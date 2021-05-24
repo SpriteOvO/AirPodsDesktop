@@ -150,7 +150,7 @@ namespace Core::AppleCP
         uint8_t lidState;               // 1/2/3/4/5/6/7/0 == opened, 9/a/b/c/d/e/f/8 == closed
         Color color;                    // Untested because I don't have a device other than white
         uint8_t unk11[1];
-        uint8_t unk12[16];              // Encrypted payload
+        uint8_t unk12[16];              // Hash or encrypted payload
     };
     static_assert(sizeof(AirPods) == 27);
 #pragma pack(pop)
