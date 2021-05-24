@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/Resource">
+        <file>Image/Icon.svg</file>
+        <file>Video/AirPods_1_2.avi</file>
+        <file>Video/AirPods_Pro.avi</file>
+    </qresource>
+</RCC>
