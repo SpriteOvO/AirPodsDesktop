@@ -76,17 +76,22 @@ void Application::InitSettings()
     {
         switch (status.GetValue())
         {
+        case Status::SettingsLoadedDataAbiIncompatible:
+            QMessageBox::information(
+                nullptr,
+                Config::ProgramName,
+                tr("Settings format has changed a bit and needs to be reconfigured.")
+            );
+
         case Status::SettingsLoadedDataNoAbiVer:
             _isFirstTimeUse = true;
             Core::Settings::LoadDefault();
             FirstTimeUse();
             break;
+
         default:
             Core::Settings::LoadDefault();
-            spdlog::critical(
-                "Unhandled error occurred while loading settings: {}",
-                status.GetValue()
-            );
+            spdlog::critical("Unhandled error occurred while loading settings: {}", status);
             break;
         }
     }
