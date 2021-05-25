@@ -82,6 +82,7 @@ void Application::InitSettings()
                 Config::ProgramName,
                 tr("Settings format has changed a bit and needs to be reconfigured.")
             );
+            [[fallthrough]];
 
         case Status::SettingsLoadedDataNoAbiVer:
             _isFirstTimeUse = true;
