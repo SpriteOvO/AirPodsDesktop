@@ -41,6 +41,19 @@
         <string>Launch when system starts</string>
        </property>
       </widget>
+      <widget class="QCheckBox" name="checkBoxLowAudioLatency">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>40</y>
+         <width>361</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Low audio latency</string>
+       </property>
+      </widget>
      </widget>
     </widget>
    </item>

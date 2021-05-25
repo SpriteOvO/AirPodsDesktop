@@ -40,6 +40,10 @@ namespace Gui
         connect(_ui.checkBoxAutoRun, &QCheckBox::toggled, this,
             [this](bool checked) { _data.auto_run = checked; }
         );
+
+        connect(_ui.checkBoxLowAudioLatency, &QCheckBox::toggled, this,
+            [this](bool checked) { _data.low_audio_latency = checked; }
+        );
     }
 
     void SettingsWindow::LoadCurrent()
@@ -62,6 +66,7 @@ namespace Gui
     void SettingsWindow::Update()
     {
         _ui.checkBoxAutoRun->setChecked(_data.auto_run);
+        _ui.checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)
