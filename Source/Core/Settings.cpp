@@ -25,6 +25,7 @@
 #include "../Helper.h"
 #include "../Logger.h"
 #include "../Application.h"
+#include "LowAudioLatency.h"
 
 
 namespace Core::Settings
@@ -110,7 +111,7 @@ namespace Core::Settings
         if (variable != other.variable) { handler(other.variable); }
 
         HANDLE_IF_DIFF(auto_run, OnAutoRunChanged);
-        // HANDLE_IF_DIFF(low_audio_latency, /* nothing */);
+        HANDLE_IF_DIFF(low_audio_latency, OnLowAudioLatencyChanged);
 
 #undef HANDLE_IF_DIFF
     }
@@ -137,6 +138,13 @@ namespace Core::Settings
         }
     }
 
+    void Data::OnLowAudioLatencyChanged(bool value)
+    {
+        spdlog::info("OnLowAudioLatencyChanged: {}", value);
+
+        LowAudioLatency::Control(value);
+    }
+
 
     class Manager
     {
@@ -158,42 +166,43 @@ namespace Core::Settings
 
             if (status.IsSucceeded()) {
                 std::lock_guard<std::mutex> lock{_mutex};
-                _currentData = data;
+                Load(std::move(data));
             }
-
             return status;
         }
 
-        void Load(Data data)
+        void LoadDefault()
         {
             std::lock_guard<std::mutex> lock{_mutex};
-            _currentData = std::move(data);
+
+            Load(Data{});
         }
 
         Data GetCurrent() const
         {
             std::lock_guard<std::mutex> lock{_mutex};
 
-            APD_ASSERT(_currentData.has_value());
-
-            return _currentData.value();
+            return _currentData;
         }
 
         Status SaveToCurrentAndLocal(Data data)
         {
             std::lock_guard<std::mutex> lock{_mutex};
 
-            APD_ASSERT(_currentData.has_value());
-
-            _currentData->HandleDiff(data);
-            _currentData = std::move(data);
-            return _currentData->SaveToQSettings(_settings);
+            Load(std::move(data));
+            return _currentData.SaveToQSettings(_settings);
         }
 
     private:
         QSettings _settings{QSettings::UserScope, Config::ProgramName, Config::ProgramName};
         mutable std::mutex _mutex;
-        std::optional<Data> _currentData;
+        Data _currentData;
+
+        void Load(Data data)
+        {
+            _currentData.HandleDiff(data);
+            _currentData = std::move(data);
+        }
     };
 
 
@@ -209,7 +218,7 @@ namespace Core::Settings
 
     void LoadDefault()
     {
-        return Manager::GetInstance().Load(GetDefault());
+        return Manager::GetInstance().LoadDefault();
     }
 
     Status LoadFromLocal()

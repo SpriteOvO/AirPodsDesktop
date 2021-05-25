@@ -3,5 +3,6 @@
         <file>Image/Icon.svg</file>
         <file>Video/AirPods_1_2.avi</file>
         <file>Video/AirPods_Pro.avi</file>
+        <file>Audio/Silence.mp3</file>
     </qresource>
 </RCC>

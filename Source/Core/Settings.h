@@ -44,6 +44,7 @@ namespace Core::Settings
         void HandleDiff(const Data &other);
 
         static void OnAutoRunChanged(bool value);
+        static void OnLowAudioLatencyChanged(bool value);
 
         friend class Manager;
     };

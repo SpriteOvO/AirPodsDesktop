@@ -65,6 +65,7 @@ namespace Gui
         Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
 
         bool _isShown{false};
+        bool _isAnimationPlaying{false};
 
         constexpr static QSize _screenMargin{50, 100};
         constexpr static int _moveStep = 2;
@@ -72,8 +73,10 @@ namespace Gui
         void UpdateState(const Core::AirPods::State &state);
         void Disconnect(const QString &title);
 
-        void setRoundedCorners();
-        void setAnimation(Core::AirPods::Model model);
+        void SetRoundedCorners();
+        void SetAnimation(Core::AirPods::Model model);
+        void PlayAnimation();
+        void StopAnimation();
 
         void DoHide();
         void showEvent(QShowEvent *event) override;

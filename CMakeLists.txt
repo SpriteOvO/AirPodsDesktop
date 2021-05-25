@@ -133,10 +133,11 @@ set(
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
 
+    "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
     "Source/Core/AppleCP.cpp"
     "Source/Core/Settings.cpp"
-    "Source/Core/Update.cpp"
+    "Source/Core/LowAudioLatency.cpp"
 )
 
 set(ADD_EXECUTABLE_ARG)

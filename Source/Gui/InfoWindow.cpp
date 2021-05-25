@@ -128,14 +128,9 @@ namespace Gui
         _ui.deviceLabel->setPalette(deviceLabelPalette);
 
         setFixedSize(300, 300);
-        setRoundedCorners();
+        SetRoundedCorners();
 
-        connect(
-            _closeButton,
-            &CloseButton::Clicked,
-            this,
-            &InfoWindow::DoHide
-        );
+        connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
 
         // for loop play
         //
@@ -143,7 +138,7 @@ namespace Gui
             _mediaPlayer,
             &QMediaPlayer::stateChanged,
             [this](QMediaPlayer::State newState) {
-                if (newState == QMediaPlayer::StoppedState) {
+                if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
                     _mediaPlayer->play();
                 }
             }
@@ -153,7 +148,11 @@ namespace Gui
         connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
         connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
 
+        _mediaPlayer->setMuted(true);
         _mediaPlayer->setVideoOutput(_videoWidget);
+        _videoWidget->setAspectRatioMode(Qt::IgnoreAspectRatio);
+        _videoWidget->show();
+
         _ui.layoutAnimation->addWidget(_videoWidget);
 
         _ui.layoutPods->addWidget(_leftBattery);
@@ -177,7 +176,7 @@ namespace Gui
     {
         _ui.deviceLabel->setText(Helper::ToString(state.model));
 
-        setAnimation(state.model);
+        SetAnimation(state.model);
 
         if (!state.pods.left.battery.has_value()) {
             _leftBattery->hide();
@@ -219,14 +218,14 @@ namespace Gui
         _caseBattery->hide();
     }
 
-    void InfoWindow::setRoundedCorners()
+    void InfoWindow::SetRoundedCorners()
     {
         QPainterPath path;
         path.addRoundedRect(rect(), 30, 30);
         setMask(QRegion{path.toFillPolygon().toPolygon()});
     }
 
-    void InfoWindow::setAnimation(Core::AirPods::Model model)
+    void InfoWindow::SetAnimation(Core::AirPods::Model model)
     {
         if (model == _cacheModel) {
             return;
@@ -252,10 +251,18 @@ namespace Gui
         }
 
         _mediaPlayer->setMedia(QUrl{media});
-        _mediaPlayer->play();
+    }
 
-        _videoWidget->setAspectRatioMode(Qt::IgnoreAspectRatio);
-        _videoWidget->show();
+    void InfoWindow::PlayAnimation()
+    {
+        _isAnimationPlaying = true;
+        _mediaPlayer->play();
+    }
+
+    void InfoWindow::StopAnimation()
+    {
+        _isAnimationPlaying = false;
+        _mediaPlayer->stop();
     }
 
     void InfoWindow::DoHide()
@@ -276,6 +283,7 @@ namespace Gui
                 else {
                     _hideTimer->stop();
                     hide();
+                    StopAnimation();
                 }
             }
         );
@@ -291,6 +299,7 @@ namespace Gui
         _isShown = true;
 
         _hideTimer->stop();
+        PlayAnimation();
 
         move(_screenSize.width() - size().width() - _screenMargin.width(), _screenSize.height());
 
