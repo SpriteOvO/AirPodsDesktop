@@ -5,6 +5,9 @@
 </h1>
 <p align="center">AirPods 桌面用户体验增强程序</p>
 <p align="center">
+    <a href="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml">
+        <img src="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml/badge.svg"/>
+    </a>
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/compare">
         <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"/>
     </a>
