@@ -27,7 +27,7 @@
 ## :hammer_and_wrench: 构建
 查看 [构建说明](/Docs/Build.md)。
 
-## :beer: 贡献
+## :handshake: 贡献
 *AirPodsDesktop* 是一个开源项目，您可以通过以下方式贡献：
 * [打开问题](https://github.com/SpriteOvO/AirPodsDesktop/issues/new/choose) 来报告错误或建议新功能。
 * [提交 PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) 来修复已知 BUG 或尝试 TODO 列表中的事项。

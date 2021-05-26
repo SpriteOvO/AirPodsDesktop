@@ -27,7 +27,7 @@
 ## :hammer_and_wrench: Build
 See the [Build Instructions](/Docs/Build.md).
 
-## :beer: Contribute
+## :handshake: Contribute
 *AirPodsDesktop* is an open source project, here are some ways you can contribute:
 * [Open an issue](https://github.com/SpriteOvO/AirPodsDesktop/issues/new/choose) to report bugs or suggest new features.
 * [Submit a PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) to fix a known bug or try something from the TODO list.
