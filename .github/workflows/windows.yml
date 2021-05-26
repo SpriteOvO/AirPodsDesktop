@@ -1,0 +1,84 @@
+name: Windows Builds
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'Assets/**'
+      - 'Docs/**'
+
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'Assets/**'
+      - 'Docs/**'
+
+  workflow_dispatch:
+
+env:
+  PLATFORM_NAME: Win32
+  BUILD_TYPE: Release
+  UPLOAD_ARTIFACT: false
+  CACHE_DEPS: false
+
+jobs:
+  Build:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Generate dependencies cache key
+        if: env.CACHE_DEPS == 'true'
+        run: |
+          curl -o DepsRef.json https://api.github.com/repos/SpriteOvO/AirPodsDesktop-Deps/git/refs/heads/main
+          type DepsRef.json
+
+      - name: Dependencies cache
+        id: cache-deps
+        if: env.CACHE_DEPS == 'true'
+        uses: actions/cache@v2
+        with:
+          path: AirPodsDesktop-Deps
+          key: ${{ hashFiles('DepsRef.json') }}
+
+      - name: Clone dependencies
+        if: env.CACHE_DEPS != 'true' || steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop-Deps.git
+          dir AirPodsDesktop-Deps
+
+      - name: Generate project and build
+        run: |
+          mkdir Build && cd Build
+          mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
+
+          cmake -G "Visual Studio 16 2019" ^
+                -A ${{ env.PLATFORM_NAME }} ^
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
+                -DAPD_QT_PATH=../../AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
+                -DAPD_GENERATE_INSTALLER=ON ^
+                ../../
+
+          cmake --build . ^
+                --config ${{ env.BUILD_TYPE }}
+
+          dir /s Binary
+          dir /s Installer
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        if: env.UPLOAD_ARTIFACT == 'true'
+        with:
+          name: ${{ env.BUILD_TYPE }}
+          path: Build\${{ env.BUILD_TYPE }}\Installer\
+          retention-days: 5
