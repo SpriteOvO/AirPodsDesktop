@@ -115,7 +115,9 @@ namespace Gui
         qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
 
         setAttribute(Qt::WA_DeleteOnClose);
-        setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        setWindowFlags(
+            windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint
+        );
 
         _screenSize = Application::primaryScreen()->size();
 
