@@ -37,7 +37,12 @@ namespace Gui
     private:
         Ui::SettingsWindow _ui;
 
+        QCheckBox *_checkBoxAutoRun;
+        QCheckBox *_checkBoxLowAudioLatency;
+
         Core::Settings::Data _data;
+
+        void InitUi();
 
         void LoadCurrent();
         void LoadDefault();

@@ -19,30 +19,83 @@
 #include "SettingsWindow.h"
 
 #include <QPushButton>
+#include <QCheckBox>
+#include <QToolTip>
+#include <QLabel>
 
 
 using namespace std::chrono_literals;
 
 namespace Gui
 {
+    class TipLabel : public QLabel
+    {
+        Q_OBJECT
+
+    private:
+        constexpr static auto content = "(?)";
+
+    public:
+        TipLabel(QString text, QWidget *parent) :
+            QLabel{content, parent},
+            _text{std::move(text)}
+        {
+            QPalette palette = this->palette();
+            palette.setColor(QPalette::WindowText, Qt::darkGray);
+            setPalette(palette);
+        }
+
+    private:
+        QString _text;
+
+        void enterEvent(QEvent *event) override
+        {
+            QToolTip::showText(QCursor::pos(), _text, this);
+        }
+
+        void leaveEvent(QEvent *event) override
+        {
+            QToolTip::hideText();
+        }
+    };
+
+
     SettingsWindow::SettingsWindow(QWidget *parent) :
         QDialog{parent}
     {
         _ui.setupUi(this);
 
+        InitUi();
+
         LoadCurrent();
 
         connect(_ui.buttonBox, &QDialogButtonBox::accepted, this, &SettingsWindow::Save);
-        connect(_ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
-            &SettingsWindow::LoadDefault
+        connect(_ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked,
+            this, &SettingsWindow::LoadDefault
         );
 
-        connect(_ui.checkBoxAutoRun, &QCheckBox::toggled, this,
+        connect(_checkBoxAutoRun, &QCheckBox::toggled, this,
             [this](bool checked) { _data.auto_run = checked; }
         );
 
-        connect(_ui.checkBoxLowAudioLatency, &QCheckBox::toggled, this,
+        connect(_checkBoxLowAudioLatency, &QCheckBox::toggled, this,
             [this](bool checked) { _data.low_audio_latency = checked; }
+        );
+    }
+
+    void SettingsWindow::InitUi()
+    {
+        _checkBoxAutoRun = new QCheckBox{tr("Launch when system starts"), this};
+        _checkBoxLowAudioLatency = new QCheckBox{tr("Low audio latency mode"), this};
+
+        _ui.gridLayout->addWidget(_checkBoxAutoRun, 0, 0);
+
+        _ui.gridLayout->addWidget(_checkBoxLowAudioLatency, 1, 0);
+        _ui.gridLayout->addWidget(
+            new TipLabel{
+                tr("It improves the problem of short audio not playing, but may increase battery consumption."),
+                this
+            }, 1, 1, Qt::AlignLeft
         );
     }
 
@@ -65,8 +118,8 @@ namespace Gui
 
     void SettingsWindow::Update()
     {
-        _ui.checkBoxAutoRun->setChecked(_data.auto_run);
-        _ui.checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
+        _checkBoxAutoRun->setChecked(_data.auto_run);
+        _checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)
@@ -75,3 +128,5 @@ namespace Gui
     }
 
 } // namespace Gui
+
+#include "SettingsWindow.moc"
