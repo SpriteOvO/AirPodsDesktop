@@ -441,6 +441,14 @@ namespace Core::AirPods
 
         manager.BothInEarCallbacks() += [](const State &state, bool isBothInEar)
         {
+            if (!Settings::GetCurrent().automatic_ear_detection) {
+                spdlog::trace(
+                    "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
+                    isBothInEar
+                );
+                return;
+            }
+
             if (isBothInEar) {
                 Core::GlobalMedia::Play();
             }

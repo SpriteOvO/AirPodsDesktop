@@ -35,6 +35,7 @@ namespace Core::Settings
 
         bool auto_run{false};
         bool low_audio_latency{false};
+        bool automatic_ear_detection{true};
         QString skipped_version;
 
     private:

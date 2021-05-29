@@ -73,6 +73,7 @@ namespace Core::Settings
 
         LOAD_VALUE(auto_run);
         LOAD_VALUE(low_audio_latency);
+        LOAD_VALUE(automatic_ear_detection);
         LOAD_VALUE(skipped_version);
 
         return Status::Success;
@@ -97,6 +98,7 @@ namespace Core::Settings
 
         SAVE_VALUE(auto_run);
         SAVE_VALUE(low_audio_latency);
+        SAVE_VALUE(automatic_ear_detection);
         SAVE_VALUE(skipped_version);
 
         return Status::Success;

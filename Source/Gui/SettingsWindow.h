@@ -39,6 +39,7 @@ namespace Gui
 
         QCheckBox *_checkBoxAutoRun;
         QCheckBox *_checkBoxLowAudioLatency;
+        QCheckBox *_checkBoxAutomaticEarDetection;
 
         Core::Settings::Data _data;
 

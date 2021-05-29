@@ -81,12 +81,17 @@ namespace Gui
         connect(_checkBoxLowAudioLatency, &QCheckBox::toggled, this,
             [this](bool checked) { _data.low_audio_latency = checked; }
         );
+
+        connect(_checkBoxAutomaticEarDetection, &QCheckBox::toggled, this,
+            [this](bool checked) { _data.automatic_ear_detection = checked; }
+        );
     }
 
     void SettingsWindow::InitUi()
     {
         _checkBoxAutoRun = new QCheckBox{tr("Launch when system starts"), this};
         _checkBoxLowAudioLatency = new QCheckBox{tr("Low audio latency mode"), this};
+        _checkBoxAutomaticEarDetection = new QCheckBox{tr("Automatic ear detection"), this};
 
         _ui.gridLayout->addWidget(_checkBoxAutoRun, 0, 0);
 
@@ -96,6 +101,14 @@ namespace Gui
                 tr("It improves the problem of short audio not playing, but may increase battery consumption."),
                 this
             }, 1, 1, Qt::AlignLeft
+        );
+
+        _ui.gridLayout->addWidget(_checkBoxAutomaticEarDetection, 2, 0);
+        _ui.gridLayout->addWidget(
+            new TipLabel{
+                tr("Pause the media when you remove the AirPods and play it when both AirPods are put back on."),
+                this
+            }, 2, 1, Qt::AlignLeft
         );
     }
 
@@ -120,6 +133,7 @@ namespace Gui
     {
         _checkBoxAutoRun->setChecked(_data.auto_run);
         _checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
+        _checkBoxAutomaticEarDetection->setChecked(_data.automatic_ear_detection);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)
