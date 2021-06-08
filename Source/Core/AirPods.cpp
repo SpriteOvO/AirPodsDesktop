@@ -406,9 +406,9 @@ namespace Core::AirPods
                 newState.model =
                     rightState.model != Model::Unknown ? rightState.model : leftState.model;
 
-                newState.pods.left = ll.battery.has_value() ? ll : rl;
-                newState.pods.right = rr.battery.has_value() ? rr : lr;
-                newState.caseBox = rc.battery.has_value() ? rc : lc;
+                newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
+                newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
+                newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
 
                 UpdateState(std::move(newState));
 
