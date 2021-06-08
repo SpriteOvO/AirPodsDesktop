@@ -125,6 +125,8 @@ namespace Core::AppleCP
         bool IsLeftInEar() const;
         bool IsRightInEar() const;
 
+        AirPods Desensitize() const;
+
     private:
         uint8_t unk1[1];
         uint16_t modelId;

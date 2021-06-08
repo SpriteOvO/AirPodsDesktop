@@ -70,6 +70,10 @@ namespace Core::AirPods
             {
                 APD_ASSERT(IsDesiredAdv(data));
                 _data = data;
+
+                auto protocol = AppleCP::As<AppleCP::AirPods>(GetMfrData());
+                APD_ASSERT(protocol.has_value());
+                _protocol = std::move(protocol.value());
             }
 
             int16_t GetRssi() const
@@ -87,35 +91,35 @@ namespace Core::AirPods
                 return _data.address;
             }
 
-            AppleCP::AirPods GetRawData() const
+            std::vector<uint8_t> GetDesensitizedData() const
             {
-                auto protocol = AppleCP::As<AppleCP::AirPods>(GetMfrData());
-                APD_ASSERT(protocol.has_value());
-                return protocol.value();
+                auto desensitizedData = _protocol.Desensitize();
+
+                std::vector<uint8_t> result(sizeof(desensitizedData), 0);
+                std::memcpy(result.data(), &desensitizedData, sizeof(desensitizedData));
+                return result;
             }
 
             DevState GetState() const
             {
-                auto protocol = GetRawData();
-
                 DevState state;
 
-                state.model = protocol.GetModel();
-                state.side = protocol.GetBroadcastedSide();
+                state.model = _protocol.GetModel();
+                state.side = _protocol.GetBroadcastedSide();
 
-                state.pods.left.battery = protocol.GetLeftBattery();
-                state.pods.left.isCharging = protocol.IsLeftCharging();
-                state.pods.left.isInEar = protocol.IsLeftInEar();
+                state.pods.left.battery = _protocol.GetLeftBattery();
+                state.pods.left.isCharging = _protocol.IsLeftCharging();
+                state.pods.left.isInEar = _protocol.IsLeftInEar();
 
-                state.pods.right.battery = protocol.GetRightBattery();
-                state.pods.right.isCharging = protocol.IsRightCharging();
-                state.pods.right.isInEar = protocol.IsRightInEar();
+                state.pods.right.battery = _protocol.GetRightBattery();
+                state.pods.right.isCharging = _protocol.IsRightCharging();
+                state.pods.right.isInEar = _protocol.IsRightInEar();
 
-                state.caseBox.battery = protocol.GetCaseBattery();
-                state.caseBox.isCharging = protocol.IsCaseCharging();
+                state.caseBox.battery = _protocol.GetCaseBattery();
+                state.caseBox.isCharging = _protocol.IsCaseCharging();
 
-                state.caseBox.isBothPodsInCase = protocol.IsBothPodsInCase();
-                state.caseBox.isLidOpened = protocol.IsLidOpened();
+                state.caseBox.isBothPodsInCase = _protocol.IsBothPodsInCase();
+                state.caseBox.isLidOpened = _protocol.IsLidOpened();
 
                 if (state.pods.left.battery.has_value()) {
                     state.pods.left.battery = state.pods.left.battery.value() * 10;
@@ -132,6 +136,7 @@ namespace Core::AirPods
 
         private:
             Bluetooth::AdvertisementWatcher::ReceivedData _data;
+            AppleCP::AirPods _protocol;
 
             const std::vector<uint8_t>& GetMfrData() const
             {
@@ -310,6 +315,12 @@ namespace Core::AirPods
             bool OnDevicesUpdated(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
             {
                 Advertisement adv{data};
+
+                spdlog::trace(
+                    "AirPods advertisement received. Data: {}",
+                    Helper::ToString(adv.GetDesensitizedData())
+                );
+
                 auto state = adv.GetState();
 
                 if (_leftAdv.has_value() && Clock::now() - _leftAdv->first >= Timeout) {

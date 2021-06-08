@@ -133,4 +133,16 @@ namespace Core::AppleCP
         return !IsRightCharging() && (IsRightBroadcasted() ? currInEar : anotInEar);
     }
 
+    AirPods AirPods::Desensitize() const
+    {
+        auto result = *this;
+
+        // This field may be some kind of hash or encrypted payload.
+        // So it may contain personal information about the user.
+        //
+        std::memset(result.unk12, 0, sizeof(result.unk12));
+
+        return result;
+    }
+
 } // namespace Core::AppleCP
