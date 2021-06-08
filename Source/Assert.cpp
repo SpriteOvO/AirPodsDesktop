@@ -28,9 +28,9 @@ namespace Assert
         QString content = QString{
             "Assertion triggered.\n"
             "\n"
-            "Condition: %1"
-            "File: %2"
-            "Line: %3"}
+            "Condition: %1\n"
+            "File: %2\n"
+            "Line: %3\n"}
             .arg(condition)
             .arg(fileName)
             .arg(line);
