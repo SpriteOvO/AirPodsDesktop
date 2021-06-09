@@ -207,7 +207,7 @@ bool Application::CheckUpdate()
             "Latest version: %2\n"
             "\n"
             "%3"
-            "Click \"Ignore\" to skip this new release and no longer be reminded.\n"
+            "Click \"Ignore\" to skip this version and no longer be reminded.\n"
             "\n"
             "Do you want to update it now?"
         ).arg(info.localVer)
