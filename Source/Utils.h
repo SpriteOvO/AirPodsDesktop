@@ -21,7 +21,9 @@
 #include <mutex>
 #include <vector>
 #include <functional>
+#include <QDir>
 #include <QKeyEvent>
+#include <QStandardPaths>
 
 #include <spdlog/spdlog.h>
 
@@ -82,6 +84,21 @@ namespace Utils
         }
 
     } // namespace Text
+
+    namespace File
+    {
+        inline QDir GetWorkspace()
+        {
+            auto location = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+
+            QDir result{std::move(location)};
+            if (!result.exists()) {
+                result.mkdir(".");
+            }
+            return result;
+        }
+
+    } // namespace File
 
     namespace Process
     {

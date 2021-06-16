@@ -205,26 +205,14 @@ namespace Logger
 #if defined APD_DEBUG
         enableTrace = true;
 #endif
+        auto workspace = Utils::File::GetWorkspace();
+        auto logFilePath = workspace.filePath(CONFIG_PROGRAM_NAME ".log");
 
-        // We must use the absolute path here
-        // Because in Windows, opening relative path files with auto-run will fail
-        //
-        QDir dirPath{Application::applicationDirPath()};
-        
-        dirPath.mkdir("logs");
-        if (!dirPath.cd("logs")) {
-            DoError("cd to 'logs' failed when initializing Logger.", true);
-            return false;
-        }
-        
         try {
-
             auto logger = std::make_shared<spdlog::logger>(
                 "Main",
                 std::initializer_list<spdlog::sink_ptr>{
-                    std::make_shared<Details::CustomFileSink<>>(
-                        dirPath.filePath(CONFIG_PROGRAM_NAME ".log").toStdString()
-                    )
+                    std::make_shared<Details::CustomFileSink<>>(logFilePath.toStdString())
                 }
             );
             spdlog::register_logger(logger);
