@@ -20,7 +20,7 @@ on:
 env:
   PLATFORM_NAME: Win32
   BUILD_TYPE: Release
-  UPLOAD_ARTIFACT: false
+  UPLOAD_ARTIFACT: true
   CACHE_DEPS: false
 
 jobs:
