@@ -161,9 +161,118 @@ namespace Core::AirPods
                     return false;
                 }
 
+                Advertisement adv{data};
+                auto state = adv.GetState();
+
+                spdlog::trace(
+                    "AirPods advertisement received. Data: {}",
+                    Helper::ToString(adv.GetDesensitizedData())
+                );
+
                 std::lock_guard<std::mutex> lock{_mutex};
 
-                return OnDevicesUpdated(data);
+                if (_leftAdv.has_value() && Clock::now() - _leftAdv->first >= Timeout) {
+                    _leftAdv.reset();
+                }
+                if (_rightAdv.has_value() && Clock::now() - _rightAdv->first >= Timeout) {
+                    _rightAdv.reset();
+                }
+
+                auto &lastAdv = state.side == Side::Left ? _leftAdv : _rightAdv;
+
+                // If the Random Non-resolvable Address of our devices is changed
+                // or the packet is sent from another device that it isn't ours
+                //
+                if (_unreliableAddress != adv.GetAddress())
+                {
+                    if (lastAdv.has_value())
+                    {
+                        auto lastState = lastAdv->second.GetState();
+
+                        Battery::value_type leftBatteryDiff = 0, rightBatteryDiff = 0,
+                            caseBatteryDiff = 0;
+
+                        if (state.pods.left.battery.has_value() &&
+                            lastState.pods.left.battery.has_value())
+                        {
+                            leftBatteryDiff = std::abs(
+                                (int32_t)state.pods.left.battery.value() -
+                                (int32_t)lastState.pods.left.battery.value()
+                            );
+                        }
+                        if (state.pods.right.battery.has_value() &&
+                            lastState.pods.right.battery.has_value())
+                        {
+                            rightBatteryDiff = std::abs(
+                                (int32_t)state.pods.right.battery.value() -
+                                (int32_t)lastState.pods.right.battery.value()
+                            );
+                        }
+                        if (state.caseBox.battery.has_value() &&
+                            lastState.caseBox.battery.has_value())
+                        {
+                            caseBatteryDiff = std::abs(
+                                (int32_t)state.caseBox.battery.value() -
+                                (int32_t)lastState.caseBox.battery.value()
+                            );
+                        }
+
+                        // The battery changes in steps of 1,
+                        // so the data of two packets in a short time can not exceed 1,
+                        // otherwise it is not our device
+                        //
+                        if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1)
+                        {
+                            auto now = Clock::now();
+
+                            if (_lostDuration == Timestamp{}) {
+                                _lostDuration = now;
+                            }
+                            if (now - _lostDuration < Timeout) {
+                                return false;
+                            }
+                        }
+                    }
+                    _lostDuration = Timestamp{};
+                    _unreliableAddress = adv.GetAddress();
+                }
+
+                lastAdv = std::make_pair(Clock::now(), adv);
+
+
+                //////////////////////////////////////////////////
+                // Update states
+                //
+
+                Advertisement::DevState leftState, rightState;
+
+                if (_leftAdv.has_value()) {
+                    leftState = _leftAdv->second.GetState();
+                }
+                if (_rightAdv.has_value()) {
+                    rightState = _rightAdv->second.GetState();
+                }
+
+                State newState;
+
+                const auto &ll = leftState.pods.left;
+                const auto &rl = rightState.pods.left;
+                const auto &lr = leftState.pods.right;
+                const auto &rr = rightState.pods.right;
+                const auto &lc = leftState.caseBox;
+                const auto &rc = rightState.caseBox;
+
+                newState.model =
+                    rightState.model != Model::Unknown ? rightState.model : leftState.model;
+
+                newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
+                newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
+                newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
+
+                UpdateState(std::move(newState));
+
+                _lastUpdateTimestamp = Clock::now();
+                return true;
             }
 
             PodState GetPodState(Side side) const
@@ -310,121 +419,6 @@ namespace Core::AirPods
                 }
 
                 _state = std::move(newState);
-            }
-
-            bool OnDevicesUpdated(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
-            {
-                Advertisement adv{data};
-
-                spdlog::trace(
-                    "AirPods advertisement received. Data: {}",
-                    Helper::ToString(adv.GetDesensitizedData())
-                );
-
-                auto state = adv.GetState();
-
-                if (_leftAdv.has_value() && Clock::now() - _leftAdv->first >= Timeout) {
-                    _leftAdv.reset();
-                }
-                if (_rightAdv.has_value() && Clock::now() - _rightAdv->first >= Timeout) {
-                    _rightAdv.reset();
-                }
-
-                auto &lastAdv = state.side == Side::Left ? _leftAdv : _rightAdv;
-
-                // If the Random Non-resolvable Address of our devices is changed
-                // or the packet is sent from another device that it isn't ours
-                //
-                if (_unreliableAddress != adv.GetAddress())
-                {
-                    if (lastAdv.has_value())
-                    {
-                        auto lastState = lastAdv->second.GetState();
-
-                        Battery::value_type leftBatteryDiff = 0, rightBatteryDiff = 0,
-                            caseBatteryDiff = 0;
-
-                        if (state.pods.left.battery.has_value() &&
-                            lastState.pods.left.battery.has_value())
-                        {
-                            leftBatteryDiff = std::abs(
-                                (int32_t)state.pods.left.battery.value() - 
-                                (int32_t)lastState.pods.left.battery.value()
-                            );
-                        }
-                        if (state.pods.right.battery.has_value() &&
-                            lastState.pods.right.battery.has_value())
-                        {
-                            rightBatteryDiff = std::abs(
-                                (int32_t)state.pods.right.battery.value() -
-                                (int32_t)lastState.pods.right.battery.value()
-                            );
-                        }
-                        if (state.caseBox.battery.has_value() &&
-                            lastState.caseBox.battery.has_value())
-                        {
-                            caseBatteryDiff = std::abs(
-                                (int32_t)state.caseBox.battery.value() -
-                                (int32_t)lastState.caseBox.battery.value()
-                            );
-                        }
-
-                        // The battery changes in steps of 1,
-                        // so the data of two packets in a short time can not exceed 1,
-                        // otherwise it is not our device
-                        //
-                        if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1)
-                        {
-                            auto now = Clock::now();
-
-                            if (_lostDuration == Timestamp{}) {
-                                _lostDuration = now;
-                            }
-                            if (now - _lostDuration < Timeout) {
-                                return false;
-                            }
-                        }
-                    }
-                    _lostDuration = Timestamp{};
-                    _unreliableAddress = adv.GetAddress();
-                }
-
-                lastAdv = std::make_pair(Clock::now(), adv);
-
-
-                //////////////////////////////////////////////////
-                // Update states
-                //
-
-                Advertisement::DevState leftState, rightState;
-
-                if (_leftAdv.has_value()) {
-                    leftState = _leftAdv->second.GetState();
-                }
-                if (_rightAdv.has_value()) {
-                    rightState = _rightAdv->second.GetState();
-                }
-
-                State newState;
-
-                const auto &ll = leftState.pods.left;
-                const auto &rl = rightState.pods.left;
-                const auto &lr = leftState.pods.right;
-                const auto &rr = rightState.pods.right;
-                const auto &lc = leftState.caseBox;
-                const auto &rc = rightState.caseBox;
-
-                newState.model =
-                    rightState.model != Model::Unknown ? rightState.model : leftState.model;
-
-                newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
-                newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
-                newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
-
-                UpdateState(std::move(newState));
-
-                _lastUpdateTimestamp = Clock::now();
-                return true;
             }
         };
 
