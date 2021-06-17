@@ -165,8 +165,10 @@ namespace Core::AirPods
                 auto state = adv.GetState();
 
                 spdlog::trace(
-                    "AirPods advertisement received. Data: {}",
-                    Helper::ToString(adv.GetDesensitizedData())
+                    "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
+                    Helper::ToString(adv.GetDesensitizedData()),
+                    std::hash<decltype(data.address)>{}(data.address),
+                    data.rssi
                 );
 
                 std::lock_guard<std::mutex> lock{_mutex};
