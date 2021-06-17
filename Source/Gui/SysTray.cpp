@@ -89,7 +89,7 @@ namespace Gui
 
     void SysTray::ShowInfoWindow()
     {
-        App->GetInfoWindow().ShowSafety();
+        App->GetInfoWindow()->ShowSafety();
     }
 
     void SysTray::OnSettingsClicked()

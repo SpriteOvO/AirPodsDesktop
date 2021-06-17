@@ -34,6 +34,7 @@ class Application : public QApplication
 public:
     template <class ...Args>
     inline static void Initialize(Args &&...args) {
+        PreConstructorInit();
         App = std::make_unique<Application>(std::forward<Args>(args)...);
     }
 
@@ -53,13 +54,12 @@ private:
     static inline cxxopts::Options _options{Config::ProgramName,Config::Description};
     static inline bool _isFirstTimeUse{false};
 
-    bool _preInit{false};
-    Gui::SysTray _sysTray;
-    Gui::InfoWindow _infoWindow;
+    std::unique_ptr<Gui::SysTray> _sysTray;
+    std::unique_ptr<Gui::InfoWindow> _infoWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::AsyncScanner> _scanner;
 
-    static bool PreMemberInit(int argc, char *argv[]);
+    static void PreConstructorInit();
     static void InitSettings();
     static void FirstTimeUse();
 

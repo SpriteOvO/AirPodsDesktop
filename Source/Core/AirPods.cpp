@@ -431,18 +431,18 @@ namespace Core::AirPods
         auto &manager = Details::Manager::GetInstance();
 
         manager.StateChangedCallbacks() += [](const State &state) {
-            App->GetInfoWindow().UpdateStateSafety(state);
-            App->GetSysTray().UpdateStateSafety(state);
+            App->GetInfoWindow()->UpdateStateSafety(state);
+            App->GetSysTray()->UpdateStateSafety(state);
         };
 
         manager.ControlInfoWindowCallbacks() += [](const State &state, bool show)
         {
             auto &infoWindow = App->GetInfoWindow();
             if (show) {
-                infoWindow.ShowSafety();
+                infoWindow->ShowSafety();
             }
             else {
-                infoWindow.HideSafety();
+                infoWindow->HideSafety();
             }
         };
 
@@ -570,9 +570,9 @@ namespace Core::AirPods
         }
 
         auto &infoWindow = App->GetInfoWindow();
-        infoWindow.HideSafety();
-        infoWindow.DisconnectSafety(title);
-        App->GetSysTray().DisconnectSafety(title);
+        infoWindow->HideSafety();
+        infoWindow->DisconnectSafety(title);
+        App->GetSysTray()->DisconnectSafety(title);
     }
 
 

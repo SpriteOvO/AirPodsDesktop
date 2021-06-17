@@ -29,44 +29,9 @@
 #include "Core/Update.h"
 
 
-bool Application::PreMemberInit(int argc, char *argv[])
+void Application::PreConstructorInit()
 {
-    static bool isFirstConstruct{false};
-    if (isFirstConstruct) {
-        return false;
-    }
-    isFirstConstruct = true;
-
-    bool enableTrace = false;
-
-    try {
-        _options.add_options()
-            ("trace", "Enable trace level logging.", cxxopts::value<bool>()->default_value("false"));
-
-        auto args = _options.parse(argc, argv);
-        enableTrace = args["trace"].as<bool>();
-    }
-    catch (cxxopts::OptionException &exception) {
-        Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
-        return false;
-    }
-
-    Logger::Initialize(enableTrace);
-
-    spdlog::info("Launched.");
-    spdlog::info("Args: {{ trace: {} }}", enableTrace);
-
-    Core::Bluetooth::Initialize();
-    Core::GlobalMedia::Initialize();
-
-    setFont(QFont{"Segoe UI", 9});
-    setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
-    setQuitOnLastWindowClosed(false);
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
-
-    InitSettings();
-
-    return true;
 }
 
 void Application::InitSettings()
@@ -154,10 +119,39 @@ void Application::FirstTimeUse()
     );
 }
 
-Application::Application(int argc, char *argv[]) :
-    QApplication{argc, argv},
-    _preInit{PreMemberInit(argc, argv)}
+Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
 {
+    bool enableTrace = false;
+
+    try {
+        _options.add_options()
+            ("trace", "Enable trace level logging.", cxxopts::value<bool>()->default_value("false"));
+
+        auto args = _options.parse(argc, argv);
+        enableTrace = args["trace"].as<bool>();
+    }
+    catch (cxxopts::OptionException &exception) {
+        Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
+        APD_ASSERT(false);
+    }
+
+    Logger::Initialize(enableTrace);
+
+    spdlog::info("Launched.");
+    spdlog::info("Args: {{ trace: {} }}", enableTrace);
+
+    Core::Bluetooth::Initialize();
+    Core::GlobalMedia::Initialize();
+
+    setFont(QFont{"Segoe UI", 9});
+    setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
+    setQuitOnLastWindowClosed(false);
+
+    InitSettings();
+
+    _sysTray = std::make_unique<Gui::SysTray>();
+    _infoWindow = std::make_unique<Gui::InfoWindow>();
+
     connect(this, &Application::aboutToQuit, this, &Application::QuitHandler);
     _scanner = std::make_unique<Core::AirPods::AsyncScanner>();
 }
