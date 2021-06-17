@@ -32,6 +32,7 @@
 void Application::PreConstructorInit()
 {
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
+    setAttribute(Qt::AA_EnableHighDpiScaling);
 }
 
 void Application::InitSettings()
