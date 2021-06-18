@@ -141,9 +141,9 @@ namespace Core::AppleCP
             uint8_t unk8 : 1;
         };
         struct {
-            uint8_t curr : 4;           // Battery remaining [0, 10], overwise unavailable
-            uint8_t anot : 4;           // Battery remaining [0, 10], overwise unavailable
-            uint8_t caseBox : 4;        // Battery remaining [0, 10], overwise unavailable
+            uint8_t curr : 4;           // Battery remaining [0, 10], otherwise unavailable
+            uint8_t anot : 4;           // Battery remaining [0, 10], otherwise unavailable
+            uint8_t caseBox : 4;        // Battery remaining [0, 10], otherwise unavailable
             uint8_t currCharging : 1;   // If it's charging (value != 0)
             uint8_t anotCharging : 1;   // If it's charging (value != 0)
             uint8_t caseCharging : 1;   // If it's charging (value != 0)
