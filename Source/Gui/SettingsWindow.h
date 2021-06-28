@@ -19,6 +19,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QSlider>
 
 #include "../Core/Settings.h"
 #include "../Utils.h"
@@ -40,6 +41,7 @@ namespace Gui
         QCheckBox *_checkBoxAutoRun;
         QCheckBox *_checkBoxLowAudioLatency;
         QCheckBox *_checkBoxAutomaticEarDetection;
+        QSlider *_sliderMaximumReceivingRange;
 
         Core::Settings::Data _data;
 

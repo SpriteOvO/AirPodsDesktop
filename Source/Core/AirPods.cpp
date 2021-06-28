@@ -171,6 +171,18 @@ namespace Core::AirPods
 
             bool TryTrack(Advertisement adv)
             {
+                const auto &currentSettings = Settings::GetCurrent();
+                const auto advRssi = adv.GetRssi();
+
+                if (advRssi < currentSettings.rssi_min) {
+                    spdlog::warn(
+                        "TryTrack returns false. Reason: RSSI is less than the limit. "
+                        "curr: '{}' min: '{}'",
+                        advRssi, currentSettings.rssi_min
+                    );
+                    return false;
+                }
+
                 const auto &advState = adv.GetAdvState();
 
                 std::lock_guard<std::mutex> lock{_mutex};

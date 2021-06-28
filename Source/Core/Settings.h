@@ -37,6 +37,7 @@ namespace Core::Settings
         bool low_audio_latency{false};
         bool automatic_ear_detection{true};
         QString skipped_version;
+        int16_t rssi_min{-80};
 
     private:
         Status LoadFromQSettings(const QSettings &settings);

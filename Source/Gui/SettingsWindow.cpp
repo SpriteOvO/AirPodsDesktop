@@ -85,31 +85,57 @@ namespace Gui
         connect(_checkBoxAutomaticEarDetection, &QCheckBox::toggled, this,
             [this](bool checked) { _data.automatic_ear_detection = checked; }
         );
+
+        _sliderMaximumReceivingRange->setMinimum(50);
+        _sliderMaximumReceivingRange->setMaximum(100);
+        connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this,
+            [this](int value) { _data.rssi_min = -value; }
+        );
     }
 
     void SettingsWindow::InitUi()
     {
+        _ui.gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+        int row = -1, column = 0;
+
+        const auto &newLine = [&](QWidget *widget, Qt::Alignment alignment = {}) {
+            row += 1;
+            column = 0;
+            _ui.gridLayout->addWidget(widget, row, column, alignment);
+        };
+
+        const auto &sameLine = [&](QWidget *widget, Qt::Alignment alignment = {}) {
+            _ui.gridLayout->addWidget(widget, row, ++column, alignment);
+        };
+
         _checkBoxAutoRun = new QCheckBox{tr("Launch when system starts"), this};
+        newLine(_checkBoxAutoRun);
+
         _checkBoxLowAudioLatency = new QCheckBox{tr("Low audio latency mode"), this};
-        _checkBoxAutomaticEarDetection = new QCheckBox{tr("Automatic ear detection"), this};
-
-        _ui.gridLayout->addWidget(_checkBoxAutoRun, 0, 0);
-
-        _ui.gridLayout->addWidget(_checkBoxLowAudioLatency, 1, 0);
-        _ui.gridLayout->addWidget(
+        newLine(_checkBoxLowAudioLatency);
+        sameLine(
             new TipLabel{
                 tr("It improves the problem of short audio not playing, but may increase battery consumption."),
                 this
-            }, 1, 1, Qt::AlignLeft
+            },
+            Qt::AlignLeft
         );
 
-        _ui.gridLayout->addWidget(_checkBoxAutomaticEarDetection, 2, 0);
-        _ui.gridLayout->addWidget(
+        _checkBoxAutomaticEarDetection = new QCheckBox{tr("Automatic ear detection"), this};
+        newLine(_checkBoxAutomaticEarDetection);
+        sameLine(
             new TipLabel{
                 tr("Pause the media when you remove the AirPods and play it when both AirPods are put back on."),
                 this
-            }, 2, 1, Qt::AlignLeft
+            }, Qt::AlignLeft
         );
+
+        _sliderMaximumReceivingRange = new QSlider{Qt::Horizontal, this};
+        newLine(
+            new QLabel{tr("Maximum receiving range"), this}
+        );
+        newLine(_sliderMaximumReceivingRange);
     }
 
     void SettingsWindow::LoadCurrent()
@@ -134,6 +160,7 @@ namespace Gui
         _checkBoxAutoRun->setChecked(_data.auto_run);
         _checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
         _checkBoxAutomaticEarDetection->setChecked(_data.automatic_ear_detection);
+        _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)
