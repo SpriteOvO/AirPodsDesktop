@@ -20,7 +20,10 @@
 
 #include <mutex>
 #include <vector>
+#include <chrono>
+#include <thread>
 #include <functional>
+#include <condition_variable>
 #include <QString>
 
 #define __TO_STRING(expr)       # expr
@@ -137,6 +140,68 @@ namespace Helper
         mutable std::mutex _mutex;
         CbHandle _nextHandle{1};
         std::vector<std::pair<CbHandle, Function>> _callbacks;
+    };
+
+    class Timer
+    {
+    public:
+        Timer() = default;
+
+        template <class ...Args>
+        inline Timer(Args &&...args) {
+            Start(std::forward<Args>(args)...);
+        }
+
+        inline ~Timer() {
+            Stop();
+        }
+
+        inline void Start(std::chrono::milliseconds interval, std::function<void()> callback)
+        {
+            Stop();
+            _destroy = false;
+            _interval = std::move(interval);
+            Reset();
+            _thread = std::thread{&Timer::Thread, this, std::move(callback)};
+        }
+
+        inline void Stop()
+        {
+            _destroy = true;
+            if (_thread.joinable()) {
+                _thread.join();
+            }
+        }
+
+        inline void Reset()
+        {
+            _deadline = Clock::now() + _interval.load();
+        }
+
+    private:
+        using Clock = std::chrono::steady_clock;
+        using TimePoint = Clock::time_point;
+
+        std::atomic<bool> _destroy{false};
+        std::atomic<std::chrono::milliseconds> _interval;
+        std::atomic<TimePoint> _deadline;
+        std::thread _thread;
+
+        void Thread(std::function<void()> callback)
+        {
+            while (true)
+            {
+                std::this_thread::sleep_until(_deadline.load());
+                if (_destroy) {
+                    break;
+                }
+                if (_deadline.load() > Clock::now()) {
+                    continue;
+                }
+                Reset();
+                callback();
+            }
+        }
     };
 
 } // namespace Helper

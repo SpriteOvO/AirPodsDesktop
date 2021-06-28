@@ -66,6 +66,15 @@ namespace Core::AirPods
     struct PodState : Details::BasicState
     {
         bool isInEar{false};
+
+        inline bool operator==(const PodState &rhs) const {
+            return *(Details::BasicState*)this == *(Details::BasicState*)&rhs &&
+                isInEar == rhs.isInEar;
+        }
+        inline bool operator!=(const PodState &rhs) const {
+            return *(Details::BasicState*)this != *(Details::BasicState*)&rhs ||
+                isInEar != rhs.isInEar;
+        }
     };
 
     struct CaseState : Details::BasicState
@@ -125,9 +134,7 @@ namespace Core::AirPods
         void UpdateUi(Action action);
     };
 
-    PodState GetPodState(Side side);
-    PodsState GetPodsState();
-    CaseState GetCaseState();
+    std::optional<State> GetState();
 
 } // namespace Core::AirPods
 
@@ -148,6 +155,20 @@ inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model
         return "BeatsX";
     case Core::AirPods::Model::Beats_Solo3:
         return "BeatsSolo3";
+    default:
+        return "Unknown";
+    }
+}
+
+template <>
+inline QString Helper::ToString<Core::AirPods::Side>(const Core::AirPods::Side &value)
+{
+    switch (value)
+    {
+    case Core::AirPods::Side::Left:
+        return "Left";
+    case Core::AirPods::Side::Right:
+        return "Right";
     default:
         return "Unknown";
     }
