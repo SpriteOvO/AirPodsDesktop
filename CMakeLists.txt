@@ -98,42 +98,50 @@ find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 # spdlog
 #
 add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+message("Fetching 'spdlog'...")
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
     GIT_TAG "v1.8.5"
 )
 FetchContent_MakeAvailable(spdlog)
+message("Fetch 'spdlog' done.")
 
 # cxxopts
 #
+message("Fetching 'cxxopts'...")
 FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY "https://github.com/jarro2783/cxxopts.git"
     GIT_TAG "v2.2.1"
 )
 FetchContent_MakeAvailable(cxxopts)
+message("Fetch 'cxxopts' done.")
 
 # cpr
 #
 set(CPR_BUILD_TESTS ${APD_BUILD_TESTS})
 set(CPR_BUILD_TESTS_SSL OFF)
-SET(CURL_ZLIB OFF CACHE STRING "" FORCE)
+set(CURL_ZLIB OFF CACHE STRING "" FORCE)
+message("Fetching 'cpr'...")
 FetchContent_Declare(
     cpr
     GIT_REPOSITORY "https://github.com/whoshuu/cpr.git"
     GIT_TAG "92009ee4bd6377837420e4e2399f24ec7c5a765a"
 )
 FetchContent_MakeAvailable(cpr)
+message("Fetch 'cpr' done.")
 
 # json
 #
+message("Fetching 'json'...")
 FetchContent_Declare(
     json
     GIT_REPOSITORY "https://github.com/nlohmann/json.git"
     GIT_TAG "v3.9.1"
 )
 FetchContent_MakeAvailable(json)
+message("Fetch 'json' done.")
 
 ##################################################
 
