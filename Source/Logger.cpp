@@ -96,12 +96,12 @@ namespace Logger
     void DoWarn(const QString &content)
     {
 #if defined APD_DEBUG
-        MessageBoxW(
-            nullptr,
-            content.toStdWString().c_str(),
-            QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
-            MB_ICONWARNING | MB_OK
-        );
+        // MessageBoxW(
+        //     nullptr,
+        //     content.toStdWString().c_str(),
+        //     QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
+        //     MB_ICONWARNING | MB_OK
+        // );
 #endif
     }
 
