@@ -187,7 +187,7 @@ namespace Helper
         std::atomic<TimePoint> _deadline;
         std::thread _thread;
 
-        void Thread(std::function<void()> callback)
+        inline void Thread(std::function<void()> callback)
         {
             while (true)
             {
