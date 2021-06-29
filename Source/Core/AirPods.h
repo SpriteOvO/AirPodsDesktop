@@ -81,6 +81,15 @@ namespace Core::AirPods
     {
         bool isBothPodsInCase{false};
         bool isLidOpened{false};
+
+        inline bool operator==(const CaseState &rhs) const {
+            return *(Details::BasicState*)this == *(Details::BasicState*)&rhs &&
+                isBothPodsInCase == rhs.isBothPodsInCase && isLidOpened == rhs.isLidOpened;
+        }
+        inline bool operator!=(const CaseState &rhs) const {
+            return *(Details::BasicState*)this != *(Details::BasicState*)&rhs ||
+                isBothPodsInCase != rhs.isBothPodsInCase || isLidOpened != rhs.isLidOpened;
+        }
     };
 
     struct PodsState

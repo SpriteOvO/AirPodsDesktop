@@ -413,23 +413,38 @@ namespace Core::AirPods
                 _tracker.CbStateChanged() += [this](
                     const std::optional<State> &oldState, const State &newState
                 ) {
-                    if (!oldState.has_value()) {
-                        return;
+
+                    // Lid opened
+                    //
+                    bool newLidOpened =
+                        newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
+
+                    if (oldState.has_value())
+                    {
+                        bool cachedLidOpened =
+                            oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
+
+                        if (cachedLidOpened != newLidOpened) {
+                            _cbControlInfoWindow.Invoke(newState, newLidOpened);
+                        }
+                    }
+                    else {
+                        if (newLidOpened) {
+                            _cbControlInfoWindow.Invoke(newState, newLidOpened);
+                        }
                     }
 
-                    if (oldState->caseBox.isLidOpened != newState.caseBox.isLidOpened) {
-                        _cbControlInfoWindow.Invoke(
-                            newState,
-                            newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase
-                        );
-                    }
-
-                    bool cachedBothInEar =
-                        oldState->pods.left.isInEar && oldState->pods.right.isInEar;
-                    bool newBothInEar =
-                        newState.pods.left.isInEar && newState.pods.right.isInEar;
-                    if (cachedBothInEar != newBothInEar) {
-                        _cbBothInEar.Invoke(newState, newBothInEar);
+                    // Both in ear
+                    //
+                    if (oldState.has_value())
+                    {
+                        bool cachedBothInEar =
+                            oldState->pods.left.isInEar && oldState->pods.right.isInEar;
+                        bool newBothInEar =
+                            newState.pods.left.isInEar && newState.pods.right.isInEar;
+                        if (cachedBothInEar != newBothInEar) {
+                            _cbBothInEar.Invoke(newState, newBothInEar);
+                        }
                     }
                 };
             }
