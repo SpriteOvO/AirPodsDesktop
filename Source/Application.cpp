@@ -154,13 +154,12 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
     _infoWindow = std::make_unique<Gui::InfoWindow>();
 
     connect(this, &Application::aboutToQuit, this, &Application::QuitHandler);
-    _scanner = std::make_unique<Core::AirPods::AsyncScanner>();
 }
 
 int Application::Run()
 {
     if (CheckUpdate()) {
-        _scanner->Start();
+        Core::AirPods::StartScanner();
     }
     return exec();
 }
@@ -243,7 +242,7 @@ bool Application::CheckUpdate()
 
 void Application::QuitHandler()
 {
-    _scanner.reset();
+    Core::AirPods::OnQuit();
 }
 
 void Application::PopupAboutWindow(QWidget *parent)

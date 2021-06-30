@@ -57,7 +57,6 @@ private:
     std::unique_ptr<Gui::SysTray> _sysTray;
     std::unique_ptr<Gui::InfoWindow> _infoWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
-    std::unique_ptr<Core::AirPods::AsyncScanner> _scanner;
 
     static void PreConstructorInit();
     static void InitSettings();

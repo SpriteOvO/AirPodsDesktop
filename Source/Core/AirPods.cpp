@@ -367,6 +367,48 @@ namespace Core::AirPods
                 return i;
             }
 
+            std::optional<State> GetState() const {
+                return _tracker.GetState();
+            }
+
+            void StartScanner()
+            {
+                if (_isScannerStarted) {
+                    spdlog::warn("AsyncScanner::Start() return directly. Because it's already started.");
+                    return;
+                }
+
+                _isScannerStarted = true;
+                _destroyScannerThread = false;
+                _restartScanner = true;
+                _scannerRestartThread = std::thread{&Manager::ScannerRestartThread, this};
+            }
+
+            Status StopScanner()
+            {
+                if (!_isScannerStarted) {
+                    spdlog::warn("AsyncScanner::Stop() return directly. Because it's already stopped.");
+                    return Status::Success;
+                }
+
+                _destroyScannerThread = true;
+                if (_scannerRestartThread.joinable()) {
+                    _scannerRestartThread.join();
+                }
+
+                Status status = _adWatcher.Stop();
+                if (status.IsFailed()) {
+                    spdlog::warn("AsyncScanner::Stop() failed. Status: {}", status);
+                }
+                else {
+                    _isScannerStarted = false;
+                    UpdateUi(Action::BluetoothUnavailable);
+                    spdlog::info("AsyncScanner::Stop() succeeded.");
+                }
+
+                return status;
+            }
+
             bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
             {
                 if (!Advertisement::IsDesiredAdv(data)) {
@@ -389,16 +431,17 @@ namespace Core::AirPods
                 return true;
             }
 
-            std::optional<State> GetState() const {
-                return _tracker.GetState();
+            void OnQuit()
+            {
+                StopScanner();
             }
 
-            auto& CbControlInfoWindow()  { return _cbControlInfoWindow; }
-            auto& CbBothInEar()          { return _cbBothInEar; }
-            auto& CbStateChanged()       { return _tracker.CbStateChanged(); }
-            auto& CbLosted()             { return _tracker.CbLosted(); }
-
         private:
+            enum class Action : uint32_t {
+                Disconnected,
+                BluetoothUnavailable,
+            };
+
             Tracker _tracker;
 
             using FnControlInfoWindow = std::function<void(const State &state, bool show)>;
@@ -407,9 +450,50 @@ namespace Core::AirPods
             Helper::Callback<FnControlInfoWindow> _cbControlInfoWindow;
             Helper::Callback<FnBothInEar> _cbBothInEar;
 
+            Bluetooth::AdvertisementWatcher _adWatcher;
+            Action _lastAction{Action::Disconnected};
+            std::atomic<bool> _isScannerStarted{false},
+                _destroyScannerThread{false},
+                _restartScanner{false};
+            std::thread _scannerRestartThread;
+
 
             Manager()
             {
+                _tracker.CbStateChanged() += [](auto, const State &newState) {
+                    App->GetInfoWindow()->UpdateStateSafety(newState);
+                    App->GetSysTray()->UpdateStateSafety(newState);
+                };
+
+                _cbControlInfoWindow += [](const State &state, bool show)
+                {
+                    auto &infoWindow = App->GetInfoWindow();
+                    if (show) {
+                        infoWindow->ShowSafety();
+                    }
+                    else {
+                        infoWindow->HideSafety();
+                    }
+                };
+
+                _cbBothInEar += [](const State &state, bool isBothInEar)
+                {
+                    if (!Settings::GetCurrent().automatic_ear_detection) {
+                        spdlog::trace(
+                            "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
+                            isBothInEar
+                        );
+                        return;
+                    }
+
+                    if (isBothInEar) {
+                        Core::GlobalMedia::Play();
+                    }
+                    else {
+                        Core::GlobalMedia::Pause();
+                    }
+                };
+
                 _tracker.CbStateChanged() += [this](
                     const std::optional<State> &oldState, const State &newState
                 ) {
@@ -447,164 +531,93 @@ namespace Core::AirPods
                         }
                     }
                 };
+
+                _tracker.CbLosted() += [this]() {
+                    UpdateUi(Action::Disconnected);
+                };
+
+                _adWatcher.ReceivedCallbacks() +=
+                    [this](const Bluetooth::AdvertisementWatcher::ReceivedData &receivedData)
+                {
+                    OnAdvertisementReceived(receivedData);
+                };
+
+                _adWatcher.StoppedCallbacks() += [this]()
+                {
+                    UpdateUi(Action::BluetoothUnavailable);
+                    spdlog::warn("Bluetooth AdvWatcher stopped. Try to restart.");
+                    _restartScanner = true;
+                };
+
+                _adWatcher.ErrorCallbacks() += [this](const std::string &info)
+                {
+                    UpdateUi(Action::BluetoothUnavailable);
+                    spdlog::warn("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
+                    _restartScanner = true;
+                };
+            }
+
+            void ScannerRestartThread()
+            {
+                while (!_destroyScannerThread)
+                {
+                    if (!_restartScanner) {
+                        std::this_thread::sleep_for(500ms);
+                    }
+                    else {
+                        Status status = _adWatcher.Start();
+                        if (!status.IsSucceeded()) {
+                            UpdateUi(Action::BluetoothUnavailable);
+                            spdlog::warn("Bluetooth AdvWatcher start failed. status: {}", status);
+                        }
+                        else {
+                            _restartScanner = false;
+                            UpdateUi(Action::Disconnected);
+                            spdlog::info("Bluetooth AdvWatcher start succeeded.");
+                        }
+                        std::this_thread::sleep_for(5s);
+                    }
+                }
+            }
+
+            void UpdateUi(Action action)
+            {
+                if (_lastAction == Action::BluetoothUnavailable && action == Action::Disconnected) {
+                    return;
+                }
+                _lastAction = action;
+
+                QString title;
+                if (action == Action::Disconnected) {
+                    title = QDialog::tr("Disconnected");
+                }
+                else if (action == Action::BluetoothUnavailable) {
+                    title = QDialog::tr("Unavailable");
+                }
+
+                auto &infoWindow = App->GetInfoWindow();
+                // infoWindow->HideSafety();
+                infoWindow->DisconnectSafety(title);
+                App->GetSysTray()->DisconnectSafety(title);
             }
         };
 
     } // namespace Details
 
-    AsyncScanner::AsyncScanner()
-    {
-        auto &manager = Details::Manager::GetInstance();
-
-        manager.CbStateChanged() += [](auto, const State &newState) {
-            App->GetInfoWindow()->UpdateStateSafety(newState);
-            App->GetSysTray()->UpdateStateSafety(newState);
-        };
-
-        manager.CbControlInfoWindow() += [](const State &state, bool show)
-        {
-            auto &infoWindow = App->GetInfoWindow();
-            if (show) {
-                infoWindow->ShowSafety();
-            }
-            else {
-                infoWindow->HideSafety();
-            }
-        };
-
-        manager.CbBothInEar() += [](const State &state, bool isBothInEar)
-        {
-            if (!Settings::GetCurrent().automatic_ear_detection) {
-                spdlog::trace(
-                    "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
-                    isBothInEar
-                );
-                return;
-            }
-
-            if (isBothInEar) {
-                Core::GlobalMedia::Play();
-            }
-            else {
-                Core::GlobalMedia::Pause();
-            }
-        };
-
-        manager.CbLosted() += [this]() {
-            UpdateUi(Action::Disconnected);
-        };
-
-        _adWatcher.ReceivedCallbacks() +=
-            [](const Bluetooth::AdvertisementWatcher::ReceivedData &receivedData)
-        {
-            Details::Manager::GetInstance().OnAdvertisementReceived(receivedData);
-        };
-
-        _adWatcher.StoppedCallbacks() += [this]() {
-            UpdateUi(Action::BluetoothUnavailable);
-            spdlog::warn("Bluetooth AdvWatcher stopped. Try to restart.");
-            _needToStart = true;
-        };
-
-        _adWatcher.ErrorCallbacks() += [this](const std::string &info) {
-            UpdateUi(Action::BluetoothUnavailable);
-            spdlog::warn("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
-            _needToStart = true;
-        };
-    }
-
-    AsyncScanner::~AsyncScanner()
-    {
-        Stop();
-    }
-
-    void AsyncScanner::Start()
-    {
-        if (!_isStopped) {
-            spdlog::warn("AsyncScanner::Start() return directly. Because it's already started.");
-            return;
-        }
-
-        _isStopped = false;
-        _destroyStartThread = false;
-        _needToStart = true;
-        _startThread = std::thread{&AsyncScanner::StartThread, this};
-    }
-
-    Status AsyncScanner::Stop()
-    {
-        if (_isStopped) {
-            spdlog::warn("AsyncScanner::Stop() return directly. Because it's already stopped.");
-            return Status::Success;
-        }
-
-        _needToStart = false;
-        _destroyStartThread = true;
-        if (_startThread.joinable()) {
-            _startThread.join();
-        }
-
-        Status status = _adWatcher.Stop();
-        if (status.IsFailed()) {
-            spdlog::warn("AsyncScanner::Stop() failed. Status: {}", status);
-        }
-        else {
-            _isStopped = true;
-            UpdateUi(Action::BluetoothUnavailable);
-            spdlog::info("AsyncScanner::Stop() succeeded.");
-        }
-
-        return status;
-    }
-
-    void AsyncScanner::StartThread()
-    {
-        while (!_destroyStartThread)
-        {
-            if (!_needToStart) {
-                std::this_thread::sleep_for(500ms);
-            }
-            else {
-                Status status = _adWatcher.Start();
-                if (status.IsSucceeded()) {
-                    UpdateUi(Action::Disconnected);
-                    _needToStart = false;
-                    spdlog::info("Bluetooth AdvWatcher start succeeded.");
-                }
-                else {
-                    UpdateUi(Action::BluetoothUnavailable);
-                    spdlog::warn("Bluetooth AdvWatcher start failed. status: {}", status);
-                }
-                std::this_thread::sleep_for(5s);
-            }
-        }
-    }
-
-    void AsyncScanner::UpdateUi(Action action)
-    {
-        if (_lastAction == Action::BluetoothUnavailable && action == Action::Disconnected) {
-            return;
-        }
-        _lastAction = action;
-
-        QString title;
-        if (action == Action::Disconnected) {
-            title = QDialog::tr("Disconnected");
-        }
-        else if (action == Action::BluetoothUnavailable) {
-            title = QDialog::tr("Unavailable");
-        }
-
-        auto &infoWindow = App->GetInfoWindow();
-        infoWindow->HideSafety();
-        infoWindow->DisconnectSafety(title);
-        App->GetSysTray()->DisconnectSafety(title);
-    }
-
 
     std::optional<State> GetState()
     {
         return Details::Manager::GetInstance().GetState();
+    }
+
+    void StartScanner()
+    {
+        Details::Manager::GetInstance().StartScanner();
+    }
+
+    void OnQuit()
+    {
+        Details::Manager::GetInstance().OnQuit();
     }
 
 } // namespace Core::AirPods

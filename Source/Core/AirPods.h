@@ -118,32 +118,9 @@ namespace Core::AirPods
         }
     };
 
-    class AsyncScanner
-    {
-    public:
-        explicit AsyncScanner();
-        ~AsyncScanner();
-
-        void Start();
-        Status Stop();
-
-    private:
-        enum class Action : uint32_t {
-            Disconnected,
-            BluetoothUnavailable,
-        };
-
-        Core::Bluetooth::AdvertisementWatcher _adWatcher;
-        Action _lastAction{Action::Disconnected};
-
-        std::atomic<bool> _isStopped{true}, _destroyStartThread{false}, _needToStart{false};
-        std::thread _startThread;
-
-        void StartThread();
-        void UpdateUi(Action action);
-    };
-
     std::optional<State> GetState();
+    void StartScanner();
+    void OnQuit();
 
 } // namespace Core::AirPods
 
