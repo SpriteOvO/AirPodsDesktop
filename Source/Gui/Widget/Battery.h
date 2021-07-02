@@ -113,7 +113,7 @@ namespace Gui::Widget
 
         ValueType _minValue{0};
         ValueType _maxValue{100};
-        ValueType _alarmValue{10};
+        ValueType _alarmValue{20};
         ValueType _value{0};
 
         qreal _borderWidth{2};
