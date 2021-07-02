@@ -132,6 +132,8 @@ namespace Gui
         setFixedSize(300, 300);
         SetRoundedCorners();
 
+        _autoHideTimer->callOnTimeout([this] { DoHide(); });
+
         connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
 
         // for loop play
@@ -165,8 +167,8 @@ namespace Gui
 
     InfoWindow::~InfoWindow()
     {
-        _showTimer->stop();
-        _hideTimer->stop();
+        _showHideTimer->stop();
+        _autoHideTimer->stop();
     }
 
     void InfoWindow::ShowSafety()
@@ -274,23 +276,25 @@ namespace Gui
         }
         _isShown = false;
 
-        _showTimer->stop();
+        _showHideTimer->stop();
+        _autoHideTimer->stop();
 
-        _hideTimer->callOnTimeout(
+        _showHideTimer->disconnect();
+        _showHideTimer->callOnTimeout(
             [this]() {
                 QPoint windowPos = pos();
                 if (_screenSize.height() > windowPos.y()) {
                     move(windowPos.x(), windowPos.y() + _moveStep);
                 }
                 else {
-                    _hideTimer->stop();
+                    _showHideTimer->stop();
                     hide();
                     StopAnimation();
                 }
             }
         );
 
-        _hideTimer->start(1ms);
+        _showHideTimer->start(1ms);
     }
 
     void InfoWindow::showEvent(QShowEvent *event)
@@ -300,24 +304,26 @@ namespace Gui
         }
         _isShown = true;
 
-        _hideTimer->stop();
+        _showHideTimer->stop();
         PlayAnimation();
 
         move(_screenSize.width() - size().width() - _screenMargin.width(), _screenSize.height());
 
-        _showTimer->callOnTimeout(
+        _showHideTimer->disconnect();
+        _showHideTimer->callOnTimeout(
             [this]() {
                 QPoint windowPos = pos();
                 if (_screenSize.height() - size().height() - _screenMargin.height() < windowPos.y()) {
                     move(windowPos.x(), windowPos.y() - _moveStep);
                 }
                 else {
-                    _showTimer->stop();
+                    _showHideTimer->stop();
                 }
             }
         );
 
-        _showTimer->start(1ms);
+        _showHideTimer->start(1ms);
+        _autoHideTimer->start(10s);
     }
 
 } // namespace Gui

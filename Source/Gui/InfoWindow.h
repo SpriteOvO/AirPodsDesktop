@@ -58,8 +58,8 @@ namespace Gui
         QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
 
         QSize _screenSize;
-        QTimer *_showTimer = new QTimer{this},
-            *_hideTimer = new QTimer{this};
+        QTimer *_showHideTimer = new QTimer{this},
+            *_autoHideTimer = new QTimer{this};
         CloseButton *_closeButton;
         Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
         Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
