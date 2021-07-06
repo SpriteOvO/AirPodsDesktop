@@ -38,6 +38,8 @@ namespace Core::Settings
         bool automatic_ear_detection{true};
         QString skipped_version;
         int16_t rssi_min{-80};
+        bool reduce_loud_sounds{false};
+        uint32_t loud_volume_level{40};
 
     private:
         Status LoadFromQSettings(const QSettings &settings);
@@ -45,8 +47,10 @@ namespace Core::Settings
 
         void HandleDiff(const Data &other);
 
-        static void OnAutoRunChanged(bool value);
-        static void OnLowAudioLatencyChanged(bool value);
+        static void OnAutoRunChanged(const Data &current, bool value);
+        static void OnLowAudioLatencyChanged(const Data &current, bool value);
+        static void OnReduceLoudSoundsChanged(const Data &current, bool value);
+        static void OnLoudVolumeLevelChanged(const Data &current, uint32_t value);
 
         friend class Manager;
     };

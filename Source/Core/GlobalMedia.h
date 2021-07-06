@@ -36,4 +36,9 @@ namespace Core::GlobalMedia
         Controller::GetInstance().Pause();
     }
 
+    inline void LimitVolume(std::optional<uint32_t> volumeLevel)
+    {
+        Controller::GetInstance().LimitVolume(std::move(volumeLevel));
+    }
+
 } // namespace Core::GlobalMedia

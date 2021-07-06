@@ -18,16 +18,6 @@
 
 #include "GlobalMedia_win.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-
-#include <Windows.h>
-#include <mmdeviceapi.h>
-#include <audiopolicy.h>
-#include <endpointvolume.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Media.Control.h>
-
 #include <spdlog/spdlog.h>
 
 #include "../Utils.h"
@@ -549,6 +539,227 @@ namespace Core::GlobalMedia
             return result;
         }
 
+        //////////////////////////////////////////////////
+        // VolumeLevelLimiter::Callback
+        //
+
+        VolumeLevelLimiter::Callback::Callback(std::function<bool(uint32_t)> volumeLevelSetter) :
+            _volumeLevelSetter{std::move(volumeLevelSetter)}
+        {}
+
+        ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::AddRef()
+        {
+            return ++_ref;
+        }
+
+        ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::Release()
+        {
+            auto ref = --_ref;
+            if (ref == 0) {
+                delete this;
+            }
+            return ref;
+        }
+
+        HRESULT STDMETHODCALLTYPE VolumeLevelLimiter::Callback::QueryInterface(
+            REFIID riid,
+            void **ppvInterface
+        )
+        {
+            if (IID_IUnknown == riid) {
+                AddRef();
+                *ppvInterface = (IUnknown*)this;
+            }
+            else if (__uuidof(IAudioEndpointVolumeCallback) == riid) {
+                AddRef();
+                *ppvInterface = (IAudioEndpointVolumeCallback*)this;
+            }
+            else {
+                *ppvInterface = nullptr;
+                return E_NOINTERFACE;
+            }
+            return S_OK;
+        }
+
+        HRESULT STDMETHODCALLTYPE VolumeLevelLimiter::Callback::OnNotify(
+            PAUDIO_VOLUME_NOTIFICATION_DATA pNotify
+        )
+        {
+            spdlog::trace("VolumeLevelLimiter::Callback::OnNotify() called.");
+
+            if (pNotify == nullptr) {
+                spdlog::warn("VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
+                return E_INVALIDARG;
+            }
+
+            do {
+                auto optVolumeLevel = _volumeLevel.load();
+
+                if (!optVolumeLevel.has_value()) {
+                    spdlog::trace(
+                        "VolumeLevelLimiter::Callback::OnNotify(): Volume level unlimited."
+                    );
+                    break;
+                }
+
+                if (pNotify->fMasterVolume > optVolumeLevel.value() / 100.f) {
+                    spdlog::trace(
+                        "VolumeLevelLimiter::Callback::OnNotify(): Exceeded the limit, reduce. ('{}', '{}')",
+                        pNotify->fMasterVolume, optVolumeLevel.value()
+                    );
+                    _volumeLevelSetter(optVolumeLevel.value());
+                }
+                else {
+                    spdlog::trace(
+                        "VolumeLevelLimiter::Callback::OnNotify(): Not exceeded the limit. ('{}', '{}')",
+                        pNotify->fMasterVolume, optVolumeLevel.value()
+                    );
+                }
+
+            } while (false);
+
+            return S_OK;
+        }
+
+        void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLevel)
+        {
+            if (volumeLevel.has_value()) {
+                volumeLevel = std::min<uint32_t>(volumeLevel.value(), 100);
+            }
+            _volumeLevel = std::move(volumeLevel);
+        }
+
+        //////////////////////////////////////////////////
+        // VolumeLevelLimiter
+        //
+
+        VolumeLevelLimiter::VolumeLevelLimiter() :
+            _callback{[this](uint32_t volumeLevel) { return SetVolumeLevel(volumeLevel); }}
+        {
+            Initialize();
+        }
+
+        VolumeLevelLimiter::~VolumeLevelLimiter()
+        {
+            if (_endpointVolume) {
+                _endpointVolume->UnregisterControlChangeNotify(&_callback);
+            }
+        }
+
+        void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
+        {
+            spdlog::info(
+                "VolumeLevelLimiter::SetMaxValue() value: {}",
+                volumeLevel.has_value() ? std::to_string(volumeLevel.value()) : "nullopt"
+            );
+
+            if (volumeLevel.has_value())
+            {
+                auto optCurrent = GetVolumeLevel();
+
+                // Reduce the current volume level if it's exceeded the limit
+                if (optCurrent.has_value() && optCurrent.value() > volumeLevel.value()) {
+                    SetVolumeLevel(volumeLevel.value());
+                }
+            }
+
+            _callback.SetMaxValue(std::move(volumeLevel));
+        }
+
+        std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
+        {
+            float value = 0.f;
+            HRESULT result = _endpointVolume->GetMasterVolumeLevelScalar(&value);
+            if (FAILED(result)) {
+                spdlog::trace(
+                    "'IAudioEndpointVolume::GetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
+                    result
+                );
+                return std::nullopt;
+            }
+
+            uint32_t return_value = (uint32_t)(value * 100.f);
+            spdlog::trace("GetVolumeLevel() returns '{}'", return_value);
+
+            return return_value;
+        }
+
+        bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
+        {
+            spdlog::trace("SetVolumeLevel() '{}'", volumeLevel);
+
+            HRESULT result = _endpointVolume->SetMasterVolumeLevelScalar(
+                volumeLevel / 100.f,
+                nullptr
+            );
+            if (FAILED(result)) {
+                spdlog::trace(
+                    "'IAudioEndpointVolume::SetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
+                    result
+                );
+                return false;
+            }
+            return true;
+        }
+
+        bool VolumeLevelLimiter::Initialize()
+        {
+            spdlog::info("VolumeLevelLimiter initializing.");
+
+            OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
+            HRESULT result = CoCreateInstance(
+                __uuidof(MMDeviceEnumerator),
+                nullptr,
+                CLSCTX_ALL,
+                deviceEnumerator.GetIID(),
+                (void**)deviceEnumerator.ReleaseAndAddressOf()
+            );
+            if (FAILED(result)) {
+                spdlog::error(
+                    "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}",
+                    result
+                );
+                return false;
+            }
+
+            OS::Windows::Com::UniquePtr<IMMDevice> audioEndpoint;
+            result = deviceEnumerator->GetDefaultAudioEndpoint(
+                eRender,
+                eConsole, // TODO:
+                audioEndpoint.ReleaseAndAddressOf()
+            );
+            if (FAILED(result)) {
+                spdlog::error("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+                return false;
+            }
+
+            result = audioEndpoint->Activate(
+                _endpointVolume.GetIID(),
+                CLSCTX_ALL,
+                nullptr,
+                (void**)_endpointVolume.ReleaseAndAddressOf()
+            );
+            if (FAILED(result)) {
+                spdlog::error(
+                    "'IMMDevice::Activate' IAudioEndpointVolume failed. HRESULT: {:#x}",
+                    result
+                );
+                return false;
+            }
+
+            result = _endpointVolume->RegisterControlChangeNotify(&_callback);
+            if (FAILED(result)) {
+                spdlog::error(
+                    "IAudioEndpointVolume::RegisterControlChangeNotify failed. HRESULT: {:#x}",
+                    result
+                );
+                return false;
+            }
+
+            spdlog::info("VolumeLevelLimiter initialization succeeded.");
+            return true;
+        }
+
     } // namespace Details
 
 
@@ -615,6 +826,11 @@ namespace Core::GlobalMedia
                 }
             }
         }
+    }
+
+    void Controller::LimitVolume(std::optional<uint32_t> volumeLevel)
+    {
+        _volumeLevelLimiter.SetMaxValue(std::move(volumeLevel));
     }
 
 } // namespace Core::GlobalMedia

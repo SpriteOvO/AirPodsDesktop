@@ -25,6 +25,7 @@
 #include "../Helper.h"
 #include "../Logger.h"
 #include "../Application.h"
+#include "GlobalMedia.h"
 #include "LowAudioLatency.h"
 
 
@@ -76,6 +77,8 @@ namespace Core::Settings
         LOAD_VALUE(automatic_ear_detection);
         LOAD_VALUE(skipped_version);
         LOAD_VALUE(rssi_min);
+        LOAD_VALUE(reduce_loud_sounds);
+        LOAD_VALUE(loud_volume_level);
 
         return Status::Success;
 
@@ -102,6 +105,8 @@ namespace Core::Settings
         SAVE_VALUE(automatic_ear_detection);
         SAVE_VALUE(skipped_version);
         SAVE_VALUE(rssi_min);
+        SAVE_VALUE(reduce_loud_sounds);
+        SAVE_VALUE(loud_volume_level);
 
         return Status::Success;
 
@@ -112,15 +117,17 @@ namespace Core::Settings
     void Data::HandleDiff(const Data &other)
     {
 #define HANDLE_IF_DIFF(variable, handler)   \
-        if (variable != other.variable) { handler(other.variable); }
+        if (variable != other.variable) { handler(other, other.variable); }
 
         HANDLE_IF_DIFF(auto_run, OnAutoRunChanged);
         HANDLE_IF_DIFF(low_audio_latency, OnLowAudioLatencyChanged);
+        HANDLE_IF_DIFF(reduce_loud_sounds, OnReduceLoudSoundsChanged);
+        HANDLE_IF_DIFF(loud_volume_level, OnLoudVolumeLevelChanged);
 
 #undef HANDLE_IF_DIFF
     }
 
-    void Data::OnAutoRunChanged(bool value)
+    void Data::OnAutoRunChanged(const Data &current, bool value)
     {
         spdlog::info("OnAutoRunChanged: {}", value);
 
@@ -142,11 +149,29 @@ namespace Core::Settings
         }
     }
 
-    void Data::OnLowAudioLatencyChanged(bool value)
+    void Data::OnLowAudioLatencyChanged(const Data &current, bool value)
     {
         spdlog::info("OnLowAudioLatencyChanged: {}", value);
 
         LowAudioLatency::Control(value);
+    }
+
+    void Data::OnReduceLoudSoundsChanged(const Data &current, bool value)
+    {
+        spdlog::info("OnReduceLoudSoundsChanged: {}", value);
+
+        GlobalMedia::LimitVolume(
+            value ? std::optional<uint32_t>{current.loud_volume_level} : std::nullopt
+        );
+    }
+
+    void Data::OnLoudVolumeLevelChanged(const Data &current, uint32_t value)
+    {
+        spdlog::info("OnLoudVolumeLevelChanged: {}", value);
+
+        GlobalMedia::LimitVolume(
+            current.reduce_loud_sounds ? std::optional<uint32_t>{value} : std::nullopt
+        );
     }
 
 

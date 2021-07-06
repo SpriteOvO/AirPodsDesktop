@@ -24,6 +24,16 @@
 #   error "This file shouldn't be compiled."
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+
+#include <Windows.h>
+#include <mmdeviceapi.h>
+#include <audiopolicy.h>
+#include <endpointvolume.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Media.Control.h>
+
 #include <mutex>
 #include <string>
 #include <vector>
@@ -65,6 +75,48 @@ namespace Core::GlobalMedia
             virtual Priority GetPriority() const = 0;
         };
 
+
+        class VolumeLevelLimiter
+        {
+        private:
+            class Callback : public IAudioEndpointVolumeCallback
+            {
+            public:
+                Callback(std::function<bool(uint32_t)> volumeLevelSetter);
+
+                ULONG STDMETHODCALLTYPE AddRef() override;
+                ULONG STDMETHODCALLTYPE Release() override;
+
+                HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvInterface) override;
+
+                HRESULT STDMETHODCALLTYPE OnNotify(
+                    PAUDIO_VOLUME_NOTIFICATION_DATA pNotify
+                ) override;
+
+                void SetMaxValue(std::optional<uint32_t> volumeLevel);
+
+            private:
+                std::atomic<ULONG> _ref{1};
+                std::atomic<std::optional<uint32_t>> _volumeLevel;
+                std::function<bool(uint32_t)> _volumeLevelSetter;
+            };
+
+        public:
+            VolumeLevelLimiter();
+            ~VolumeLevelLimiter();
+
+            void SetMaxValue(std::optional<uint32_t> volumeLevel);
+
+            std::optional<uint32_t> GetVolumeLevel() const;
+            bool SetVolumeLevel(uint32_t volumeLevel) const;
+
+        private:
+            OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
+            Callback _callback;
+
+            bool Initialize();
+        };
+
     } // namespace Details
 
     bool Initialize();
@@ -77,9 +129,12 @@ namespace Core::GlobalMedia
         void Play() override;
         void Pause() override;
 
+        void LimitVolume(std::optional<uint32_t> volumeLevel) override;
+
     private:
         std::mutex _mutex;
         std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
+        Details::VolumeLevelLimiter _volumeLevelLimiter;
     };
 
 } // namespace Core::GlobalMedia::Details
