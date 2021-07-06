@@ -702,6 +702,9 @@ namespace Core::GlobalMedia
             return true;
         }
 
+        // TODO: * Bind to the exact AirPods playback device insteam of default playback device
+        //       * Allow rebind if device unavailable
+        //
         bool VolumeLevelLimiter::Initialize()
         {
             spdlog::info("VolumeLevelLimiter initializing.");
@@ -715,7 +718,7 @@ namespace Core::GlobalMedia
                 (void**)deviceEnumerator.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::error(
+                spdlog::warn(
                     "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}",
                     result
                 );
@@ -725,11 +728,11 @@ namespace Core::GlobalMedia
             OS::Windows::Com::UniquePtr<IMMDevice> audioEndpoint;
             result = deviceEnumerator->GetDefaultAudioEndpoint(
                 eRender,
-                eConsole, // TODO:
+                eConsole,
                 audioEndpoint.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::error("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+                spdlog::warn("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
                 return false;
             }
 
@@ -740,7 +743,7 @@ namespace Core::GlobalMedia
                 (void**)_endpointVolume.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::error(
+                spdlog::warn(
                     "'IMMDevice::Activate' IAudioEndpointVolume failed. HRESULT: {:#x}",
                     result
                 );
@@ -749,7 +752,7 @@ namespace Core::GlobalMedia
 
             result = _endpointVolume->RegisterControlChangeNotify(&_callback);
             if (FAILED(result)) {
-                spdlog::error(
+                spdlog::warn(
                     "IAudioEndpointVolume::RegisterControlChangeNotify failed. HRESULT: {:#x}",
                     result
                 );
