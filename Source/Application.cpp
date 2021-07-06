@@ -139,6 +139,14 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
     Logger::Initialize(enableTrace);
 
     spdlog::info("Launched.");
+    spdlog::info(
+        "Build configuration: {}",
+#if defined APD_DEBUG
+        "Debug"
+#else
+        "Not Debug"
+#endif
+    );
     spdlog::info("Args: {{ trace: {} }}", enableTrace);
 
     Core::Bluetooth::Initialize();

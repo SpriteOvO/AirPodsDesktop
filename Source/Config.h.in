@@ -32,14 +32,6 @@
 #   define APD_OS_WIN
 #endif
 
-#if defined APD_MSVC
-#   if defined _DEBUG
-#       define APD_DEBUG
-#   endif
-#else
-#   error "Unimplemented."
-#endif
-
 namespace Config
 {
 #define CONFIG_VERSION_STRING           "@AirPodsDesktop_VERSION_MAJOR@.@AirPodsDesktop_VERSION_MINOR@.@AirPodsDesktop_VERSION_PATCH@"

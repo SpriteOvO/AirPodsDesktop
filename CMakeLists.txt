@@ -193,6 +193,12 @@ add_executable(
     ${APD_CODE_FILES}
 )
 
+target_compile_definitions(
+    ${PROJECT_NAME} PRIVATE
+
+    $<$<CONFIG:Debug>:APD_DEBUG>
+)
+
 ##################################################
 
 if (MSVC)
@@ -275,7 +281,7 @@ include(CPack) # We always need variable "CPACK_SYSTEM_NAME"
 #
 
 configure_file("Source/Config.h.in" "Source/Config.h")
-target_include_directories (${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/Source")
+target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/Source")
 
 ##################################################
 
