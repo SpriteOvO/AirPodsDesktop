@@ -40,7 +40,7 @@ namespace Core::Bluetooth::Details
         using FnStopped = std::function<void()>;
         using FnError = std::function<void(const std::string &)>;
 
-        virtual ~AdvertisementWatcherAbstract() = 0;
+        virtual inline ~AdvertisementWatcherAbstract() {}
 
         inline auto& ReceivedCallbacks() {
             return _receivedCallbacks;
@@ -60,8 +60,5 @@ namespace Core::Bluetooth::Details
         Helper::Callback<FnStopped> _stoppedCallbacks;
         Helper::Callback<FnError> _errorCallbacks;
     };
-
-    template <class Derived>
-    inline AdvertisementWatcherAbstract<Derived>::~AdvertisementWatcherAbstract() {}
 
 } // namespace Core::Bluetooth::Details

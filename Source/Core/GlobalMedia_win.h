@@ -54,7 +54,7 @@ namespace Core::GlobalMedia
                 Min = std::numeric_limits<uint32_t>::max()
             };
 
-            virtual ~MediaProgramAbstract() = 0;
+            virtual inline ~MediaProgramAbstract() {};
 
             virtual bool IsAvailable() = 0;
             virtual bool IsPlaying() const = 0;
@@ -64,7 +64,6 @@ namespace Core::GlobalMedia
             virtual std::wstring GetProgramName() const = 0;
             virtual Priority GetPriority() const = 0;
         };
-        inline MediaProgramAbstract::~MediaProgramAbstract() {}
 
     } // namespace Details
 
@@ -74,7 +73,6 @@ namespace Core::GlobalMedia
     {
     public:
         Controller() = default;
-        ~Controller() override = default;
 
         void Play() override;
         void Pause() override;

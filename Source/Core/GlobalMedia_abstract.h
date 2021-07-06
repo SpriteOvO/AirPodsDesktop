@@ -30,7 +30,7 @@ namespace Core::GlobalMedia::Details
             return i;
         }
 
-        virtual ~ControllerAbstract() = 0;
+        virtual inline ~ControllerAbstract() {}
 
         virtual void Play() = 0;
         virtual void Pause() = 0;
@@ -38,8 +38,5 @@ namespace Core::GlobalMedia::Details
     protected:
         ControllerAbstract() = default;
     };
-
-    template <class Derived>
-    inline ControllerAbstract<Derived>::~ControllerAbstract() {};
 
 } // namespace Core::GlobalMedia::Details

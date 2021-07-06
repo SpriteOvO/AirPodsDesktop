@@ -50,7 +50,7 @@ namespace Core::GlobalMedia
             };
             Q_DECLARE_FLAGS(WindowMatchingFlags, WindowMatchingFlag)
 
-            virtual ~MediaProgramThroughVirtualKeyAbstract() = 0;
+            virtual inline ~MediaProgramThroughVirtualKeyAbstract() {}
 
             bool IsAvailable() override
             {
@@ -344,7 +344,6 @@ namespace Core::GlobalMedia
                 return status;
             }
         };
-        MediaProgramThroughVirtualKeyAbstract::~MediaProgramThroughVirtualKeyAbstract() {}
 
         Q_DECLARE_OPERATORS_FOR_FLAGS(MediaProgramThroughVirtualKeyAbstract::WindowMatchingFlags)
 

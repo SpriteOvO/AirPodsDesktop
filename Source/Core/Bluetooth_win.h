@@ -44,7 +44,6 @@ namespace Core::Bluetooth
         using Timestamp = winrt::Windows::Foundation::DateTime;
 
         explicit AdvertisementWatcher();
-        ~AdvertisementWatcher() override = default;
 
         Status Start() override;
         Status Stop() override;
