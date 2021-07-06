@@ -36,6 +36,7 @@ namespace Assert
             .arg(line);
 
         Logger::DoError(content, true);
+        std::abort();
     }
 
 } // namespace Assert
