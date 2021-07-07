@@ -172,7 +172,7 @@ namespace Gui
         connect(_sliderVolumeLevel, &QSlider::valueChanged, this,
             [this](int value)
             {
-                if (_sliderEnableVolumeLevelWarning && value > kSliderVolumeLevelProtectionValue)
+                if (_sliderEnableVolumeLevelWarning && value > kSliderVolumeLevelAlertValue)
                 {
                     auto button = QMessageBox::warning(
                         _sliderVolumeLevel,
@@ -189,7 +189,7 @@ namespace Gui
                         _sliderEnableVolumeLevelWarning = false;
                     }
                     else {
-                        _sliderVolumeLevel->setValue(kSliderVolumeLevelProtectionValue - 1);
+                        _sliderVolumeLevel->setValue(kSliderVolumeLevelAlertValue - 1);
                         return;
                     }
                 }
@@ -228,7 +228,7 @@ namespace Gui
         _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
 
         _checkReduceLoudSounds->setChecked(_data.reduce_loud_sounds);
-        if (_data.loud_volume_level > kSliderVolumeLevelProtectionValue) {
+        if (_data.loud_volume_level > kSliderVolumeLevelAlertValue) {
             _sliderEnableVolumeLevelWarning = false;
         }
         _sliderVolumeLevel->setValue(_data.loud_volume_level);

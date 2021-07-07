@@ -45,7 +45,7 @@ namespace Gui
         QCheckBox *_checkReduceLoudSounds;
         QLabel *_labelVolumeLevel;
         QSlider *_sliderVolumeLevel;
-        constexpr static int kSliderVolumeLevelProtectionValue = 60;
+        constexpr static int kSliderVolumeLevelAlertValue = 70;
         bool _sliderEnableVolumeLevelWarning = true;
 
         Core::Settings::Data _data;
