@@ -41,12 +41,12 @@ namespace Gui
         QCheckBox *_checkBoxAutoRun;
         QCheckBox *_checkBoxLowAudioLatency;
         QCheckBox *_checkBoxAutomaticEarDetection;
-        QSlider *_sliderMaximumReceivingRange;
         QCheckBox *_checkReduceLoudSounds;
         QLabel *_labelVolumeLevel;
         QSlider *_sliderVolumeLevel;
         constexpr static int kSliderVolumeLevelAlertValue = 70;
         bool _sliderEnableVolumeLevelWarning = true;
+        QSlider *_sliderMaximumReceivingRange;
 
         Core::Settings::Data _data;
 

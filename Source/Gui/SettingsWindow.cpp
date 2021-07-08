@@ -118,15 +118,6 @@ namespace Gui
             }, Qt::AlignLeft
         );
 
-        // RSSI
-        //
-
-        _sliderMaximumReceivingRange = new QSlider{Qt::Horizontal, this};
-        newLine(
-            new QLabel{tr("Maximum receiving range"), this}
-        );
-        newLine(_sliderMaximumReceivingRange);
-
         // Reduce loud sounds
         //
 
@@ -137,6 +128,15 @@ namespace Gui
         _labelVolumeLevel = new QLabel{tr("Volume Level"), this};
         newLine(_labelVolumeLevel);
         newLine(_sliderVolumeLevel);
+
+        // RSSI
+        //
+
+        _sliderMaximumReceivingRange = new QSlider{Qt::Horizontal, this};
+        newLine(
+            new QLabel{tr("Maximum receiving range"), this}
+        );
+        newLine(_sliderMaximumReceivingRange);
     }
 
     void SettingsWindow::ConnectUi()
@@ -156,12 +156,6 @@ namespace Gui
 
         connect(_checkBoxAutomaticEarDetection, &QCheckBox::toggled, this,
             [this](bool checked) { _data.automatic_ear_detection = checked; }
-        );
-
-        _sliderMaximumReceivingRange->setMinimum(50);
-        _sliderMaximumReceivingRange->setMaximum(100);
-        connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this,
-            [this](int value) { _data.rssi_min = -value; }
         );
 
         connect(_checkReduceLoudSounds, &QCheckBox::toggled, this,
@@ -198,6 +192,12 @@ namespace Gui
                 _data.loud_volume_level = value;
             }
         );
+
+        _sliderMaximumReceivingRange->setMinimum(50);
+        _sliderMaximumReceivingRange->setMaximum(100);
+        connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this,
+            [this](int value) { _data.rssi_min = -value; }
+        );
     }
 
     void SettingsWindow::LoadCurrent()
@@ -225,13 +225,13 @@ namespace Gui
 
         _checkBoxAutomaticEarDetection->setChecked(_data.automatic_ear_detection);
 
-        _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
-
         _checkReduceLoudSounds->setChecked(_data.reduce_loud_sounds);
         if (_data.loud_volume_level > kSliderVolumeLevelAlertValue) {
             _sliderEnableVolumeLevelWarning = false;
         }
         _sliderVolumeLevel->setValue(_data.loud_volume_level);
+
+        _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)
