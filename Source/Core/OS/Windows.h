@@ -164,11 +164,6 @@ namespace Core::OS::Windows
             }
         }
 
-        inline QString ToQString(const winrt::hstring &hString)
-        {
-            return QString::fromStdString(winrt::to_string(hString));
-        }
-
     } // namespace Winrt
 
     namespace Com
@@ -248,3 +243,21 @@ namespace Core::OS::Windows
     } // namespace Com
 
 } // namespace Core::OS::Windows
+
+namespace Helper
+{
+    template <>
+    inline QString ToString(const winrt::hstring &value)
+    {
+        return QString::fromStdString(winrt::to_string(value));
+    }
+
+    template <>
+    inline QString ToString(const winrt::hresult_error &value)
+    {
+        return QString{"0x%1 (%2)"}
+            .arg(QString::number(value.code(), 16))
+            .arg(ToString(value.message()));
+    }
+
+} // namespace Helper

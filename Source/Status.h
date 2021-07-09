@@ -155,11 +155,7 @@ private:
                     ,[&](const winrt::hresult_error &value) {
                         return format
                             .arg("winrt::hresult_error")
-                            .arg(
-                                QString{"0x%1 (%2)"}
-                                    .arg(QString::number(value.code(), 16))
-                                    .arg(Core::OS::Windows::Winrt::ToQString(value.message()))
-                            );
+                            .arg(Helper::ToString(value));
                     }
 #endif
                 },

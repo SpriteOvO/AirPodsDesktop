@@ -24,41 +24,73 @@
 #include "../Status.h"
 
 
-namespace Core::Bluetooth::Details
+namespace Core::Bluetooth
 {
-    template <class Derived>
-    class AdvertisementWatcherAbstract
+    enum class DeviceState : uint32_t
     {
-    public:
-        struct ReceivedData {
-            int16_t rssi{};
-            typename Derived::Timestamp timestamp;
-            uint64_t address{};
-            std::map<uint16_t, std::vector<uint8_t>> manufacturerDataMap;
-        };
-        using FnReceived = std::function<void(const ReceivedData &)>;
-        using FnStopped = std::function<void()>;
-        using FnError = std::function<void(const std::string &)>;
-
-        virtual inline ~AdvertisementWatcherAbstract() {}
-
-        inline auto& ReceivedCallbacks() {
-            return _receivedCallbacks;
-        }
-        inline auto& StoppedCallbacks() {
-            return _stoppedCallbacks;
-        }
-        inline auto& ErrorCallbacks() {
-            return _errorCallbacks;
-        }
-
-        virtual Status Start() = 0;
-        virtual Status Stop() = 0;
-
-    private:
-        Helper::Callback<FnReceived> _receivedCallbacks;
-        Helper::Callback<FnStopped> _stoppedCallbacks;
-        Helper::Callback<FnError> _errorCallbacks;
+        Paired,
+        Disconnected,
+        Connected,
     };
+
+    namespace Details
+    {
+        template <class ConcreteAddressT>
+        class DeviceAbstract
+        {
+        public:
+            virtual inline ~DeviceAbstract() {}
+
+            virtual ConcreteAddressT GetAddress() const = 0;
+            virtual std::string GetDisplayName() const = 0;
+            virtual uint16_t GetProductId() const = 0;
+            virtual uint16_t GetVendorId() const = 0;
+        };
+
+        template <class ConcreteDeviceT>
+        class DeviceManagerAbstract
+        {
+        public:
+            virtual inline ~DeviceManagerAbstract() {}
+
+            virtual std::vector<ConcreteDeviceT> GetDevicesByState(DeviceState state) const = 0;
+        };
+
+        template <class Derived>
+        class AdvertisementWatcherAbstract
+        {
+        public:
+            struct ReceivedData {
+                int16_t rssi{};
+                typename Derived::Timestamp timestamp;
+                uint64_t address{};
+                std::map<uint16_t, std::vector<uint8_t>> manufacturerDataMap;
+            };
+            using FnReceived = std::function<void(const ReceivedData &)>;
+            using FnStopped = std::function<void()>;
+            using FnError = std::function<void(const std::string &)>;
+
+            virtual inline ~AdvertisementWatcherAbstract() {}
+
+            inline auto& ReceivedCallbacks() {
+                return _receivedCallbacks;
+            }
+            inline auto& StoppedCallbacks() {
+                return _stoppedCallbacks;
+            }
+            inline auto& ErrorCallbacks() {
+                return _errorCallbacks;
+            }
+
+            virtual Status Start() = 0;
+            virtual Status Stop() = 0;
+
+        private:
+            Helper::Callback<FnReceived> _receivedCallbacks;
+            Helper::Callback<FnStopped> _stoppedCallbacks;
+            Helper::Callback<FnError> _errorCallbacks;
+        };
+
+    } // namespace Details
 
 } // namespace Core::Bluetooth::Details

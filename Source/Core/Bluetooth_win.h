@@ -24,18 +24,71 @@
 #   error "This file shouldn't be compiled."
 #endif
 
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.Devices.Enumeration.h>
 #include <winrt/Windows.Devices.Bluetooth.Advertisement.h>
+#include <winrt/Windows.Networking.h>
 
 #include "Bluetooth_abstract.h"
 
 
 namespace Core::Bluetooth
 {
+    namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
     namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
+    namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
 
     bool Initialize();
+
+    class Device final : public Details::DeviceAbstract<uint64_t>
+    {
+    public:
+        Device(WinrtBlutooth::BluetoothDevice device);
+
+        uint64_t GetAddress() const override;
+        std::string GetDisplayName() const override;
+        uint16_t GetProductId() const override;
+        uint16_t GetVendorId() const override;
+
+    private:
+        constexpr static auto kPropertyBluetoothProductId = L"System.DeviceInterface.Bluetooth.ProductId";
+        constexpr static auto kPropertyBluetoothVendorId = L"System.DeviceInterface.Bluetooth.VendorId";
+        constexpr static auto kPropertyAepContainerId = L"System.Devices.Aep.ContainerId";
+
+        WinrtBlutooth::BluetoothDevice _device;
+        mutable std::optional<WinrtDevicesEnumeration::DeviceInformation> _info;
+
+        const std::optional<WinrtDevicesEnumeration::DeviceInformation> & GetInfo() const;
+
+        template <class T>
+        inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const
+        {
+            WINRT_TRY {
+                const auto & optInfo = GetInfo();
+                if (!optInfo.has_value()) {
+                    spdlog::warn("optInfo.has_value() false.");
+                    return defaultValue;
+                }
+
+                const auto boxed = optInfo->Properties().TryLookup(name);
+                return winrt::unbox_value_or<T>(boxed, defaultValue);
+            }
+            WINRT_CATCH(ex) {
+                spdlog::warn("GetProperty() failed. {}", Helper::ToString(ex));
+            }
+            return defaultValue;
+        }
+
+        winrt::hstring GetAepId() const;
+    };
+
+    class DeviceManager final : Details::DeviceManagerAbstract<Device>
+    {
+    public:
+        std::vector<Device> GetDevicesByState(DeviceState state) const override;
+    };
 
     class AdvertisementWatcher final :
         public Details::AdvertisementWatcherAbstract<AdvertisementWatcher>
