@@ -149,14 +149,13 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
     );
     spdlog::info("Args: {{ trace: {} }}", enableTrace);
 
+    InitSettings();
     Core::Bluetooth::Initialize();
     Core::GlobalMedia::Initialize();
 
     setFont(QFont{"Segoe UI", 9});
     setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
     setQuitOnLastWindowClosed(false);
-
-    InitSettings();
 
     _sysTray = std::make_unique<Gui::SysTray>();
     _infoWindow = std::make_unique<Gui::InfoWindow>();
