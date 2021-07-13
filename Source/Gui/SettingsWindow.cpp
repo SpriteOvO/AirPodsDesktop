@@ -137,6 +137,12 @@ namespace Gui
             new QLabel{tr("Maximum receiving range"), this}
         );
         newLine(_sliderMaximumReceivingRange);
+
+        // Unbind this AirPods
+        //
+
+        _buttonUnbindAirPods = new QPushButton{tr("Unbind this AirPods"), this};
+        newLine(_buttonUnbindAirPods);
     }
 
     void SettingsWindow::ConnectUi()
@@ -198,6 +204,15 @@ namespace Gui
         connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this,
             [this](int value) { _data.rssi_min = -value; }
         );
+
+        connect(_buttonUnbindAirPods, &QPushButton::clicked, this,
+            [this]() {
+                auto current = Core::Settings::GetCurrent();
+                current.device_address = 0;
+                Core::Settings::SaveToCurrentAndLocal(std::move(current));
+                _buttonUnbindAirPods->setDisabled(true);
+            }
+        );
     }
 
     void SettingsWindow::LoadCurrent()
@@ -232,6 +247,8 @@ namespace Gui
         _sliderVolumeLevel->setValue(_data.loud_volume_level);
 
         _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
+
+        _buttonUnbindAirPods->setDisabled(_data.device_address == 0);
     }
 
     void SettingsWindow::showEvent(QShowEvent *event)

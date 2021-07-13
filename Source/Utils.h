@@ -22,7 +22,10 @@
 #include <vector>
 #include <functional>
 #include <QDir>
+#include <QTimer>
 #include <QKeyEvent>
+#include <QApplication>
+#include <QPainterPath>
 #include <QStandardPaths>
 
 #include <spdlog/spdlog.h>
@@ -50,6 +53,27 @@ namespace Utils
             else {                                                          \
                 base_name::keyPressEvent(event);                            \
             }                                                               \
+        }
+
+        inline void SetRoundedCorners(QWidget *widget, qreal radius)
+        {
+            QPainterPath path;
+            path.addRoundedRect(widget->rect(), radius, radius);
+            widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
+        }
+
+        inline void Dispatch(std::function<void()> callback)
+        {
+            QTimer *timer = new QTimer;
+            timer->moveToThread(qApp->thread());
+            timer->setSingleShot(true);
+            QObject::connect(timer, &QTimer::timeout,
+                [timer, callback = std::move(callback)]() {
+                    callback();
+                    timer->deleteLater();
+                }
+            );
+            QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
         }
 
     } // namespace Qt

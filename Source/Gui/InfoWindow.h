@@ -36,6 +36,12 @@ namespace Gui
     class CloseButton;
     class BatteryInfo;
 
+    enum class ButtonAction : uint32_t
+    {
+        NoButton,
+        Bind,
+    };
+
     class InfoWindow : public QDialog
     {
         Q_OBJECT
@@ -47,6 +53,7 @@ namespace Gui
         void ShowSafety();
 
     Q_SIGNALS:
+        void ChangeButtonActionSafety(ButtonAction action);
         void HideSafety();
         void UpdateStateSafety(const Core::AirPods::State &state);
         void DisconnectSafety(const QString &title);
@@ -63,6 +70,7 @@ namespace Gui
         CloseButton *_closeButton;
         Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
         Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
+        ButtonAction _buttonAction{ButtonAction::NoButton};
 
         bool _isShown{false};
         bool _isAnimationPlaying{false};
@@ -70,15 +78,20 @@ namespace Gui
         constexpr static QSize _screenMargin{50, 100};
         constexpr static int _moveStep = 2;
 
+        void InitCommonButton();
+
+        void ChangeButtonAction(ButtonAction action);
         void UpdateState(const Core::AirPods::State &state);
         void Disconnect(const QString &title);
 
-        void SetRoundedCorners();
         void SetAnimation(Core::AirPods::Model model);
         void PlayAnimation();
         void StopAnimation();
 
+        void BindDevice();
+
         void DoHide();
+        void OnButtonClicked();
         void showEvent(QShowEvent *event) override;
 
         UTILS_QT_DISABLE_ESC_QUIT(InfoWindow, QDialog);

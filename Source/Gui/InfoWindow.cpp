@@ -20,10 +20,11 @@
 
 #include <QScreen>
 #include <QPainter>
-#include <QPainterPath>
 
 #include "../Helper.h"
 #include "../Application.h"
+#include "../Core/AppleCP.h"
+#include "SelectWindow.h"
 
 
 using namespace std::chrono_literals;
@@ -103,6 +104,19 @@ namespace Gui
     {
         _ui.setupUi(this);
 
+        setFixedSize(300, 300);
+        setAttribute(Qt::WA_DeleteOnClose);
+        setWindowFlags(
+            windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint
+        );
+        Utils::Qt::SetRoundedCorners(this, 30);
+
+        auto palette = this->palette();
+        palette.setColor(QPalette::Window, Qt::white);
+        setPalette(palette);
+
+        qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
+
         _closeButton = new CloseButton{this};
         _leftBattery = new Widget::Battery{this};
         _rightBattery = new Widget::Battery{this};
@@ -112,25 +126,13 @@ namespace Gui
         _rightBattery->hide();
         _caseBattery->hide();
 
-        qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
-
-        setAttribute(Qt::WA_DeleteOnClose);
-        setWindowFlags(
-            windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint
-        );
-
         _screenSize = Application::primaryScreen()->size();
 
-        QPalette palette = this->palette();
-        palette.setColor(QPalette::Window, Qt::white);
-        setPalette(palette);
-
-        QPalette deviceLabelPalette = _ui.deviceLabel->palette();
+        auto deviceLabelPalette = _ui.deviceLabel->palette();
         deviceLabelPalette.setColor(QPalette::WindowText, QColor{94, 94, 94});
         _ui.deviceLabel->setPalette(deviceLabelPalette);
 
-        setFixedSize(300, 300);
-        SetRoundedCorners();
+        InitCommonButton();
 
         _autoHideTimer->callOnTimeout([this] { DoHide(); });
 
@@ -148,6 +150,7 @@ namespace Gui
             }
         );
 
+        connect(this, &InfoWindow::ChangeButtonActionSafety, this, &InfoWindow::ChangeButtonAction);
         connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
         connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
         connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
@@ -174,6 +177,40 @@ namespace Gui
     void InfoWindow::ShowSafety()
     {
         QMetaObject::invokeMethod(this, &InfoWindow::show);
+    }
+
+    void InfoWindow::InitCommonButton()
+    {
+        ChangeButtonAction(ButtonAction::NoButton);
+        Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
+        connect(_ui.pushButton, &QPushButton::clicked, this, &InfoWindow::OnButtonClicked);
+
+        if (Core::Settings::GetCurrent().device_address == 0) {
+            ChangeButtonAction(ButtonAction::Bind);
+        }
+    }
+
+    void InfoWindow::ChangeButtonAction(ButtonAction action)
+    {
+        switch (action)
+        {
+        case ButtonAction::NoButton:
+            _ui.pushButton->setText("");
+            _ui.pushButton->hide();
+            return;
+
+        case ButtonAction::Bind:
+            _ui.pushButton->setText(tr("Bind to AirPods"));
+            break;
+
+        default:
+            spdlog::error("Unhandled button action. Value: '{}'", action);
+            APD_ASSERT(false);
+            return;
+        }
+
+        _buttonAction = action;
+        _ui.pushButton->show();
     }
 
     void InfoWindow::UpdateState(const Core::AirPods::State &state)
@@ -222,13 +259,6 @@ namespace Gui
         _caseBattery->hide();
     }
 
-    void InfoWindow::SetRoundedCorners()
-    {
-        QPainterPath path;
-        path.addRoundedRect(rect(), 30, 30);
-        setMask(QRegion{path.toFillPolygon().toPolygon()});
-    }
-
     void InfoWindow::SetAnimation(Core::AirPods::Model model)
     {
         if (model == _cacheModel) {
@@ -267,6 +297,110 @@ namespace Gui
     {
         _isAnimationPlaying = false;
         _mediaPlayer->stop();
+    }
+
+    void InfoWindow::BindDevice()
+    {
+        spdlog::info("BindDevice");
+
+        std::vector<Core::Bluetooth::Device> devices =
+            Core::Bluetooth::DeviceManager::GetDevicesByState(Core::Bluetooth::DeviceState::Paired);
+
+        spdlog::info("Devices count: {}", devices.size());
+
+        devices.erase(std::remove_if(devices.begin(), devices.end(),
+            [](const auto &device)
+            {
+                const auto vendorId = device.GetVendorId();
+                const auto productId = device.GetProductId();
+
+                const auto doErase = vendorId != Core::AppleCP::VendorId ||
+                    Core::AppleCP::AirPods::GetModel(productId) == Core::AirPods::Model::Unknown;
+
+                spdlog::trace(
+                    "Device VendorId: '{}', ProductId: '{}', doErase: {}",
+                    vendorId, productId, doErase
+                );
+
+                return doErase;
+            }),
+            devices.end()
+        );
+
+        spdlog::info("AirPods devices count: {} (filtered)", devices.size());
+
+        if (devices.empty())
+        {
+            QMessageBox::warning(
+                this,
+                Config::ProgramName,
+                QMessageBox::tr(
+                    "No paired device found.\n"
+                    "You need to pair your AirPods in Windows Bluetooth Settings first."
+                )
+            );
+            return;
+        }
+
+        int selectedIndex = 0;
+
+        if (devices.size() > 1)
+        {
+            QStringList deviceNames;
+            for (const auto &device : devices)
+            {
+                auto displayName = device.GetDisplayName();
+
+                spdlog::trace("Device name: '{}'", displayName);
+                spdlog::trace("GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(), device.GetVendorId());
+                deviceNames.append(QString::fromStdString(displayName));
+            }
+
+            SelectWindow selector{tr("Please select your AirPods device below."), deviceNames, this};
+            if (selector.exec() == -1) {
+                spdlog::warn("selector.exec() == -1");
+                return;
+            }
+
+            if (!selector.HasResult()) {
+                spdlog::info("No result for selector.");
+                return;
+            }
+
+            selectedIndex = selector.GetSeletedIndex();
+            APD_ASSERT(selectedIndex >= 0 && selectedIndex < devices.size());
+        }
+
+        const auto &selectedDevice = devices.at(selectedIndex);
+
+        spdlog::info(
+            "Selected device index: '{}', device name: '{}'",
+            selectedIndex, selectedDevice.GetDisplayName()
+        );
+
+        auto current = Core::Settings::GetCurrent();
+        current.device_address = selectedDevice.GetAddress();
+        Core::Settings::SaveToCurrentAndLocal(std::move(current));
+
+        spdlog::info("Remembered this device.");
+
+        ChangeButtonAction(ButtonAction::NoButton);
+    }
+
+    void InfoWindow::OnButtonClicked()
+    {
+        switch (_buttonAction)
+        {
+        case ButtonAction::Bind:
+            spdlog::info("User clicked 'Bind'");
+            BindDevice();
+            break;
+
+        default:
+            spdlog::error("Unhandled button action. Value: '{}'", _buttonAction);
+            APD_ASSERT(false);
+            break;
+        }
     }
 
     void InfoWindow::DoHide()

@@ -120,6 +120,7 @@ namespace Core::AirPods
 
     std::optional<State> GetState();
     void StartScanner();
+    void OnBindDeviceChanged(uint64_t address);
     void OnQuit();
 
 } // namespace Core::AirPods

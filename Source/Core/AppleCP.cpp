@@ -40,6 +40,27 @@ namespace Core::AppleCP
         return true;
     }
 
+    Core::AirPods::Model AirPods::GetModel(uint16_t modelId)
+    {
+        switch (modelId)
+        {
+        case 0x2002:
+            return Core::AirPods::Model::AirPods_1;
+        case 0x200F:
+            return Core::AirPods::Model::AirPods_2;
+        case 0x200E:
+            return Core::AirPods::Model::AirPods_Pro;
+            //case 0x2003:
+            //    return Core::AirPods::Model::Powerbeats_3;
+            //case 0x2005:
+            //    return Core::AirPods::Model::Beats_X;
+            //case 0x2006:
+            //    return Core::AirPods::Model::Beats_Solo3;
+        default:
+            return Core::AirPods::Model::Unknown;
+        }
+    }
+
     Core::AirPods::Side AirPods::GetBroadcastedSide() const
     {
         return broadcastFrom == 1 ? Core::AirPods::Side::Left : Core::AirPods::Side::Right;
@@ -57,23 +78,7 @@ namespace Core::AppleCP
 
     Core::AirPods::Model AirPods::GetModel() const
     {
-        switch (modelId)
-        {
-        case 0x2002:
-            return Core::AirPods::Model::AirPods_1;
-        case 0x200F:
-            return Core::AirPods::Model::AirPods_2;
-        case 0x200E:
-            return Core::AirPods::Model::AirPods_Pro;
-        //case 0x2003:
-        //    return Core::AirPods::Model::Powerbeats_3;
-        //case 0x2005:
-        //    return Core::AirPods::Model::Beats_X;
-        //case 0x2006:
-        //    return Core::AirPods::Model::Beats_Solo3;
-        default:
-            return Core::AirPods::Model::Unknown;
-        }
+        return GetModel(modelId);
     }
 
     Core::AirPods::Battery AirPods::GetLeftBattery() const

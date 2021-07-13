@@ -47,6 +47,7 @@ namespace Gui
         constexpr static int kSliderVolumeLevelAlertValue = 70;
         bool _sliderEnableVolumeLevelWarning = true;
         QSlider *_sliderMaximumReceivingRange;
+        QPushButton *_buttonUnbindAirPods;
 
         Core::Settings::Data _data;
 

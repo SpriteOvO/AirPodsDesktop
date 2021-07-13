@@ -31,13 +31,38 @@
 
 namespace Core::Settings
 {
+    enum class ValueType : uint32_t
+    {
+        Normal,
+        Sensitive
+    };
+
+    template <ValueType type, class T>
+    std::conditional_t<type == ValueType::Normal, const T &, const char *> LogValue(const T &value)
+    {
+        if constexpr (type == ValueType::Normal) {
+            return value;
+        }
+        else if constexpr (type == ValueType::Sensitive) {
+            if ((value) != T{}) {
+                return "** MAYBE HAVE VALUE **";
+            }
+            else {
+                return "** MAYBE NO VALUE **";
+            }
+        }
+        else {
+            static_assert(false);
+        }
+    }
+
     Status Data::LoadFromQSettings(const QSettings &settings)
     {
-#define LOAD_VALUE_TO_VARIABLE(variable, key)                                           \
+#define LOAD_VALUE_TO_VARIABLE(variable, type, key)                                     \
         if (!settings.contains((key))) {                                                \
             spdlog::warn(                                                               \
                 "This QSettings doesn't contain key '{}'. Use the default value: {}",   \
-                (key), (variable)                                                       \
+                (key), LogValue<ValueType::type>(variable)                              \
             );                                                                          \
         }                                                                               \
         else {                                                                          \
@@ -54,16 +79,16 @@ namespace Core::Settings
                 (variable) = var.value<decltype(variable)>();                           \
                 spdlog::info(                                                           \
                     "Load key succeeded. Key: '{}', Value: {}",                         \
-                    (key), (variable)                                                   \
+                    (key), LogValue<ValueType::type>(variable)                          \
                 );                                                                      \
             }                                                                           \
         }
 
-#define LOAD_VALUE(variable)    LOAD_VALUE_TO_VARIABLE(variable, TO_STRING(variable))
+#define LOAD_VALUE(variable, type)    LOAD_VALUE_TO_VARIABLE(variable, type, TO_STRING(variable))
 
         std::remove_cv_t<decltype(abi_version)> settingsAbiVer = 0;
 
-        LOAD_VALUE_TO_VARIABLE(settingsAbiVer, "abi_version");
+        LOAD_VALUE_TO_VARIABLE(settingsAbiVer, Normal, "abi_version");
         if (settingsAbiVer == 0) {
             return Status::SettingsLoadedDataNoAbiVer;
         }
@@ -72,13 +97,15 @@ namespace Core::Settings
                 .SetAdditionalData(settingsAbiVer);
         }
 
-        LOAD_VALUE(auto_run);
-        LOAD_VALUE(low_audio_latency);
-        LOAD_VALUE(automatic_ear_detection);
-        LOAD_VALUE(skipped_version);
-        LOAD_VALUE(rssi_min);
-        LOAD_VALUE(reduce_loud_sounds);
-        LOAD_VALUE(loud_volume_level);
+        LOAD_VALUE(auto_run, Normal);
+        LOAD_VALUE(low_audio_latency, Normal);
+        LOAD_VALUE(automatic_ear_detection, Normal);
+        LOAD_VALUE(skipped_version, Normal);
+        LOAD_VALUE(rssi_min, Normal);
+        LOAD_VALUE(reduce_loud_sounds, Normal);
+        LOAD_VALUE(loud_volume_level, Normal);
+
+        LOAD_VALUE(device_address, Sensitive);
 
         return Status::Success;
 
@@ -88,25 +115,27 @@ namespace Core::Settings
 
     Status Data::SaveToQSettings(QSettings &settings) const
     {
-#define SAVE_VALUE_FROM_VARIABLE(variable, key) {                                       \
+#define SAVE_VALUE_FROM_VARIABLE(variable, type, key) {                                 \
             settings.setValue((key), (variable));                                       \
             spdlog::info(                                                               \
                 "Save key succeeded. Key: '{}', Value: {}",                             \
-                (key), (variable)                                                       \
+                (key), LogValue<ValueType::type>(variable)                              \
             );                                                                          \
         }
 
-#define SAVE_VALUE(variable)    SAVE_VALUE_FROM_VARIABLE(variable, TO_STRING(variable))
+#define SAVE_VALUE(variable, type)    SAVE_VALUE_FROM_VARIABLE(variable, type, TO_STRING(variable))
 
-        SAVE_VALUE(abi_version);
+        SAVE_VALUE(abi_version, Normal);
 
-        SAVE_VALUE(auto_run);
-        SAVE_VALUE(low_audio_latency);
-        SAVE_VALUE(automatic_ear_detection);
-        SAVE_VALUE(skipped_version);
-        SAVE_VALUE(rssi_min);
-        SAVE_VALUE(reduce_loud_sounds);
-        SAVE_VALUE(loud_volume_level);
+        SAVE_VALUE(auto_run, Normal);
+        SAVE_VALUE(low_audio_latency, Normal);
+        SAVE_VALUE(automatic_ear_detection, Normal);
+        SAVE_VALUE(skipped_version, Normal);
+        SAVE_VALUE(rssi_min, Normal);
+        SAVE_VALUE(reduce_loud_sounds, Normal);
+        SAVE_VALUE(loud_volume_level, Normal);
+
+        SAVE_VALUE(device_address, Sensitive);
 
         return Status::Success;
 
@@ -114,15 +143,16 @@ namespace Core::Settings
 #undef SAVE_VALUE_FROM_VARIABLE
     }
 
-    void Data::HandleDiff(const Data &other)
+    void Data::HandleFields(const Data &other)
     {
 #define HANDLE_IF_DIFF(variable, handler)   \
-        if (variable != other.variable) { handler(other, other.variable); }
+        if (/*variable != other.variable*/true) { handler(other, other.variable); }
 
         HANDLE_IF_DIFF(auto_run, OnAutoRunChanged);
         HANDLE_IF_DIFF(low_audio_latency, OnLowAudioLatencyChanged);
         HANDLE_IF_DIFF(reduce_loud_sounds, OnReduceLoudSoundsChanged);
         HANDLE_IF_DIFF(loud_volume_level, OnLoudVolumeLevelChanged);
+        HANDLE_IF_DIFF(device_address, OnDeviceAddressChanged);
 
 #undef HANDLE_IF_DIFF
     }
@@ -172,6 +202,13 @@ namespace Core::Settings
         GlobalMedia::LimitVolume(
             current.reduce_loud_sounds ? std::optional<uint32_t>{value} : std::nullopt
         );
+    }
+
+    void Data::OnDeviceAddressChanged(const Data &current, uint64_t value)
+    {
+        spdlog::info("OnDeviceAddressChanged: {}", LogValue<ValueType::Sensitive>(value));
+
+        AirPods::OnBindDeviceChanged(value);
     }
 
 
@@ -229,7 +266,7 @@ namespace Core::Settings
 
         void Load(Data data)
         {
-            _currentData.HandleDiff(data);
+            _currentData.HandleFields(data);
             _currentData = std::move(data);
         }
     };

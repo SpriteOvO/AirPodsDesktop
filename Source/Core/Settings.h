@@ -40,17 +40,19 @@ namespace Core::Settings
         int16_t rssi_min{-80};
         bool reduce_loud_sounds{false};
         uint32_t loud_volume_level{40};
+        uint64_t device_address{0};
 
     private:
         Status LoadFromQSettings(const QSettings &settings);
         Status SaveToQSettings(QSettings &settings) const;
 
-        void HandleDiff(const Data &other);
+        void HandleFields(const Data &other);
 
         static void OnAutoRunChanged(const Data &current, bool value);
         static void OnLowAudioLatencyChanged(const Data &current, bool value);
         static void OnReduceLoudSoundsChanged(const Data &current, bool value);
         static void OnLoudVolumeLevelChanged(const Data &current, uint32_t value);
+        static void OnDeviceAddressChanged(const Data &current, uint64_t value);
 
         friend class Manager;
     };

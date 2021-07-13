@@ -68,6 +68,7 @@ namespace Core::AppleCP
         uint8_t remainingLength;                // Remaining length of this packet
     };
 
+    constexpr uint16_t VendorId = 76;
 
     // About "Flipped":
     // 
@@ -104,6 +105,7 @@ namespace Core::AppleCP
     {
     public:
         static bool IsValid(const std::vector<uint8_t> &data);
+        static Core::AirPods::Model GetModel(uint16_t modelId);
 
         Core::AirPods::Side GetBroadcastedSide() const;
         bool IsLeftBroadcasted() const;

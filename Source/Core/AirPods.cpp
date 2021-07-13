@@ -53,7 +53,7 @@ namespace Core::AirPods
 
             static bool IsDesiredAdv(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
             {
-                auto iter = data.manufacturerDataMap.find(76);
+                auto iter = data.manufacturerDataMap.find(AppleCP::VendorId);
                 if (iter == data.manufacturerDataMap.end()) {
                     return false;
                 }
@@ -141,7 +141,7 @@ namespace Core::AirPods
 
             const std::vector<uint8_t>& GetMfrData() const
             {
-                auto iter = _data.manufacturerDataMap.find(76);
+                auto iter = _data.manufacturerDataMap.find(AppleCP::VendorId);
                 APD_ASSERT(iter != _data.manufacturerDataMap.end());
 
                 return (*iter).second;
@@ -168,6 +168,11 @@ namespace Core::AirPods
 
             auto& CbStateChanged()   { return _cbStateChanged; }
             auto& CbLosted()         { return _cbLosted; }
+
+            void Disconnect()
+            {
+                DoLost();
+            }
 
             bool TryTrack(Advertisement adv)
             {
@@ -402,7 +407,7 @@ namespace Core::AirPods
                 }
                 else {
                     _isScannerStarted = false;
-                    UpdateUi(Action::BluetoothUnavailable);
+                    UpdateUi(Action::Unavailable);
                     spdlog::info("AsyncScanner::Stop() succeeded.");
                 }
 
@@ -412,6 +417,11 @@ namespace Core::AirPods
             bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
             {
                 if (!Advertisement::IsDesiredAdv(data)) {
+                    return false;
+                }
+
+                if (!_deviceConnected) {
+                    spdlog::info("AirPods advertisement received, but device disconnected.");
                     return false;
                 }
 
@@ -431,6 +441,57 @@ namespace Core::AirPods
                 return true;
             }
 
+            void OnBoundDeviceAddressChanged(uint64_t address)
+            {
+                const auto &disconnect = [this]()
+                {
+                    _boundDevice.reset();
+                    _deviceConnected = false;
+                    _tracker.Disconnect();
+                };
+
+                if (address == 0) {
+                    disconnect();
+                    UpdateUi(Action::WaitingForBinding);
+                    Utils::Qt::Dispatch(
+                        []() {
+                            App->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind);
+                        }
+                    );
+                    return;
+                }
+                UpdateUi(Action::Disconnected);
+
+                auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
+
+                if (!optDevice.has_value()) {
+                    disconnect();
+                    return;
+                }
+
+                _deviceConnected =
+                    optDevice->GetConnectionState() == Bluetooth::DeviceState::Connected;
+
+                _boundDevice = std::move(optDevice);
+
+                _boundDevice->CbConnectionStatusChanged() += [this](Bluetooth::DeviceState state)
+                {
+                    bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
+                    bool doDisconnet = _deviceConnected && !newDeviceConnected;
+                    _deviceConnected = newDeviceConnected;
+
+                    if (doDisconnet) {
+                        _tracker.Disconnect();
+                        UpdateUi(Action::Disconnected);
+                    }
+
+                    spdlog::info(
+                        "The device we bound is updated. current: {}, new: {}",
+                        _deviceConnected, newDeviceConnected
+                    );
+                };
+            }
+
             void OnQuit()
             {
                 StopScanner();
@@ -438,8 +499,9 @@ namespace Core::AirPods
 
         private:
             enum class Action : uint32_t {
+                Unavailable,
+                WaitingForBinding,
                 Disconnected,
-                BluetoothUnavailable,
             };
 
             Tracker _tracker;
@@ -451,10 +513,13 @@ namespace Core::AirPods
             Helper::Callback<FnBothInEar> _cbBothInEar;
 
             Bluetooth::AdvertisementWatcher _adWatcher;
-            Action _lastAction{Action::Disconnected};
+            std::optional<Bluetooth::Device> _boundDevice;
+
+            std::atomic<Action> _lastAction{Action::Unavailable};
             std::atomic<bool> _isScannerStarted{false},
                 _destroyScannerThread{false},
-                _restartScanner{false};
+                _restartScanner{false},
+                _deviceConnected{false};
             std::thread _scannerRestartThread;
 
 
@@ -496,7 +561,12 @@ namespace Core::AirPods
 
                 _tracker.CbStateChanged() += [this](
                     const std::optional<State> &oldState, const State &newState
-                ) {
+                )
+                {
+                    if (!_deviceConnected) {
+                        spdlog::info("AirPods state changed, but device disconnected.");
+                        return;
+                    }
 
                     // Lid opened
                     //
@@ -544,14 +614,14 @@ namespace Core::AirPods
 
                 _adWatcher.StoppedCallbacks() += [this]()
                 {
-                    UpdateUi(Action::BluetoothUnavailable);
+                    UpdateUi(Action::Unavailable);
                     spdlog::warn("Bluetooth AdvWatcher stopped. Try to restart.");
                     _restartScanner = true;
                 };
 
                 _adWatcher.ErrorCallbacks() += [this](const std::string &info)
                 {
-                    UpdateUi(Action::BluetoothUnavailable);
+                    UpdateUi(Action::Unavailable);
                     spdlog::warn("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
                     _restartScanner = true;
                 };
@@ -567,12 +637,14 @@ namespace Core::AirPods
                     else {
                         Status status = _adWatcher.Start();
                         if (!status.IsSucceeded()) {
-                            UpdateUi(Action::BluetoothUnavailable);
+                            UpdateUi(Action::Unavailable);
                             spdlog::warn("Bluetooth AdvWatcher start failed. status: {}", status);
                         }
                         else {
                             _restartScanner = false;
-                            UpdateUi(Action::Disconnected);
+                            if (_lastAction == Action::Unavailable) {
+                                UpdateUi(Action::Disconnected);
+                            }
                             spdlog::info("Bluetooth AdvWatcher start succeeded.");
                         }
                         std::this_thread::sleep_for(5s);
@@ -582,23 +654,25 @@ namespace Core::AirPods
 
             void UpdateUi(Action action)
             {
-                if (_lastAction == Action::BluetoothUnavailable && action == Action::Disconnected) {
-                    return;
-                }
                 _lastAction = action;
 
                 QString title;
-                if (action == Action::Disconnected) {
-                    title = QDialog::tr("Disconnected");
-                }
-                else if (action == Action::BluetoothUnavailable) {
+                if (action == Action::Unavailable) {
                     title = QDialog::tr("Unavailable");
                 }
+                else if (action == Action::WaitingForBinding) {
+                    title = QDialog::tr("Waiting for Binding");
+                }
+                else if (action == Action::Disconnected) {
+                    title = QDialog::tr("Disconnected");
+                }
 
-                auto &infoWindow = App->GetInfoWindow();
-                // infoWindow->HideSafety();
-                infoWindow->DisconnectSafety(title);
-                App->GetSysTray()->DisconnectSafety(title);
+                Utils::Qt::Dispatch(
+                    [=] {
+                        App->GetInfoWindow()->DisconnectSafety(title);
+                        App->GetSysTray()->DisconnectSafety(title);
+                    }
+                );
             }
         };
 
@@ -613,6 +687,11 @@ namespace Core::AirPods
     void StartScanner()
     {
         Details::Manager::GetInstance().StartScanner();
+    }
+
+    void OnBindDeviceChanged(uint64_t address)
+    {
+        Details::Manager::GetInstance().OnBoundDeviceAddressChanged(address);
     }
 
     void OnQuit()

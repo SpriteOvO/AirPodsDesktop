@@ -69,6 +69,8 @@ private:
 \
     invoke(BluetoothAdvWatcherStartFailed,      MAKE_STATUS(State::Failure, Module::Bluetooth, 1), "Bluetooth advertisement watcher start failed.") \
     invoke(BluetoothAdvWatcherStopFailed,       MAKE_STATUS(State::Failure, Module::Bluetooth, 2), "Bluetooth advertisement watcher stop failed.") \
+    invoke(BluetoothDeviceWatcherStartFailed,   MAKE_STATUS(State::Failure, Module::Bluetooth, 3), "Bluetooth device watcher start failed.") \
+    invoke(BluetoothDeviceWatcherStopFailed,    MAKE_STATUS(State::Failure, Module::Bluetooth, 4), "Bluetooth device watcher stop failed.") \
 \
     invoke(GlobalMediaPlayAlreadyPlaying,       MAKE_STATUS(State::Success, Module::GlobalMedia, 1), "Play: No need to do anything, because it's already playing.") \
     invoke(GlobalMediaPauseNothingIsPlaying,    MAKE_STATUS(State::Success, Module::GlobalMedia, 2), "Pause: No need to do anything, because nothing is playing.") \

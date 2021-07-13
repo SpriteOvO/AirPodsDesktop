@@ -155,6 +155,7 @@ set(
 
     "Source/Gui/SysTray.cpp"
     "Source/Gui/InfoWindow.cpp"
+    "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
