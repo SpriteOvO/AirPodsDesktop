@@ -39,12 +39,23 @@ namespace Core::Bluetooth
         class DeviceAbstract
         {
         public:
+            using FnConnectionStatusChanged = std::function<void(DeviceState)>;
+            using FnNameChanged = std::function<void(const std::string &)>;
+
             virtual inline ~DeviceAbstract() {}
 
             virtual ConcreteAddressT GetAddress() const = 0;
             virtual std::string GetDisplayName() const = 0;
             virtual uint16_t GetProductId() const = 0;
             virtual uint16_t GetVendorId() const = 0;
+            virtual DeviceState GetConnectionState() const = 0;
+
+            inline auto& CbConnectionStatusChanged()    { return _cbConnectionStatusChanged; }
+            inline auto& CbNameChanged()                { return _cbNameChanged; }
+
+        private:
+            Helper::Callback<FnConnectionStatusChanged> _cbConnectionStatusChanged;
+            Helper::Callback<FnNameChanged> _cbNameChanged;
         };
 
         template <class ConcreteDeviceT>
@@ -54,6 +65,7 @@ namespace Core::Bluetooth
             virtual inline ~DeviceManagerAbstract() {}
 
             virtual std::vector<ConcreteDeviceT> GetDevicesByState(DeviceState state) const = 0;
+            virtual std::optional<ConcreteDeviceT> FindDevice(uint64_t address) const = 0;
         };
 
         template <class Derived>

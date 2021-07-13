@@ -36,6 +36,7 @@
 
 namespace Core::Bluetooth
 {
+    namespace WinrtFoundation = winrt::Windows::Foundation;
     namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
     namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
     namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
@@ -46,19 +47,32 @@ namespace Core::Bluetooth
     {
     public:
         Device(WinrtBlutooth::BluetoothDevice device);
+        Device(const Device &rhs);
+        Device(Device &&rhs) noexcept;
+        ~Device();
+
+        Device& operator=(const Device &rhs);
+        Device& operator=(Device &&rhs) noexcept;
 
         uint64_t GetAddress() const override;
         std::string GetDisplayName() const override;
-        uint16_t GetProductId() const override;
         uint16_t GetVendorId() const override;
+        uint16_t GetProductId() const override;
+        DeviceState GetConnectionState() const override;
 
     private:
-        constexpr static auto kPropertyBluetoothProductId = L"System.DeviceInterface.Bluetooth.ProductId";
         constexpr static auto kPropertyBluetoothVendorId = L"System.DeviceInterface.Bluetooth.VendorId";
+        constexpr static auto kPropertyBluetoothProductId = L"System.DeviceInterface.Bluetooth.ProductId";
         constexpr static auto kPropertyAepContainerId = L"System.Devices.Aep.ContainerId";
 
-        WinrtBlutooth::BluetoothDevice _device;
+        std::optional<WinrtBlutooth::BluetoothDevice> _device;
         mutable std::optional<WinrtDevicesEnumeration::DeviceInformation> _info;
+        winrt::event_token _tokenConnectionStatusChanged, _tokenNameChanged;
+
+        void RegisterHandlers();
+        void UnregisterHandlers();
+        void CopyFrom(const Device &rhs);
+        void MoveFrom(Device &&rhs) noexcept;
 
         const std::optional<WinrtDevicesEnumeration::DeviceInformation> & GetInfo() const;
 
@@ -82,13 +96,17 @@ namespace Core::Bluetooth
         }
 
         winrt::hstring GetAepId() const;
+
+        void OnConnectionStatusChanged(const WinrtBlutooth::BluetoothDevice &sender);
+        void OnNameChanged(const WinrtBlutooth::BluetoothDevice &sender);
     };
 
-    class DeviceManager final : Details::DeviceManagerAbstract<Device>
+    namespace DeviceManager
     {
-    public:
-        std::vector<Device> GetDevicesByState(DeviceState state) const override;
-    };
+        std::vector<Device> GetDevicesByState(DeviceState state);
+        std::optional<Device> FindDevice(uint64_t address);
+
+    } // namespace DeviceManager
 
     class AdvertisementWatcher final :
         public Details::AdvertisementWatcherAbstract<AdvertisementWatcher>
