@@ -104,7 +104,6 @@ namespace Core::Settings
         LOAD_VALUE(rssi_min, Normal);
         LOAD_VALUE(reduce_loud_sounds, Normal);
         LOAD_VALUE(loud_volume_level, Normal);
-
         LOAD_VALUE(device_address, Sensitive);
 
         return Status::Success;
@@ -134,7 +133,6 @@ namespace Core::Settings
         SAVE_VALUE(rssi_min, Normal);
         SAVE_VALUE(reduce_loud_sounds, Normal);
         SAVE_VALUE(loud_volume_level, Normal);
-
         SAVE_VALUE(device_address, Sensitive);
 
         return Status::Success;
@@ -145,16 +143,16 @@ namespace Core::Settings
 
     void Data::HandleFields(const Data &other)
     {
-#define HANDLE_IF_DIFF(variable, handler)   \
+#define HANDLE_FIELD(variable, handler)   \
         if (/*variable != other.variable*/true) { handler(other, other.variable); }
 
-        HANDLE_IF_DIFF(auto_run, OnAutoRunChanged);
-        HANDLE_IF_DIFF(low_audio_latency, OnLowAudioLatencyChanged);
-        HANDLE_IF_DIFF(reduce_loud_sounds, OnReduceLoudSoundsChanged);
-        HANDLE_IF_DIFF(loud_volume_level, OnLoudVolumeLevelChanged);
-        HANDLE_IF_DIFF(device_address, OnDeviceAddressChanged);
+        HANDLE_FIELD(auto_run, OnAutoRunChanged);
+        HANDLE_FIELD(low_audio_latency, OnLowAudioLatencyChanged);
+        HANDLE_FIELD(reduce_loud_sounds, OnReduceLoudSoundsChanged);
+        HANDLE_FIELD(loud_volume_level, OnLoudVolumeLevelChanged);
+        HANDLE_FIELD(device_address, OnDeviceAddressChanged);
 
-#undef HANDLE_IF_DIFF
+#undef HANDLE_FIELD
     }
 
     void Data::OnAutoRunChanged(const Data &current, bool value)
