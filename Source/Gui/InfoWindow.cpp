@@ -185,6 +185,18 @@ namespace Gui
             }
         );
 
+        QObject::connect(qApp, &QGuiApplication::applicationStateChanged, this,
+            [this](Qt::ApplicationState state)
+            {
+                if (state == Qt::ApplicationActive) {
+                    _autoHideTimer->stop();
+                }
+                else {
+                    _autoHideTimer->start(10s);
+                }
+            }
+        );
+
         connect(this, &InfoWindow::ChangeButtonActionSafety, this, &InfoWindow::ChangeButtonAction);
         connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
         connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
@@ -492,7 +504,6 @@ namespace Gui
         );
 
         _showHideTimer->start(1ms);
-        _autoHideTimer->start(10s);
     }
 
 } // namespace Gui
