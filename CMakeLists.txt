@@ -198,6 +198,7 @@ target_compile_definitions(
     ${PROJECT_NAME} PRIVATE
 
     $<$<CONFIG:Debug>:APD_DEBUG>
+    SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 )
 
 ##################################################
