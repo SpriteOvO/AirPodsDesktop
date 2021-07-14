@@ -23,7 +23,7 @@
 int main(int argc, char *argv[])
 {
     if (!Utils::Process::SingleInstance(Config::ProgramName)) {
-        Logger::DoError(QString{"%1 is already running."}.arg(Config::ProgramName), false);
+        Logger::DoWarn(QString{"%1 is already running."}.arg(Config::ProgramName));
         return 0;
     }
 

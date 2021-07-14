@@ -95,14 +95,12 @@ namespace Logger
 
     void DoWarn(const QString &content)
     {
-#if defined APD_DEBUG
-        // MessageBoxW(
-        //     nullptr,
-        //     content.toStdWString().c_str(),
-        //     QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
-        //     MB_ICONWARNING | MB_OK
-        // );
-#endif
+        MessageBoxW(
+            nullptr,
+            content.toStdWString().c_str(),
+            QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
+            MB_ICONWARNING | MB_OK
+        );
     }
 
     namespace Details
@@ -186,7 +184,7 @@ namespace Logger
                 switch (message.level)
                 {
                 case spdlog::level::warn:
-                    DoWarn(payload);
+                    // DoWarn(payload);
                     break;
                 case spdlog::level::err:
                     DoError(payload, false);
