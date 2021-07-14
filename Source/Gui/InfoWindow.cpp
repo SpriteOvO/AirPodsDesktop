@@ -44,6 +44,9 @@ namespace Gui
     Q_SIGNALS:
         void Clicked();
 
+    private:
+        bool _isHovering{false}, _isHoldDown{false};
+
     protected:
         void paintEvent(QPaintEvent *event) override
         {
@@ -54,9 +57,29 @@ namespace Gui
             DrawX(painter);
         }
 
+        void enterEvent(QEvent *event) override
+        {
+            _isHovering = true;
+            repaint();
+        }
+
+        void leaveEvent(QEvent *event) override
+        {
+            _isHovering = false;
+            repaint();
+        }
+
+        void mousePressEvent(QMouseEvent *event) override
+        {
+            _isHoldDown = true;
+            repaint();
+        }
+
         void mouseReleaseEvent(QMouseEvent *event) override
         {
+            _isHoldDown = false;
             Q_EMIT Clicked();
+            repaint();
         }
 
         void DrawBackground(QPainter &painter)
@@ -64,7 +87,19 @@ namespace Gui
             painter.save();
             {
                 painter.setPen(Qt::NoPen);
-                painter.setBrush(QBrush{QColor{238, 238, 239}});
+
+                QColor color;
+                if (_isHoldDown) {
+                    color = QColor{218, 218, 219};
+                }
+                else if (_isHovering) {
+                    color = QColor{228, 228, 229};
+                }
+                else {
+                    color = QColor{238, 238, 239};
+                }
+
+                painter.setBrush(QBrush{color});
                 painter.drawEllipse(rect());
             }
             painter.restore();
