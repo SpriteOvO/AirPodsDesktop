@@ -64,10 +64,10 @@ namespace Core::GlobalMedia
 
             Status Play() override
             {
-                spdlog::trace("Do play.");
+                SPDLOG_TRACE("Do play.");
 
                 if (IsPlaying()) {
-                    spdlog::trace("The media program is already playing.");
+                    SPDLOG_TRACE("The media program is already playing.");
                     return Status::GlobalMediaPlayAlreadyPlaying;
                 }
                 return Switch();
@@ -75,10 +75,10 @@ namespace Core::GlobalMedia
 
             Status Pause() override
             {
-                spdlog::trace("Do pause.");
+                SPDLOG_TRACE("Do pause.");
 
                 if (!IsPlaying()) {
-                    spdlog::trace("The media program nothing is playingg.");
+                    SPDLOG_TRACE("The media program nothing is playingg.");
                     return Status::GlobalMediaPauseNothingIsPlaying;
                 }
                 return Switch();
@@ -99,7 +99,7 @@ namespace Core::GlobalMedia
             OS::Windows::Com::UniquePtr<IAudioMeterInformation>
                 GetProcessAudioMeterInfo()
             {
-                spdlog::trace("Try to get IAudioMeterInformation of this process.");
+                SPDLOG_TRACE("Try to get IAudioMeterInformation of this process.");
 
                 OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
                 HRESULT result = CoCreateInstance(
@@ -110,7 +110,7 @@ namespace Core::GlobalMedia
                     (void**)deviceEnumerator.ReleaseAndAddressOf()
                 );
                 if (FAILED(result)) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}",
                         result
                     );
@@ -124,7 +124,7 @@ namespace Core::GlobalMedia
                     audioEndpoint.ReleaseAndAddressOf()
                 );
                 if (FAILED(result)) {
-                    spdlog::trace("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+                    SPDLOG_TRACE("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
                     return {};
                 }
 
@@ -136,7 +136,7 @@ namespace Core::GlobalMedia
                     (void**)sessionMgr.ReleaseAndAddressOf()
                 );
                 if (FAILED(result)) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "'IMMDevice::Activate' IAudioSessionManager2 failed. HRESULT: {:#x}",
                         result
                     );
@@ -146,7 +146,7 @@ namespace Core::GlobalMedia
                 OS::Windows::Com::UniquePtr<IAudioSessionEnumerator> sessionEnumerator;
                 result = sessionMgr->GetSessionEnumerator(sessionEnumerator.ReleaseAndAddressOf());
                 if (FAILED(result)) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "'IAudioSessionManager2::GetSessionEnumerator' failed. HRESULT: {:#x}",
                         result
                     );
@@ -156,7 +156,7 @@ namespace Core::GlobalMedia
                 int sessionCount = 0;
                 result = sessionEnumerator->GetCount(&sessionCount);
                 if (FAILED(result)) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "'IAudioSessionEnumerator::GetCount' failed. HRESULT: {:#x}",
                         result
                     );
@@ -165,12 +165,12 @@ namespace Core::GlobalMedia
 
                 for (int i = 0; i < sessionCount; ++i)
                 {
-                    spdlog::trace("Enumerating the {}th session.", i);
+                    SPDLOG_TRACE("Enumerating the {}th session.", i);
 
                     OS::Windows::Com::UniquePtr<IAudioSessionControl> session;
                     result = sessionEnumerator->GetSession(i, session.ReleaseAndAddressOf());
                     if (FAILED(result)) {
-                        spdlog::trace(
+                        SPDLOG_TRACE(
                             "'IAudioSessionEnumerator::GetSession' failed. HRESULT: {:#x}",
                             result
                         );
@@ -183,7 +183,7 @@ namespace Core::GlobalMedia
                         (void**)sessionEx.ReleaseAndAddressOf()
                     );
                     if (FAILED(result)) {
-                        spdlog::trace(
+                        SPDLOG_TRACE(
                             "'IAudioSessionControl::QueryInterface' IAudioSessionControl2 failed. HRESULT: {:#x}",
                             result
                         );
@@ -193,17 +193,17 @@ namespace Core::GlobalMedia
                     uint32_t thisProcessId = 0;
                     result = sessionEx->GetProcessId((DWORD*)&thisProcessId);
                     if (FAILED(result)) {
-                        spdlog::trace(
+                        SPDLOG_TRACE(
                             "'IAudioSessionControl2::GetProcessId' failed. HRESULT: {:#x}",
                             result
                         );
                         continue;
                     }
 
-                    spdlog::trace("Get the session process id: {}", thisProcessId);
+                    SPDLOG_TRACE("Get the session process id: {}", thisProcessId);
 
                     if (_windowProcess->second != thisProcessId) {
-                        spdlog::trace("Process id mismatch, try next.");
+                        SPDLOG_TRACE("Process id mismatch, try next.");
                         continue;
                     }
 
@@ -213,18 +213,18 @@ namespace Core::GlobalMedia
                         (void**)audioMeterInfo.ReleaseAndAddressOf()
                     );
                     if (FAILED(result)) {
-                        spdlog::trace(
+                        SPDLOG_TRACE(
                             "'IAudioSessionControl2::QueryInterface' IAudioMeterInformation failed. HRESULT: {:#x}",
                             result
                         );
                         return {};
                     }
 
-                    spdlog::trace("Get IAudioMeterInformation successfully.");
+                    SPDLOG_TRACE("Get IAudioMeterInformation successfully.");
                     return audioMeterInfo;
                 }
 
-                spdlog::trace("The desired IAudioMeterInformation not found.");
+                SPDLOG_TRACE("The desired IAudioMeterInformation not found.");
                 return {};
             }
 
@@ -237,7 +237,7 @@ namespace Core::GlobalMedia
                 float peak = 0.f;
                 HRESULT result = _audioMeterInfo->GetPeakValue(&peak);
                 if (FAILED(result)) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "'IAudioMeterInformation::GetPeakValue' failed. HRESULT: {:#x}",
                         result
                     );
@@ -253,7 +253,7 @@ namespace Core::GlobalMedia
                 auto className = GetWindowClassName();
                 auto optTitleName = GetWindowTitleName();
 
-                spdlog::trace(
+                SPDLOG_TRACE(
                     L"Try to find the media window. Process name: '{}', Class name: '{}'",
                     processName,
                     className
@@ -261,7 +261,7 @@ namespace Core::GlobalMedia
 
                 auto windowsInfo = OS::Windows::Window::FindWindowsInfo(className, optTitleName);
                 if (windowsInfo.empty()) {
-                    spdlog::trace(L"No matching media windows found.");
+                    SPDLOG_TRACE(L"No matching media windows found.");
                     return std::nullopt;
                 }
 
@@ -269,7 +269,7 @@ namespace Core::GlobalMedia
 
                 for (const auto &info : windowsInfo)
                 {
-                    // spdlog::trace(
+                    // SPDLOG_TRACE(
                     //     L"Enumerating window. hwnd: {}, Process id: {}, Process name: {}",
                     //     (void*)info.hwnd,
                     //     info.processId,
@@ -279,26 +279,26 @@ namespace Core::GlobalMedia
                     if (Utils::Text::ToLower(info.processName) !=
                         Utils::Text::ToLower(processName))
                     {
-                        // spdlog::trace(L"The media window process name mismatch.");
+                        // SPDLOG_TRACE(L"The media window process name mismatch.");
                         continue;
                     }
 
                     
                     if (windowMatchingFlags.testFlag(WindowMatchingFlag::HasChildren)) {
                         if (GetWindow(info.hwnd, GW_CHILD) == 0) {
-                            // spdlog::trace(L"The window doesn't have any child windows.");
+                            // SPDLOG_TRACE(L"The window doesn't have any child windows.");
                             continue;
                         }
                     }
 
                     if (windowMatchingFlags.testFlag(WindowMatchingFlag::NonEmptyTitle)) {
                         if (info.titleName.empty()) {
-                            // spdlog::trace(L"The window doesn't have title name.");
+                            // SPDLOG_TRACE(L"The window doesn't have title name.");
                             continue;
                         }
                     }
 
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         L"The media window is matched. Return the information. hwnd: {}, Process id: {}, Process name: {}",
                         (void*)info.hwnd,
                         info.processId,
@@ -308,7 +308,7 @@ namespace Core::GlobalMedia
                     return std::make_pair(info.hwnd, info.processId);
                 }
 
-                spdlog::trace(L"The desired media window not found.");
+                SPDLOG_TRACE(L"The desired media window not found.");
                 return std::nullopt;
             }
 
@@ -328,7 +328,7 @@ namespace Core::GlobalMedia
                         Status::GlobalMediaVKSwitchFailed
                     }.SetAdditionalData(postDown, postUp);
 
-                    spdlog::trace("Switch failed. Status: {}", status);
+                    SPDLOG_TRACE("Switch failed. Status: {}", status);
                 }
 
                 return status;
@@ -352,7 +352,7 @@ namespace Core::GlobalMedia
                     _currentSession = GetCurrentSession();
                 }
                 WINRT_CATCH(exception) {
-                    spdlog::warn(
+                    SPDLOG_WARN(
                         "UniversalSystemSession get current session failed. Code: {:#x}, Message: {}",
                         exception.code(), winrt::to_string(exception.message())
                     );
@@ -361,7 +361,7 @@ namespace Core::GlobalMedia
 
                 if (!_currentSession.value()) {
                     _currentSession.reset();
-                    spdlog::trace("UniversalSystemSession current session is unavailable.");
+                    SPDLOG_TRACE("UniversalSystemSession current session is unavailable.");
                     return false;
                 }
 
@@ -430,7 +430,7 @@ namespace Core::GlobalMedia
                         GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
                 }
                 WINRT_CATCH(exception) {
-                    spdlog::warn(
+                    SPDLOG_WARN(
                         "UniversalSystemSession Get playback status failed. Code: {:#x}, Message: {}",
                         exception.code(), winrt::to_string(exception.message())
                     );
@@ -585,10 +585,10 @@ namespace Core::GlobalMedia
             PAUDIO_VOLUME_NOTIFICATION_DATA pNotify
         )
         {
-            spdlog::trace("VolumeLevelLimiter::Callback::OnNotify() called.");
+            SPDLOG_TRACE("VolumeLevelLimiter::Callback::OnNotify() called.");
 
             if (pNotify == nullptr) {
-                spdlog::warn("VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
+                SPDLOG_WARN("VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
                 return E_INVALIDARG;
             }
 
@@ -596,21 +596,21 @@ namespace Core::GlobalMedia
                 auto optVolumeLevel = _volumeLevel.load();
 
                 if (!optVolumeLevel.has_value()) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "VolumeLevelLimiter::Callback::OnNotify(): Volume level unlimited."
                     );
                     break;
                 }
 
                 if (pNotify->fMasterVolume > optVolumeLevel.value() / 100.f) {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "VolumeLevelLimiter::Callback::OnNotify(): Exceeded the limit, reduce. ('{}', '{}')",
                         pNotify->fMasterVolume, optVolumeLevel.value()
                     );
                     _volumeLevelSetter(optVolumeLevel.value());
                 }
                 else {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         "VolumeLevelLimiter::Callback::OnNotify(): Not exceeded the limit. ('{}', '{}')",
                         pNotify->fMasterVolume, optVolumeLevel.value()
                     );
@@ -648,7 +648,7 @@ namespace Core::GlobalMedia
 
         void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
         {
-            spdlog::info(
+            SPDLOG_INFO(
                 "VolumeLevelLimiter::SetMaxValue() value: {}",
                 volumeLevel.has_value() ? std::to_string(volumeLevel.value()) : "nullopt"
             );
@@ -671,7 +671,7 @@ namespace Core::GlobalMedia
             float value = 0.f;
             HRESULT result = _endpointVolume->GetMasterVolumeLevelScalar(&value);
             if (FAILED(result)) {
-                spdlog::trace(
+                SPDLOG_TRACE(
                     "'IAudioEndpointVolume::GetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
                     result
                 );
@@ -679,21 +679,21 @@ namespace Core::GlobalMedia
             }
 
             uint32_t return_value = (uint32_t)(value * 100.f);
-            spdlog::trace("GetVolumeLevel() returns '{}'", return_value);
+            SPDLOG_TRACE("GetVolumeLevel() returns '{}'", return_value);
 
             return return_value;
         }
 
         bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
         {
-            spdlog::trace("SetVolumeLevel() '{}'", volumeLevel);
+            SPDLOG_TRACE("SetVolumeLevel() '{}'", volumeLevel);
 
             HRESULT result = _endpointVolume->SetMasterVolumeLevelScalar(
                 volumeLevel / 100.f,
                 nullptr
             );
             if (FAILED(result)) {
-                spdlog::trace(
+                SPDLOG_TRACE(
                     "'IAudioEndpointVolume::SetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
                     result
                 );
@@ -707,7 +707,7 @@ namespace Core::GlobalMedia
         //
         bool VolumeLevelLimiter::Initialize()
         {
-            spdlog::info("VolumeLevelLimiter initializing.");
+            SPDLOG_INFO("VolumeLevelLimiter initializing.");
 
             OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
             HRESULT result = CoCreateInstance(
@@ -718,7 +718,7 @@ namespace Core::GlobalMedia
                 (void**)deviceEnumerator.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::warn(
+                SPDLOG_WARN(
                     "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}",
                     result
                 );
@@ -732,7 +732,7 @@ namespace Core::GlobalMedia
                 audioEndpoint.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::warn("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+                SPDLOG_WARN("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
                 return false;
             }
 
@@ -743,7 +743,7 @@ namespace Core::GlobalMedia
                 (void**)_endpointVolume.ReleaseAndAddressOf()
             );
             if (FAILED(result)) {
-                spdlog::warn(
+                SPDLOG_WARN(
                     "'IMMDevice::Activate' IAudioEndpointVolume failed. HRESULT: {:#x}",
                     result
                 );
@@ -752,14 +752,14 @@ namespace Core::GlobalMedia
 
             result = _endpointVolume->RegisterControlChangeNotify(&_callback);
             if (FAILED(result)) {
-                spdlog::warn(
+                SPDLOG_WARN(
                     "IAudioEndpointVolume::RegisterControlChangeNotify failed. HRESULT: {:#x}",
                     result
                 );
                 return false;
             }
 
-            spdlog::info("VolumeLevelLimiter initialization succeeded.");
+            SPDLOG_INFO("VolumeLevelLimiter initialization succeeded.");
             return true;
         }
 
@@ -776,7 +776,7 @@ namespace Core::GlobalMedia
         std::lock_guard<std::mutex> lock{_mutex};
 
         if (_pausedPrograms.empty()) {
-            spdlog::trace(L"Paused programs vector is empty.");
+            SPDLOG_TRACE(L"Paused programs vector is empty.");
             return;
         }
 
@@ -785,14 +785,14 @@ namespace Core::GlobalMedia
             Status status = program->Play();
 
             if (status.IsFailed()) {
-                spdlog::warn(
+                SPDLOG_WARN(
                     L"Failed to play media. Program name: {}, Status: {}",
                     program->GetProgramName(),
                     status
                 );
             }
             else {
-                spdlog::trace(
+                SPDLOG_TRACE(
                     L"Media played. Program name: {}",
                     program->GetProgramName()
                 );
@@ -814,14 +814,14 @@ namespace Core::GlobalMedia
             {
                 Status status = program->Pause();
                 if (status.IsFailed()) {
-                    spdlog::warn(
+                    SPDLOG_WARN(
                         L"Failed to pause media. Program name: {}, Status: {}",
                         program->GetProgramName(),
                         status
                     );
                 }
                 else {
-                    spdlog::trace(
+                    SPDLOG_TRACE(
                         L"Media paused. Program name: {}",
                         program->GetProgramName()
                     );

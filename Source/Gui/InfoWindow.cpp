@@ -204,7 +204,7 @@ namespace Gui
             break;
 
         default:
-            spdlog::critical("Unhandled button action. Value: '{}'", action);
+            SPDLOG_CRITICAL("Unhandled button action. Value: '{}'", action);
             APD_ASSERT(false);
             return;
         }
@@ -301,12 +301,12 @@ namespace Gui
 
     void InfoWindow::BindDevice()
     {
-        spdlog::info("BindDevice");
+        SPDLOG_INFO("BindDevice");
 
         std::vector<Core::Bluetooth::Device> devices =
             Core::Bluetooth::DeviceManager::GetDevicesByState(Core::Bluetooth::DeviceState::Paired);
 
-        spdlog::info("Devices count: {}", devices.size());
+        SPDLOG_INFO("Devices count: {}", devices.size());
 
         devices.erase(std::remove_if(devices.begin(), devices.end(),
             [](const auto &device)
@@ -317,7 +317,7 @@ namespace Gui
                 const auto doErase = vendorId != Core::AppleCP::VendorId ||
                     Core::AppleCP::AirPods::GetModel(productId) == Core::AirPods::Model::Unknown;
 
-                spdlog::trace(
+                SPDLOG_TRACE(
                     "Device VendorId: '{}', ProductId: '{}', doErase: {}",
                     vendorId, productId, doErase
                 );
@@ -327,7 +327,7 @@ namespace Gui
             devices.end()
         );
 
-        spdlog::info("AirPods devices count: {} (filtered)", devices.size());
+        SPDLOG_INFO("AirPods devices count: {} (filtered)", devices.size());
 
         if (devices.empty())
         {
@@ -351,19 +351,19 @@ namespace Gui
             {
                 auto displayName = device.GetDisplayName();
 
-                spdlog::trace("Device name: '{}'", displayName);
-                spdlog::trace("GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(), device.GetVendorId());
+                SPDLOG_TRACE("Device name: '{}'", displayName);
+                SPDLOG_TRACE("GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(), device.GetVendorId());
                 deviceNames.append(QString::fromStdString(displayName));
             }
 
             SelectWindow selector{tr("Please select your AirPods device below."), deviceNames, this};
             if (selector.exec() == -1) {
-                spdlog::warn("selector.exec() == -1");
+                SPDLOG_WARN("selector.exec() == -1");
                 return;
             }
 
             if (!selector.HasResult()) {
-                spdlog::info("No result for selector.");
+                SPDLOG_INFO("No result for selector.");
                 return;
             }
 
@@ -373,7 +373,7 @@ namespace Gui
 
         const auto &selectedDevice = devices.at(selectedIndex);
 
-        spdlog::info(
+        SPDLOG_INFO(
             "Selected device index: '{}', device name: '{}'",
             selectedIndex, selectedDevice.GetDisplayName()
         );
@@ -382,7 +382,7 @@ namespace Gui
         current.device_address = selectedDevice.GetAddress();
         Core::Settings::SaveToCurrentAndLocal(std::move(current));
 
-        spdlog::info("Remembered this device.");
+        SPDLOG_INFO("Remembered this device.");
 
         ChangeButtonAction(ButtonAction::NoButton);
     }
@@ -392,12 +392,12 @@ namespace Gui
         switch (_buttonAction)
         {
         case ButtonAction::Bind:
-            spdlog::info("User clicked 'Bind'");
+            SPDLOG_INFO("User clicked 'Bind'");
             BindDevice();
             break;
 
         default:
-            spdlog::critical("Unhandled button action. Value: '{}'", _buttonAction);
+            SPDLOG_CRITICAL("Unhandled button action. Value: '{}'", _buttonAction);
             APD_ASSERT(false);
             break;
         }

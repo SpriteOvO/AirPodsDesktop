@@ -91,7 +91,7 @@ namespace Utils
             __debugbreak();
 #   endif
 #else
-            spdlog::warn("Triggered a break point.");
+            SPDLOG_WARN("Triggered a break point.");
 #endif
         }
 

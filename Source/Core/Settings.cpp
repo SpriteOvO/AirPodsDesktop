@@ -60,7 +60,7 @@ namespace Core::Settings
     {
 #define LOAD_VALUE_TO_VARIABLE(variable, type, key)                                     \
         if (!settings.contains((key))) {                                                \
-            spdlog::warn(                                                               \
+            SPDLOG_WARN(                                                               \
                 "This QSettings doesn't contain key '{}'. Use the default value: {}",   \
                 (key), LogValue<ValueType::type>(variable)                              \
             );                                                                          \
@@ -70,14 +70,14 @@ namespace Core::Settings
             if (!var.canConvert<decltype(variable)>() ||                                \
                 !var.convert(qMetaTypeId<decltype(variable)>()))                        \
             {                                                                           \
-                spdlog::warn(                                                           \
+                SPDLOG_WARN(                                                           \
                     "The value of the key '{}' cannot be convert.",                     \
                     (key)                                                               \
                 );                                                                      \
             }                                                                           \
             else {                                                                      \
                 (variable) = var.value<decltype(variable)>();                           \
-                spdlog::info(                                                           \
+                SPDLOG_INFO(                                                           \
                     "Load key succeeded. Key: '{}', Value: {}",                         \
                     (key), LogValue<ValueType::type>(variable)                          \
                 );                                                                      \
@@ -116,7 +116,7 @@ namespace Core::Settings
     {
 #define SAVE_VALUE_FROM_VARIABLE(variable, type, key) {                                 \
             settings.setValue((key), (variable));                                       \
-            spdlog::info(                                                               \
+            SPDLOG_INFO(                                                               \
                 "Save key succeeded. Key: '{}', Value: {}",                             \
                 (key), LogValue<ValueType::type>(variable)                              \
             );                                                                          \
@@ -157,7 +157,7 @@ namespace Core::Settings
 
     void Data::OnAutoRunChanged(const Data &current, bool value)
     {
-        spdlog::info("OnAutoRunChanged: {}", value);
+        SPDLOG_INFO("OnAutoRunChanged: {}", value);
 
 #if !defined APD_OS_WIN
 #   error "Need to port."
@@ -179,14 +179,14 @@ namespace Core::Settings
 
     void Data::OnLowAudioLatencyChanged(const Data &current, bool value)
     {
-        spdlog::info("OnLowAudioLatencyChanged: {}", value);
+        SPDLOG_INFO("OnLowAudioLatencyChanged: {}", value);
 
         LowAudioLatency::Control(value);
     }
 
     void Data::OnReduceLoudSoundsChanged(const Data &current, bool value)
     {
-        spdlog::info("OnReduceLoudSoundsChanged: {}", value);
+        SPDLOG_INFO("OnReduceLoudSoundsChanged: {}", value);
 
         GlobalMedia::LimitVolume(
             value ? std::optional<uint32_t>{current.loud_volume_level} : std::nullopt
@@ -195,7 +195,7 @@ namespace Core::Settings
 
     void Data::OnLoudVolumeLevelChanged(const Data &current, uint32_t value)
     {
-        spdlog::info("OnLoudVolumeLevelChanged: {}", value);
+        SPDLOG_INFO("OnLoudVolumeLevelChanged: {}", value);
 
         GlobalMedia::LimitVolume(
             current.reduce_loud_sounds ? std::optional<uint32_t>{value} : std::nullopt
@@ -204,7 +204,7 @@ namespace Core::Settings
 
     void Data::OnDeviceAddressChanged(const Data &current, uint64_t value)
     {
-        spdlog::info("OnDeviceAddressChanged: {}", LogValue<ValueType::Sensitive>(value));
+        SPDLOG_INFO("OnDeviceAddressChanged: {}", LogValue<ValueType::Sensitive>(value));
 
         AirPods::OnBindDeviceChanged(value);
     }

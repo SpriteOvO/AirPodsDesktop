@@ -153,7 +153,7 @@ namespace Core::OS::Windows
             }
             WINRT_CATCH(exception)
             {
-                spdlog::warn(
+                SPDLOG_WARN(
                     "Winrt initialize failed. Code: {:#x}, Message: {}",
                     exception.code(),
                     winrt::to_string(exception.message())

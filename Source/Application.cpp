@@ -58,7 +58,7 @@ void Application::InitSettings()
 
         default:
             Core::Settings::LoadDefault();
-            spdlog::critical("Unhandled error occurred while loading settings: {}", status);
+            SPDLOG_CRITICAL("Unhandled error occurred while loading settings: {}", status);
             break;
         }
     }
@@ -138,16 +138,14 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
 
     Logger::Initialize(enableTrace);
 
-    spdlog::info("Launched.");
-    spdlog::info(
-        "Build configuration: {}",
+    SPDLOG_INFO("Launched.");
 #if defined APD_DEBUG
-        "Debug"
+    SPDLOG_INFO("Build configuration: Debug");
 #else
-        "Not Debug"
+    SPDLOG_INFO("Build configuration: Not Debug");
 #endif
-    );
-    spdlog::info("Args: {{ trace: {} }}", enableTrace);
+    
+    SPDLOG_INFO("Args: {{ trace: {} }}", enableTrace);
 
     InitSettings();
     Core::Bluetooth::Initialize();
@@ -187,7 +185,7 @@ bool Application::CheckUpdate()
     }
 
     if (info.latestVer == Core::Settings::GetCurrent().skipped_version) {
-        spdlog::info("User skipped this new version. Ignore.");
+        SPDLOG_INFO("User skipped this new version. Ignore.");
         return true;
     }
 
@@ -220,10 +218,10 @@ bool Application::CheckUpdate()
 
     if (button == QMessageBox::Yes)
     {
-        spdlog::info("AppUpdate: User clicked Yes.");
+        SPDLOG_INFO("AppUpdate: User clicked Yes.");
 
         if (!info.CanAutoUpdate()) {
-            spdlog::info("AppUpdate: Popup latest url and quit.");
+            SPDLOG_INFO("AppUpdate: Popup latest url and quit.");
             info.PopupLatestUrl();
             Application::QuitSafety();
             return false;
@@ -234,14 +232,14 @@ bool Application::CheckUpdate()
     }
     else if (button == QMessageBox::Ignore)
     {
-        spdlog::info("AppUpdate: User clicked Ignore.");
+        SPDLOG_INFO("AppUpdate: User clicked Ignore.");
 
         auto currentSettings = Core::Settings::GetCurrent();
         currentSettings.skipped_version = info.latestVer;
         Core::Settings::SaveToCurrentAndLocal(std::move(currentSettings));
     }
     else {
-        spdlog::info("AppUpdate: User clicked No.");
+        SPDLOG_INFO("AppUpdate: User clicked No.");
     }
 
     return true;

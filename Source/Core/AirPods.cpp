@@ -180,7 +180,7 @@ namespace Core::AirPods
                 const auto advRssi = adv.GetRssi();
 
                 if (advRssi < currentSettings.rssi_min) {
-                    spdlog::warn(
+                    SPDLOG_WARN(
                         "TryTrack returns false. Reason: RSSI is less than the limit. "
                         "curr: '{}' min: '{}'",
                         advRssi, currentSettings.rssi_min
@@ -203,7 +203,7 @@ namespace Core::AirPods
                     const auto &lastAdvState = lastAdv->GetAdvState();
 
                     if (advState.model != lastAdvState.model) {
-                        spdlog::warn(
+                        SPDLOG_WARN(
                             "TryTrack returns false. Reason: model new='{}' old='{}'",
                             Helper::ToString(advState.model), Helper::ToString(lastAdvState.model)
                         );
@@ -242,7 +242,7 @@ namespace Core::AirPods
                     // can not exceed 1, otherwise it is not our device
                     //
                     if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
-                        spdlog::warn(
+                        SPDLOG_WARN(
                             "TryTrack returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                             leftBatteryDiff, rightBatteryDiff, caseBatteryDiff
                         );
@@ -251,20 +251,20 @@ namespace Core::AirPods
 
                     int16_t rssiDiff = std::abs(adv.GetRssi() - lastAdv->GetRssi());
                     if (rssiDiff > 50) {
-                        spdlog::warn(
+                        SPDLOG_WARN(
                             "TryTrack returns false. Reason: Current side rssiDiff '{}'",
                             rssiDiff
                         );
                         return false;
                     }
 
-                    spdlog::warn("Address changed, but it might still be the same device.");
+                    SPDLOG_WARN("Address changed, but it might still be the same device.");
                 }
                 if (lastAnotherAdv.has_value())
                 {
                     int16_t rssiDiff = std::abs(adv.GetRssi() - lastAnotherAdv->GetRssi());
                     if (rssiDiff > 50) {
-                        spdlog::warn(
+                        SPDLOG_WARN(
                             "TryTrack returns false. Reason: Another side rssiDiff '{}'",
                             rssiDiff
                         );
@@ -343,7 +343,7 @@ namespace Core::AirPods
                 std::lock_guard<std::mutex> lock{_mutex};
 
                 if (_leftAdv.has_value() || _rightAdv.has_value() || _cachedState.has_value()) {
-                    spdlog::info("Tracker: DoLost called.");
+                    SPDLOG_INFO("Tracker: DoLost called.");
                     _cbLosted.Invoke();
                 }
 
@@ -358,7 +358,7 @@ namespace Core::AirPods
 
                 auto &adv = side == Side::Left ? _leftAdv : _rightAdv;
                 if (adv.has_value()) {
-                    spdlog::info("Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
+                    SPDLOG_INFO("Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
                     adv.reset();
                 }
             }
@@ -379,7 +379,7 @@ namespace Core::AirPods
             void StartScanner()
             {
                 if (_isScannerStarted) {
-                    spdlog::warn("AsyncScanner::Start() return directly. Because it's already started.");
+                    SPDLOG_WARN("AsyncScanner::Start() return directly. Because it's already started.");
                     return;
                 }
 
@@ -392,7 +392,7 @@ namespace Core::AirPods
             Status StopScanner()
             {
                 if (!_isScannerStarted) {
-                    spdlog::warn("AsyncScanner::Stop() return directly. Because it's already stopped.");
+                    SPDLOG_WARN("AsyncScanner::Stop() return directly. Because it's already stopped.");
                     return Status::Success;
                 }
 
@@ -403,12 +403,12 @@ namespace Core::AirPods
 
                 Status status = _adWatcher.Stop();
                 if (status.IsFailed()) {
-                    spdlog::warn("AsyncScanner::Stop() failed. Status: {}", status);
+                    SPDLOG_WARN("AsyncScanner::Stop() failed. Status: {}", status);
                 }
                 else {
                     _isScannerStarted = false;
                     UpdateUi(Action::Unavailable);
-                    spdlog::info("AsyncScanner::Stop() succeeded.");
+                    SPDLOG_INFO("AsyncScanner::Stop() succeeded.");
                 }
 
                 return status;
@@ -421,13 +421,13 @@ namespace Core::AirPods
                 }
 
                 if (!_deviceConnected) {
-                    spdlog::info("AirPods advertisement received, but device disconnected.");
+                    SPDLOG_INFO("AirPods advertisement received, but device disconnected.");
                     return false;
                 }
 
                 Advertisement adv{data};
 
-                spdlog::trace(
+                SPDLOG_TRACE(
                     "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
                     Helper::ToString(adv.GetDesensitizedData()),
                     std::hash<decltype(data.address)>{}(data.address),
@@ -435,7 +435,7 @@ namespace Core::AirPods
                 );
 
                 if (!_tracker.TryTrack(adv)) {
-                    spdlog::warn("It doesn't seem to be the device we desired.");
+                    SPDLOG_WARN("It doesn't seem to be the device we desired.");
                     return false;
                 }
                 return true;
@@ -485,7 +485,7 @@ namespace Core::AirPods
                         UpdateUi(Action::Disconnected);
                     }
 
-                    spdlog::info(
+                    SPDLOG_INFO(
                         "The device we bound is updated. current: {}, new: {}",
                         _deviceConnected, newDeviceConnected
                     );
@@ -544,7 +544,7 @@ namespace Core::AirPods
                 _cbBothInEar += [](const State &state, bool isBothInEar)
                 {
                     if (!Settings::GetCurrent().automatic_ear_detection) {
-                        spdlog::trace(
+                        SPDLOG_TRACE(
                             "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
                             isBothInEar
                         );
@@ -564,7 +564,7 @@ namespace Core::AirPods
                 )
                 {
                     if (!_deviceConnected) {
-                        spdlog::info("AirPods state changed, but device disconnected.");
+                        SPDLOG_INFO("AirPods state changed, but device disconnected.");
                         return;
                     }
 
@@ -615,14 +615,14 @@ namespace Core::AirPods
                 _adWatcher.StoppedCallbacks() += [this]()
                 {
                     UpdateUi(Action::Unavailable);
-                    spdlog::warn("Bluetooth AdvWatcher stopped. Try to restart.");
+                    SPDLOG_WARN("Bluetooth AdvWatcher stopped. Try to restart.");
                     _restartScanner = true;
                 };
 
                 _adWatcher.ErrorCallbacks() += [this](const std::string &info)
                 {
                     UpdateUi(Action::Unavailable);
-                    spdlog::warn("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
+                    SPDLOG_WARN("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
                     _restartScanner = true;
                 };
             }
@@ -638,14 +638,14 @@ namespace Core::AirPods
                         Status status = _adWatcher.Start();
                         if (!status.IsSucceeded()) {
                             UpdateUi(Action::Unavailable);
-                            spdlog::warn("Bluetooth AdvWatcher start failed. status: {}", status);
+                            SPDLOG_WARN("Bluetooth AdvWatcher start failed. status: {}", status);
                         }
                         else {
                             _restartScanner = false;
                             if (_lastAction == Action::Unavailable) {
                                 UpdateUi(Action::Disconnected);
                             }
-                            spdlog::info("Bluetooth AdvWatcher start succeeded.");
+                            SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
                         }
                         std::this_thread::sleep_for(5s);
                     }

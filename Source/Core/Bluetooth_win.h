@@ -82,7 +82,7 @@ namespace Core::Bluetooth
             WINRT_TRY {
                 const auto & optInfo = GetInfo();
                 if (!optInfo.has_value()) {
-                    spdlog::warn("optInfo.has_value() false.");
+                    SPDLOG_WARN("optInfo.has_value() false.");
                     return defaultValue;
                 }
 
@@ -90,7 +90,7 @@ namespace Core::Bluetooth
                 return winrt::unbox_value_or<T>(boxed, defaultValue);
             }
             WINRT_CATCH(ex) {
-                spdlog::warn("GetProperty() failed. {}", Helper::ToString(ex));
+                SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
             }
             return defaultValue;
         }

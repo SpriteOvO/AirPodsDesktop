@@ -55,7 +55,7 @@ namespace Gui
                         );
 
                         if (_destroy) {
-                            spdlog::warn("DownloadWindow destructor requests destroy.");
+                            SPDLOG_WARN("DownloadWindow destructor requests destroy.");
                             return false;
                         }
                         return true;
@@ -86,7 +86,7 @@ namespace Gui
 
     void DownloadWindow::OnFailed()
     {
-        spdlog::warn("DownloadAndInstall failed. Popup latest url and quit.");
+        SPDLOG_WARN("DownloadAndInstall failed. Popup latest url and quit.");
 
         QMessageBox::warning(
             this,

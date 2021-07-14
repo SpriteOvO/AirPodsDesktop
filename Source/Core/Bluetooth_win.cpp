@@ -164,7 +164,7 @@ namespace Core::Bluetooth
                     ).get();
                 }
                 WINRT_CATCH(ex) {
-                    spdlog::warn(
+                    SPDLOG_WARN(
                         "DeviceInformation::CreateFromIdAsync() failed. {}",
                         Helper::ToString(ex)
                     );
@@ -241,7 +241,7 @@ namespace Core::Bluetooth
                             result.emplace_back(std::move(device));
                         }
                         WINRT_CATCH(ex) {
-                            spdlog::warn("BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
+                            SPDLOG_WARN("BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
                         }
                     }
 

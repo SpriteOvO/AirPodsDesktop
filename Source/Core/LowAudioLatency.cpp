@@ -62,7 +62,7 @@ namespace Core::LowAudioLatency
 
         void Control(bool enable)
         {
-            spdlog::info("LowAudioLatency::Controller Control: {}", enable);
+            SPDLOG_INFO("LowAudioLatency::Controller Control: {}", enable);
 
             if (enable) {
                 _mediaPlayer.play();
@@ -73,7 +73,7 @@ namespace Core::LowAudioLatency
         }
 
         void OnError(QMediaPlayer::Error error) {
-            spdlog::warn("LowAudioLatency::Controller error: {}", error);
+            SPDLOG_WARN("LowAudioLatency::Controller error: {}", error);
         }
     };
 
