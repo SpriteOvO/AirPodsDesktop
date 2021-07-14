@@ -204,7 +204,7 @@ namespace Gui
             break;
 
         default:
-            spdlog::error("Unhandled button action. Value: '{}'", action);
+            spdlog::critical("Unhandled button action. Value: '{}'", action);
             APD_ASSERT(false);
             return;
         }
@@ -397,7 +397,7 @@ namespace Gui
             break;
 
         default:
-            spdlog::error("Unhandled button action. Value: '{}'", _buttonAction);
+            spdlog::critical("Unhandled button action. Value: '{}'", _buttonAction);
             APD_ASSERT(false);
             break;
         }
