@@ -138,7 +138,7 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
 
     Logger::Initialize(enableTrace);
 
-    SPDLOG_INFO("Launched.");
+    SPDLOG_INFO("Launched. Version: '{}'", Config::Version::String);
 #if defined APD_DEBUG
     SPDLOG_INFO("Build configuration: Debug");
 #else
