@@ -18,9 +18,8 @@
 
 #pragma once
 
+namespace Core::LowAudioLatency {
 
-namespace Core::LowAudioLatency
-{
-    void Control(bool enable);
+void Control(bool enable);
 
 } // namespace Core::LowAudioLatency

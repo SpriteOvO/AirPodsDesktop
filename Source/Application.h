@@ -18,21 +18,19 @@
 
 #pragma once
 
-#include <memory>
 #include <QApplication>
 #include <cxxopts.hpp>
+#include <memory>
 
 #include "Config.h"
-#include "Gui/SysTray.h"
-#include "Gui/InfoWindow.h"
-#include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
+#include "Gui/DownloadWindow.h"
+#include "Gui/InfoWindow.h"
+#include "Gui/SysTray.h"
 
-
-class Application : public QApplication
-{
+class Application : public QApplication {
 public:
-    template <class ...Args>
+    template <class... Args>
     inline static void Initialize(Args &&...args) {
         PreConstructorInit();
         App = std::make_unique<Application>(std::forward<Args>(args)...);
@@ -42,16 +40,22 @@ public:
 
     int Run();
 
-    inline auto& GetSysTray()               { return _sysTray; }
-    inline auto& GetInfoWindow()            { return _infoWindow; }
+    inline auto &GetSysTray() {
+        return _sysTray;
+    }
+    inline auto &GetInfoWindow() {
+        return _infoWindow;
+    }
 
-    inline static bool IsFirstTimeUse()     { return _isFirstTimeUse; }
+    inline static bool IsFirstTimeUse() {
+        return _isFirstTimeUse;
+    }
 
     static void PopupAboutWindow(QWidget *parent);
     static void QuitSafety();
 
 private:
-    static inline cxxopts::Options _options{Config::ProgramName,Config::Description};
+    static inline cxxopts::Options _options{Config::ProgramName, Config::Description};
     static inline bool _isFirstTimeUse{false};
 
     std::unique_ptr<Gui::SysTray> _sysTray;

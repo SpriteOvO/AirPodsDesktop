@@ -20,27 +20,24 @@
 
 #include <optional>
 
+namespace Core::GlobalMedia::Details {
 
-namespace Core::GlobalMedia::Details
-{
-    template <class Derived>
-    class ControllerAbstract
-    {
-    public:
-        inline static auto& GetInstance() {
-            static Derived i;
-            return i;
-        }
+template <class Derived>
+class ControllerAbstract {
+public:
+    inline static auto &GetInstance() {
+        static Derived i;
+        return i;
+    }
 
-        virtual inline ~ControllerAbstract() {}
+    virtual inline ~ControllerAbstract() {}
 
-        virtual void Play() = 0;
-        virtual void Pause() = 0;
+    virtual void Play() = 0;
+    virtual void Pause() = 0;
 
-        virtual void LimitVolume(std::optional<uint32_t> volumeLevel) = 0;
+    virtual void LimitVolume(std::optional<uint32_t> volumeLevel) = 0;
 
-    protected:
-        ControllerAbstract() = default;
-    };
-
+protected:
+    ControllerAbstract() = default;
+};
 } // namespace Core::GlobalMedia::Details

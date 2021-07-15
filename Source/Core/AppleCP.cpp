@@ -18,136 +18,115 @@
 
 #include "AppleCP.h"
 
+namespace Core::AppleCP {
 
-namespace Core::AppleCP
-{
-    bool AirPods::IsValid(const std::vector<uint8_t> &data)
-    {
-        if (data.size() != sizeof(AirPods)) {
-            return false;
-        }
-
-        constexpr uint8_t shouldRemainingLength =
-            sizeof(AirPods) - (offsetof(Header, remainingLength) + sizeof(Header::remainingLength));
-
-        Header *packet = (Header *)(data.data());
-        if (packet->packetType != PacketType::ProximityPairing ||
-            packet->remainingLength != shouldRemainingLength)
-        {
-            return false;
-        }
-
-        return true;
+bool AirPods::IsValid(const std::vector<uint8_t> &data) {
+    if (data.size() != sizeof(AirPods)) {
+        return false;
     }
 
-    Core::AirPods::Model AirPods::GetModel(uint16_t modelId)
-    {
-        switch (modelId)
-        {
-        case 0x2002:
-            return Core::AirPods::Model::AirPods_1;
-        case 0x200F:
-            return Core::AirPods::Model::AirPods_2;
-        case 0x200E:
-            return Core::AirPods::Model::AirPods_Pro;
-            //case 0x2003:
-            //    return Core::AirPods::Model::Powerbeats_3;
-            //case 0x2005:
-            //    return Core::AirPods::Model::Beats_X;
-            //case 0x2006:
-            //    return Core::AirPods::Model::Beats_Solo3;
-        default:
-            return Core::AirPods::Model::Unknown;
-        }
+    constexpr uint8_t shouldRemainingLength =
+        sizeof(AirPods) - (offsetof(Header, remainingLength) + sizeof(Header::remainingLength));
+
+    Header *packet = (Header *)(data.data());
+    if (packet->packetType != PacketType::ProximityPairing ||
+        packet->remainingLength != shouldRemainingLength) {
+        return false;
     }
 
-    Core::AirPods::Side AirPods::GetBroadcastedSide() const
-    {
-        return broadcastFrom == 1 ? Core::AirPods::Side::Left : Core::AirPods::Side::Right;
+    return true;
+}
+
+Core::AirPods::Model AirPods::GetModel(uint16_t modelId) {
+    switch (modelId) {
+    case 0x2002:
+        return Core::AirPods::Model::AirPods_1;
+    case 0x200F:
+        return Core::AirPods::Model::AirPods_2;
+    case 0x200E:
+        return Core::AirPods::Model::AirPods_Pro;
+        // case 0x2003:
+        //    return Core::AirPods::Model::Powerbeats_3;
+        // case 0x2005:
+        //    return Core::AirPods::Model::Beats_X;
+        // case 0x2006:
+        //    return Core::AirPods::Model::Beats_Solo3;
+    default:
+        return Core::AirPods::Model::Unknown;
     }
+}
 
-    bool AirPods::IsLeftBroadcasted() const
-    {
-        return GetBroadcastedSide() == Core::AirPods::Side::Left;
-    }
+Core::AirPods::Side AirPods::GetBroadcastedSide() const {
+    return broadcastFrom == 1 ? Core::AirPods::Side::Left : Core::AirPods::Side::Right;
+}
 
-    bool AirPods::IsRightBroadcasted() const
-    {
-        return GetBroadcastedSide() == Core::AirPods::Side::Right;
-    }
+bool AirPods::IsLeftBroadcasted() const {
+    return GetBroadcastedSide() == Core::AirPods::Side::Left;
+}
 
-    Core::AirPods::Model AirPods::GetModel() const
-    {
-        return GetModel(modelId);
-    }
+bool AirPods::IsRightBroadcasted() const {
+    return GetBroadcastedSide() == Core::AirPods::Side::Right;
+}
 
-    Core::AirPods::Battery AirPods::GetLeftBattery() const
-    {
-        const auto val = (IsLeftBroadcasted() ? battery.curr : battery.anot);
-        return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
-    }
+Core::AirPods::Model AirPods::GetModel() const {
+    return GetModel(modelId);
+}
 
-    Core::AirPods::Battery AirPods::GetRightBattery() const
-    {
-        const auto val = (IsRightBroadcasted() ? battery.curr : battery.anot);
-        return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
-    }
+Core::AirPods::Battery AirPods::GetLeftBattery() const {
+    const auto val = (IsLeftBroadcasted() ? battery.curr : battery.anot);
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+}
 
-    Core::AirPods::Battery AirPods::GetCaseBattery() const
-    {
-        const auto val = battery.caseBox;
-        return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
-    }
+Core::AirPods::Battery AirPods::GetRightBattery() const {
+    const auto val = (IsRightBroadcasted() ? battery.curr : battery.anot);
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+}
 
-    bool AirPods::IsLeftCharging() const
-    {
-        return (IsLeftBroadcasted() ? battery.currCharging : battery.anotCharging) != 0;
-    }
+Core::AirPods::Battery AirPods::GetCaseBattery() const {
+    const auto val = battery.caseBox;
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+}
 
-    bool AirPods::IsRightCharging() const
-    {
-        return (IsRightBroadcasted() ? battery.currCharging : battery.anotCharging) != 0;
-    }
+bool AirPods::IsLeftCharging() const {
+    return (IsLeftBroadcasted() ? battery.currCharging : battery.anotCharging) != 0;
+}
 
-    bool AirPods::IsBothPodsInCase() const
-    {
-        return bothInCase;
-    }
+bool AirPods::IsRightCharging() const {
+    return (IsRightBroadcasted() ? battery.currCharging : battery.anotCharging) != 0;
+}
 
-    bool AirPods::IsLidOpened() const
-    {
-        return lidState == 1 || lidState == 2 || lidState == 3 || lidState == 4 ||
-            lidState == 5 || lidState == 6 || lidState == 7 || lidState == 0;
-    }
+bool AirPods::IsBothPodsInCase() const {
+    return bothInCase;
+}
 
-    bool AirPods::IsCaseCharging() const
-    {
-        return battery.caseCharging;
-    }
+bool AirPods::IsLidOpened() const {
+    return lidState == 1 || lidState == 2 || lidState == 3 || lidState == 4 || lidState == 5 ||
+           lidState == 6 || lidState == 7 || lidState == 0;
+}
 
-    bool AirPods::IsLeftInEar() const
-    {
-        // If it's charging, the "ear" will be set in one of the multiple devices, idk why..
-        // so we need to filter it
-        //     vvvvvvvvvvvvvvvvvvvv
-        return !IsLeftCharging() && (IsLeftBroadcasted() ? currInEar : anotInEar);
-    }
+bool AirPods::IsCaseCharging() const {
+    return battery.caseCharging;
+}
 
-    bool AirPods::IsRightInEar() const
-    {
-        return !IsRightCharging() && (IsRightBroadcasted() ? currInEar : anotInEar);
-    }
+bool AirPods::IsLeftInEar() const {
+    // If it's charging, the "ear" will be set in one of the multiple devices, idk why..
+    // so we need to filter it
+    //     vvvvvvvvvvvvvvvvvvvv
+    return !IsLeftCharging() && (IsLeftBroadcasted() ? currInEar : anotInEar);
+}
 
-    AirPods AirPods::Desensitize() const
-    {
-        auto result = *this;
+bool AirPods::IsRightInEar() const {
+    return !IsRightCharging() && (IsRightBroadcasted() ? currInEar : anotInEar);
+}
 
-        // This field may be some kind of hash or encrypted payload.
-        // So it may contain personal information about the user.
-        //
-        std::memset(result.unk12, 0, sizeof(result.unk12));
+AirPods AirPods::Desensitize() const {
+    auto result = *this;
 
-        return result;
-    }
+    // This field may be some kind of hash or encrypted payload.
+    // So it may contain personal information about the user.
+    //
+    std::memset(result.unk12, 0, sizeof(result.unk12));
 
+    return result;
+}
 } // namespace Core::AppleCP

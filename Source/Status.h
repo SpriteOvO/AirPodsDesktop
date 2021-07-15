@@ -18,35 +18,31 @@
 
 #pragma once
 
-#include <variant>
-#include <unordered_map>
-#include <QString>
 #include <QMessageBox>
+#include <QString>
 #include <spdlog/fmt/ostr.h>
+#include <unordered_map>
+#include <variant>
 
 #include "Config.h"
 #include "Helper.h"
 
 #if defined APD_OS_WIN
-#   include "Core/OS/Windows.h"
+    #include "Core/OS/Windows.h"
 #endif
 
-
-class Status
-{
+class Status {
 private:
     using ValueType = uint64_t;
 
-    enum class State : uint16_t
-    {
+    enum class State : uint16_t {
         Unknown = 0,
         Success = 1,
         Warning = 2,
         Failure = 3,
     };
 
-    enum class Module : uint16_t
-    {
+    enum class Module : uint16_t {
         Unknown = 0,
         Common = 1,
 
@@ -56,12 +52,12 @@ private:
         Update = 5,
     };
 
-#define MAKE_STATUS(state, module, specific)            \
-    ((ValueType) (                                      \
-        ((((ValueType)(   state)) &   0xFF) << 48) |    \
-        ((((ValueType)(  module)) &   0xFF) << 32) |    \
-         (((ValueType)(specific)) & 0xFFFF)             \
-    ))
+#define MAKE_STATUS(state, module, specific)                                                       \
+    ((ValueType)(                                                                                  \
+        ((((ValueType)(state)) & 0xFF) << 48) | ((((ValueType)(module)) & 0xFF) << 32) |           \
+        (((ValueType)(specific)) & 0xFFFF)))
+
+    // clang-format off
 
 #define STATUS_VALUES(invoke) \
     invoke(Unknown,                             MAKE_STATUS(State::Unknown, Module::Unknown, 0), "Unknown status.") \
@@ -89,23 +85,19 @@ private:
     invoke(UpdateDownloadCannotAutoUpdate,      MAKE_STATUS(State::Failure, Module::Update, 6), "") \
     invoke(UpdateDownloadStatusCodeIsNot200,    MAKE_STATUS(State::Failure, Module::Update, 7), "") \
     invoke(UpdateDownloadFileSizeMismatch,      MAKE_STATUS(State::Failure, Module::Update, 8), "") \
-    invoke(UpdateDownloadStartInstallerFailed,  MAKE_STATUS(State::Failure, Module::Update, 9), "") \
+    invoke(UpdateDownloadStartInstallerFailed,  MAKE_STATUS(State::Failure, Module::Update, 9), "")
 
-    class AdditionalData
-    {
+    // clang-format on
+
+    class AdditionalData {
     private:
         using VarData = std::variant<
-            std::monostate,
-            long,
-            uint32_t,
-            uint64_t,
-            bool,
-            std::string,
-            QString
+            std::monostate, long, uint32_t, uint64_t, bool, std::string, QString
 #if defined APD_OS_WIN
-            , winrt::hresult_error
+            ,
+            winrt::hresult_error
 #endif
-        >;
+            >;
 
     public:
         AdditionalData() = default;
@@ -124,9 +116,10 @@ private:
             return _data.index() != 0;
         }
 
-        inline QString ToString() const
-        {
+        inline QString ToString() const {
             QString format{"(%1) %2"};
+
+            // clang-format off
 
             return std::visit(
                 Helper::Overloaded{
@@ -153,14 +146,14 @@ private:
                     }
 #if defined APD_OS_WIN
                     ,[&](const winrt::hresult_error &value) {
-                        return format
-                            .arg("winrt::hresult_error")
-                            .arg(Helper::ToString(value));
+                        return format.arg("winrt::hresult_error").arg(Helper::ToString(value));
                     }
 #endif
                 },
                 _data
             );
+
+            // clang-format on
         }
 
     private:
@@ -168,8 +161,7 @@ private:
     };
 
 public:
-    enum UnscopedStatus : ValueType
-    {
+    enum UnscopedStatus : ValueType {
 #define DEFINE_ENUMERATOR(name, value, description) name = (value),
         STATUS_VALUES(DEFINE_ENUMERATOR)
 #undef DEFINE_ENUMERATOR
@@ -179,10 +171,10 @@ public:
     Status(const Status &) = default;
     Status(Status &&) = default;
 
-    Status& operator=(const Status &rhs) = default;
-    Status& operator=(Status &&rhs) = default;
+    Status &operator=(const Status &rhs) = default;
+    Status &operator=(Status &&rhs) = default;
 
-    inline Status& operator=(UnscopedStatus status) {
+    inline Status &operator=(UnscopedStatus status) {
         _additionalData = decltype(_additionalData){};
         _value = status;
     }
@@ -191,8 +183,7 @@ public:
         return _value;
     }
 
-    inline bool IsSucceeded() const
-    {
+    inline bool IsSucceeded() const {
         State state = (State)((_value >> 48) & 0xFF);
         return state == State::Success || state == State::Warning;
     }
@@ -201,13 +192,10 @@ public:
         return !IsSucceeded();
     }
 
-    inline QString GetDescription() const
-    {
-        static std::unordered_map<ValueType, QString> statusDescriptionMap =
-        {
-#define DEFINE_ENUMERATOR(name, value, description) {               \
-                UnscopedStatus::name, QMessageBox::tr(description)  \
-            },
+    inline QString GetDescription() const {
+        static std::unordered_map<ValueType, QString> statusDescriptionMap = {
+#define DEFINE_ENUMERATOR(name, value, description)                                                \
+    {UnscopedStatus::name, QMessageBox::tr(description)},
 
             STATUS_VALUES(DEFINE_ENUMERATOR)
 #undef DEFINE_ENUMERATOR
@@ -216,20 +204,16 @@ public:
         auto iter = statusDescriptionMap.find(_value);
         if (iter == statusDescriptionMap.end()) {
             return QString{"Status description not found. Value: %1"}.arg(_value);
-        }
-        else {
+        } else {
             return (*iter).second;
         }
     }
 
-    inline QString ToMessage() const
-    {
-        QString result = QString{"0x%1 (%2)"}
-            .arg(QString::number(_value, 16))
-            .arg(GetDescription());
+    inline QString ToMessage() const {
+        QString result =
+            QString{"0x%1 (%2)"}.arg(QString::number(_value, 16)).arg(GetDescription());
 
-        for (size_t i = 0; i < _additionalData.size(); ++i)
-        {
+        for (size_t i = 0; i < _additionalData.size(); ++i) {
             const auto &data = _additionalData.at(i);
 
             if (data.HasValue()) {
@@ -240,24 +224,20 @@ public:
         return result;
     }
 
-    inline Status& SetAdditionalData(
-        const AdditionalData &data1,
-        const AdditionalData &data2 = AdditionalData{},
+    inline Status &SetAdditionalData(
+        const AdditionalData &data1, const AdditionalData &data2 = AdditionalData{},
         const AdditionalData &data3 = AdditionalData{},
-        const AdditionalData &data4 = AdditionalData{}
-    ) {
-        _additionalData = { data1, data2, data3, data4 };
+        const AdditionalData &data4 = AdditionalData{}) {
+        _additionalData = {data1, data2, data3, data4};
         return *this;
     }
 
-    inline const auto& GetAdditionalData() const
-    {
+    inline const auto &GetAdditionalData() const {
         return _additionalData;
     }
 
     template <class OutStream>
-    inline friend OutStream& operator<<(OutStream &outStream, const Status &status)
-    {
+    inline friend OutStream &operator<<(OutStream &outStream, const Status &status) {
         return outStream << status.ToMessage().toStdString().c_str();
     }
 

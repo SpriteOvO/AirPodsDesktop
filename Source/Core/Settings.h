@@ -22,45 +22,43 @@
 
 #include "../Status.h"
 
+namespace Core::Settings {
 
-namespace Core::Settings
-{
-    class Data
-    {
-    public:
-        // Increase this value when the current ABI cannot be backward compatible
-        // For example, the name or type of an old key has changed
-        //
-        constexpr static inline uint32_t abi_version = 1;
+class Data {
+public:
+    // Increase this value when the current ABI cannot be backward compatible
+    // For example, the name or type of an old key has changed
+    //
+    constexpr static inline uint32_t abi_version = 1;
 
-        bool auto_run{false};
-        bool low_audio_latency{false};
-        bool automatic_ear_detection{true};
-        QString skipped_version;
-        int16_t rssi_min{-80};
-        bool reduce_loud_sounds{false};
-        uint32_t loud_volume_level{40};
-        uint64_t device_address{0};
+    bool auto_run{false};
+    bool low_audio_latency{false};
+    bool automatic_ear_detection{true};
+    QString skipped_version;
+    int16_t rssi_min{-80};
+    bool reduce_loud_sounds{false};
+    uint32_t loud_volume_level{40};
+    uint64_t device_address{0};
 
-    private:
-        Status LoadFromQSettings(const QSettings &settings);
-        Status SaveToQSettings(QSettings &settings) const;
+private:
+    Status LoadFromQSettings(const QSettings &settings);
+    Status SaveToQSettings(QSettings &settings) const;
 
-        void HandleFields(const Data &other);
+    void HandleFields(const Data &other);
 
-        static void OnAutoRunChanged(const Data &current, bool value);
-        static void OnLowAudioLatencyChanged(const Data &current, bool value);
-        static void OnReduceLoudSoundsChanged(const Data &current, bool value);
-        static void OnLoudVolumeLevelChanged(const Data &current, uint32_t value);
-        static void OnDeviceAddressChanged(const Data &current, uint64_t value);
+    static void OnAutoRunChanged(const Data &current, bool value);
+    static void OnLowAudioLatencyChanged(const Data &current, bool value);
+    static void OnReduceLoudSoundsChanged(const Data &current, bool value);
+    static void OnLoudVolumeLevelChanged(const Data &current, uint32_t value);
+    static void OnDeviceAddressChanged(const Data &current, uint64_t value);
 
-        friend class Manager;
-    };
+    friend class Manager;
+};
 
-    Data GetDefault();
-    Data GetCurrent();
-    void LoadDefault();
-    Status LoadFromLocal();
-    Status SaveToCurrentAndLocal(Data data);
+Data GetDefault();
+Data GetCurrent();
+void LoadDefault();
+Status LoadFromLocal();
+Status SaveToCurrentAndLocal(Data data);
 
 } // namespace Core::Settings

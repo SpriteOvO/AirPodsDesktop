@@ -21,19 +21,19 @@
 #include <cstdint>
 
 #if defined __clang__
-#   define APD_CLANG
+    #define APD_CLANG
 #elif defined __GNUC__
-#   define APD_GCC
+    #define APD_GCC
 #elif defined _MSC_VER
-#   define APD_MSVC
+    #define APD_MSVC
 #endif
 
 #if defined _WIN32
-#   define APD_OS_WIN
+    #define APD_OS_WIN
 #endif
 
-namespace Config
-{
+namespace Config {
+
 #define CONFIG_VERSION_STRING           "@AirPodsDesktop_VERSION_MAJOR@.@AirPodsDesktop_VERSION_MINOR@.@AirPodsDesktop_VERSION_PATCH@"
 #define CONFIG_WINRC_VERSION_NUMBERS    @AirPodsDesktop_VERSION_MAJOR@, @AirPodsDesktop_VERSION_MINOR@, @AirPodsDesktop_VERSION_PATCH@, 0
 #define CONFIG_WINRC_VERSION_STRING     CONFIG_VERSION_STRING ".0"
@@ -47,24 +47,23 @@ namespace Config
 #define CONFIG_URL_LICENSE              CONFIG_URL_REPO "/blob/main/LICENSE"
 #define CONFIG_URL_CURRENT_RELEASE      CONFIG_URL_RELEASES "/tag/" CONFIG_VERSION_STRING
 
-    constexpr inline auto ProgramName = CONFIG_PROGRAM_NAME;
-    constexpr inline auto UrlRepository = CONFIG_URL_REPO;
-    constexpr inline auto UrlIssues = CONFIG_URL_ISSUES;
-    constexpr inline auto UrlReleases = CONFIG_URL_RELEASES;
-    constexpr inline auto UrlLicense = CONFIG_URL_LICENSE;
-    constexpr inline auto UrlCurrentRelease = CONFIG_URL_CURRENT_RELEASE;
-    constexpr inline auto License = "GPLv3";
-    constexpr inline auto Copyright = CONFIG_COPYRIGHT;
-    constexpr inline auto Description = CONFIG_DESCRIPTION;
+constexpr inline auto ProgramName = CONFIG_PROGRAM_NAME;
+constexpr inline auto UrlRepository = CONFIG_URL_REPO;
+constexpr inline auto UrlIssues = CONFIG_URL_ISSUES;
+constexpr inline auto UrlReleases = CONFIG_URL_RELEASES;
+constexpr inline auto UrlLicense = CONFIG_URL_LICENSE;
+constexpr inline auto UrlCurrentRelease = CONFIG_URL_CURRENT_RELEASE;
+constexpr inline auto License = "GPLv3";
+constexpr inline auto Copyright = CONFIG_COPYRIGHT;
+constexpr inline auto Description = CONFIG_DESCRIPTION;
 
-    namespace Version
-    {
-        constexpr inline uint32_t Major = @AirPodsDesktop_VERSION_MAJOR@;
-        constexpr inline uint32_t Minor = @AirPodsDesktop_VERSION_MINOR@;
-        constexpr inline uint32_t Patch = @AirPodsDesktop_VERSION_PATCH@;
+namespace Version {
 
-        constexpr inline auto String = CONFIG_VERSION_STRING;
+constexpr inline uint32_t Major = @AirPodsDesktop_VERSION_MAJOR@;
+constexpr inline uint32_t Minor = @AirPodsDesktop_VERSION_MINOR@;
+constexpr inline uint32_t Patch = @AirPodsDesktop_VERSION_PATCH@;
 
-    } // namespace Version
+constexpr inline auto String = CONFIG_VERSION_STRING;
 
+} // namespace Version
 } // namespace Config

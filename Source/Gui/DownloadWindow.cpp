@@ -18,87 +18,66 @@
 
 #include "DownloadWindow.h"
 
-#include <QPushButton>
 #include <QMetaObject>
+#include <QPushButton>
 
-#include "../Status.h"
 #include "../Application.h"
-
+#include "../Status.h"
 
 using namespace std::chrono_literals;
 
-namespace Gui
-{
-    DownloadWindow::DownloadWindow(const Core::Update::Info &info, QWidget *parent) :
-        QDialog{parent}, _info{info}
-    {
-        _ui.setupUi(this);
+namespace Gui {
 
-        setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
+DownloadWindow::DownloadWindow(const Core::Update::Info &info, QWidget *parent)
+    : QDialog{parent}, _info{info} {
+    _ui.setupUi(this);
 
-        connect(
-            _ui.pushButtonDownloadManually, &QPushButton::clicked, this,
-            [this]() {
-                _info.PopupLatestUrl();
-            }
-        );
+    setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
 
-        _downloadThread = std::thread{
-            [this]() {
-                Status status = _info.DownloadAndInstall(
-                    [this](size_t downloaded, size_t total) {
-                        QMetaObject::invokeMethod(
-                            this,
-                            "UpdateProgress",
-                            Q_ARG(int, (int)downloaded),
-                            Q_ARG(int, (int)total)
-                        );
-
-                        if (_destroy) {
-                            SPDLOG_WARN("DownloadWindow destructor requests destroy.");
-                            return false;
-                        }
-                        return true;
-                    }
-                );
-                if (status.IsFailed()) {
-                    QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
-                }
-            }
-        };
-    }
-
-    DownloadWindow::~DownloadWindow()
-    {
-        _destroy = true;
-        if (_downloadThread.joinable()) {
-            _downloadThread.join();
-        }
-    }
-
-    void DownloadWindow::UpdateProgress(int downloaded, int total)
-    {
-        if (total == 0) {
-            return;
-        }
-        _ui.progressBar->setValue(downloaded / total * _ui.progressBar->maximum());
-    }
-
-    void DownloadWindow::OnFailed()
-    {
-        SPDLOG_WARN("DownloadAndInstall failed. Popup latest url and quit.");
-
-        QMessageBox::warning(
-            this,
-            Config::ProgramName,
-            tr(
-                "Oops, there was a glitch in the automatic update.\n"
-                "Please download and install the new version manually."
-            )
-        );
-
+    connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
         _info.PopupLatestUrl();
-        Application::QuitSafety();
-    }
+    });
 
+    _downloadThread = std::thread{[this]() {
+        Status status = _info.DownloadAndInstall([this](size_t downloaded, size_t total) {
+            QMetaObject::invokeMethod(
+                this, "UpdateProgress", Q_ARG(int, (int)downloaded), Q_ARG(int, (int)total));
+
+            if (_destroy) {
+                SPDLOG_WARN("DownloadWindow destructor requests destroy.");
+                return false;
+            }
+            return true;
+        });
+        if (status.IsFailed()) {
+            QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
+        }
+    }};
+}
+
+DownloadWindow::~DownloadWindow() {
+    _destroy = true;
+    if (_downloadThread.joinable()) {
+        _downloadThread.join();
+    }
+}
+
+void DownloadWindow::UpdateProgress(int downloaded, int total) {
+    if (total == 0) {
+        return;
+    }
+    _ui.progressBar->setValue(downloaded / total * _ui.progressBar->maximum());
+}
+
+void DownloadWindow::OnFailed() {
+    SPDLOG_WARN("DownloadAndInstall failed. Popup latest url and quit.");
+
+    QMessageBox::warning(
+        this, Config::ProgramName,
+        tr("Oops, there was a glitch in the automatic update.\n"
+           "Please download and install the new version manually."));
+
+    _info.PopupLatestUrl();
+    Application::QuitSafety();
+}
 } // namespace Gui

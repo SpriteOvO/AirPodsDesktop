@@ -21,120 +21,106 @@
 #include <Config.h>
 
 #if !defined APD_OS_WIN
-#   error "This file shouldn't be compiled."
+    #error "This file shouldn't be compiled."
 #endif
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
 #include <Windows.h>
-#include <mmdeviceapi.h>
 #include <audiopolicy.h>
 #include <endpointvolume.h>
+#include <mmdeviceapi.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Media.Control.h>
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-#include <memory>
 
-#include "GlobalMedia_abstract.h"
 #include "../Status.h"
+#include "GlobalMedia_abstract.h"
 
+namespace Core::GlobalMedia {
+namespace Details {
 
-namespace Core::GlobalMedia
-{
-    namespace Details
-    {
-        enum class ActionId : uint32_t {
-            Play,
-            Pause
-        };
+enum class ActionId : uint32_t { Play, Pause };
 
-        class MediaProgramAbstract
-        {
-        public:
-            enum class Priority : uint32_t {
-                Max = 0,
+class MediaProgramAbstract {
+public:
+    enum class Priority : uint32_t {
+        Max = 0,
 
-                SystemSession = 1,
-                MusicPlayer = 2,
+        SystemSession = 1,
+        MusicPlayer = 2,
 
-                Min = std::numeric_limits<uint32_t>::max()
-            };
-
-            virtual inline ~MediaProgramAbstract() {};
-
-            virtual bool IsAvailable() = 0;
-            virtual bool IsPlaying() const = 0;
-            virtual Status Play() = 0;
-            virtual Status Pause() = 0;
-
-            virtual std::wstring GetProgramName() const = 0;
-            virtual Priority GetPriority() const = 0;
-        };
-
-
-        class VolumeLevelLimiter
-        {
-        private:
-            class Callback : public IAudioEndpointVolumeCallback
-            {
-            public:
-                Callback(std::function<bool(uint32_t)> volumeLevelSetter);
-
-                ULONG STDMETHODCALLTYPE AddRef() override;
-                ULONG STDMETHODCALLTYPE Release() override;
-
-                HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvInterface) override;
-
-                HRESULT STDMETHODCALLTYPE OnNotify(
-                    PAUDIO_VOLUME_NOTIFICATION_DATA pNotify
-                ) override;
-
-                void SetMaxValue(std::optional<uint32_t> volumeLevel);
-
-            private:
-                std::atomic<ULONG> _ref{1};
-                std::atomic<std::optional<uint32_t>> _volumeLevel;
-                std::function<bool(uint32_t)> _volumeLevelSetter;
-            };
-
-        public:
-            VolumeLevelLimiter();
-            ~VolumeLevelLimiter();
-
-            void SetMaxValue(std::optional<uint32_t> volumeLevel);
-
-            std::optional<uint32_t> GetVolumeLevel() const;
-            bool SetVolumeLevel(uint32_t volumeLevel) const;
-
-        private:
-            OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
-            Callback _callback;
-
-            bool Initialize();
-        };
-
-    } // namespace Details
-
-    bool Initialize();
-
-    class Controller final : public Details::ControllerAbstract<Controller>
-    {
-    public:
-        Controller() = default;
-
-        void Play() override;
-        void Pause() override;
-
-        void LimitVolume(std::optional<uint32_t> volumeLevel) override;
-
-    private:
-        std::mutex _mutex;
-        std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
-        Details::VolumeLevelLimiter _volumeLevelLimiter;
+        Min = std::numeric_limits<uint32_t>::max()
     };
 
-} // namespace Core::GlobalMedia::Details
+    virtual inline ~MediaProgramAbstract(){};
+
+    virtual bool IsAvailable() = 0;
+    virtual bool IsPlaying() const = 0;
+    virtual Status Play() = 0;
+    virtual Status Pause() = 0;
+
+    virtual std::wstring GetProgramName() const = 0;
+    virtual Priority GetPriority() const = 0;
+};
+
+class VolumeLevelLimiter {
+private:
+    class Callback : public IAudioEndpointVolumeCallback {
+    public:
+        Callback(std::function<bool(uint32_t)> volumeLevelSetter);
+
+        ULONG STDMETHODCALLTYPE AddRef() override;
+        ULONG STDMETHODCALLTYPE Release() override;
+
+        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvInterface) override;
+
+        HRESULT STDMETHODCALLTYPE OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) override;
+
+        void SetMaxValue(std::optional<uint32_t> volumeLevel);
+
+    private:
+        std::atomic<ULONG> _ref{1};
+        std::atomic<std::optional<uint32_t>> _volumeLevel;
+        std::function<bool(uint32_t)> _volumeLevelSetter;
+    };
+
+public:
+    VolumeLevelLimiter();
+    ~VolumeLevelLimiter();
+
+    void SetMaxValue(std::optional<uint32_t> volumeLevel);
+
+    std::optional<uint32_t> GetVolumeLevel() const;
+    bool SetVolumeLevel(uint32_t volumeLevel) const;
+
+private:
+    OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
+    Callback _callback;
+
+    bool Initialize();
+};
+} // namespace Details
+
+bool Initialize();
+
+class Controller final : public Details::ControllerAbstract<Controller> {
+public:
+    Controller() = default;
+
+    void Play() override;
+    void Pause() override;
+
+    void LimitVolume(std::optional<uint32_t> volumeLevel) override;
+
+private:
+    std::mutex _mutex;
+    std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
+    Details::VolumeLevelLimiter _volumeLevelLimiter;
+};
+} // namespace Core::GlobalMedia

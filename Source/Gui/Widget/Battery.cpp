@@ -21,423 +21,349 @@
 #include <QPainter>
 #include <QPainterPath>
 
+namespace Gui::Widget {
 
-namespace Gui::Widget
-{
-    Battery::Battery(QWidget *parent) : QWidget{parent}
-    {
-        // Add bold
-        //
-        auto currFont = font();
-        currFont.setBold(true);
-        setFont(currFont);
+Battery::Battery(QWidget *parent) : QWidget{parent} {
+    // Add bold
+    //
+    auto currFont = font();
+    currFont.setBold(true);
+    setFont(currFont);
 
-        setBatterySize(30, 13);
+    setBatterySize(30, 13);
+}
+
+void Battery::paintEvent(QPaintEvent *event) {
+    QFontMetrics fontMetrics{this->fontMetrics()};
+
+    qreal headWidth = getHeadWidth();
+
+    _batteryRect =
+        QRectF{_borderWidth, _borderWidth, _batterySize.width() - headWidth, _batterySize.height()};
+
+    if (_isShowText) {
+        _textRect = QRectF{
+            _batteryRect.left(), _batteryRect.bottom() + _textPadding, (qreal)width(),
+            (qreal)fontMetrics.height()};
     }
 
-    void Battery::paintEvent(QPaintEvent *event)
+    _chargingRect = QRectF{
+        _batteryRect.right() + headWidth + ChargingPadding, _batteryRect.top(),
+        getChargingIconWidth(), _batterySize.height()};
+
+    _headRect = QRectF{
+        _batteryRect.right(), _batteryRect.bottom() / 3.0, headWidth, _batteryRect.bottom() / 3.0};
+
+    QPainter painter{this};
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+
+    drawBorder(painter);
+    drawBackground(painter);
+    drawHead(painter);
+    drawChargingIcon(painter);
+    drawText(painter);
+}
+
+void Battery::drawBorder(QPainter &painter) {
+    painter.save();
     {
-        QFontMetrics fontMetrics{this->fontMetrics()};
+        painter.setPen(QPen{_borderColor, _borderWidth});
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(_batteryRect, _borderRadius, _borderRadius);
+    }
+    painter.restore();
+}
 
-        qreal headWidth = getHeadWidth();
-
-        _batteryRect = QRectF{
-            _borderWidth,
-            _borderWidth,
-            _batterySize.width() - headWidth,
-            _batterySize.height()
-        };
-
-        if (_isShowText) {
-            _textRect = QRectF{
-                _batteryRect.left(),
-                _batteryRect.bottom() + _textPadding,
-                (qreal)width(),
-                (qreal)fontMetrics.height()
-            };
-        }
-
-        _chargingRect = QRectF{
-            _batteryRect.right() + headWidth + ChargingPadding,
-            _batteryRect.top(),
-            getChargingIconWidth(),
-            _batterySize.height()
-        };
-
-        _headRect = QRectF{
-            _batteryRect.right(),
-            _batteryRect.bottom() / 3.0,
-            headWidth,
-            _batteryRect.bottom() / 3.0
-        };
-
-
-        QPainter painter{this};
-        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-
-        drawBorder(painter);
-        drawBackground(painter);
-        drawHead(painter);
-        drawChargingIcon(painter);
-        drawText(painter);
+void Battery::drawBackground(QPainter &painter) {
+    if (_value <= _minValue) {
+        return;
     }
 
-    void Battery::drawBorder(QPainter &painter)
+    painter.save();
     {
-        painter.save();
-        {
-            painter.setPen(QPen{_borderColor, _borderWidth});
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRoundedRect(_batteryRect, _borderRadius, _borderRadius);
-        }
-        painter.restore();
+        qreal margin = /*qMin(width(), height()) / 20.0*/ 1.0;
+        qreal unit = (_batteryRect.width() - (margin * 2.0)) / 100.0;
+        qreal width = _value * unit;
+
+        QRectF rect{
+            _batteryRect.left() + margin, _batteryRect.top() + margin, width,
+            _batteryRect.height() - margin * 2};
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QBrush{_value /*>=*/ > _alarmValue ? _normalColor : _alarmColor});
+        painter.drawRoundedRect(rect, _backgroundRadius, _backgroundRadius);
+    }
+    painter.restore();
+}
+
+void Battery::drawHead(QPainter &painter) {
+    painter.save();
+    {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QBrush{_borderColor});
+        painter.drawRoundedRect(_headRect, _headRadius, _headRadius);
+    }
+    painter.restore();
+}
+
+void Battery::drawChargingIcon(QPainter &painter) {
+    if (!_isCharging) {
+        return;
     }
 
-    void Battery::drawBackground(QPainter &painter)
+    painter.save();
     {
-        if (_value <= _minValue) {
-            return;
-        }
+        constexpr qreal innerPadding = 2.0;
 
-        painter.save();
-        {
-            qreal margin = /*qMin(width(), height()) / 20.0*/ 1.0;
-            qreal unit = (_batteryRect.width() - (margin * 2.0)) / 100.0;
-            qreal width = _value * unit;
+        QPainterPath path;
 
-            QRectF rect{
-                _batteryRect.left() + margin,
-                _batteryRect.top() + margin,
-                width,
-                _batteryRect.height() - margin * 2
-            };
+        QPointF pointStart{_chargingRect.right() - innerPadding, _chargingRect.top()};
+        QPointF pointL1{
+            _chargingRect.left(),
+            _chargingRect.bottom() - _chargingRect.height() / 2.0 + innerPadding / 2.0};
+        QPointF pointR1{
+            _chargingRect.left() + _chargingRect.width() / 2.0 + innerPadding / 2.0,
+            _chargingRect.bottom() - _chargingRect.height() / 2.0 - innerPadding / 2.0};
+        QPointF pointL2{
+            _chargingRect.left() + _chargingRect.width() / 2.0 - innerPadding / 2.0,
+            _chargingRect.bottom() - _chargingRect.height() / 2.0 + innerPadding / 2.0};
+        QPointF pointR2{
+            _chargingRect.right(),
+            _chargingRect.bottom() - _chargingRect.height() / 2.0 - innerPadding / 2.0};
+        QPointF pointEnd{_chargingRect.left() + innerPadding, _chargingRect.bottom()};
 
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(QBrush{_value /*>=*/ > _alarmValue ? _normalColor : _alarmColor});
-            painter.drawRoundedRect(rect, _backgroundRadius, _backgroundRadius);
-        }
-        painter.restore();
+        path.moveTo(pointStart);
+        path.lineTo(pointL1);
+        path.lineTo(pointL2);
+        path.lineTo(pointEnd);
+        path.lineTo(pointR2);
+        path.lineTo(pointR1);
+        path.lineTo(pointStart);
+
+        painter.setPen(Qt::NoPen);
+        painter.fillPath(path, QBrush{Qt::black});
+    }
+    painter.restore();
+}
+
+void Battery::drawText(QPainter &painter) {
+    if (!_isShowText) {
+        return;
     }
 
-    void Battery::drawHead(QPainter &painter)
+    painter.save();
     {
-        painter.save();
-        {
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(QBrush{_borderColor});
-            painter.drawRoundedRect(_headRect, _headRadius, _headRadius);
-        }
-        painter.restore();
+        QTextOption textOption;
+        textOption.setWrapMode(QTextOption::NoWrap);
+
+        painter.drawText(_textRect, QString{"%1%"}.arg(_value), textOption);
+    }
+    painter.restore();
+}
+
+auto Battery::getMinValue() const -> ValueType {
+    return _minValue;
+}
+
+auto Battery::getMaxValue() const -> ValueType {
+    return _maxValue;
+}
+
+auto Battery::getAlarmValue() const -> ValueType {
+    return _alarmValue;
+}
+
+auto Battery::getValue() const -> ValueType {
+    return _value;
+}
+
+qreal Battery::getBorderWidth() const {
+    return _borderWidth;
+}
+
+qreal Battery::getBorderRadius() const {
+    return _borderRadius;
+}
+
+qreal Battery::getBackgroundRadius() const {
+    return _backgroundRadius;
+}
+
+qreal Battery::getHeadRadius() const {
+    return _headRadius;
+}
+
+QColor Battery::getBorderColor() const {
+    return _borderColor;
+}
+
+QColor Battery::getAlarmColor() const {
+    return _alarmColor;
+}
+
+QColor Battery::getNormalColor() const {
+    return _normalColor;
+}
+
+bool Battery::isCharging() const {
+    return _isCharging;
+}
+
+bool Battery::isShowText() const {
+    return _isShowText;
+}
+
+qreal Battery::getTextPadding() const {
+    return _textPadding;
+}
+
+// QSize Battery::sizeHint() const
+//{
+//    return QSize{30, 15};
+//}
+
+// QSize Battery::minimumSizeHint() const
+//{
+//    return QSize{30, 15};
+//}
+
+void Battery::setRange(ValueType minValue, ValueType maxValue) {
+    if (minValue >= maxValue) {
+        return;
     }
 
-    void Battery::drawChargingIcon(QPainter &painter)
-    {
-        if (!_isCharging) {
-            return;
-        }
+    _minValue = minValue;
+    _maxValue = maxValue;
 
-        painter.save();
-        {
-            constexpr qreal innerPadding = 2.0;
+    setValue(_value);
+    update();
+}
 
-            QPainterPath path;
+void Battery::setMinValue(ValueType value) {
+    setRange(value, _maxValue);
+}
 
-            QPointF pointStart{
-                _chargingRect.right() - innerPadding,
-                _chargingRect.top()
-            };
-            QPointF pointL1{
-                _chargingRect.left(),
-                _chargingRect.bottom() - _chargingRect.height() / 2.0 + innerPadding / 2.0
-            };
-            QPointF pointR1{
-                _chargingRect.left() + _chargingRect.width() / 2.0 + innerPadding / 2.0,
-                _chargingRect.bottom() - _chargingRect.height() / 2.0 - innerPadding / 2.0
-            };
-            QPointF pointL2{
-                _chargingRect.left() + _chargingRect.width() / 2.0 - innerPadding / 2.0,
-                _chargingRect.bottom() - _chargingRect.height() / 2.0 + innerPadding / 2.0
-            };
-            QPointF pointR2{
-                _chargingRect.right(),
-                _chargingRect.bottom() - _chargingRect.height() / 2.0 - innerPadding / 2.0
-            };
-            QPointF pointEnd{
-                _chargingRect.left() + innerPadding,
-                _chargingRect.bottom()
-            };
+void Battery::setMaxValue(ValueType value) {
+    setRange(_minValue, value);
+}
 
-            path.moveTo(pointStart);
-            path.lineTo(pointL1);
-            path.lineTo(pointL2);
-            path.lineTo(pointEnd);
-            path.lineTo(pointR2);
-            path.lineTo(pointR1);
-            path.lineTo(pointStart);
+void Battery::setAlarmValue(ValueType value) {
+    if (_alarmValue == value) {
+        return;
+    }
+    _alarmValue = value;
+    update();
+}
 
-            painter.setPen(Qt::NoPen);
-            painter.fillPath(path, QBrush{Qt::black});
-        }
-        painter.restore();
+void Battery::setValue(ValueType value) {
+    value = std::clamp(value, _minValue, _maxValue);
+    if (_value == value) {
+        return;
     }
 
-    void Battery::drawText(QPainter &painter)
-    {
-        if (!_isShowText) {
-            return;
-        }
+    _value = value;
+    update();
 
-        painter.save();
-        {
-            QTextOption textOption;
-            textOption.setWrapMode(QTextOption::NoWrap);
+    Q_EMIT valueChanged(_value);
+}
 
-            painter.drawText(
-                _textRect,
-                QString{"%1%"}.arg(_value),
-                textOption
-            );
-        }
-        painter.restore();
+void Battery::setBorderWidth(qreal value) {
+    if (_borderWidth == value) {
+        return;
     }
+    _borderWidth = value;
+    update();
+}
 
-    auto Battery::getMinValue() const -> ValueType
-    {
-        return _minValue;
+void Battery::setBorderRadius(qreal value) {
+    if (_borderRadius == value) {
+        return;
     }
+    _borderRadius = value;
+    update();
+}
 
-    auto Battery::getMaxValue() const -> ValueType
-    {
-        return _maxValue;
+void Battery::setBackgroundRadius(qreal value) {
+    if (_backgroundRadius == value) {
+        return;
     }
+    _backgroundRadius = value;
+    update();
+}
 
-    auto Battery::getAlarmValue() const -> ValueType
-    {
-        return _alarmValue;
+void Battery::setHeadRadius(qreal value) {
+    if (_headRadius == value) {
+        return;
     }
+    _headRadius = value;
+    update();
+}
 
-    auto Battery::getValue() const -> ValueType
-    {
-        return _value;
+void Battery::setBorderColor(const QColor &value) {
+    if (_borderColor == value) {
+        return;
     }
+    _borderColor = value;
+    update();
+}
 
-    qreal Battery::getBorderWidth() const
-    {
-        return _borderWidth;
+void Battery::setAlarmColor(const QColor &value) {
+    if (_alarmColor == value) {
+        return;
     }
+    _alarmColor = value;
+    update();
+}
 
-    qreal Battery::getBorderRadius() const
-    {
-        return _borderRadius;
+void Battery::setNormalColor(const QColor &value) {
+    if (_normalColor == value) {
+        return;
     }
+    _normalColor = value;
+    update();
+}
 
-    qreal Battery::getBackgroundRadius() const
-    {
-        return _backgroundRadius;
+void Battery::setCharging(bool value) {
+    if (_isCharging == value) {
+        return;
     }
+    _isCharging = value;
+    update();
 
-    qreal Battery::getHeadRadius() const
-    {
-        return _headRadius;
+    Q_EMIT chargingStateChanged(_isCharging);
+}
+
+void Battery::setShowText(bool value) {
+    if (_isShowText == value) {
+        return;
     }
+    _isShowText = value;
+    update();
+}
 
-    QColor Battery::getBorderColor() const
-    {
-        return _borderColor;
+void Battery::setTextPadding(qreal value) {
+    if (_textPadding == value) {
+        return;
     }
+    _textPadding = value;
+    update();
+}
 
-    QColor Battery::getAlarmColor() const
-    {
-        return _alarmColor;
-    }
+void Battery::setBatterySize(int width, int height) {
+    _batterySize = QSizeF{(qreal)width, (qreal)height};
 
-    QColor Battery::getNormalColor() const
-    {
-        return _normalColor;
-    }
+    QFontMetrics fontMetrics{this->fontMetrics()};
+    setFixedSize(
+        width + getChargingIconWidth() + getHeadWidth() + ChargingPadding,
+        height + (_isShowText ? (fontMetrics.height() + _textPadding) : 0));
+    update();
+}
 
-    bool Battery::isCharging() const
-    {
-        return _isCharging;
-    }
+qreal Battery::getHeadWidth() const {
+    return qMax(_batterySize.width() / 15.0, 3.0);
+}
 
-    bool Battery::isShowText() const
-    {
-        return _isShowText;
-    }
-
-    qreal Battery::getTextPadding() const
-    {
-        return _textPadding;
-    }
-
-    //QSize Battery::sizeHint() const
-    //{
-    //    return QSize{30, 15};
-    //}
-
-    //QSize Battery::minimumSizeHint() const
-    //{
-    //    return QSize{30, 15};
-    //}
-
-    void Battery::setRange(ValueType minValue, ValueType maxValue)
-    {
-        if (minValue >= maxValue) {
-            return;
-        }
-
-        _minValue = minValue;
-        _maxValue = maxValue;
-
-        setValue(_value);
-        update();
-    }
-
-    void Battery::setMinValue(ValueType value)
-    {
-        setRange(value, _maxValue);
-    }
-
-    void Battery::setMaxValue(ValueType value)
-    {
-        setRange(_minValue, value);
-    }
-
-    void Battery::setAlarmValue(ValueType value)
-    {
-        if (_alarmValue == value) {
-            return;
-        }
-        _alarmValue = value;
-        update();
-    }
-
-    void Battery::setValue(ValueType value)
-    {
-        value = std::clamp(value, _minValue, _maxValue);
-        if (_value == value) {
-            return;
-        }
-
-        _value = value;
-        update();
-
-        Q_EMIT valueChanged(_value);
-    }
-
-    void Battery::setBorderWidth(qreal value)
-    {
-        if (_borderWidth == value) {
-            return;
-        }
-        _borderWidth = value;
-        update();
-    }
-
-    void Battery::setBorderRadius(qreal value)
-    {
-        if (_borderRadius == value) {
-            return;
-        }
-        _borderRadius = value;
-        update();
-    }
-
-    void Battery::setBackgroundRadius(qreal value)
-    {
-        if (_backgroundRadius == value) {
-            return;
-        }
-        _backgroundRadius = value;
-        update();
-    }
-
-    void Battery::setHeadRadius(qreal value)
-    {
-        if (_headRadius == value) {
-            return;
-        }
-        _headRadius = value;
-        update();
-    }
-
-    void Battery::setBorderColor(const QColor &value)
-    {
-        if (_borderColor == value) {
-            return;
-        }
-        _borderColor = value;
-        update();
-    }
-
-    void Battery::setAlarmColor(const QColor &value)
-    {
-        if (_alarmColor == value) {
-            return;
-        }
-        _alarmColor = value;
-        update();
-    }
-
-    void Battery::setNormalColor(const QColor &value)
-    {
-        if (_normalColor == value) {
-            return;
-        }
-        _normalColor = value;
-        update();
-    }
-
-    void Battery::setCharging(bool value)
-    {
-        if (_isCharging == value) {
-            return;
-        }
-        _isCharging = value;
-        update();
-
-        Q_EMIT chargingStateChanged(_isCharging);
-    }
-
-    void Battery::setShowText(bool value)
-    {
-        if (_isShowText == value) {
-            return;
-        }
-        _isShowText = value;
-        update();
-    }
-
-    void Battery::setTextPadding(qreal value)
-    {
-        if (_textPadding == value) {
-            return;
-        }
-        _textPadding = value;
-        update();
-    }
-
-    void Battery::setBatterySize(int width, int height)
-    {
-        _batterySize = QSizeF{(qreal)width, (qreal)height};
-
-        QFontMetrics fontMetrics{this->fontMetrics()};
-        setFixedSize(
-            width + getChargingIconWidth() + getHeadWidth() + ChargingPadding,
-            height + (_isShowText ? (fontMetrics.height() + _textPadding) : 0)
-        );
-        update();
-    }
-
-    qreal Battery::getHeadWidth() const
-    {
-        return qMax(_batterySize.width() / 15.0, 3.0);
-    }
-
-    qreal Battery::getChargingIconWidth() const
-    {
-        return (_batterySize.height()) / 2.0;
-    }
-
+qreal Battery::getChargingIconWidth() const {
+    return (_batterySize.height()) / 2.0;
+}
 } // namespace Gui::Widget

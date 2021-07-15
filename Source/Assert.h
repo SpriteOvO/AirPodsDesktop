@@ -22,18 +22,13 @@
 
 #include "Helper.h"
 
-#define APD_ASSERT(condition)           \
-    while (!(condition)) {              \
-        Assert::Trigger(                \
-            TO_STRING(condition),       \
-            __FILE__,                   \
-            __LINE__                    \
-        );                              \
+#define APD_ASSERT(condition)                                                                      \
+    while (!(condition)) {                                                                         \
+        Assert::Trigger(TO_STRING(condition), __FILE__, __LINE__);                                 \
     }
 
+namespace Assert {
 
-namespace Assert
-{
-    void Trigger(const QString &condition, const QString &fileName, uint32_t line);
+void Trigger(const QString &condition, const QString &fileName, uint32_t line);
 
 } // namespace Assert

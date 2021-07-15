@@ -21,24 +21,20 @@
 #include <Config.h>
 
 #if defined APD_OS_WIN
-#   include "GlobalMedia_win.h"
+    #include "GlobalMedia_win.h"
 #endif
 
-namespace Core::GlobalMedia
-{
-    inline void Play()
-    {
-        Controller::GetInstance().Play();
-    }
+namespace Core::GlobalMedia {
 
-    inline void Pause()
-    {
-        Controller::GetInstance().Pause();
-    }
+inline void Play() {
+    Controller::GetInstance().Play();
+}
 
-    inline void LimitVolume(std::optional<uint32_t> volumeLevel)
-    {
-        Controller::GetInstance().LimitVolume(std::move(volumeLevel));
-    }
+inline void Pause() {
+    Controller::GetInstance().Pause();
+}
 
+inline void LimitVolume(std::optional<uint32_t> volumeLevel) {
+    Controller::GetInstance().LimitVolume(std::move(volumeLevel));
+}
 } // namespace Core::GlobalMedia

@@ -18,34 +18,32 @@
 
 #pragma once
 
-#include <string>
 #include <QString>
+#include <string>
 
 #include "../Status.h"
 
+namespace Core::Update {
 
-namespace Core::Update
-{
-    struct Info
-    {
-        using FnProgress = std::function<bool(size_t downloaded, size_t total)>;
+struct Info {
+    using FnProgress = std::function<bool(size_t downloaded, size_t total)>;
 
-        bool CanAutoUpdate() const;
-        Status DownloadAndInstall(const FnProgress &progressCallback) const;
-        void PopupLatestUrl() const;
+    bool CanAutoUpdate() const;
+    Status DownloadAndInstall(const FnProgress &progressCallback) const;
+    void PopupLatestUrl() const;
 
-        bool needToUpdate{false};
-        QString localVer;
-        QString latestVer;
-        QString latestUrl;
-        QString latestFileName;
-        std::string latestFileUrl;
-        size_t fileSize{0};
-        QString changeLog;
-    };
+    bool needToUpdate{false};
+    QString localVer;
+    QString latestVer;
+    QString latestUrl;
+    QString latestFileName;
+    std::string latestFileUrl;
+    size_t fileSize{0};
+    QString changeLog;
+};
 
-    using StatusInfo = std::pair<Status, std::optional<Info>>;
+using StatusInfo = std::pair<Status, std::optional<Info>>;
 
-    StatusInfo Check();
+StatusInfo Check();
 
 } // namespace Core::Update

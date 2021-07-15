@@ -21,113 +21,105 @@
 #include <Config.h>
 
 #if !defined APD_OS_WIN
-#   error "This file shouldn't be compiled."
+    #error "This file shouldn't be compiled."
 #endif
 
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Storage.Streams.h>
-#include <winrt/Windows.Devices.Enumeration.h>
 #include <winrt/Windows.Devices.Bluetooth.Advertisement.h>
+#include <winrt/Windows.Devices.Enumeration.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Networking.h>
+#include <winrt/Windows.Storage.Streams.h>
 
 #include "Bluetooth_abstract.h"
 
+namespace Core::Bluetooth {
 
-namespace Core::Bluetooth
-{
-    namespace WinrtFoundation = winrt::Windows::Foundation;
-    namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
-    namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
-    namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
+namespace WinrtFoundation = winrt::Windows::Foundation;
+namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
+namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
+namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
 
-    bool Initialize();
+bool Initialize();
 
-    class Device final : public Details::DeviceAbstract<uint64_t>
-    {
-    public:
-        Device(WinrtBlutooth::BluetoothDevice device);
-        Device(const Device &rhs);
-        Device(Device &&rhs) noexcept;
-        ~Device();
+class Device final : public Details::DeviceAbstract<uint64_t> {
+public:
+    Device(WinrtBlutooth::BluetoothDevice device);
+    Device(const Device &rhs);
+    Device(Device &&rhs) noexcept;
+    ~Device();
 
-        Device& operator=(const Device &rhs);
-        Device& operator=(Device &&rhs) noexcept;
+    Device &operator=(const Device &rhs);
+    Device &operator=(Device &&rhs) noexcept;
 
-        uint64_t GetAddress() const override;
-        std::string GetDisplayName() const override;
-        uint16_t GetVendorId() const override;
-        uint16_t GetProductId() const override;
-        DeviceState GetConnectionState() const override;
+    uint64_t GetAddress() const override;
+    std::string GetDisplayName() const override;
+    uint16_t GetVendorId() const override;
+    uint16_t GetProductId() const override;
+    DeviceState GetConnectionState() const override;
 
-    private:
-        constexpr static auto kPropertyBluetoothVendorId = L"System.DeviceInterface.Bluetooth.VendorId";
-        constexpr static auto kPropertyBluetoothProductId = L"System.DeviceInterface.Bluetooth.ProductId";
-        constexpr static auto kPropertyAepContainerId = L"System.Devices.Aep.ContainerId";
+private:
+    constexpr static auto kPropertyBluetoothVendorId = L"System.DeviceInterface.Bluetooth.VendorId";
+    constexpr static auto kPropertyBluetoothProductId =
+        L"System.DeviceInterface.Bluetooth.ProductId";
+    constexpr static auto kPropertyAepContainerId = L"System.Devices.Aep.ContainerId";
 
-        std::optional<WinrtBlutooth::BluetoothDevice> _device;
-        mutable std::optional<WinrtDevicesEnumeration::DeviceInformation> _info;
-        winrt::event_token _tokenConnectionStatusChanged, _tokenNameChanged;
+    std::optional<WinrtBlutooth::BluetoothDevice> _device;
+    mutable std::optional<WinrtDevicesEnumeration::DeviceInformation> _info;
+    winrt::event_token _tokenConnectionStatusChanged, _tokenNameChanged;
 
-        void RegisterHandlers();
-        void UnregisterHandlers();
-        void CopyFrom(const Device &rhs);
-        void MoveFrom(Device &&rhs) noexcept;
+    void RegisterHandlers();
+    void UnregisterHandlers();
+    void CopyFrom(const Device &rhs);
+    void MoveFrom(Device &&rhs) noexcept;
 
-        const std::optional<WinrtDevicesEnumeration::DeviceInformation> & GetInfo() const;
+    const std::optional<WinrtDevicesEnumeration::DeviceInformation> &GetInfo() const;
 
-        template <class T>
-        inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const
-        {
-            WINRT_TRY {
-                const auto & optInfo = GetInfo();
-                if (!optInfo.has_value()) {
-                    SPDLOG_WARN("optInfo.has_value() false.");
-                    return defaultValue;
-                }
-
-                const auto boxed = optInfo->Properties().TryLookup(name);
-                return winrt::unbox_value_or<T>(boxed, defaultValue);
+    template <class T>
+    inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const {
+        WINRT_TRY {
+            const auto &optInfo = GetInfo();
+            if (!optInfo.has_value()) {
+                SPDLOG_WARN("optInfo.has_value() false.");
+                return defaultValue;
             }
-            WINRT_CATCH(ex) {
-                SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
-            }
-            return defaultValue;
+
+            const auto boxed = optInfo->Properties().TryLookup(name);
+            return winrt::unbox_value_or<T>(boxed, defaultValue);
         }
+        WINRT_CATCH(ex) {
+            SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
+        }
+        return defaultValue;
+    }
 
-        winrt::hstring GetAepId() const;
+    winrt::hstring GetAepId() const;
 
-        void OnConnectionStatusChanged(const WinrtBlutooth::BluetoothDevice &sender);
-        void OnNameChanged(const WinrtBlutooth::BluetoothDevice &sender);
-    };
+    void OnConnectionStatusChanged(const WinrtBlutooth::BluetoothDevice &sender);
+    void OnNameChanged(const WinrtBlutooth::BluetoothDevice &sender);
+};
 
-    namespace DeviceManager
-    {
-        std::vector<Device> GetDevicesByState(DeviceState state);
-        std::optional<Device> FindDevice(uint64_t address);
+namespace DeviceManager {
 
-    } // namespace DeviceManager
+std::vector<Device> GetDevicesByState(DeviceState state);
+std::optional<Device> FindDevice(uint64_t address);
 
-    class AdvertisementWatcher final :
-        public Details::AdvertisementWatcherAbstract<AdvertisementWatcher>
-    {
-    public:
-        using Timestamp = winrt::Windows::Foundation::DateTime;
+} // namespace DeviceManager
 
-        explicit AdvertisementWatcher();
+class AdvertisementWatcher final
+    : public Details::AdvertisementWatcherAbstract<AdvertisementWatcher> {
+public:
+    using Timestamp = winrt::Windows::Foundation::DateTime;
 
-        Status Start() override;
-        Status Stop() override;
+    explicit AdvertisementWatcher();
 
-    private:
-        WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
+    Status Start() override;
+    Status Stop() override;
 
-        void OnReceived(
-            const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args
-        );
-        void OnStopped(
-            const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args
-        );
-    };
+private:
+    WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
 
+    void OnReceived(const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
+    void OnStopped(const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);
+};
 } // namespace Core::Bluetooth

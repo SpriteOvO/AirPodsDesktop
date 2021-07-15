@@ -20,23 +20,24 @@
 
 #include "Logger.h"
 
+namespace Assert {
 
-namespace Assert
-{
-    void Trigger(const QString &condition, const QString &fileName, uint32_t line)
-    {
-        QString content = QString{
-            "Assertion triggered.\n"
-            "\n"
-            "Condition: %1\n"
-            "File: %2\n"
-            "Line: %3\n"}
-            .arg(condition)
-            .arg(fileName)
-            .arg(line);
+void Trigger(const QString &condition, const QString &fileName, uint32_t line) {
+    // clang-format off
 
-        Logger::DoError(content, true);
-        std::abort();
-    }
+    QString content = QString{
+        "Assertion triggered.\n"
+        "\n"
+        "Condition: %1\n"
+        "File: %2\n"
+        "Line: %3\n"}
+        .arg(condition)
+        .arg(fileName)
+        .arg(line);
 
+    // clang-format on
+
+    Logger::DoError(content, true);
+    std::abort();
+}
 } // namespace Assert

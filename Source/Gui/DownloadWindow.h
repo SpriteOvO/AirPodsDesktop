@@ -18,37 +18,34 @@
 
 #pragma once
 
-#include <thread>
-#include <atomic>
 #include <QDialog>
+#include <atomic>
+#include <thread>
 
 #include "../Core/Update.h"
 #include "../Utils.h"
 #include "ui_DownloadWindow.h"
 
+namespace Gui {
 
-namespace Gui
-{
-    class DownloadWindow : public QDialog
-    {
-        Q_OBJECT
+class DownloadWindow : public QDialog {
+    Q_OBJECT
 
-    public:
-        DownloadWindow(const Core::Update::Info &info, QWidget *parent = nullptr);
-        ~DownloadWindow();
+public:
+    DownloadWindow(const Core::Update::Info &info, QWidget *parent = nullptr);
+    ~DownloadWindow();
 
-    public Q_SLOTS:
-        void UpdateProgress(int downloaded, int total);
-        void OnFailed();
+public Q_SLOTS:
+    void UpdateProgress(int downloaded, int total);
+    void OnFailed();
 
-    private:
-        Ui::DownloadWindow _ui;
+private:
+    Ui::DownloadWindow _ui;
 
-        Core::Update::Info _info;
-        std::atomic<bool> _destroy{false};
-        std::thread _downloadThread;
+    Core::Update::Info _info;
+    std::atomic<bool> _destroy{false};
+    std::thread _downloadThread;
 
-        UTILS_QT_DISABLE_ESC_QUIT(DownloadWindow, QDialog);
-    };
-
+    UTILS_QT_DISABLE_ESC_QUIT(DownloadWindow, QDialog);
+};
 } // namespace Gui

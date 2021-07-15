@@ -25,44 +25,41 @@
 #include "../Utils.h"
 #include "ui_SettingsWindow.h"
 
+namespace Gui {
 
-namespace Gui
-{
-    class SettingsWindow : public QDialog
-    {
-        Q_OBJECT
+class SettingsWindow : public QDialog {
+    Q_OBJECT
 
-    public:
-        SettingsWindow(QWidget *parent = nullptr);
+public:
+    SettingsWindow(QWidget *parent = nullptr);
 
-    private:
-        Ui::SettingsWindow _ui;
+private:
+    Ui::SettingsWindow _ui;
 
-        QCheckBox *_checkBoxAutoRun;
-        QCheckBox *_checkBoxLowAudioLatency;
-        QCheckBox *_checkBoxAutomaticEarDetection;
-        QCheckBox *_checkReduceLoudSounds;
-        QLabel *_labelVolumeLevel;
-        QSlider *_sliderVolumeLevel;
-        constexpr static int kSliderVolumeLevelAlertValue = 70;
-        bool _sliderEnableVolumeLevelWarning = true;
-        QSlider *_sliderMaximumReceivingRange;
-        QPushButton *_buttonUnbindAirPods;
+    QCheckBox *_checkBoxAutoRun;
+    QCheckBox *_checkBoxLowAudioLatency;
+    QCheckBox *_checkBoxAutomaticEarDetection;
+    QCheckBox *_checkReduceLoudSounds;
+    QLabel *_labelVolumeLevel;
+    QSlider *_sliderVolumeLevel;
+    constexpr static int kSliderVolumeLevelAlertValue = 70;
+    bool _sliderEnableVolumeLevelWarning = true;
+    QSlider *_sliderMaximumReceivingRange;
+    QPushButton *_buttonUnbindAirPods;
 
-        Core::Settings::Data _data;
+    Core::Settings::Data _data;
 
-        void CreateUi();
-        void ConnectUi();
+    void CreateUi();
+    void ConnectUi();
 
-        void LoadCurrent();
-        void LoadDefault();
-        void Save();
+    void LoadCurrent();
+    void LoadDefault();
+    void Save();
 
-        void Update();
+    void Update();
 
-        void showEvent(QShowEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
-        UTILS_QT_DISABLE_ESC_QUIT(SettingsWindow, QDialog);
-    };
-
+    UTILS_QT_DISABLE_ESC_QUIT(SettingsWindow, QDialog);
+};
 } // namespace Gui

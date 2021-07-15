@@ -22,79 +22,74 @@
 
 #include "ui_InfoWindow.h"
 
+#include <QMediaPlayer>
 #include <QTimer>
 #include <QVideoWidget>
-#include <QMediaPlayer>
 
 #include "../Core/AirPods.h"
 #include "../Utils.h"
 #include "Widget/Battery.h"
 
+namespace Gui {
 
-namespace Gui
-{
-    class CloseButton;
-    class BatteryInfo;
+class CloseButton;
+class BatteryInfo;
 
-    enum class ButtonAction : uint32_t
-    {
-        NoButton,
-        Bind,
-    };
+enum class ButtonAction : uint32_t {
+    NoButton,
+    Bind,
+};
 
-    class InfoWindow : public QDialog
-    {
-        Q_OBJECT
+class InfoWindow : public QDialog {
+    Q_OBJECT
 
-    public:
-        InfoWindow(QWidget *parent = nullptr);
-        ~InfoWindow();
+public:
+    InfoWindow(QWidget *parent = nullptr);
+    ~InfoWindow();
 
-        void ShowSafety();
+    void ShowSafety();
 
-    Q_SIGNALS:
-        void ChangeButtonActionSafety(ButtonAction action);
-        void HideSafety();
-        void UpdateStateSafety(const Core::AirPods::State &state);
-        void DisconnectSafety(const QString &title);
+Q_SIGNALS:
+    void ChangeButtonActionSafety(ButtonAction action);
+    void HideSafety();
+    void UpdateStateSafety(const Core::AirPods::State &state);
+    void DisconnectSafety(const QString &title);
 
-    private:
-        Ui::InfoWindow _ui;
+private:
+    Ui::InfoWindow _ui;
 
-        QVideoWidget *_videoWidget = new QVideoWidget{this};
-        QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
+    QVideoWidget *_videoWidget = new QVideoWidget{this};
+    QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
 
-        QSize _screenSize;
-        QTimer *_showHideTimer = new QTimer{this},
-            *_autoHideTimer = new QTimer{this};
-        CloseButton *_closeButton;
-        Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
-        Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
-        ButtonAction _buttonAction{ButtonAction::NoButton};
+    QSize _screenSize;
+    QTimer *_showHideTimer = new QTimer{this}, *_autoHideTimer = new QTimer{this};
+    CloseButton *_closeButton;
+    Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
+    Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
+    ButtonAction _buttonAction{ButtonAction::NoButton};
 
-        bool _isShown{false};
-        bool _isAnimationPlaying{false};
+    bool _isShown{false};
+    bool _isAnimationPlaying{false};
 
-        constexpr static QSize _screenMargin{50, 100};
-        constexpr static int _moveStep = 2;
+    constexpr static QSize _screenMargin{50, 100};
+    constexpr static int _moveStep = 2;
 
-        void InitCommonButton();
+    void InitCommonButton();
 
-        void ChangeButtonAction(ButtonAction action);
-        void UpdateState(const Core::AirPods::State &state);
-        void Disconnect(const QString &title);
+    void ChangeButtonAction(ButtonAction action);
+    void UpdateState(const Core::AirPods::State &state);
+    void Disconnect(const QString &title);
 
-        void SetAnimation(Core::AirPods::Model model);
-        void PlayAnimation();
-        void StopAnimation();
+    void SetAnimation(Core::AirPods::Model model);
+    void PlayAnimation();
+    void StopAnimation();
 
-        void BindDevice();
+    void BindDevice();
 
-        void DoHide();
-        void OnButtonClicked();
-        void showEvent(QShowEvent *event) override;
+    void DoHide();
+    void OnButtonClicked();
+    void showEvent(QShowEvent *event) override;
 
-        UTILS_QT_DISABLE_ESC_QUIT(InfoWindow, QDialog);
-    };
-
+    UTILS_QT_DISABLE_ESC_QUIT(InfoWindow, QDialog);
+};
 } // namespace Gui

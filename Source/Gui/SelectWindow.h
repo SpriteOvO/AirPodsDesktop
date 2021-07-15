@@ -19,33 +19,30 @@
 #pragma once
 
 #include <QDialog>
-#include <QVector>
 #include <QString>
+#include <QVector>
 
 #include "ui_SelectWindow.h"
 
 #include "../Utils.h"
 
+namespace Gui {
 
-namespace Gui
-{
-    class SelectWindow : public QDialog
-    {
-        Q_OBJECT
+class SelectWindow : public QDialog {
+    Q_OBJECT
 
-    public:
-        SelectWindow(const QString &title, const QStringList &items, QWidget *parent = nullptr);
+public:
+    SelectWindow(const QString &title, const QStringList &items, QWidget *parent = nullptr);
 
-        bool HasResult() const;
-        int GetSeletedIndex() const;
+    bool HasResult() const;
+    int GetSeletedIndex() const;
 
-    private:
-        Ui::SelectWindow _ui;
-        QDialogButtonBox::StandardButton _clickedButton = QDialogButtonBox::NoButton;
+private:
+    Ui::SelectWindow _ui;
+    QDialogButtonBox::StandardButton _clickedButton = QDialogButtonBox::NoButton;
 
-        void OnButtonClicked(QDialogButtonBox::StandardButton button);
+    void OnButtonClicked(QDialogButtonBox::StandardButton button);
 
-        UTILS_QT_DISABLE_ESC_QUIT(SelectWindow, QDialog);
-    };
-
+    UTILS_QT_DISABLE_ESC_QUIT(SelectWindow, QDialog);
+};
 } // namespace Gui

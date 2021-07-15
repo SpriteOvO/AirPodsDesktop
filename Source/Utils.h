@@ -18,15 +18,15 @@
 
 #pragma once
 
-#include <mutex>
-#include <vector>
-#include <functional>
-#include <QDir>
-#include <QTimer>
-#include <QKeyEvent>
 #include <QApplication>
+#include <QDir>
+#include <QKeyEvent>
 #include <QPainterPath>
 #include <QStandardPaths>
+#include <QTimer>
+#include <functional>
+#include <mutex>
+#include <vector>
 
 #include <spdlog/spdlog.h>
 
@@ -35,121 +35,98 @@
 #include "Logger.h"
 
 #if defined APD_OS_WIN
-#   include "Core/OS/Windows.h"
+    #include "Core/OS/Windows.h"
 #endif
 
+namespace Utils {
+namespace Qt {
 
-namespace Utils
-{
-    namespace Qt
-    {
-#define UTILS_QT_DISABLE_ESC_QUIT(class_name, base_name)                    \
-        inline void class_name::keyPressEvent(QKeyEvent *event) override    \
-        {                                                                   \
-            /* Prevent users from closing window by pressing ESC */         \
-            if (event->key() == Qt::Key_Escape) {                           \
-                event->accept();                                            \
-            }                                                               \
-            else {                                                          \
-                base_name::keyPressEvent(event);                            \
-            }                                                               \
-        }
+#define UTILS_QT_DISABLE_ESC_QUIT(class_name, base_name)                                           \
+    inline void class_name::keyPressEvent(QKeyEvent *event) override {                             \
+        /* Prevent users from closing window by pressing ESC */                                    \
+        if (event->key() == Qt::Key_Escape) {                                                      \
+            event->accept();                                                                       \
+        } else {                                                                                   \
+            base_name::keyPressEvent(event);                                                       \
+        }                                                                                          \
+    }
 
-        inline void SetRoundedCorners(QWidget *widget, qreal radius)
-        {
-            QPainterPath path;
-            path.addRoundedRect(widget->rect(), radius, radius);
-            widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
-        }
+inline void SetRoundedCorners(QWidget *widget, qreal radius) {
+    QPainterPath path;
+    path.addRoundedRect(widget->rect(), radius, radius);
+    widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
+}
 
-        inline void Dispatch(std::function<void()> callback)
-        {
-            QTimer *timer = new QTimer;
-            timer->moveToThread(qApp->thread());
-            timer->setSingleShot(true);
-            QObject::connect(timer, &QTimer::timeout,
-                [timer, callback = std::move(callback)]() {
-                    callback();
-                    timer->deleteLater();
-                }
-            );
-            QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
-        }
+inline void Dispatch(std::function<void()> callback) {
+    QTimer *timer = new QTimer;
+    timer->moveToThread(qApp->thread());
+    timer->setSingleShot(true);
+    QObject::connect(timer, &QTimer::timeout, [timer, callback = std::move(callback)]() {
+        callback();
+        timer->deleteLater();
+    });
+    QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
+}
+} // namespace Qt
 
-    } // namespace Qt
+namespace Debug {
 
-    namespace Debug
-    {
-        inline void BreakPoint()
-        {
+inline void BreakPoint() {
 #if defined APD_DEBUG
-#   if !defined APD_MSVC
-#      error "Need to port."
-#   endif
+    #if !defined APD_MSVC
+        #error "Need to port."
+    #endif
 
-#   if defined APD_MSVC
-            __debugbreak();
-#   endif
+    #if defined APD_MSVC
+    __debugbreak();
+    #endif
 #else
-            SPDLOG_WARN("Triggered a break point.");
+    SPDLOG_WARN("Triggered a break point.");
 #endif
-        }
+}
+} // namespace Debug
 
-    } // namespace Debug
+namespace Text {
 
-    namespace Text
-    {
-        template <class String, std::enable_if_t<Helper::is_string_v<String>, int> = 0>
-        inline String ToLower(const String &str)
-        {
-            String result = str;
-            std::transform(result.begin(), result.end(), result.begin(), std::tolower);
-            return result;
-        }
+template <class String, std::enable_if_t<Helper::is_string_v<String>, int> = 0>
+inline String ToLower(const String &str) {
+    String result = str;
+    std::transform(result.begin(), result.end(), result.begin(), std::tolower);
+    return result;
+}
+} // namespace Text
 
-    } // namespace Text
+namespace File {
 
-    namespace File
-    {
-        inline QDir GetWorkspace()
-        {
-            auto location = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+inline QDir GetWorkspace() {
+    auto location = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
-            QDir result{std::move(location)};
-            if (!result.exists()) {
-                result.mkdir(".");
-            }
-            return result;
-        }
+    QDir result{std::move(location)};
+    if (!result.exists()) {
+        result.mkdir(".");
+    }
+    return result;
+}
+} // namespace File
 
-    } // namespace File
+namespace Process {
 
-    namespace Process
-    {
-        inline bool SingleInstance(const QString &instanceName)
-        {
+inline bool SingleInstance(const QString &instanceName) {
 #if !defined APD_OS_WIN
-#   error "Need to port."
+    #error "Need to port."
 #endif
-            HANDLE mutex = CreateMutexW(
-                nullptr,
-                false,
-                ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str()
-            );
-            uint32_t lastError = GetLastError();
+    HANDLE mutex = CreateMutexW(
+        nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
+    uint32_t lastError = GetLastError();
 
-            if (mutex == nullptr) {
-                Logger::DoError(
-                    QString{"Create instance mutex failed.\nErrorCode: %1"}.arg(lastError),
-                    false
-                );
-            }
+    if (mutex == nullptr) {
+        Logger::DoError(
+            QString{"Create instance mutex failed.\nErrorCode: %1"}.arg(lastError), false);
+    }
 
-            // No need to close the handle
-            //
-            return lastError != ERROR_ALREADY_EXISTS;
-        }
-
-    } // namespace Process
-
+    // No need to close the handle
+    //
+    return lastError != ERROR_ALREADY_EXISTS;
+}
+} // namespace Process
 } // namespace Utils

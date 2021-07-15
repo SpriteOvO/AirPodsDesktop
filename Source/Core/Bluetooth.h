@@ -21,22 +21,17 @@
 #include <Config.h>
 
 #if defined APD_OS_WIN
-#   include "Bluetooth_win.h"
+    #include "Bluetooth_win.h"
 #endif
-
 
 template <>
 inline QString Helper::ToString<Core::Bluetooth::AdvertisementWatcher::ReceivedData>(
-    const Core::Bluetooth::AdvertisementWatcher::ReceivedData &value
-    )
-{
+    const Core::Bluetooth::AdvertisementWatcher::ReceivedData &value) {
     QString manufacturerData;
 
-    for (const auto &keyValue : value.manufacturerDataMap)
-    {
-        manufacturerData += QString{"CompanyId: %1 Bytes: %2"}
-            .arg(keyValue.first)
-            .arg(ToString(keyValue.second));
+    for (const auto &keyValue : value.manufacturerDataMap) {
+        manufacturerData +=
+            QString{"CompanyId: %1 Bytes: %2"}.arg(keyValue.first).arg(ToString(keyValue.second));
     }
 
     return QString{"rssi: %1 address: %3\nmanufacturerData: %4"}

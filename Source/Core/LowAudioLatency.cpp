@@ -24,65 +24,54 @@
 
 #include "../Application.h"
 
+namespace Core::LowAudioLatency {
 
-namespace Core::LowAudioLatency
-{
-    class Controller : public QObject
-    {
-        Q_OBJECT
+class Controller : public QObject {
+    Q_OBJECT
 
-    public:
-        static auto& GetInstance() {
-            static Controller i;
-            return i;
-        }
-
-        Controller(QObject *parent = nullptr) : QObject{parent}
-        {
-            connect(
-                &_mediaPlayer,
-                qOverload<QMediaPlayer::Error>(&QMediaPlayer::error),
-                this,
-                &Controller::OnError
-            );
-
-            connect(this, &Controller::ControlSafety, this, &Controller::Control);
-
-            _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
-            _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
-            _mediaPlayer.setPlaylist(&_mediaPlaylist);
-        }
-
-    Q_SIGNALS:
-        void ControlSafety(bool enable);
-
-    private:
-        QMediaPlayer _mediaPlayer;
-        QMediaPlaylist _mediaPlaylist;
-
-        void Control(bool enable)
-        {
-            SPDLOG_INFO("LowAudioLatency::Controller Control: {}", enable);
-
-            if (enable) {
-                _mediaPlayer.play();
-            }
-            else {
-                _mediaPlayer.stop();
-            }
-        }
-
-        void OnError(QMediaPlayer::Error error) {
-            SPDLOG_WARN("LowAudioLatency::Controller error: {}", error);
-        }
-    };
-
-
-    void Control(bool enable)
-    {
-        Controller::GetInstance().ControlSafety(enable);
+public:
+    static auto &GetInstance() {
+        static Controller i;
+        return i;
     }
 
+    Controller(QObject *parent = nullptr) : QObject{parent} {
+        connect(
+            &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
+            &Controller::OnError);
+
+        connect(this, &Controller::ControlSafety, this, &Controller::Control);
+
+        _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
+        _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
+        _mediaPlayer.setPlaylist(&_mediaPlaylist);
+    }
+
+Q_SIGNALS:
+    void ControlSafety(bool enable);
+
+private:
+    QMediaPlayer _mediaPlayer;
+    QMediaPlaylist _mediaPlaylist;
+
+    void Control(bool enable) {
+        SPDLOG_INFO("LowAudioLatency::Controller Control: {}", enable);
+
+        if (enable) {
+            _mediaPlayer.play();
+        } else {
+            _mediaPlayer.stop();
+        }
+    }
+
+    void OnError(QMediaPlayer::Error error) {
+        SPDLOG_WARN("LowAudioLatency::Controller error: {}", error);
+    }
+};
+
+void Control(bool enable) {
+    Controller::GetInstance().ControlSafety(enable);
+}
 } // namespace Core::LowAudioLatency
 
 #include "LowAudioLatency.moc"

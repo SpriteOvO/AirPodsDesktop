@@ -18,49 +18,46 @@
 
 #pragma once
 
-#include <QSystemTrayIcon>
-#include <QMenu>
 #include <QAction>
+#include <QMenu>
+#include <QSystemTrayIcon>
 
-#include <Config.h>
 #include "../Core/AirPods.h"
 #include "SettingsWindow.h"
+#include <Config.h>
 
+namespace Gui {
 
-namespace Gui
-{
-    class SysTray : public QWidget
-    {
-        Q_OBJECT
+class SysTray : public QWidget {
+    Q_OBJECT
 
-    public:
-        SysTray();
+public:
+    SysTray();
 
-    Q_SIGNALS:
-        void UpdateStateSafety(const Core::AirPods::State &state);
-        void DisconnectSafety(const QString &title);
+Q_SIGNALS:
+    void UpdateStateSafety(const Core::AirPods::State &state);
+    void DisconnectSafety(const QString &title);
 
-    private:
-        QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
-        QMenu *_menu = new QMenu{this};
+private:
+    QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
+    QMenu *_menu = new QMenu{this};
 
-        QAction *_actionSettings = new QAction{tr("Settings"), this};
-        QAction *_actionAbout = new QAction{tr("About"), this};
-        QAction *_actionQuit = new QAction{tr("Quit"), this};
+    QAction *_actionSettings = new QAction{tr("Settings"), this};
+    QAction *_actionAbout = new QAction{tr("About"), this};
+    QAction *_actionQuit = new QAction{tr("Quit"), this};
 
-        void UpdateState(const Core::AirPods::State &state);
-        void Disconnect(const QString &title);
+    void UpdateState(const Core::AirPods::State &state);
+    void Disconnect(const QString &title);
 
-        void ShowInfoWindow();
+    void ShowInfoWindow();
 
-        void OnSettingsClicked();
-        void OnAboutClicked();
-        void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
+    void OnSettingsClicked();
+    void OnAboutClicked();
+    void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
 
-    protected:
-        Core::AirPods::State _state{};
+protected:
+    Core::AirPods::State _state{};
 
-        SettingsWindow _settingsWindow{this};
-    };
-
+    SettingsWindow _settingsWindow{this};
+};
 } // namespace Gui
