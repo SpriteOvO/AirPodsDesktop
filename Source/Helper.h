@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include <QString>
-#include <chrono>
-#include <condition_variable>
-#include <functional>
 #include <mutex>
-#include <thread>
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <functional>
+#include <condition_variable>
+#include <QString>
 
 #define __TO_STRING(expr) #expr
 #define TO_STRING(expr) __TO_STRING(expr)

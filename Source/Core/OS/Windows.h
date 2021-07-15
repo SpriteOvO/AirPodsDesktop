@@ -21,11 +21,11 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 
-#include <QString>
 #include <Windows.h>
-#include <spdlog/spdlog.h>
 #include <tlhelp32.h>
 #include <winrt/Windows.Foundation.h>
+#include <QString>
+#include <spdlog/spdlog.h>
 
 #include "../../Assert.h"
 

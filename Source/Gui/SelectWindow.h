@@ -19,8 +19,8 @@
 #pragma once
 
 #include <QDialog>
-#include <QString>
 #include <QVector>
+#include <QString>
 
 #include "ui_SelectWindow.h"
 

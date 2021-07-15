@@ -18,10 +18,10 @@
 
 #include "SettingsWindow.h"
 
-#include <QCheckBox>
-#include <QLabel>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QToolTip>
+#include <QLabel>
 
 using namespace std::chrono_literals;
 

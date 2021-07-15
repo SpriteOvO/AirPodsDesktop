@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <functional>
 #include <optional>
+#include <functional>
 
 #include "../Helper.h"
 #include "../Status.h"

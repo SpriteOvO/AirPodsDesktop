@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include <QMessageBox>
-#include <QString>
-#include <spdlog/fmt/ostr.h>
-#include <unordered_map>
 #include <variant>
+#include <unordered_map>
+#include <QString>
+#include <QMessageBox>
+#include <spdlog/fmt/ostr.h>
 
 #include "Config.h"
 #include "Helper.h"

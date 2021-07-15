@@ -28,19 +28,19 @@
 #define NOMINMAX
 
 #include <Windows.h>
+#include <mmdeviceapi.h>
 #include <audiopolicy.h>
 #include <endpointvolume.h>
-#include <mmdeviceapi.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Media.Control.h>
 
-#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
+#include <memory>
 
-#include "../Status.h"
 #include "GlobalMedia_abstract.h"
+#include "../Status.h"
 
 namespace Core::GlobalMedia {
 namespace Details {

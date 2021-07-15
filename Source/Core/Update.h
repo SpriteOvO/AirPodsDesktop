@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <QString>
 #include <string>
+#include <QString>
 
 #include "../Status.h"
 

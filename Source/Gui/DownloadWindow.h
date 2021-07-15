@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <QDialog>
-#include <atomic>
 #include <thread>
+#include <atomic>
+#include <QDialog>
 
 #include "../Core/Update.h"
 #include "../Utils.h"

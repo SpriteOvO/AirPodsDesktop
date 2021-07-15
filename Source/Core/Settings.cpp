@@ -18,13 +18,13 @@
 
 #include "Settings.h"
 
-#include <QDir>
 #include <mutex>
+#include <QDir>
 #include <spdlog/spdlog.h>
 
-#include "../Application.h"
 #include "../Helper.h"
 #include "../Logger.h"
+#include "../Application.h"
 #include "GlobalMedia.h"
 #include "LowAudioLatency.h"
 

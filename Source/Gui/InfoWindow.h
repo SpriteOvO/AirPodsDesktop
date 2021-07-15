@@ -22,9 +22,9 @@
 
 #include "ui_InfoWindow.h"
 
-#include <QMediaPlayer>
 #include <QTimer>
 #include <QVideoWidget>
+#include <QMediaPlayer>
 
 #include "../Core/AirPods.h"
 #include "../Utils.h"

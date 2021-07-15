@@ -18,11 +18,11 @@
 
 #include "DownloadWindow.h"
 
-#include <QMetaObject>
 #include <QPushButton>
+#include <QMetaObject>
 
-#include "../Application.h"
 #include "../Status.h"
+#include "../Application.h"
 
 using namespace std::chrono_literals;
 

@@ -18,19 +18,19 @@
 
 #include "Logger.h"
 
-#include <QDesktopServices>
+#include <QUrl>
 #include <QDir>
 #include <QMessageBox>
-#include <QUrl>
-#include <spdlog/pattern_formatter.h>
-#include <spdlog/sinks/daily_file_sink.h>
-#include <spdlog/sinks/sink.h>
+#include <QDesktopServices>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/sink.h>
+#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/pattern_formatter.h>
 
-#include "Application.h"
+#include <Config.h>
 #include "Helper.h"
 #include "Utils.h"
-#include <Config.h>
+#include "Application.h"
 
 #include "Core/OS/Windows.h"
 

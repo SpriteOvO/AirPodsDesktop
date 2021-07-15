@@ -18,15 +18,15 @@
 
 #pragma once
 
-#include <QApplication>
-#include <QDir>
-#include <QKeyEvent>
-#include <QPainterPath>
-#include <QStandardPaths>
-#include <QTimer>
-#include <functional>
 #include <mutex>
 #include <vector>
+#include <functional>
+#include <QDir>
+#include <QTimer>
+#include <QKeyEvent>
+#include <QApplication>
+#include <QPainterPath>
+#include <QStandardPaths>
 
 #include <spdlog/spdlog.h>
 

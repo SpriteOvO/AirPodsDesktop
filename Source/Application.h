@@ -18,15 +18,15 @@
 
 #pragma once
 
+#include <memory>
 #include <QApplication>
 #include <cxxopts.hpp>
-#include <memory>
 
 #include "Config.h"
-#include "Core/AirPods.h"
-#include "Gui/DownloadWindow.h"
-#include "Gui/InfoWindow.h"
 #include "Gui/SysTray.h"
+#include "Gui/InfoWindow.h"
+#include "Gui/DownloadWindow.h"
+#include "Core/AirPods.h"
 
 class Application : public QApplication {
 public:

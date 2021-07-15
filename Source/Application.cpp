@@ -21,12 +21,12 @@
 #include <QMessageBox>
 #include <spdlog/spdlog.h>
 
+#include <Config.h>
+#include "Logger.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/Settings.h"
 #include "Core/Update.h"
-#include "Logger.h"
-#include <Config.h>
 
 void Application::PreConstructorInit() {
     setAttribute(Qt::AA_DisableWindowContextHelpButton);

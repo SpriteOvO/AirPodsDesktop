@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include <QAction>
-#include <QMenu>
 #include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
 
+#include <Config.h>
 #include "../Core/AirPods.h"
 #include "SettingsWindow.h"
-#include <Config.h>
 
 namespace Gui {
 

@@ -18,18 +18,18 @@
 
 #include "Update.h"
 
-#include <QDesktopServices>
+#include <optional>
+#include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
-#include <QUrl>
 #include <QVersionNumber>
+#include <QDesktopServices>
 #include <cpr/cpr.h>
-#include <nlohmann/json.hpp>
-#include <optional>
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
 
-#include "../Application.h"
 #include "../Logger.h"
+#include "../Application.h"
 
 using json = nlohmann::json;
 

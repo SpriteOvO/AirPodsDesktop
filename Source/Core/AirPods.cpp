@@ -18,21 +18,21 @@
 
 #include "AirPods.h"
 
-#include <QMetaObject>
-#include <QVector>
-#include <chrono>
 #include <mutex>
+#include <chrono>
 #include <thread>
+#include <QVector>
+#include <QMetaObject>
 
 #include <spdlog/spdlog.h>
 
-#include "../Application.h"
-#include "../Assert.h"
-#include "../Gui/InfoWindow.h"
-#include "../Helper.h"
-#include "AppleCP.h"
 #include "Bluetooth.h"
+#include "AppleCP.h"
 #include "GlobalMedia.h"
+#include "../Helper.h"
+#include "../Assert.h"
+#include "../Application.h"
+#include "../Gui/InfoWindow.h"
 
 using namespace Core;
 using namespace std::chrono_literals;

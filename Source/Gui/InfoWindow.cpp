@@ -18,12 +18,12 @@
 
 #include "InfoWindow.h"
 
-#include <QPainter>
 #include <QScreen>
+#include <QPainter>
 
+#include "../Helper.h"
 #include "../Application.h"
 #include "../Core/AppleCP.h"
-#include "../Helper.h"
 #include "SelectWindow.h"
 
 using namespace std::chrono_literals;
