@@ -22,7 +22,8 @@
 
 namespace Assert {
 
-void Trigger(const QString &condition, const QString &fileName, uint32_t line) {
+void Trigger(const QString &condition, const QString &fileName, uint32_t line)
+{
     // clang-format off
 
     QString content = QString{

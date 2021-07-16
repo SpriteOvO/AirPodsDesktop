@@ -23,7 +23,8 @@
 
 namespace Gui::Widget {
 
-Battery::Battery(QWidget *parent) : QWidget{parent} {
+Battery::Battery(QWidget *parent) : QWidget{parent}
+{
     // Add bold
     //
     auto currFont = font();
@@ -33,7 +34,8 @@ Battery::Battery(QWidget *parent) : QWidget{parent} {
     setBatterySize(30, 13);
 }
 
-void Battery::paintEvent(QPaintEvent *event) {
+void Battery::paintEvent(QPaintEvent *event)
+{
     QFontMetrics fontMetrics{this->fontMetrics()};
 
     qreal headWidth = getHeadWidth();
@@ -64,7 +66,8 @@ void Battery::paintEvent(QPaintEvent *event) {
     drawText(painter);
 }
 
-void Battery::drawBorder(QPainter &painter) {
+void Battery::drawBorder(QPainter &painter)
+{
     painter.save();
     {
         painter.setPen(QPen{_borderColor, _borderWidth});
@@ -74,7 +77,8 @@ void Battery::drawBorder(QPainter &painter) {
     painter.restore();
 }
 
-void Battery::drawBackground(QPainter &painter) {
+void Battery::drawBackground(QPainter &painter)
+{
     if (_value <= _minValue) {
         return;
     }
@@ -96,7 +100,8 @@ void Battery::drawBackground(QPainter &painter) {
     painter.restore();
 }
 
-void Battery::drawHead(QPainter &painter) {
+void Battery::drawHead(QPainter &painter)
+{
     painter.save();
     {
         painter.setPen(Qt::NoPen);
@@ -106,7 +111,8 @@ void Battery::drawHead(QPainter &painter) {
     painter.restore();
 }
 
-void Battery::drawChargingIcon(QPainter &painter) {
+void Battery::drawChargingIcon(QPainter &painter)
+{
     if (!_isCharging) {
         return;
     }
@@ -146,7 +152,8 @@ void Battery::drawChargingIcon(QPainter &painter) {
     painter.restore();
 }
 
-void Battery::drawText(QPainter &painter) {
+void Battery::drawText(QPainter &painter)
+{
     if (!_isShowText) {
         return;
     }
@@ -161,59 +168,73 @@ void Battery::drawText(QPainter &painter) {
     painter.restore();
 }
 
-auto Battery::getMinValue() const -> ValueType {
+auto Battery::getMinValue() const -> ValueType
+{
     return _minValue;
 }
 
-auto Battery::getMaxValue() const -> ValueType {
+auto Battery::getMaxValue() const -> ValueType
+{
     return _maxValue;
 }
 
-auto Battery::getAlarmValue() const -> ValueType {
+auto Battery::getAlarmValue() const -> ValueType
+{
     return _alarmValue;
 }
 
-auto Battery::getValue() const -> ValueType {
+auto Battery::getValue() const -> ValueType
+{
     return _value;
 }
 
-qreal Battery::getBorderWidth() const {
+qreal Battery::getBorderWidth() const
+{
     return _borderWidth;
 }
 
-qreal Battery::getBorderRadius() const {
+qreal Battery::getBorderRadius() const
+{
     return _borderRadius;
 }
 
-qreal Battery::getBackgroundRadius() const {
+qreal Battery::getBackgroundRadius() const
+{
     return _backgroundRadius;
 }
 
-qreal Battery::getHeadRadius() const {
+qreal Battery::getHeadRadius() const
+{
     return _headRadius;
 }
 
-QColor Battery::getBorderColor() const {
+QColor Battery::getBorderColor() const
+{
     return _borderColor;
 }
 
-QColor Battery::getAlarmColor() const {
+QColor Battery::getAlarmColor() const
+{
     return _alarmColor;
 }
 
-QColor Battery::getNormalColor() const {
+QColor Battery::getNormalColor() const
+{
     return _normalColor;
 }
 
-bool Battery::isCharging() const {
+bool Battery::isCharging() const
+{
     return _isCharging;
 }
 
-bool Battery::isShowText() const {
+bool Battery::isShowText() const
+{
     return _isShowText;
 }
 
-qreal Battery::getTextPadding() const {
+qreal Battery::getTextPadding() const
+{
     return _textPadding;
 }
 
@@ -227,7 +248,8 @@ qreal Battery::getTextPadding() const {
 //    return QSize{30, 15};
 //}
 
-void Battery::setRange(ValueType minValue, ValueType maxValue) {
+void Battery::setRange(ValueType minValue, ValueType maxValue)
+{
     if (minValue >= maxValue) {
         return;
     }
@@ -239,15 +261,18 @@ void Battery::setRange(ValueType minValue, ValueType maxValue) {
     update();
 }
 
-void Battery::setMinValue(ValueType value) {
+void Battery::setMinValue(ValueType value)
+{
     setRange(value, _maxValue);
 }
 
-void Battery::setMaxValue(ValueType value) {
+void Battery::setMaxValue(ValueType value)
+{
     setRange(_minValue, value);
 }
 
-void Battery::setAlarmValue(ValueType value) {
+void Battery::setAlarmValue(ValueType value)
+{
     if (_alarmValue == value) {
         return;
     }
@@ -255,7 +280,8 @@ void Battery::setAlarmValue(ValueType value) {
     update();
 }
 
-void Battery::setValue(ValueType value) {
+void Battery::setValue(ValueType value)
+{
     value = std::clamp(value, _minValue, _maxValue);
     if (_value == value) {
         return;
@@ -267,7 +293,8 @@ void Battery::setValue(ValueType value) {
     Q_EMIT valueChanged(_value);
 }
 
-void Battery::setBorderWidth(qreal value) {
+void Battery::setBorderWidth(qreal value)
+{
     if (_borderWidth == value) {
         return;
     }
@@ -275,7 +302,8 @@ void Battery::setBorderWidth(qreal value) {
     update();
 }
 
-void Battery::setBorderRadius(qreal value) {
+void Battery::setBorderRadius(qreal value)
+{
     if (_borderRadius == value) {
         return;
     }
@@ -283,7 +311,8 @@ void Battery::setBorderRadius(qreal value) {
     update();
 }
 
-void Battery::setBackgroundRadius(qreal value) {
+void Battery::setBackgroundRadius(qreal value)
+{
     if (_backgroundRadius == value) {
         return;
     }
@@ -291,7 +320,8 @@ void Battery::setBackgroundRadius(qreal value) {
     update();
 }
 
-void Battery::setHeadRadius(qreal value) {
+void Battery::setHeadRadius(qreal value)
+{
     if (_headRadius == value) {
         return;
     }
@@ -299,7 +329,8 @@ void Battery::setHeadRadius(qreal value) {
     update();
 }
 
-void Battery::setBorderColor(const QColor &value) {
+void Battery::setBorderColor(const QColor &value)
+{
     if (_borderColor == value) {
         return;
     }
@@ -307,7 +338,8 @@ void Battery::setBorderColor(const QColor &value) {
     update();
 }
 
-void Battery::setAlarmColor(const QColor &value) {
+void Battery::setAlarmColor(const QColor &value)
+{
     if (_alarmColor == value) {
         return;
     }
@@ -315,7 +347,8 @@ void Battery::setAlarmColor(const QColor &value) {
     update();
 }
 
-void Battery::setNormalColor(const QColor &value) {
+void Battery::setNormalColor(const QColor &value)
+{
     if (_normalColor == value) {
         return;
     }
@@ -323,7 +356,8 @@ void Battery::setNormalColor(const QColor &value) {
     update();
 }
 
-void Battery::setCharging(bool value) {
+void Battery::setCharging(bool value)
+{
     if (_isCharging == value) {
         return;
     }
@@ -333,7 +367,8 @@ void Battery::setCharging(bool value) {
     Q_EMIT chargingStateChanged(_isCharging);
 }
 
-void Battery::setShowText(bool value) {
+void Battery::setShowText(bool value)
+{
     if (_isShowText == value) {
         return;
     }
@@ -341,7 +376,8 @@ void Battery::setShowText(bool value) {
     update();
 }
 
-void Battery::setTextPadding(qreal value) {
+void Battery::setTextPadding(qreal value)
+{
     if (_textPadding == value) {
         return;
     }
@@ -349,7 +385,8 @@ void Battery::setTextPadding(qreal value) {
     update();
 }
 
-void Battery::setBatterySize(int width, int height) {
+void Battery::setBatterySize(int width, int height)
+{
     _batterySize = QSizeF{(qreal)width, (qreal)height};
 
     QFontMetrics fontMetrics{this->fontMetrics()};
@@ -359,11 +396,13 @@ void Battery::setBatterySize(int width, int height) {
     update();
 }
 
-qreal Battery::getHeadWidth() const {
+qreal Battery::getHeadWidth() const
+{
     return qMax(_batterySize.width() / 15.0, 3.0);
 }
 
-qreal Battery::getChargingIconWidth() const {
+qreal Battery::getChargingIconWidth() const
+{
     return (_batterySize.height()) / 2.0;
 }
 } // namespace Gui::Widget

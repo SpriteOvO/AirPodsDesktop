@@ -30,7 +30,8 @@ using namespace WinrtBlutooth;
 using namespace WinrtBlutoothAdv;
 using namespace WinrtDevicesEnumeration;
 
-bool Initialize() {
+bool Initialize()
+{
     return OS::Windows::Winrt::Initialize();
 }
 
@@ -38,59 +39,72 @@ bool Initialize() {
 // Device
 //
 
-Device::Device(BluetoothDevice device) : _device{std::move(device)} {
+Device::Device(BluetoothDevice device) : _device{std::move(device)}
+{
     RegisterHandlers();
 }
 
-Device::Device(const Device &rhs) {
+Device::Device(const Device &rhs)
+{
     CopyFrom(rhs);
 }
 
-Device::Device(Device &&rhs) noexcept {
+Device::Device(Device &&rhs) noexcept
+{
     MoveFrom(std::move(rhs));
 }
 
-Device::~Device() {
+Device::~Device()
+{
     UnregisterHandlers();
 }
 
-Device &Device::operator=(const Device &rhs) {
+Device &Device::operator=(const Device &rhs)
+{
     CopyFrom(rhs);
     return *this;
 }
 
-Device &Device::operator=(Device &&rhs) noexcept {
+Device &Device::operator=(Device &&rhs) noexcept
+{
     MoveFrom(std::move(rhs));
     return *this;
 }
 
-uint64_t Device::GetAddress() const {
+uint64_t Device::GetAddress() const
+{
     return _device->BluetoothAddress();
 }
 
-std::string Device::GetDisplayName() const {
+std::string Device::GetDisplayName() const
+{
     return winrt::to_string(_device->Name());
 }
 
-uint16_t Device::GetVendorId() const {
+uint16_t Device::GetVendorId() const
+{
     return GetProperty<uint16_t>(kPropertyBluetoothVendorId, 0);
 }
 
-uint16_t Device::GetProductId() const {
+uint16_t Device::GetProductId() const
+{
     return GetProperty<uint16_t>(kPropertyBluetoothProductId, 0);
 }
 
-DeviceState Device::GetConnectionState() const {
+DeviceState Device::GetConnectionState() const
+{
     return _device->ConnectionStatus() == BluetoothConnectionStatus::Connected
                ? DeviceState::Connected
                : DeviceState::Disconnected;
 }
 
-winrt::hstring Device::GetAepId() const {
+winrt::hstring Device::GetAepId() const
+{
     return GetProperty<winrt::hstring>(kPropertyAepContainerId, {});
 }
 
-void Device::RegisterHandlers() {
+void Device::RegisterHandlers()
+{
     UnregisterHandlers();
 
     _tokenConnectionStatusChanged = _device->ConnectionStatusChanged(
@@ -100,7 +114,8 @@ void Device::RegisterHandlers() {
         [this](const BluetoothDevice &sender, IInspectable) { OnNameChanged(sender); });
 }
 
-void Device::UnregisterHandlers() {
+void Device::UnregisterHandlers()
+{
     if (_tokenConnectionStatusChanged) {
         _device->ConnectionStatusChanged(_tokenConnectionStatusChanged);
         _tokenConnectionStatusChanged = {};
@@ -112,20 +127,23 @@ void Device::UnregisterHandlers() {
     }
 }
 
-void Device::CopyFrom(const Device &rhs) {
+void Device::CopyFrom(const Device &rhs)
+{
     _device = rhs._device;
     _info = rhs._info;
     RegisterHandlers();
 }
 
-void Device::MoveFrom(Device &&rhs) noexcept {
+void Device::MoveFrom(Device &&rhs) noexcept
+{
     rhs.UnregisterHandlers();
     _device = std::move(rhs._device);
     _info = std::move(rhs._info);
     RegisterHandlers();
 }
 
-const std::optional<DeviceInformation> &Device::GetInfo() const {
+const std::optional<DeviceInformation> &Device::GetInfo() const
+{
     if (_info.has_value()) {
         return _info;
     }
@@ -142,7 +160,8 @@ const std::optional<DeviceInformation> &Device::GetInfo() const {
                 }
             ).get();
             // clang-format on
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN("DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
         }
     }}.join();
@@ -150,11 +169,13 @@ const std::optional<DeviceInformation> &Device::GetInfo() const {
     return _info;
 }
 
-void Device::OnConnectionStatusChanged(const BluetoothDevice &sender) {
+void Device::OnConnectionStatusChanged(const BluetoothDevice &sender)
+{
     CbConnectionStatusChanged().Invoke(GetConnectionState());
 }
 
-void Device::OnNameChanged(const BluetoothDevice &sender) {
+void Device::OnNameChanged(const BluetoothDevice &sender)
+{
     CbNameChanged().Invoke(GetDisplayName());
 }
 
@@ -163,14 +184,17 @@ void Device::OnNameChanged(const BluetoothDevice &sender) {
 //
 
 namespace Details {
-class DeviceManager final : Details::DeviceManagerAbstract<Device> {
+class DeviceManager final : Details::DeviceManagerAbstract<Device>
+{
 public:
-    static DeviceManager &GetInstance() {
+    static DeviceManager &GetInstance()
+    {
         static DeviceManager i;
         return i;
     }
 
-    std::vector<Device> GetDevicesByState(DeviceState state) const override {
+    std::vector<Device> GetDevicesByState(DeviceState state) const override
+    {
         std::vector<Device> result;
 
         try {
@@ -204,18 +228,21 @@ public:
                 try {
                     auto device = BluetoothDevice::FromIdAsync(deviceInfo.Id()).get();
                     result.emplace_back(std::move(device));
-                } catch (const OS::Windows::Winrt::Exception &ex) {
+                }
+                catch (const OS::Windows::Winrt::Exception &ex) {
                     SPDLOG_WARN("BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
                 }
             }
 
             return result;
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             return result;
         }
     }
 
-    std::optional<Device> FindDevice(uint64_t address) const override {
+    std::optional<Device> FindDevice(uint64_t address) const override
+    {
         auto devices = GetDevicesByState(Bluetooth::DeviceState::Paired);
         for (const auto &device : devices) {
             if (device.GetAddress() == address) {
@@ -229,7 +256,8 @@ public:
 
 namespace DeviceManager {
 
-std::vector<Device> GetDevicesByState(DeviceState state) {
+std::vector<Device> GetDevicesByState(DeviceState state)
+{
     std::vector<Device> result;
     std::thread{[&]() {
         result = Details::DeviceManager::GetInstance().GetDevicesByState(state);
@@ -237,7 +265,8 @@ std::vector<Device> GetDevicesByState(DeviceState state) {
     return result;
 }
 
-std::optional<Device> FindDevice(uint64_t address) {
+std::optional<Device> FindDevice(uint64_t address)
+{
     std::optional<Device> result;
     std::thread{[&]() {
         result = Details::DeviceManager::GetInstance().FindDevice(address);
@@ -250,30 +279,36 @@ std::optional<Device> FindDevice(uint64_t address) {
 // AdvertisementWatcher
 //
 
-AdvertisementWatcher::AdvertisementWatcher() {
+AdvertisementWatcher::AdvertisementWatcher()
+{
     _bleWatcher.Received(std::bind(&AdvertisementWatcher::OnReceived, this, _2));
     _bleWatcher.Stopped(std::bind(&AdvertisementWatcher::OnStopped, this, _2));
 }
 
-Status AdvertisementWatcher::Start() {
+Status AdvertisementWatcher::Start()
+{
     try {
         _bleWatcher.Start();
         return Status::Success;
-    } catch (const OS::Windows::Winrt::Exception &ex) {
+    }
+    catch (const OS::Windows::Winrt::Exception &ex) {
         return Status{Status::BluetoothAdvWatcherStartFailed}.SetAdditionalData(ex);
     }
 }
 
-Status AdvertisementWatcher::Stop() {
+Status AdvertisementWatcher::Stop()
+{
     try {
         _bleWatcher.Stop();
         return Status::Success;
-    } catch (const OS::Windows::Winrt::Exception &ex) {
+    }
+    catch (const OS::Windows::Winrt::Exception &ex) {
         return Status{Status::BluetoothAdvWatcherStopFailed}.SetAdditionalData(ex);
     }
 }
 
-void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEventArgs &args) {
+void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEventArgs &args)
+{
     ReceivedData receivedData;
 
     receivedData.rssi = args.RawSignalStrengthInDBm();
@@ -294,7 +329,8 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
     ReceivedCallbacks().Invoke(receivedData);
 }
 
-void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppedEventArgs &args) {
+void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppedEventArgs &args)
+{
     static std::unordered_map<BluetoothError, std::string> errorReasons = {
         {BluetoothError::Success, "Success"},
         {BluetoothError::RadioNotAvailable, "RadioNotAvailable"},
@@ -312,18 +348,22 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
     auto errorCode = args.Error();
 
     if (errorCode == BluetoothError::Success &&
-        status != BluetoothLEAdvertisementWatcherStatus::Aborted) {
+        status != BluetoothLEAdvertisementWatcherStatus::Aborted)
+    {
         StoppedCallbacks().Invoke();
-    } else {
+    }
+    else {
         std::string info;
 
         if (status == BluetoothLEAdvertisementWatcherStatus::Aborted) {
             info = "Aborted";
-        } else {
+        }
+        else {
             auto reasonIter = errorReasons.find(errorCode);
             if (reasonIter != errorReasons.end()) {
                 info = (*reasonIter).second;
-            } else {
+            }
+            else {
                 info = "Unknown error (" + std::to_string((uint32_t)errorCode) + ")";
             }
         }

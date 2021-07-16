@@ -28,7 +28,8 @@
 
 namespace Gui {
 
-class DownloadWindow : public QDialog {
+class DownloadWindow : public QDialog
+{
     Q_OBJECT
 
 public:

@@ -27,14 +27,16 @@ using namespace std::chrono_literals;
 
 namespace Gui {
 
-class TipLabel : public QLabel {
+class TipLabel : public QLabel
+{
     Q_OBJECT
 
 private:
     constexpr static auto content = "(?)";
 
 public:
-    TipLabel(QString text, QWidget *parent) : QLabel{content, parent}, _text{std::move(text)} {
+    TipLabel(QString text, QWidget *parent) : QLabel{content, parent}, _text{std::move(text)}
+    {
         QPalette palette = this->palette();
         palette.setColor(QPalette::WindowText, Qt::darkGray);
         setPalette(palette);
@@ -43,16 +45,19 @@ public:
 private:
     QString _text;
 
-    void enterEvent(QEvent *event) override {
+    void enterEvent(QEvent *event) override
+    {
         QToolTip::showText(QCursor::pos(), _text, this);
     }
 
-    void leaveEvent(QEvent *event) override {
+    void leaveEvent(QEvent *event) override
+    {
         QToolTip::hideText();
     }
 };
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent} {
+SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
+{
     _ui.setupUi(this);
 
     CreateUi();
@@ -61,7 +66,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent} {
     LoadCurrent();
 }
 
-void SettingsWindow::CreateUi() {
+void SettingsWindow::CreateUi()
+{
     _ui.gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     int row = -1, column = 0;
@@ -131,7 +137,8 @@ void SettingsWindow::CreateUi() {
     newLine(_buttonUnbindAirPods);
 }
 
-void SettingsWindow::ConnectUi() {
+void SettingsWindow::ConnectUi()
+{
     connect(_ui.buttonBox, &QDialogButtonBox::accepted, this, &SettingsWindow::Save);
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
@@ -164,7 +171,8 @@ void SettingsWindow::ConnectUi() {
                 QMessageBox::Ok | QMessageBox::Ignore, QMessageBox::Ok);
             if (button == QMessageBox::Ignore) {
                 _sliderEnableVolumeLevelWarning = false;
-            } else {
+            }
+            else {
                 _sliderVolumeLevel->setValue(kSliderVolumeLevelAlertValue - 1);
                 return;
             }
@@ -188,21 +196,25 @@ void SettingsWindow::ConnectUi() {
     });
 }
 
-void SettingsWindow::LoadCurrent() {
+void SettingsWindow::LoadCurrent()
+{
     _data = Core::Settings::GetCurrent();
     Update();
 }
 
-void SettingsWindow::LoadDefault() {
+void SettingsWindow::LoadDefault()
+{
     _data = Core::Settings::GetDefault();
     Update();
 }
 
-void SettingsWindow::Save() {
+void SettingsWindow::Save()
+{
     Core::Settings::SaveToCurrentAndLocal(_data);
 }
 
-void SettingsWindow::Update() {
+void SettingsWindow::Update()
+{
     _checkBoxAutoRun->setChecked(_data.auto_run);
 
     _checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
@@ -220,7 +232,8 @@ void SettingsWindow::Update() {
     _buttonUnbindAirPods->setDisabled(_data.device_address == 0);
 }
 
-void SettingsWindow::showEvent(QShowEvent *event) {
+void SettingsWindow::showEvent(QShowEvent *event)
+{
     LoadCurrent();
 }
 } // namespace Gui

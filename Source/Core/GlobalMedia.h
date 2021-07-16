@@ -26,15 +26,18 @@
 
 namespace Core::GlobalMedia {
 
-inline void Play() {
+inline void Play()
+{
     Controller::GetInstance().Play();
 }
 
-inline void Pause() {
+inline void Pause()
+{
     Controller::GetInstance().Pause();
 }
 
-inline void LimitVolume(std::optional<uint32_t> volumeLevel) {
+inline void LimitVolume(std::optional<uint32_t> volumeLevel)
+{
     Controller::GetInstance().LimitVolume(std::move(volumeLevel));
 }
 } // namespace Core::GlobalMedia

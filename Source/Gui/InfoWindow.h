@@ -40,7 +40,8 @@ enum class ButtonAction : uint32_t {
     Bind,
 };
 
-class InfoWindow : public QDialog {
+class InfoWindow : public QDialog
+{
     Q_OBJECT
 
 public:

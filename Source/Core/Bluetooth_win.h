@@ -42,7 +42,8 @@ namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
 
 bool Initialize();
 
-class Device final : public Details::DeviceAbstract<uint64_t> {
+class Device final : public Details::DeviceAbstract<uint64_t>
+{
 public:
     Device(WinrtBlutooth::BluetoothDevice device);
     Device(const Device &rhs);
@@ -76,7 +77,8 @@ private:
     const std::optional<WinrtDevicesEnumeration::DeviceInformation> &GetInfo() const;
 
     template <class T>
-    inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const {
+    inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const
+    {
         try {
             const auto &optInfo = GetInfo();
             if (!optInfo.has_value()) {
@@ -86,7 +88,8 @@ private:
 
             const auto boxed = optInfo->Properties().TryLookup(name);
             return winrt::unbox_value_or<T>(boxed, defaultValue);
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
         }
         return defaultValue;
@@ -106,7 +109,8 @@ std::optional<Device> FindDevice(uint64_t address);
 } // namespace DeviceManager
 
 class AdvertisementWatcher final
-    : public Details::AdvertisementWatcherAbstract<AdvertisementWatcher> {
+    : public Details::AdvertisementWatcherAbstract<AdvertisementWatcher>
+{
 public:
     using Timestamp = winrt::Windows::Foundation::DateTime;
 

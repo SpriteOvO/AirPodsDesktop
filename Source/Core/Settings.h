@@ -24,7 +24,8 @@
 
 namespace Core::Settings {
 
-class Data {
+class Data
+{
 public:
     // Increase this value when the current ABI cannot be backward compatible
     // For example, the name or type of an old key has changed

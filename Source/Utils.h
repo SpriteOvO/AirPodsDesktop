@@ -42,22 +42,26 @@ namespace Utils {
 namespace Qt {
 
 #define UTILS_QT_DISABLE_ESC_QUIT(class_name, base_name)                                           \
-    inline void class_name::keyPressEvent(QKeyEvent *event) override {                             \
+    inline void class_name::keyPressEvent(QKeyEvent *event) override                               \
+    {                                                                                              \
         /* Prevent users from closing window by pressing ESC */                                    \
         if (event->key() == Qt::Key_Escape) {                                                      \
             event->accept();                                                                       \
-        } else {                                                                                   \
+        }                                                                                          \
+        else {                                                                                     \
             base_name::keyPressEvent(event);                                                       \
         }                                                                                          \
     }
 
-inline void SetRoundedCorners(QWidget *widget, qreal radius) {
+inline void SetRoundedCorners(QWidget *widget, qreal radius)
+{
     QPainterPath path;
     path.addRoundedRect(widget->rect(), radius, radius);
     widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
 }
 
-inline void Dispatch(std::function<void()> callback) {
+inline void Dispatch(std::function<void()> callback)
+{
     QTimer *timer = new QTimer;
     timer->moveToThread(qApp->thread());
     timer->setSingleShot(true);
@@ -71,7 +75,8 @@ inline void Dispatch(std::function<void()> callback) {
 
 namespace Debug {
 
-inline void BreakPoint() {
+inline void BreakPoint()
+{
 #if defined APD_DEBUG
     #if !defined APD_MSVC
         #error "Need to port."
@@ -89,7 +94,8 @@ inline void BreakPoint() {
 namespace Text {
 
 template <class String, std::enable_if_t<Helper::is_string_v<String>, int> = 0>
-inline String ToLower(const String &str) {
+inline String ToLower(const String &str)
+{
     String result = str;
     std::transform(result.begin(), result.end(), result.begin(), std::tolower);
     return result;
@@ -98,7 +104,8 @@ inline String ToLower(const String &str) {
 
 namespace File {
 
-inline QDir GetWorkspace() {
+inline QDir GetWorkspace()
+{
     auto location = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
     QDir result{std::move(location)};
@@ -111,7 +118,8 @@ inline QDir GetWorkspace() {
 
 namespace Process {
 
-inline bool SingleInstance(const QString &instanceName) {
+inline bool SingleInstance(const QString &instanceName)
+{
 #if !defined APD_OS_WIN
     #error "Need to port."
 #endif

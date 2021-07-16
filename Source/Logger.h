@@ -30,6 +30,7 @@ void DoWarn(const QString &content);
 } // namespace Logger
 
 template <class OutStream>
-inline OutStream &operator<<(OutStream &outStream, const QString &qstr) {
+inline OutStream &operator<<(OutStream &outStream, const QString &qstr)
+{
     return outStream << qstr.toStdString().c_str();
 }

@@ -32,7 +32,8 @@
 
 namespace Gui::Widget {
 
-class Battery : public QWidget {
+class Battery : public QWidget
+{
     Q_OBJECT
 
     Q_PROPERTY(ValueType minValue READ getMinValue WRITE setMinValue)

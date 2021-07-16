@@ -36,7 +36,8 @@
 
 namespace Logger {
 
-void DoError(const QString &content, bool report) {
+void DoError(const QString &content, bool report)
+{
 #if !defined APD_OS_WIN
     #error "Need to port."
 #endif
@@ -74,7 +75,8 @@ void DoError(const QString &content, bool report) {
             QDesktopServices::openUrl(QUrl{Config::UrlIssues});
         }
 #endif
-    } else {
+    }
+    else {
         MessageBoxW(
             nullptr, content.toStdWString().c_str(), title.toStdWString().c_str(),
             MB_ICONERROR | MB_OK);
@@ -87,7 +89,8 @@ void DoError(const QString &content, bool report) {
     QMetaObject::invokeMethod(qApp, &Application::quit, Qt::QueuedConnection);
 }
 
-void DoWarn(const QString &content) {
+void DoWarn(const QString &content)
+{
     MessageBoxW(
         nullptr, content.toStdWString().c_str(),
         QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
@@ -97,16 +100,19 @@ void DoWarn(const QString &content) {
 namespace Details {
 
 template <class Mutex = std::mutex>
-class CustomFileSink : public spdlog::sinks::sink, Helper::NonCopyable {
+class CustomFileSink : public spdlog::sinks::sink, Helper::NonCopyable
+{
 public:
     CustomFileSink(const spdlog::filename_t &filename)
-        : _formatter{spdlog::details::make_unique<spdlog::pattern_formatter>()} {
+        : _formatter{spdlog::details::make_unique<spdlog::pattern_formatter>()}
+    {
         _fileHelper.open(filename, true);
     }
 
     ~CustomFileSink() override = default;
 
-    void log(const spdlog::details::log_msg &message) final {
+    void log(const spdlog::details::log_msg &message) final
+    {
         std::lock_guard<Mutex> lock{_mutex};
 
         // SinkIt
@@ -118,17 +124,20 @@ public:
         PostHandler(message, formatted);
     }
 
-    void flush() final {
+    void flush() final
+    {
         std::lock_guard<Mutex> lock{_mutex};
         Flush();
     }
 
-    void set_pattern(const std::string &pattern) final {
+    void set_pattern(const std::string &pattern) final
+    {
         std::lock_guard<Mutex> lock{_mutex};
         SetPattern(pattern);
     }
 
-    void set_formatter(std::unique_ptr<spdlog::formatter> sinkFormatter) final {
+    void set_formatter(std::unique_ptr<spdlog::formatter> sinkFormatter) final
+    {
         std::lock_guard<Mutex> lock{_mutex};
         SetFormatter(std::move(sinkFormatter));
     }
@@ -138,20 +147,23 @@ protected:
     Mutex _mutex;
     spdlog::details::file_helper _fileHelper;
 
-    void Flush() {
+    void Flush()
+    {
         _fileHelper.flush();
     }
 
-    void SetPattern(const std::string &pattern) {
+    void SetPattern(const std::string &pattern)
+    {
         SetFormatter(spdlog::details::make_unique<spdlog::pattern_formatter>(pattern));
     }
 
-    void SetFormatter(std::unique_ptr<spdlog::formatter> sinkFormatter) {
+    void SetFormatter(std::unique_ptr<spdlog::formatter> sinkFormatter)
+    {
         _formatter = std::move(sinkFormatter);
     }
 
-    void
-    PostHandler(const spdlog::details::log_msg &message, const spdlog::memory_buf_t &formatted) {
+    void PostHandler(const spdlog::details::log_msg &message, const spdlog::memory_buf_t &formatted)
+    {
         std::string stdPayload{message.payload.begin(), message.payload.end()};
 
 #if defined APD_DEBUG
@@ -175,7 +187,8 @@ protected:
 };
 } // namespace Details
 
-bool Initialize(bool enableTrace) {
+bool Initialize(bool enableTrace)
+{
 #if defined APD_DEBUG
     enableTrace = true;
 #endif
@@ -196,7 +209,8 @@ bool Initialize(bool enableTrace) {
         spdlog::set_error_handler([](const std::string &msg) { Utils::Debug::BreakPoint(); });
 #endif
         return true;
-    } catch (spdlog::spdlog_ex &exception) {
+    }
+    catch (spdlog::spdlog_ex &exception) {
         DoError(QString{"spdlog initialize failed.\n\n%1"}.arg(exception.what()), true);
         return false;
     }

@@ -36,7 +36,8 @@ using json = nlohmann::json;
 namespace Core::Update {
 namespace Impl {
 
-StatusInfo ParseResponse(const std::string &text) {
+StatusInfo ParseResponse(const std::string &text)
+{
     try {
         auto root = json::parse(text);
 
@@ -76,7 +77,8 @@ StatusInfo ParseResponse(const std::string &text) {
         QString changeLog;
         if (body.isEmpty()) {
             SPDLOG_WARN("ParseResponse: 'body' is empty.");
-        } else {
+        }
+        else {
             // Find change log
             //
             int clBeginPos = body.indexOf("Change log", 0, Qt::CaseInsensitive);
@@ -86,7 +88,8 @@ StatusInfo ParseResponse(const std::string &text) {
 
             if (clBeginPos == -1) {
                 SPDLOG_WARN("ParseResponse: Find change log block failed. body: {}", body);
-            } else {
+            }
+            else {
                 changeLog = body.right(body.length() - clBeginPos).trimmed();
                 changeLog = changeLog.right(changeLog.length() - changeLog.indexOf('\n')).trimmed();
 
@@ -173,8 +176,8 @@ StatusInfo ParseResponse(const std::string &text) {
             info.latestVer);
 
         return std::make_pair(Status::Success, std::move(info));
-
-    } catch (json::exception &exception) {
+    }
+    catch (json::exception &exception) {
         SPDLOG_WARN("Update: json parse failed. what: {}, text: {}", exception.what(), text);
 
         return std::make_pair(
@@ -184,7 +187,8 @@ StatusInfo ParseResponse(const std::string &text) {
 }
 } // namespace Impl
 
-bool Info::CanAutoUpdate() const {
+bool Info::CanAutoUpdate() const
+{
     if (latestFileName.isEmpty() || latestFileUrl.empty() || fileSize == 0) {
         SPDLOG_WARN("CanAutoUpdate: Nothing to download.");
         return false;
@@ -211,7 +215,8 @@ bool Info::CanAutoUpdate() const {
     return true;
 }
 
-Status Info::DownloadAndInstall(const FnProgress &progressCallback) const {
+Status Info::DownloadAndInstall(const FnProgress &progressCallback) const
+{
     if (!CanAutoUpdate()) {
         SPDLOG_WARN("Download: Cannot auto update.");
         return Status{Status::UpdateDownloadCannotAutoUpdate};
@@ -279,11 +284,13 @@ Status Info::DownloadAndInstall(const FnProgress &progressCallback) const {
     return Status::Success;
 }
 
-void Info::PopupLatestUrl() const {
+void Info::PopupLatestUrl() const
+{
     QDesktopServices::openUrl(QUrl{latestUrl});
 }
 
-StatusInfo Check() {
+StatusInfo Check()
+{
     cpr::Response response = cpr::Get(
         cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/latest"},
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});

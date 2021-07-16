@@ -35,10 +35,12 @@ struct BasicState {
     Battery battery;
     bool isCharging{false};
 
-    inline bool operator==(const BasicState &rhs) const {
+    inline bool operator==(const BasicState &rhs) const
+    {
         return battery == rhs.battery && isCharging == rhs.isCharging;
     }
-    inline bool operator!=(const BasicState &rhs) const {
+    inline bool operator!=(const BasicState &rhs) const
+    {
         return battery != rhs.battery || isCharging != rhs.isCharging;
     }
 };
@@ -59,11 +61,13 @@ enum class Side : uint32_t { Left, Right };
 struct PodState : Details::BasicState {
     bool isInEar{false};
 
-    inline bool operator==(const PodState &rhs) const {
+    inline bool operator==(const PodState &rhs) const
+    {
         return *(Details::BasicState *)this == *(Details::BasicState *)&rhs &&
                isInEar == rhs.isInEar;
     }
-    inline bool operator!=(const PodState &rhs) const {
+    inline bool operator!=(const PodState &rhs) const
+    {
         return *(Details::BasicState *)this != *(Details::BasicState *)&rhs ||
                isInEar != rhs.isInEar;
     }
@@ -73,11 +77,13 @@ struct CaseState : Details::BasicState {
     bool isBothPodsInCase{false};
     bool isLidOpened{false};
 
-    inline bool operator==(const CaseState &rhs) const {
+    inline bool operator==(const CaseState &rhs) const
+    {
         return *(Details::BasicState *)this == *(Details::BasicState *)&rhs &&
                isBothPodsInCase == rhs.isBothPodsInCase && isLidOpened == rhs.isLidOpened;
     }
-    inline bool operator!=(const CaseState &rhs) const {
+    inline bool operator!=(const CaseState &rhs) const
+    {
         return *(Details::BasicState *)this != *(Details::BasicState *)&rhs ||
                isBothPodsInCase != rhs.isBothPodsInCase || isLidOpened != rhs.isLidOpened;
     }
@@ -86,10 +92,12 @@ struct CaseState : Details::BasicState {
 struct PodsState {
     PodState left, right;
 
-    inline bool operator==(const PodsState &rhs) const {
+    inline bool operator==(const PodsState &rhs) const
+    {
         return left == rhs.left && right == rhs.right;
     }
-    inline bool operator!=(const PodsState &rhs) const {
+    inline bool operator!=(const PodsState &rhs) const
+    {
         return left != rhs.left || right != rhs.right;
     }
 };
@@ -99,10 +107,12 @@ struct State {
     PodsState pods;
     CaseState caseBox;
 
-    inline bool operator==(const State &rhs) const {
+    inline bool operator==(const State &rhs) const
+    {
         return model == rhs.model && pods == rhs.pods && caseBox == rhs.caseBox;
     }
-    inline bool operator!=(const State &rhs) const {
+    inline bool operator!=(const State &rhs) const
+    {
         return model != rhs.model || pods != rhs.pods || caseBox != rhs.caseBox;
     }
 };
@@ -115,7 +125,8 @@ void OnQuit();
 } // namespace Core::AirPods
 
 template <>
-inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model &value) {
+inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model &value)
+{
     switch (value) {
     case Core::AirPods::Model::AirPods_1:
         return "AirPods 1";
@@ -135,7 +146,8 @@ inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model
 }
 
 template <>
-inline QString Helper::ToString<Core::AirPods::Side>(const Core::AirPods::Side &value) {
+inline QString Helper::ToString<Core::AirPods::Side>(const Core::AirPods::Side &value)
+{
     switch (value) {
     case Core::AirPods::Side::Left:
         return "Left";

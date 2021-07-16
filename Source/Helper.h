@@ -43,7 +43,8 @@ struct Overloaded : Ts... {
 template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 
-class NonCopyable {
+class NonCopyable
+{
 protected:
     NonCopyable() = default;
 
@@ -55,7 +56,8 @@ template <class T>
 QString ToString(const T &value);
 
 template <>
-inline QString ToString<std::vector<uint8_t>>(const std::vector<uint8_t> &value) {
+inline QString ToString<std::vector<uint8_t>>(const std::vector<uint8_t> &value)
+{
     QString result;
 
     size_t bytesSize = value.size();
@@ -74,9 +76,11 @@ inline QString ToString<std::vector<uint8_t>>(const std::vector<uint8_t> &value)
 using CbHandle = uint64_t;
 
 template <class Function>
-class Callback {
+class Callback
+{
 public:
-    inline CbHandle Register(Function &&callback) {
+    inline CbHandle Register(Function &&callback)
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         auto thisHandle = _nextHandle++;
@@ -84,7 +88,8 @@ public:
         return thisHandle;
     }
 
-    inline bool Unregister(CbHandle handle) {
+    inline bool Unregister(CbHandle handle)
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         auto iter =
@@ -100,14 +105,16 @@ public:
         return true;
     }
 
-    inline void UnregisterAll() {
+    inline void UnregisterAll()
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         _callbacks.clear();
     }
 
     template <class... Args>
-    inline void Invoke(Args &&...args) const {
+    inline void Invoke(Args &&...args) const
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         for (const auto &callbackInfo : _callbacks) {
@@ -115,7 +122,8 @@ public:
         }
     }
 
-    inline Callback &operator+=(Function &&callback) {
+    inline Callback &operator+=(Function &&callback)
+    {
         Register(std::move(callback));
         return *this;
     }
@@ -126,20 +134,24 @@ private:
     std::vector<std::pair<CbHandle, Function>> _callbacks;
 };
 
-class Timer {
+class Timer
+{
 public:
     Timer() = default;
 
     template <class... Args>
-    inline Timer(Args &&...args) {
+    inline Timer(Args &&...args)
+    {
         Start(std::forward<Args>(args)...);
     }
 
-    inline ~Timer() {
+    inline ~Timer()
+    {
         Stop();
     }
 
-    inline void Start(std::chrono::milliseconds interval, std::function<void()> callback) {
+    inline void Start(std::chrono::milliseconds interval, std::function<void()> callback)
+    {
         Stop();
         _destroy = false;
         _interval = std::move(interval);
@@ -147,14 +159,16 @@ public:
         _thread = std::thread{&Timer::Thread, this, std::move(callback)};
     }
 
-    inline void Stop() {
+    inline void Stop()
+    {
         _destroy = true;
         if (_thread.joinable()) {
             _thread.join();
         }
     }
 
-    inline void Reset() {
+    inline void Reset()
+    {
         _deadline = Clock::now() + _interval.load();
     }
 
@@ -167,7 +181,8 @@ private:
     std::atomic<TimePoint> _deadline;
     std::thread _thread;
 
-    inline void Thread(std::function<void()> callback) {
+    inline void Thread(std::function<void()> callback)
+    {
         while (true) {
             std::this_thread::sleep_until(_deadline.load());
             if (_destroy) {

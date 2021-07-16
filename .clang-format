@@ -28,17 +28,17 @@ BinPackArguments: true
 BinPackParameters: true
 BraceWrapping:
   AfterCaseLabel:  false
-  AfterClass:      false
-  AfterControlStatement: Never
+  AfterClass:      true
+  AfterControlStatement: MultiLine
   AfterEnum:       false
-  AfterFunction:   false
+  AfterFunction:   true
   AfterNamespace:  false
   AfterObjCDeclaration: false
   AfterStruct:     false
   AfterUnion:      false
   AfterExternBlock: false
-  BeforeCatch:     false
-  BeforeElse:      false
+  BeforeCatch:     true
+  BeforeElse:      true
   BeforeLambdaBody: false
   BeforeWhile:     false
   IndentBraces:    false
@@ -46,7 +46,7 @@ BraceWrapping:
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
 BreakBeforeBinaryOperators: None
-BreakBeforeBraces: Attach
+BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: false
 BreakInheritanceList: BeforeColon
 BreakBeforeTernaryOperators: true

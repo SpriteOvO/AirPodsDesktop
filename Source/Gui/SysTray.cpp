@@ -23,7 +23,8 @@
 
 namespace Gui {
 
-SysTray::SysTray() {
+SysTray::SysTray()
+{
     connect(_actionSettings, &QAction::triggered, this, &SysTray::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &SysTray::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &Application::quit, Qt::QueuedConnection);
@@ -50,7 +51,8 @@ SysTray::SysTray() {
     }
 }
 
-void SysTray::UpdateState(const Core::AirPods::State &state) {
+void SysTray::UpdateState(const Core::AirPods::State &state)
+{
     _state = state;
 
     QString toolTip;
@@ -82,26 +84,32 @@ void SysTray::UpdateState(const Core::AirPods::State &state) {
     _tray->setToolTip(toolTip);
 }
 
-void SysTray::Disconnect(const QString &title) {
+void SysTray::Disconnect(const QString &title)
+{
     _state = Core::AirPods::State{};
     _tray->setToolTip(title);
 }
 
-void SysTray::ShowInfoWindow() {
+void SysTray::ShowInfoWindow()
+{
     App->GetInfoWindow()->ShowSafety();
 }
 
-void SysTray::OnSettingsClicked() {
+void SysTray::OnSettingsClicked()
+{
     _settingsWindow.show();
 }
 
-void SysTray::OnAboutClicked() {
+void SysTray::OnAboutClicked()
+{
     Application::PopupAboutWindow(this);
 }
 
-void SysTray::OnIconClicked(QSystemTrayIcon::ActivationReason reason) {
+void SysTray::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
+{
     if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger ||
-        reason == QSystemTrayIcon::MiddleClick) {
+        reason == QSystemTrayIcon::MiddleClick)
+    {
         ShowInfoWindow();
     }
 }

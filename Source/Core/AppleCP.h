@@ -97,7 +97,8 @@ constexpr uint16_t VendorId = 76;
 //      one earphone is working and the other is charging (lid opened), the Bluetooth device in
 //      both earphones is made discoverable, and the battery of the case is sent and synced.
 //
-class AirPods : Header {
+class AirPods : Header
+{
 public:
     static bool IsValid(const std::vector<uint8_t> &data);
     static Core::AirPods::Model GetModel(uint16_t modelId);
@@ -158,7 +159,8 @@ template <class T>
 constexpr inline bool IsACPStruct = std::is_base_of_v<Header, T>;
 
 template <class T, std::enable_if_t<IsACPStruct<T>, int> = 0>
-std::optional<T> As(const std::vector<uint8_t> &data) {
+std::optional<T> As(const std::vector<uint8_t> &data)
+{
     if (!T::IsValid(data)) {
         return std::nullopt;
     }

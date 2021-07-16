@@ -34,7 +34,8 @@ enum class DeviceState : uint32_t {
 namespace Details {
 
 template <class ConcreteAddressT>
-class DeviceAbstract {
+class DeviceAbstract
+{
 public:
     using FnConnectionStatusChanged = std::function<void(DeviceState)>;
     using FnNameChanged = std::function<void(const std::string &)>;
@@ -47,10 +48,12 @@ public:
     virtual uint16_t GetVendorId() const = 0;
     virtual DeviceState GetConnectionState() const = 0;
 
-    inline auto &CbConnectionStatusChanged() {
+    inline auto &CbConnectionStatusChanged()
+    {
         return _cbConnectionStatusChanged;
     }
-    inline auto &CbNameChanged() {
+    inline auto &CbNameChanged()
+    {
         return _cbNameChanged;
     }
 
@@ -60,7 +63,8 @@ private:
 };
 
 template <class ConcreteDeviceT>
-class DeviceManagerAbstract {
+class DeviceManagerAbstract
+{
 public:
     virtual inline ~DeviceManagerAbstract() {}
 
@@ -69,7 +73,8 @@ public:
 };
 
 template <class Derived>
-class AdvertisementWatcherAbstract {
+class AdvertisementWatcherAbstract
+{
 public:
     struct ReceivedData {
         int16_t rssi{};
@@ -83,13 +88,16 @@ public:
 
     virtual inline ~AdvertisementWatcherAbstract() {}
 
-    inline auto &ReceivedCallbacks() {
+    inline auto &ReceivedCallbacks()
+    {
         return _receivedCallbacks;
     }
-    inline auto &StoppedCallbacks() {
+    inline auto &StoppedCallbacks()
+    {
         return _stoppedCallbacks;
     }
-    inline auto &ErrorCallbacks() {
+    inline auto &ErrorCallbacks()
+    {
         return _errorCallbacks;
     }
 

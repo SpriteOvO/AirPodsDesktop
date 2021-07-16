@@ -28,12 +28,14 @@
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
-void Application::PreConstructorInit() {
+void Application::PreConstructorInit()
+{
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
 }
 
-void Application::InitSettings() {
+void Application::InitSettings()
+{
     Status status = Core::Settings::LoadFromLocal();
     if (status.IsFailed()) {
         switch (status.GetValue()) {
@@ -57,7 +59,8 @@ void Application::InitSettings() {
     }
 }
 
-void Application::FirstTimeUse() {
+void Application::FirstTimeUse()
+{
     QMessageBox::information(
         nullptr, Config::ProgramName,
         tr("Hello, welcome to %1!\n"
@@ -98,7 +101,8 @@ void Application::FirstTimeUse() {
            "Enjoy it all~"));
 }
 
-Application::Application(int argc, char *argv[]) : QApplication{argc, argv} {
+Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
+{
     bool enableTrace = false;
 
     try {
@@ -107,7 +111,8 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv} {
 
         auto args = _options.parse(argc, argv);
         enableTrace = args["trace"].as<bool>();
-    } catch (cxxopts::OptionException &exception) {
+    }
+    catch (cxxopts::OptionException &exception) {
         Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
         APD_ASSERT(false);
     }
@@ -137,14 +142,16 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv} {
     connect(this, &Application::aboutToQuit, this, &Application::QuitHandler);
 }
 
-int Application::Run() {
+int Application::Run()
+{
     if (CheckUpdate()) {
         Core::AirPods::StartScanner();
     }
     return exec();
 }
 
-bool Application::CheckUpdate() {
+bool Application::CheckUpdate()
+{
     auto statusInfo = Core::Update::Check();
     if (statusInfo.first.IsFailed()) {
         // ignore
@@ -196,24 +203,28 @@ bool Application::CheckUpdate() {
 
         _downloadWindow = std::make_unique<Gui::DownloadWindow>(info);
         _downloadWindow->show();
-    } else if (button == QMessageBox::Ignore) {
+    }
+    else if (button == QMessageBox::Ignore) {
         SPDLOG_INFO("AppUpdate: User clicked Ignore.");
 
         auto currentSettings = Core::Settings::GetCurrent();
         currentSettings.skipped_version = info.latestVer;
         Core::Settings::SaveToCurrentAndLocal(std::move(currentSettings));
-    } else {
+    }
+    else {
         SPDLOG_INFO("AppUpdate: User clicked No.");
     }
 
     return true;
 }
 
-void Application::QuitHandler() {
+void Application::QuitHandler()
+{
     Core::AirPods::OnQuit();
 }
 
-void Application::PopupAboutWindow(QWidget *parent) {
+void Application::PopupAboutWindow(QWidget *parent)
+{
     // clang-format off
 
     QString content = tr(
@@ -236,6 +247,7 @@ void Application::PopupAboutWindow(QWidget *parent) {
     QMessageBox::about(parent, tr("About %1").arg(Config::ProgramName), content);
 }
 
-void Application::QuitSafety() {
+void Application::QuitSafety()
+{
     QMetaObject::invokeMethod(qApp, &Application::quit, Qt::QueuedConnection);
 }

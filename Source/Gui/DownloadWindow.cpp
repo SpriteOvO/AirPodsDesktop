@@ -29,7 +29,8 @@ using namespace std::chrono_literals;
 namespace Gui {
 
 DownloadWindow::DownloadWindow(const Core::Update::Info &info, QWidget *parent)
-    : QDialog{parent}, _info{info} {
+    : QDialog{parent}, _info{info}
+{
     _ui.setupUi(this);
 
     setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
@@ -55,21 +56,24 @@ DownloadWindow::DownloadWindow(const Core::Update::Info &info, QWidget *parent)
     }};
 }
 
-DownloadWindow::~DownloadWindow() {
+DownloadWindow::~DownloadWindow()
+{
     _destroy = true;
     if (_downloadThread.joinable()) {
         _downloadThread.join();
     }
 }
 
-void DownloadWindow::UpdateProgress(int downloaded, int total) {
+void DownloadWindow::UpdateProgress(int downloaded, int total)
+{
     if (total == 0) {
         return;
     }
     _ui.progressBar->setValue(downloaded / total * _ui.progressBar->maximum());
 }
 
-void DownloadWindow::OnFailed() {
+void DownloadWindow::OnFailed()
+{
     SPDLOG_WARN("DownloadAndInstall failed. Popup latest url and quit.");
 
     QMessageBox::warning(

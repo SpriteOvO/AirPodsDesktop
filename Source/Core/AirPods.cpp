@@ -40,7 +40,8 @@ using namespace std::chrono_literals;
 namespace Core::AirPods {
 namespace Details {
 
-class Advertisement {
+class Advertisement
+{
 public:
     using AddressType = decltype(Bluetooth::AdvertisementWatcher::ReceivedData::address);
 
@@ -48,7 +49,8 @@ public:
         Side side;
     };
 
-    static bool IsDesiredAdv(const Bluetooth::AdvertisementWatcher::ReceivedData &data) {
+    static bool IsDesiredAdv(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
+    {
         auto iter = data.manufacturerDataMap.find(AppleCP::VendorId);
         if (iter == data.manufacturerDataMap.end()) {
             return false;
@@ -62,7 +64,8 @@ public:
         return true;
     }
 
-    Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData &data) {
+    Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
+    {
         APD_ASSERT(IsDesiredAdv(data));
         _data = data;
 
@@ -101,19 +104,23 @@ public:
         }
     }
 
-    int16_t GetRssi() const {
+    int16_t GetRssi() const
+    {
         return _data.rssi;
     }
 
-    const auto &GetTimestamp() const {
+    const auto &GetTimestamp() const
+    {
         return _data.timestamp;
     }
 
-    AddressType GetAddress() const {
+    AddressType GetAddress() const
+    {
         return _data.address;
     }
 
-    std::vector<uint8_t> GetDesensitizedData() const {
+    std::vector<uint8_t> GetDesensitizedData() const
+    {
         auto desensitizedData = _protocol.Desensitize();
 
         std::vector<uint8_t> result(sizeof(desensitizedData), 0);
@@ -121,7 +128,8 @@ public:
         return result;
     }
 
-    const AdvState &GetAdvState() const {
+    const AdvState &GetAdvState() const
+    {
         return _state;
     }
 
@@ -130,7 +138,8 @@ private:
     AppleCP::AirPods _protocol;
     AdvState _state;
 
-    const std::vector<uint8_t> &GetMfrData() const {
+    const std::vector<uint8_t> &GetMfrData() const
+    {
         auto iter = _data.manufacturerDataMap.find(AppleCP::VendorId);
         APD_ASSERT(iter != _data.manufacturerDataMap.end());
 
@@ -142,30 +151,36 @@ private:
 // can't "Remember" the user's AirPods by any device property. Here we track our desired
 // devices in some non-elegant ways, but obviously it is sometimes unreliable.
 //
-class Tracker {
+class Tracker
+{
 public:
     using FnStateChanged =
         std::function<void(const std::optional<State> &oldState, const State &newState)>;
     using FnLosted = std::function<void()>;
 
-    Tracker() {
+    Tracker()
+    {
         _lostTimer.Start(10s, [this] { DoLost(); });
         _stateResetLeftTimer.Start(10s, [this] { DoStateReset(Side::Left); });
         _stateResetRightTimer.Start(10s, [this] { DoStateReset(Side::Right); });
     }
 
-    auto &CbStateChanged() {
+    auto &CbStateChanged()
+    {
         return _cbStateChanged;
     }
-    auto &CbLosted() {
+    auto &CbLosted()
+    {
         return _cbLosted;
     }
 
-    void Disconnect() {
+    void Disconnect()
+    {
         DoLost();
     }
 
-    bool TryTrack(Advertisement adv) {
+    bool TryTrack(Advertisement adv)
+    {
         const auto &currentSettings = Settings::GetCurrent();
         const auto advRssi = adv.GetRssi();
 
@@ -246,7 +261,8 @@ public:
         _lostTimer.Reset();
         if (advState.side == Side::Left) {
             _stateResetLeftTimer.Reset();
-        } else if (advState.side == Side::Right) {
+        }
+        else if (advState.side == Side::Right) {
             _stateResetRightTimer.Reset();
         }
 
@@ -288,7 +304,8 @@ public:
         return true;
     }
 
-    std::optional<State> GetState() const {
+    std::optional<State> GetState() const
+    {
         std::lock_guard<std::mutex> lock{_mutex};
         return _cachedState;
     }
@@ -305,7 +322,8 @@ private:
     Helper::Callback<FnStateChanged> _cbStateChanged;
     Helper::Callback<FnLosted> _cbLosted;
 
-    void DoLost() {
+    void DoLost()
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         if (_leftAdv.has_value() || _rightAdv.has_value() || _cachedState.has_value()) {
@@ -318,7 +336,8 @@ private:
         _cachedState.reset();
     }
 
-    void DoStateReset(Side side) {
+    void DoStateReset(Side side)
+    {
         std::lock_guard<std::mutex> lock{_mutex};
 
         auto &adv = side == Side::Left ? _leftAdv : _rightAdv;
@@ -329,18 +348,22 @@ private:
     }
 };
 
-class Manager : Helper::NonCopyable {
+class Manager : Helper::NonCopyable
+{
 public:
-    static Manager &GetInstance() {
+    static Manager &GetInstance()
+    {
         static Manager i;
         return i;
     }
 
-    std::optional<State> GetState() const {
+    std::optional<State> GetState() const
+    {
         return _tracker.GetState();
     }
 
-    void StartScanner() {
+    void StartScanner()
+    {
         if (_isScannerStarted) {
             SPDLOG_WARN("AsyncScanner::Start() return directly. Because it's already started.");
             return;
@@ -352,7 +375,8 @@ public:
         _scannerRestartThread = std::thread{&Manager::ScannerRestartThread, this};
     }
 
-    Status StopScanner() {
+    Status StopScanner()
+    {
         if (!_isScannerStarted) {
             SPDLOG_WARN("AsyncScanner::Stop() return directly. Because it's already stopped.");
             return Status::Success;
@@ -366,7 +390,8 @@ public:
         Status status = _adWatcher.Stop();
         if (status.IsFailed()) {
             SPDLOG_WARN("AsyncScanner::Stop() failed. Status: {}", status);
-        } else {
+        }
+        else {
             _isScannerStarted = false;
             UpdateUi(Action::Unavailable);
             SPDLOG_INFO("AsyncScanner::Stop() succeeded.");
@@ -375,7 +400,8 @@ public:
         return status;
     }
 
-    bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data) {
+    bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
+    {
         if (!Advertisement::IsDesiredAdv(data)) {
             return false;
         }
@@ -399,7 +425,8 @@ public:
         return true;
     }
 
-    void OnBoundDeviceAddressChanged(uint64_t address) {
+    void OnBoundDeviceAddressChanged(uint64_t address)
+    {
         const auto &disconnect = [this]() {
             _boundDevice.reset();
             _deviceConnected = false;
@@ -442,7 +469,8 @@ public:
         };
     }
 
-    void OnQuit() {
+    void OnQuit()
+    {
         StopScanner();
     }
 
@@ -469,7 +497,8 @@ private:
         _restartScanner{false}, _deviceConnected{false};
     std::thread _scannerRestartThread;
 
-    Manager() {
+    Manager()
+    {
         _tracker.CbStateChanged() += [](auto, const State &newState) {
             App->GetInfoWindow()->UpdateStateSafety(newState);
             App->GetSysTray()->UpdateStateSafety(newState);
@@ -479,7 +508,8 @@ private:
             auto &infoWindow = App->GetInfoWindow();
             if (show) {
                 infoWindow->ShowSafety();
-            } else {
+            }
+            else {
                 infoWindow->HideSafety();
             }
         };
@@ -494,7 +524,8 @@ private:
 
             if (isBothInEar) {
                 Core::GlobalMedia::Play();
-            } else {
+            }
+            else {
                 Core::GlobalMedia::Pause();
             }
         };
@@ -518,7 +549,8 @@ private:
                     if (cachedLidOpened != newLidOpened) {
                         _cbControlInfoWindow.Invoke(newState, newLidOpened);
                     }
-                } else {
+                }
+                else {
                     if (newLidOpened) {
                         _cbControlInfoWindow.Invoke(newState, newLidOpened);
                     }
@@ -556,16 +588,19 @@ private:
         };
     }
 
-    void ScannerRestartThread() {
+    void ScannerRestartThread()
+    {
         while (!_destroyScannerThread) {
             if (!_restartScanner) {
                 std::this_thread::sleep_for(500ms);
-            } else {
+            }
+            else {
                 Status status = _adWatcher.Start();
                 if (!status.IsSucceeded()) {
                     UpdateUi(Action::Unavailable);
                     SPDLOG_WARN("Bluetooth AdvWatcher start failed. status: {}", status);
-                } else {
+                }
+                else {
                     _restartScanner = false;
                     if (_lastAction == Action::Unavailable) {
                         UpdateUi(Action::Disconnected);
@@ -577,15 +612,18 @@ private:
         }
     }
 
-    void UpdateUi(Action action) {
+    void UpdateUi(Action action)
+    {
         _lastAction = action;
 
         QString title;
         if (action == Action::Unavailable) {
             title = QDialog::tr("Unavailable");
-        } else if (action == Action::WaitingForBinding) {
+        }
+        else if (action == Action::WaitingForBinding) {
             title = QDialog::tr("Waiting for Binding");
-        } else if (action == Action::Disconnected) {
+        }
+        else if (action == Action::Disconnected) {
             title = QDialog::tr("Disconnected");
         }
 
@@ -597,19 +635,23 @@ private:
 };
 } // namespace Details
 
-std::optional<State> GetState() {
+std::optional<State> GetState()
+{
     return Details::Manager::GetInstance().GetState();
 }
 
-void StartScanner() {
+void StartScanner()
+{
     Details::Manager::GetInstance().StartScanner();
 }
 
-void OnBindDeviceChanged(uint64_t address) {
+void OnBindDeviceChanged(uint64_t address)
+{
     Details::Manager::GetInstance().OnBoundDeviceAddressChanged(address);
 }
 
-void OnQuit() {
+void OnQuit()
+{
     Details::Manager::GetInstance().OnQuit();
 }
 } // namespace Core::AirPods

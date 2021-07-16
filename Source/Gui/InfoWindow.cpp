@@ -30,11 +30,13 @@ using namespace std::chrono_literals;
 
 namespace Gui {
 
-class CloseButton : public QWidget {
+class CloseButton : public QWidget
+{
     Q_OBJECT
 
 public:
-    CloseButton(QWidget *parent = nullptr) {
+    CloseButton(QWidget *parent = nullptr)
+    {
         setFixedSize(25, 25);
     }
 
@@ -45,7 +47,8 @@ private:
     bool _isHovering{false}, _isHoldDown{false};
 
 protected:
-    void paintEvent(QPaintEvent *event) override {
+    void paintEvent(QPaintEvent *event) override
+    {
         QPainter painter{this};
         painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
 
@@ -53,28 +56,33 @@ protected:
         DrawX(painter);
     }
 
-    void enterEvent(QEvent *event) override {
+    void enterEvent(QEvent *event) override
+    {
         _isHovering = true;
         repaint();
     }
 
-    void leaveEvent(QEvent *event) override {
+    void leaveEvent(QEvent *event) override
+    {
         _isHovering = false;
         repaint();
     }
 
-    void mousePressEvent(QMouseEvent *event) override {
+    void mousePressEvent(QMouseEvent *event) override
+    {
         _isHoldDown = true;
         repaint();
     }
 
-    void mouseReleaseEvent(QMouseEvent *event) override {
+    void mouseReleaseEvent(QMouseEvent *event) override
+    {
         _isHoldDown = false;
         Q_EMIT Clicked();
         repaint();
     }
 
-    void DrawBackground(QPainter &painter) {
+    void DrawBackground(QPainter &painter)
+    {
         painter.save();
         {
             painter.setPen(Qt::NoPen);
@@ -82,9 +90,11 @@ protected:
             QColor color;
             if (_isHoldDown) {
                 color = QColor{218, 218, 219};
-            } else if (_isHovering) {
+            }
+            else if (_isHovering) {
                 color = QColor{228, 228, 229};
-            } else {
+            }
+            else {
                 color = QColor{238, 238, 239};
             }
 
@@ -94,7 +104,8 @@ protected:
         painter.restore();
     }
 
-    void DrawX(QPainter &painter) {
+    void DrawX(QPainter &painter)
+    {
         painter.save();
         {
             painter.setPen(QPen{QColor{131, 131, 135}, 3});
@@ -112,7 +123,8 @@ protected:
     }
 };
 
-InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent} {
+InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
+{
     _ui.setupUi(this);
 
     setFixedSize(300, 300);
@@ -159,7 +171,8 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent} {
         qApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
             if (state == Qt::ApplicationActive) {
                 _autoHideTimer->stop();
-            } else {
+            }
+            else {
                 _autoHideTimer->start(10s);
             }
         });
@@ -182,16 +195,19 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent} {
     _ui.layoutClose->addWidget(_closeButton);
 }
 
-InfoWindow::~InfoWindow() {
+InfoWindow::~InfoWindow()
+{
     _showHideTimer->stop();
     _autoHideTimer->stop();
 }
 
-void InfoWindow::ShowSafety() {
+void InfoWindow::ShowSafety()
+{
     QMetaObject::invokeMethod(this, &InfoWindow::show);
 }
 
-void InfoWindow::InitCommonButton() {
+void InfoWindow::InitCommonButton()
+{
     ChangeButtonAction(ButtonAction::NoButton);
     Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
     connect(_ui.pushButton, &QPushButton::clicked, this, &InfoWindow::OnButtonClicked);
@@ -201,7 +217,8 @@ void InfoWindow::InitCommonButton() {
     }
 }
 
-void InfoWindow::ChangeButtonAction(ButtonAction action) {
+void InfoWindow::ChangeButtonAction(ButtonAction action)
+{
     switch (action) {
     case ButtonAction::NoButton:
         _ui.pushButton->setText("");
@@ -222,14 +239,16 @@ void InfoWindow::ChangeButtonAction(ButtonAction action) {
     _ui.pushButton->show();
 }
 
-void InfoWindow::UpdateState(const Core::AirPods::State &state) {
+void InfoWindow::UpdateState(const Core::AirPods::State &state)
+{
     _ui.deviceLabel->setText(Helper::ToString(state.model));
 
     SetAnimation(state.model);
 
     if (!state.pods.left.battery.has_value()) {
         _leftBattery->hide();
-    } else {
+    }
+    else {
         _leftBattery->setCharging(state.pods.left.isCharging);
         _leftBattery->setValue(state.pods.left.battery.value());
         _leftBattery->show();
@@ -237,7 +256,8 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state) {
 
     if (!state.pods.right.battery.has_value()) {
         _rightBattery->hide();
-    } else {
+    }
+    else {
         _rightBattery->setCharging(state.pods.right.isCharging);
         _rightBattery->setValue(state.pods.right.battery.value());
         _rightBattery->show();
@@ -245,14 +265,16 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state) {
 
     if (!state.caseBox.battery.has_value()) {
         _caseBattery->hide();
-    } else {
+    }
+    else {
         _caseBattery->setCharging(state.caseBox.isCharging);
         _caseBattery->setValue(state.caseBox.battery.value());
         _caseBattery->show();
     }
 }
 
-void InfoWindow::Disconnect(const QString &title) {
+void InfoWindow::Disconnect(const QString &title)
+{
     _ui.deviceLabel->setText(title);
 
     _cacheModel = Core::AirPods::Model::Unknown;
@@ -263,7 +285,8 @@ void InfoWindow::Disconnect(const QString &title) {
     _caseBattery->hide();
 }
 
-void InfoWindow::SetAnimation(Core::AirPods::Model model) {
+void InfoWindow::SetAnimation(Core::AirPods::Model model)
+{
     if (model == _cacheModel) {
         return;
     }
@@ -289,17 +312,20 @@ void InfoWindow::SetAnimation(Core::AirPods::Model model) {
     _mediaPlayer->setMedia(QUrl{media});
 }
 
-void InfoWindow::PlayAnimation() {
+void InfoWindow::PlayAnimation()
+{
     _isAnimationPlaying = true;
     _mediaPlayer->play();
 }
 
-void InfoWindow::StopAnimation() {
+void InfoWindow::StopAnimation()
+{
     _isAnimationPlaying = false;
     _mediaPlayer->stop();
 }
 
-void InfoWindow::BindDevice() {
+void InfoWindow::BindDevice()
+{
     SPDLOG_INFO("BindDevice");
 
     std::vector<Core::Bluetooth::Device> devices =
@@ -380,7 +406,8 @@ void InfoWindow::BindDevice() {
     ChangeButtonAction(ButtonAction::NoButton);
 }
 
-void InfoWindow::OnButtonClicked() {
+void InfoWindow::OnButtonClicked()
+{
     switch (_buttonAction) {
     case ButtonAction::Bind:
         SPDLOG_INFO("User clicked 'Bind'");
@@ -394,7 +421,8 @@ void InfoWindow::OnButtonClicked() {
     }
 }
 
-void InfoWindow::DoHide() {
+void InfoWindow::DoHide()
+{
     if (!_isShown) {
         return;
     }
@@ -408,7 +436,8 @@ void InfoWindow::DoHide() {
         QPoint windowPos = pos();
         if (_screenSize.height() > windowPos.y()) {
             move(windowPos.x(), windowPos.y() + _moveStep);
-        } else {
+        }
+        else {
             _showHideTimer->stop();
             hide();
             StopAnimation();
@@ -418,7 +447,8 @@ void InfoWindow::DoHide() {
     _showHideTimer->start(1ms);
 }
 
-void InfoWindow::showEvent(QShowEvent *event) {
+void InfoWindow::showEvent(QShowEvent *event)
+{
     if (_isShown) {
         return;
     }
@@ -434,7 +464,8 @@ void InfoWindow::showEvent(QShowEvent *event) {
         QPoint windowPos = pos();
         if (_screenSize.height() - size().height() - _screenMargin.height() < windowPos.y()) {
             move(windowPos.x(), windowPos.y() - _moveStep);
-        } else {
+        }
+        else {
             _showHideTimer->stop();
         }
     });

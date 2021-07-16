@@ -26,16 +26,19 @@
 
 namespace Core::LowAudioLatency {
 
-class Controller : public QObject {
+class Controller : public QObject
+{
     Q_OBJECT
 
 public:
-    static auto &GetInstance() {
+    static auto &GetInstance()
+    {
         static Controller i;
         return i;
     }
 
-    Controller(QObject *parent = nullptr) : QObject{parent} {
+    Controller(QObject *parent = nullptr) : QObject{parent}
+    {
         connect(
             &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
             &Controller::OnError);
@@ -54,22 +57,26 @@ private:
     QMediaPlayer _mediaPlayer;
     QMediaPlaylist _mediaPlaylist;
 
-    void Control(bool enable) {
+    void Control(bool enable)
+    {
         SPDLOG_INFO("LowAudioLatency::Controller Control: {}", enable);
 
         if (enable) {
             _mediaPlayer.play();
-        } else {
+        }
+        else {
             _mediaPlayer.stop();
         }
     }
 
-    void OnError(QMediaPlayer::Error error) {
+    void OnError(QMediaPlayer::Error error)
+    {
         SPDLOG_WARN("LowAudioLatency::Controller error: {}", error);
     }
 };
 
-void Control(bool enable) {
+void Control(bool enable)
+{
     Controller::GetInstance().ControlSafety(enable);
 }
 } // namespace Core::LowAudioLatency

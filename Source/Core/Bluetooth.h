@@ -26,7 +26,8 @@
 
 template <>
 inline QString Helper::ToString<Core::Bluetooth::AdvertisementWatcher::ReceivedData>(
-    const Core::Bluetooth::AdvertisementWatcher::ReceivedData &value) {
+    const Core::Bluetooth::AdvertisementWatcher::ReceivedData &value)
+{
     QString manufacturerData;
 
     for (const auto &keyValue : value.manufacturerDataMap) {

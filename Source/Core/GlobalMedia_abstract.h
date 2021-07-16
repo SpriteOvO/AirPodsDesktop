@@ -23,9 +23,11 @@
 namespace Core::GlobalMedia::Details {
 
 template <class Derived>
-class ControllerAbstract {
+class ControllerAbstract
+{
 public:
-    inline static auto &GetInstance() {
+    inline static auto &GetInstance()
+    {
         static Derived i;
         return i;
     }

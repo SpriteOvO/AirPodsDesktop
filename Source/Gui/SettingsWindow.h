@@ -27,7 +27,8 @@
 
 namespace Gui {
 
-class SettingsWindow : public QDialog {
+class SettingsWindow : public QDialog
+{
     Q_OBJECT
 
 public:

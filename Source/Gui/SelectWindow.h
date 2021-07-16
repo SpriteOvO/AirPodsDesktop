@@ -28,7 +28,8 @@
 
 namespace Gui {
 
-class SelectWindow : public QDialog {
+class SelectWindow : public QDialog
+{
     Q_OBJECT
 
 public:

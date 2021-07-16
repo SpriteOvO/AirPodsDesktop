@@ -47,7 +47,8 @@ namespace Details {
 
 enum class ActionId : uint32_t { Play, Pause };
 
-class MediaProgramAbstract {
+class MediaProgramAbstract
+{
 public:
     enum class Priority : uint32_t {
         Max = 0,
@@ -69,9 +70,11 @@ public:
     virtual Priority GetPriority() const = 0;
 };
 
-class VolumeLevelLimiter {
+class VolumeLevelLimiter
+{
 private:
-    class Callback : public IAudioEndpointVolumeCallback {
+    class Callback : public IAudioEndpointVolumeCallback
+    {
     public:
         Callback(std::function<bool(uint32_t)> volumeLevelSetter);
 
@@ -109,7 +112,8 @@ private:
 
 bool Initialize();
 
-class Controller final : public Details::ControllerAbstract<Controller> {
+class Controller final : public Details::ControllerAbstract<Controller>
+{
 public:
     Controller() = default;
 

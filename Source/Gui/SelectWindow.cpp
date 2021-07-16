@@ -23,7 +23,8 @@
 namespace Gui {
 
 SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidget *parent)
-    : QDialog{parent} {
+    : QDialog{parent}
+{
     _ui.setupUi(this);
 
     const auto &connectButton = [this](QDialogButtonBox::StandardButton button) {
@@ -42,15 +43,18 @@ SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidg
     _ui.listWidget->item(0)->setSelected(true);
 }
 
-bool SelectWindow::HasResult() const {
+bool SelectWindow::HasResult() const
+{
     return _clickedButton == QDialogButtonBox::Yes;
 }
 
-int SelectWindow::GetSeletedIndex() const {
+int SelectWindow::GetSeletedIndex() const
+{
     return _ui.listWidget->currentRow();
 }
 
-void SelectWindow::OnButtonClicked(QDialogButtonBox::StandardButton button) {
+void SelectWindow::OnButtonClicked(QDialogButtonBox::StandardButton button)
+{
     _clickedButton = button;
 }
 } // namespace Gui

@@ -34,7 +34,8 @@
 namespace Core::OS::Windows {
 namespace Process {
 
-inline std::optional<std::wstring> GetNameById(uint32_t targetId) {
+inline std::optional<std::wstring> GetNameById(uint32_t targetId)
+{
     std::optional<std::wstring> result;
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -71,7 +72,8 @@ struct WindowsInfo {
 };
 
 inline std::vector<WindowsInfo>
-FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring> &optTitleName) {
+FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring> &optTitleName)
+{
     std::vector<WindowsInfo> result;
     HWND lastHwnd = nullptr;
 
@@ -121,7 +123,8 @@ namespace Winrt {
 
 using Exception = winrt::hresult_error;
 
-inline bool Initialize() {
+inline bool Initialize()
+{
     static bool inited = false;
     if (inited) {
         return true;
@@ -131,7 +134,8 @@ inline bool Initialize() {
     try {
         winrt::init_apartment();
         return true;
-    } catch (const Exception &ex) {
+    }
+    catch (const Exception &ex) {
         SPDLOG_WARN(
             "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
             winrt::to_string(ex.message()));
@@ -148,67 +152,80 @@ template <class T>
 constexpr inline bool is_com_type_v = std::is_base_of_v<IUnknown, T>;
 
 template <class T, std::enable_if_t<is_com_type_v<T>, int> = 0>
-class UniquePtr : Helper::NonCopyable {
+class UniquePtr : Helper::NonCopyable
+{
 public:
     UniquePtr() = default;
 
-    inline UniquePtr(UniquePtr &&rhs) noexcept {
+    inline UniquePtr(UniquePtr &&rhs) noexcept
+    {
         MoveFrom(std::move(rhs));
     }
 
-    inline UniquePtr(T *purePtr) noexcept {
+    inline UniquePtr(T *purePtr) noexcept
+    {
         CopyFrom(purePtr);
     }
 
-    inline ~UniquePtr() {
+    inline ~UniquePtr()
+    {
         Release();
     }
 
-    inline UniquePtr &operator=(UniquePtr &&rhs) noexcept {
+    inline UniquePtr &operator=(UniquePtr &&rhs) noexcept
+    {
         Release();
         MoveFrom(std::move(rhs));
         return *this;
     }
 
-    inline UniquePtr &operator=(T *purePtr) noexcept {
+    inline UniquePtr &operator=(T *purePtr) noexcept
+    {
         Release();
         CopyFrom(purePtr);
         return *this;
     }
 
-    inline explicit operator bool() const noexcept {
+    inline explicit operator bool() const noexcept
+    {
         return _ptr != nullptr;
     }
 
-    inline T *operator->() const noexcept {
+    inline T *operator->() const noexcept
+    {
         APD_ASSERT(_ptr != nullptr);
         return _ptr;
     }
 
-    inline T **ReleaseAndAddressOf() noexcept {
+    inline T **ReleaseAndAddressOf() noexcept
+    {
         Release();
         return &_ptr;
     }
 
-    inline constexpr static auto GetIID() {
+    inline constexpr static auto GetIID()
+    {
         return __uuidof(T);
     }
 
 private:
     T *_ptr{nullptr};
 
-    inline void Release() noexcept {
+    inline void Release() noexcept
+    {
         if (_ptr != nullptr) {
             _ptr->Release();
             _ptr = nullptr;
         }
     }
 
-    inline void CopyFrom(T *purePtr) noexcept {
+    inline void CopyFrom(T *purePtr) noexcept
+    {
         _ptr = purePtr;
     }
 
-    inline void MoveFrom(UniquePtr &&rhs) noexcept {
+    inline void MoveFrom(UniquePtr &&rhs) noexcept
+    {
         _ptr = rhs._ptr;
         rhs._ptr = nullptr;
     }
@@ -219,12 +236,14 @@ private:
 namespace Helper {
 
 template <>
-inline QString ToString(const winrt::hstring &value) {
+inline QString ToString(const winrt::hstring &value)
+{
     return QString::fromStdString(winrt::to_string(value));
 }
 
 template <>
-inline QString ToString(const winrt::hresult_error &value) {
+inline QString ToString(const winrt::hresult_error &value)
+{
     return QString{"0x%1 (%2)"}
         .arg(QString::number(value.code(), 16))
         .arg(ToString(value.message()));

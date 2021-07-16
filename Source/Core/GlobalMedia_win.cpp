@@ -30,7 +30,8 @@ using namespace winrt::Windows::Media::Control;
 
 namespace Details {
 
-class MediaProgramThroughVirtualKeyAbstract : public MediaProgramAbstract {
+class MediaProgramThroughVirtualKeyAbstract : public MediaProgramAbstract
+{
 public:
     enum WindowMatchingFlag : uint32_t {
         HasChildren = 0b00000001,
@@ -40,7 +41,8 @@ public:
 
     virtual inline ~MediaProgramThroughVirtualKeyAbstract() {}
 
-    bool IsAvailable() override {
+    bool IsAvailable() override
+    {
         if (_windowProcess.has_value()) {
             return true;
         }
@@ -54,12 +56,14 @@ public:
         return true;
     }
 
-    bool IsPlaying() const override {
+    bool IsPlaying() const override
+    {
         auto optAudioVolume = GetProcessAudioVolume();
         return optAudioVolume.has_value() && optAudioVolume.value() != 0.f;
     }
 
-    Status Play() override {
+    Status Play() override
+    {
         SPDLOG_TRACE("Do play.");
 
         if (IsPlaying()) {
@@ -69,7 +73,8 @@ public:
         return Switch();
     }
 
-    Status Pause() override {
+    Status Pause() override
+    {
         SPDLOG_TRACE("Do pause.");
 
         if (!IsPlaying()) {
@@ -82,7 +87,8 @@ public:
 protected:
     virtual std::wstring GetProcessName() const = 0;
     virtual std::wstring GetWindowClassName() const = 0;
-    virtual std::optional<std::wstring> GetWindowTitleName() const {
+    virtual std::optional<std::wstring> GetWindowTitleName() const
+    {
         return std::nullopt;
     }
     virtual WindowMatchingFlags GetWindowMatchingFlags() const = 0;
@@ -91,7 +97,8 @@ private:
     std::optional<std::pair<HWND, uint32_t>> _windowProcess;
     OS::Windows::Com::UniquePtr<IAudioMeterInformation> _audioMeterInfo;
 
-    OS::Windows::Com::UniquePtr<IAudioMeterInformation> GetProcessAudioMeterInfo() {
+    OS::Windows::Com::UniquePtr<IAudioMeterInformation> GetProcessAudioMeterInfo()
+    {
         SPDLOG_TRACE("Try to get IAudioMeterInformation of this process.");
 
         OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
@@ -192,7 +199,8 @@ private:
         return {};
     }
 
-    std::optional<float> GetProcessAudioVolume() const {
+    std::optional<float> GetProcessAudioVolume() const
+    {
         if (!_audioMeterInfo) {
             return std::nullopt;
         }
@@ -207,7 +215,8 @@ private:
         return peak;
     }
 
-    std::optional<std::pair<HWND, uint32_t>> FindWindowAndProcess() const {
+    std::optional<std::pair<HWND, uint32_t>> FindWindowAndProcess() const
+    {
         auto processName = GetProcessName();
         auto className = GetWindowClassName();
         auto optTitleName = GetWindowTitleName();
@@ -263,7 +272,8 @@ private:
         return std::nullopt;
     }
 
-    Status Switch() {
+    Status Switch()
+    {
         bool postDown = PostMessageW(_windowProcess->first, WM_KEYDOWN, VK_SPACE, 0) != 0;
 
         std::this_thread::sleep_for(50ms);
@@ -288,14 +298,17 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(MediaProgramThroughVirtualKeyAbstract::WindowMatch
 // Media programs
 //
 
-class UniversalSystemSession final : public MediaProgramAbstract {
+class UniversalSystemSession final : public MediaProgramAbstract
+{
 public:
     UniversalSystemSession() = default;
 
-    bool IsAvailable() override {
+    bool IsAvailable() override
+    {
         try {
             _currentSession = GetCurrentSession();
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN(
                 "UniversalSystemSession get current session failed. Code: {:#x}, Message: {}",
                 ex.code(), winrt::to_string(ex.message()));
@@ -311,47 +324,56 @@ public:
         return true;
     }
 
-    bool IsPlaying() const override {
+    bool IsPlaying() const override
+    {
         return IsPlaying(_currentSession.value());
     }
 
-    Status Play() override {
+    Status Play() override
+    {
         try {
             _currentSession->TryPlayAsync().get();
             return Status::Success;
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             return Status{Status::GlobalMediaUSSPlayFailed}.SetAdditionalData(ex);
         }
     }
 
-    Status Pause() override {
+    Status Pause() override
+    {
         try {
             _currentSession->TryPauseAsync().get();
             return Status::Success;
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             return Status{Status::GlobalMediaUSSPauseFailed}.SetAdditionalData(ex);
         }
     }
 
-    std::wstring GetProgramName() const override {
+    std::wstring GetProgramName() const override
+    {
         return L"UniversalSystemSession";
     }
 
 protected:
-    Priority GetPriority() const override {
+    Priority GetPriority() const override
+    {
         return Priority::SystemSession;
     }
 
 private:
     std::optional<GlobalSystemMediaTransportControlsSession> _currentSession;
 
-    static GlobalSystemMediaTransportControlsSession GetCurrentSession() {
+    static GlobalSystemMediaTransportControlsSession GetCurrentSession()
+    {
         return GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
             .get()
             .GetCurrentSession();
     }
 
-    static auto GetSessions() {
+    static auto GetSessions()
+    {
         auto sessions =
             GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get().GetSessions();
 
@@ -365,11 +387,13 @@ private:
         return result;
     }
 
-    static bool IsPlaying(const GlobalSystemMediaTransportControlsSession &gsmtcs) {
+    static bool IsPlaying(const GlobalSystemMediaTransportControlsSession &gsmtcs)
+    {
         try {
             return gsmtcs.GetPlaybackInfo().PlaybackStatus() ==
                    GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
-        } catch (const OS::Windows::Winrt::Exception &ex) {
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN(
                 "UniversalSystemSession Get playback status failed. Code: {:#x}, Message: {}",
                 ex.code(), winrt::to_string(ex.message()));
@@ -378,72 +402,89 @@ private:
     }
 };
 
-// clang-format on
-
-class QQMusic final : public MediaProgramThroughVirtualKeyAbstract {
+class QQMusic final : public MediaProgramThroughVirtualKeyAbstract
+{
 public:
-    std::wstring GetProgramName() const override {
+    std::wstring GetProgramName() const override
+    {
         return L"QQMusic";
     }
 
 protected:
-    std::wstring GetProcessName() const override {
+    std::wstring GetProcessName() const override
+    {
         return L"QQMusic.exe";
     }
-    std::wstring GetWindowClassName() const override {
+    std::wstring GetWindowClassName() const override
+    {
         return L"TXGuiFoundation";
     }
-    WindowMatchingFlags GetWindowMatchingFlags() const override {
+    WindowMatchingFlags GetWindowMatchingFlags() const override
+    {
         return WindowMatchingFlag::HasChildren | WindowMatchingFlag::NonEmptyTitle;
     }
-    Priority GetPriority() const override {
+    Priority GetPriority() const override
+    {
         return Priority::MusicPlayer;
     }
 };
 
-class NeteaseMusic final : public MediaProgramThroughVirtualKeyAbstract {
+class NeteaseMusic final : public MediaProgramThroughVirtualKeyAbstract
+{
 public:
-    std::wstring GetProgramName() const override {
+    std::wstring GetProgramName() const override
+    {
         return L"NeteaseMusic";
     }
 
 protected:
-    std::wstring GetProcessName() const override {
+    std::wstring GetProcessName() const override
+    {
         return L"cloudmusic.exe";
     }
-    std::wstring GetWindowClassName() const override {
+    std::wstring GetWindowClassName() const override
+    {
         return L"MiniPlayer";
     }
-    WindowMatchingFlags GetWindowMatchingFlags() const override {
+    WindowMatchingFlags GetWindowMatchingFlags() const override
+    {
         return WindowMatchingFlag::NonEmptyTitle;
     }
-    Priority GetPriority() const override {
+    Priority GetPriority() const override
+    {
         return Priority::MusicPlayer;
     }
 };
 
-class KuGouMusic final : public MediaProgramThroughVirtualKeyAbstract {
+class KuGouMusic final : public MediaProgramThroughVirtualKeyAbstract
+{
 public:
-    std::wstring GetProgramName() const override {
+    std::wstring GetProgramName() const override
+    {
         return L"KuGouMusic";
     }
 
 protected:
-    std::wstring GetProcessName() const override {
+    std::wstring GetProcessName() const override
+    {
         return L"KuGou.exe";
     }
-    std::wstring GetWindowClassName() const override {
+    std::wstring GetWindowClassName() const override
+    {
         return L"kugou_ui";
     }
-    WindowMatchingFlags GetWindowMatchingFlags() const override {
+    WindowMatchingFlags GetWindowMatchingFlags() const override
+    {
         return WindowMatchingFlag::NonEmptyTitle;
     }
-    Priority GetPriority() const override {
+    Priority GetPriority() const override
+    {
         return Priority::MusicPlayer;
     }
 };
 
-auto GetAvailablePrograms() {
+auto GetAvailablePrograms()
+{
     std::vector<std::unique_ptr<MediaProgramAbstract>> result;
 
 #define PUSH_IF_AVAILABLE(type)                                                                    \
@@ -479,13 +520,17 @@ auto GetAvailablePrograms() {
 //
 
 VolumeLevelLimiter::Callback::Callback(std::function<bool(uint32_t)> volumeLevelSetter)
-    : _volumeLevelSetter{std::move(volumeLevelSetter)} {}
+    : _volumeLevelSetter{std::move(volumeLevelSetter)}
+{
+}
 
-ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::AddRef() {
+ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::AddRef()
+{
     return ++_ref;
 }
 
-ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::Release() {
+ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::Release()
+{
     auto ref = --_ref;
     if (ref == 0) {
         delete this;
@@ -494,14 +539,17 @@ ULONG STDMETHODCALLTYPE VolumeLevelLimiter::Callback::Release() {
 }
 
 HRESULT STDMETHODCALLTYPE
-VolumeLevelLimiter::Callback::QueryInterface(REFIID riid, void **ppvInterface) {
+VolumeLevelLimiter::Callback::QueryInterface(REFIID riid, void **ppvInterface)
+{
     if (IID_IUnknown == riid) {
         AddRef();
         *ppvInterface = (IUnknown *)this;
-    } else if (__uuidof(IAudioEndpointVolumeCallback) == riid) {
+    }
+    else if (__uuidof(IAudioEndpointVolumeCallback) == riid) {
         AddRef();
         *ppvInterface = (IAudioEndpointVolumeCallback *)this;
-    } else {
+    }
+    else {
         *ppvInterface = nullptr;
         return E_NOINTERFACE;
     }
@@ -509,7 +557,8 @@ VolumeLevelLimiter::Callback::QueryInterface(REFIID riid, void **ppvInterface) {
 }
 
 HRESULT STDMETHODCALLTYPE
-VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) {
+VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
+{
     SPDLOG_TRACE("VolumeLevelLimiter::Callback::OnNotify() called.");
 
     if (pNotify == nullptr) {
@@ -531,7 +580,8 @@ VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) 
                 "('{}', '{}')",
                 pNotify->fMasterVolume, optVolumeLevel.value());
             _volumeLevelSetter(optVolumeLevel.value());
-        } else {
+        }
+        else {
             SPDLOG_TRACE(
                 "VolumeLevelLimiter::Callback::OnNotify(): Not exceeded the limit. ('{}', '{}')",
                 pNotify->fMasterVolume, optVolumeLevel.value());
@@ -542,7 +592,8 @@ VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) 
     return S_OK;
 }
 
-void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLevel) {
+void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLevel)
+{
     if (volumeLevel.has_value()) {
         volumeLevel = std::min<uint32_t>(volumeLevel.value(), 100);
     }
@@ -554,17 +605,20 @@ void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLev
 //
 
 VolumeLevelLimiter::VolumeLevelLimiter()
-    : _callback{[this](uint32_t volumeLevel) { return SetVolumeLevel(volumeLevel); }} {
+    : _callback{[this](uint32_t volumeLevel) { return SetVolumeLevel(volumeLevel); }}
+{
     Initialize();
 }
 
-VolumeLevelLimiter::~VolumeLevelLimiter() {
+VolumeLevelLimiter::~VolumeLevelLimiter()
+{
     if (_endpointVolume) {
         _endpointVolume->UnregisterControlChangeNotify(&_callback);
     }
 }
 
-void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel) {
+void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
+{
     SPDLOG_INFO(
         "VolumeLevelLimiter::SetMaxValue() value: {}",
         volumeLevel.has_value() ? std::to_string(volumeLevel.value()) : "nullopt");
@@ -581,7 +635,8 @@ void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel) {
     _callback.SetMaxValue(std::move(volumeLevel));
 }
 
-std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const {
+std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
+{
     float value = 0.f;
     HRESULT result = _endpointVolume->GetMasterVolumeLevelScalar(&value);
     if (FAILED(result)) {
@@ -596,7 +651,8 @@ std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const {
     return return_value;
 }
 
-bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const {
+bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
+{
     SPDLOG_TRACE("SetVolumeLevel() '{}'", volumeLevel);
 
     HRESULT result = _endpointVolume->SetMasterVolumeLevelScalar(volumeLevel / 100.f, nullptr);
@@ -611,7 +667,8 @@ bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const {
 // TODO: * Bind to the exact AirPods playback device insteam of default playback device
 //       * Allow rebind if device unavailable
 //
-bool VolumeLevelLimiter::Initialize() {
+bool VolumeLevelLimiter::Initialize()
+{
     SPDLOG_INFO("VolumeLevelLimiter initializing.");
 
     OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
@@ -651,11 +708,13 @@ bool VolumeLevelLimiter::Initialize() {
 }
 } // namespace Details
 
-bool Initialize() {
+bool Initialize()
+{
     return OS::Windows::Winrt::Initialize();
 }
 
-void Controller::Play() {
+void Controller::Play()
+{
     std::lock_guard<std::mutex> lock{_mutex};
 
     if (_pausedPrograms.empty()) {
@@ -670,7 +729,8 @@ void Controller::Play() {
             SPDLOG_WARN(
                 L"Failed to play media. Program name: {}, Status: {}", program->GetProgramName(),
                 status);
-        } else {
+        }
+        else {
             SPDLOG_TRACE(L"Media played. Program name: {}", program->GetProgramName());
         }
     }
@@ -678,7 +738,8 @@ void Controller::Play() {
     _pausedPrograms.clear();
 }
 
-void Controller::Pause() {
+void Controller::Pause()
+{
     std::lock_guard<std::mutex> lock{_mutex};
 
     auto programs = Details::GetAvailablePrograms();
@@ -690,7 +751,8 @@ void Controller::Pause() {
                 SPDLOG_WARN(
                     L"Failed to pause media. Program name: {}, Status: {}",
                     program->GetProgramName(), status);
-            } else {
+            }
+            else {
                 SPDLOG_TRACE(L"Media paused. Program name: {}", program->GetProgramName());
                 _pausedPrograms.emplace_back(std::move(program));
             }
@@ -698,7 +760,8 @@ void Controller::Pause() {
     }
 }
 
-void Controller::LimitVolume(std::optional<uint32_t> volumeLevel) {
+void Controller::LimitVolume(std::optional<uint32_t> volumeLevel)
+{
     _volumeLevelLimiter.SetMaxValue(std::move(volumeLevel));
 }
 } // namespace Core::GlobalMedia

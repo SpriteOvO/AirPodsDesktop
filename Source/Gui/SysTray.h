@@ -28,7 +28,8 @@
 
 namespace Gui {
 
-class SysTray : public QWidget {
+class SysTray : public QWidget
+{
     Q_OBJECT
 
 public:
