@@ -77,7 +77,7 @@ private:
 
     template <class T>
     inline T GetProperty(const winrt::hstring &name, const T &defaultValue) const {
-        WINRT_TRY {
+        try {
             const auto &optInfo = GetInfo();
             if (!optInfo.has_value()) {
                 SPDLOG_WARN("optInfo.has_value() false.");
@@ -86,8 +86,7 @@ private:
 
             const auto boxed = optInfo->Properties().TryLookup(name);
             return winrt::unbox_value_or<T>(boxed, defaultValue);
-        }
-        WINRT_CATCH(ex) {
+        } catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
         }
         return defaultValue;

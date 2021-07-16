@@ -131,7 +131,7 @@ const std::optional<DeviceInformation> &Device::GetInfo() const {
     }
 
     std::thread{[this]() {
-        WINRT_TRY {
+        try {
             // clang-format off
             _info = DeviceInformation::CreateFromIdAsync(
                 _device->DeviceInformation().Id(),
@@ -142,8 +142,7 @@ const std::optional<DeviceInformation> &Device::GetInfo() const {
                 }
             ).get();
             // clang-format on
-        }
-        WINRT_CATCH(ex) {
+        } catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN("DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
         }
     }}.join();
@@ -174,7 +173,7 @@ public:
     std::vector<Device> GetDevicesByState(DeviceState state) const override {
         std::vector<Device> result;
 
-        WINRT_TRY {
+        try {
             winrt::hstring aqsString;
 
             switch (state) {
@@ -202,18 +201,18 @@ public:
             for (uint32_t i = 0; i < collection.Size(); ++i) {
                 const auto &deviceInfo = collection.GetAt(i);
 
-                WINRT_TRY {
+                try {
                     auto device = BluetoothDevice::FromIdAsync(deviceInfo.Id()).get();
                     result.emplace_back(std::move(device));
-                }
-                WINRT_CATCH(ex) {
+                } catch (const OS::Windows::Winrt::Exception &ex) {
                     SPDLOG_WARN("BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
                 }
             }
 
             return result;
+        } catch (const OS::Windows::Winrt::Exception &ex) {
+            return result;
         }
-        WINRT_CATCH_RETURN(result);
     }
 
     std::optional<Device> FindDevice(uint64_t address) const override {
@@ -256,22 +255,22 @@ AdvertisementWatcher::AdvertisementWatcher() {
     _bleWatcher.Stopped(std::bind(&AdvertisementWatcher::OnStopped, this, _2));
 }
 
-// clang-format off
 Status AdvertisementWatcher::Start() {
-    WINRT_TRY {
+    try {
         _bleWatcher.Start();
         return Status::Success;
+    } catch (const OS::Windows::Winrt::Exception &ex) {
+        return Status{Status::BluetoothAdvWatcherStartFailed}.SetAdditionalData(ex);
     }
-    WINRT_CATCH_RETURN_STATUS(Status::BluetoothAdvWatcherStartFailed)
 }
-// clang-format on
 
 Status AdvertisementWatcher::Stop() {
-    WINRT_TRY {
+    try {
         _bleWatcher.Stop();
         return Status::Success;
+    } catch (const OS::Windows::Winrt::Exception &ex) {
+        return Status{Status::BluetoothAdvWatcherStopFailed}.SetAdditionalData(ex);
     }
-    WINRT_CATCH_RETURN_STATUS(Status::BluetoothAdvWatcherStopFailed)
 }
 
 void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEventArgs &args) {

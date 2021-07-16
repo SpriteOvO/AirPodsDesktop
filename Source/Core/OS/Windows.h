@@ -31,15 +31,6 @@
 
 #pragma comment(lib, "WindowsApp.lib")
 
-#define WINRT_TRY try
-#define WINRT_CATCH(exception) catch (const winrt::hresult_error &exception)
-#define WINRT_CATCH_RETURN(value)                                                                  \
-    WINRT_CATCH(exception) {                                                                       \
-        return value;                                                                              \
-    }
-#define WINRT_CATCH_RETURN_STATUS(status)                                                          \
-    WINRT_CATCH_RETURN(Status{status}.SetAdditionalData(exception))
-
 namespace Core::OS::Windows {
 namespace Process {
 
@@ -128,6 +119,8 @@ FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring>
 
 namespace Winrt {
 
+using Exception = winrt::hresult_error;
+
 inline bool Initialize() {
     static bool inited = false;
     if (inited) {
@@ -135,14 +128,13 @@ inline bool Initialize() {
     }
     inited = true;
 
-    WINRT_TRY {
+    try {
         winrt::init_apartment();
         return true;
-    }
-    WINRT_CATCH(exception) {
+    } catch (const Exception &ex) {
         SPDLOG_WARN(
-            "Winrt initialize failed. Code: {:#x}, Message: {}", exception.code(),
-            winrt::to_string(exception.message()));
+            "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
+            winrt::to_string(ex.message()));
 
         // return false;
         return true; // workaround for "Cannot change thread mode after it is set."

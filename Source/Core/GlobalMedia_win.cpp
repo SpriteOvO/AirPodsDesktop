@@ -288,20 +288,17 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(MediaProgramThroughVirtualKeyAbstract::WindowMatch
 // Media programs
 //
 
-// clang-format off
-
 class UniversalSystemSession final : public MediaProgramAbstract {
 public:
     UniversalSystemSession() = default;
 
     bool IsAvailable() override {
-        WINRT_TRY {
+        try {
             _currentSession = GetCurrentSession();
-        }
-        WINRT_CATCH(exception) {
+        } catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN(
                 "UniversalSystemSession get current session failed. Code: {:#x}, Message: {}",
-                exception.code(), winrt::to_string(exception.message()));
+                ex.code(), winrt::to_string(ex.message()));
             return false;
         }
 
@@ -319,19 +316,21 @@ public:
     }
 
     Status Play() override {
-        WINRT_TRY {
+        try {
             _currentSession->TryPlayAsync().get();
             return Status::Success;
+        } catch (const OS::Windows::Winrt::Exception &ex) {
+            return Status{Status::GlobalMediaUSSPlayFailed}.SetAdditionalData(ex);
         }
-        WINRT_CATCH_RETURN_STATUS(Status::GlobalMediaUSSPlayFailed)
     }
 
     Status Pause() override {
-        WINRT_TRY {
+        try {
             _currentSession->TryPauseAsync().get();
             return Status::Success;
+        } catch (const OS::Windows::Winrt::Exception &ex) {
+            return Status{Status::GlobalMediaUSSPauseFailed}.SetAdditionalData(ex);
         }
-        WINRT_CATCH_RETURN_STATUS(Status::GlobalMediaUSSPauseFailed)
     }
 
     std::wstring GetProgramName() const override {
@@ -367,14 +366,13 @@ private:
     }
 
     static bool IsPlaying(const GlobalSystemMediaTransportControlsSession &gsmtcs) {
-        WINRT_TRY {
+        try {
             return gsmtcs.GetPlaybackInfo().PlaybackStatus() ==
                    GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
-        }
-        WINRT_CATCH(exception) {
+        } catch (const OS::Windows::Winrt::Exception &ex) {
             SPDLOG_WARN(
                 "UniversalSystemSession Get playback status failed. Code: {:#x}, Message: {}",
-                exception.code(), winrt::to_string(exception.message()));
+                ex.code(), winrt::to_string(ex.message()));
             return false;
         }
     }
