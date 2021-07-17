@@ -173,7 +173,7 @@ void SettingsWindow::ConnectUi()
                 _sliderEnableVolumeLevelWarning = false;
             }
             else {
-                _sliderVolumeLevel->setValue(kSliderVolumeLevelAlertValue - 1);
+                _sliderVolumeLevel->setValue(kSliderVolumeLevelAlertValue);
                 return;
             }
         }
