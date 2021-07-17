@@ -36,6 +36,11 @@ inline void Pause()
     Controller::GetInstance().Pause();
 }
 
+inline void OnLimitedDeviceStateChanged()
+{
+    Controller::GetInstance().OnLimitedDeviceStateChanged();
+}
+
 inline void LimitVolume(std::optional<uint32_t> volumeLevel)
 {
     Controller::GetInstance().LimitVolume(std::move(volumeLevel));

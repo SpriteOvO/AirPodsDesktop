@@ -97,12 +97,15 @@ public:
     VolumeLevelLimiter();
     ~VolumeLevelLimiter();
 
+    std::optional<uint32_t> GetMaxValue() const;
     void SetMaxValue(std::optional<uint32_t> volumeLevel);
 
     std::optional<uint32_t> GetVolumeLevel() const;
     bool SetVolumeLevel(uint32_t volumeLevel) const;
 
 private:
+    std::atomic<bool> _inited{false};
+    std::optional<uint32_t> _maxVolumeLevel;
     OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
     Callback _callback;
 
@@ -115,16 +118,17 @@ bool Initialize();
 class Controller final : public Details::ControllerAbstract<Controller>
 {
 public:
-    Controller() = default;
+    Controller();
 
     void Play() override;
     void Pause() override;
 
+    void OnLimitedDeviceStateChanged() override;
     void LimitVolume(std::optional<uint32_t> volumeLevel) override;
 
 private:
     std::mutex _mutex;
     std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
-    Details::VolumeLevelLimiter _volumeLevelLimiter;
+    std::unique_ptr<Details::VolumeLevelLimiter> _volumeLevelLimiter;
 };
 } // namespace Core::GlobalMedia

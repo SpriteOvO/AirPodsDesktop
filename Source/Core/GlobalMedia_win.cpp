@@ -18,6 +18,7 @@
 
 #include "GlobalMedia_win.h"
 
+#include <Functiondiscoverykeys_devpkey.h>
 #include <spdlog/spdlog.h>
 
 #include "../Utils.h"
@@ -607,7 +608,7 @@ void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLev
 VolumeLevelLimiter::VolumeLevelLimiter()
     : _callback{[this](uint32_t volumeLevel) { return SetVolumeLevel(volumeLevel); }}
 {
-    Initialize();
+    _inited = Initialize();
 }
 
 VolumeLevelLimiter::~VolumeLevelLimiter()
@@ -617,26 +618,43 @@ VolumeLevelLimiter::~VolumeLevelLimiter()
     }
 }
 
+std::optional<uint32_t> VolumeLevelLimiter::GetMaxValue() const
+{
+    return _maxVolumeLevel;
+}
+
 void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
 {
+    _maxVolumeLevel = std::move(volumeLevel);
+
+    if (!_inited) {
+        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        return;
+    }
+
     SPDLOG_INFO(
         "VolumeLevelLimiter::SetMaxValue() value: {}",
-        volumeLevel.has_value() ? std::to_string(volumeLevel.value()) : "nullopt");
+        _maxVolumeLevel.has_value() ? std::to_string(_maxVolumeLevel.value()) : "nullopt");
 
-    if (volumeLevel.has_value()) {
+    if (_maxVolumeLevel.has_value()) {
         auto optCurrent = GetVolumeLevel();
 
         // Reduce the current volume level if it's exceeded the limit
-        if (optCurrent.has_value() && optCurrent.value() > volumeLevel.value()) {
-            SetVolumeLevel(volumeLevel.value());
+        if (optCurrent.has_value() && optCurrent.value() > _maxVolumeLevel.value()) {
+            SetVolumeLevel(_maxVolumeLevel.value());
         }
     }
 
-    _callback.SetMaxValue(std::move(volumeLevel));
+    _callback.SetMaxValue(_maxVolumeLevel);
 }
 
 std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
 {
+    if (!_inited) {
+        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        return std::nullopt;
+    }
+
     float value = 0.f;
     HRESULT result = _endpointVolume->GetMasterVolumeLevelScalar(&value);
     if (FAILED(result)) {
@@ -653,6 +671,11 @@ std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
 
 bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
 {
+    if (!_inited) {
+        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        return false;
+    }
+
     SPDLOG_TRACE("SetVolumeLevel() '{}'", volumeLevel);
 
     HRESULT result = _endpointVolume->SetMasterVolumeLevelScalar(volumeLevel / 100.f, nullptr);
@@ -664,9 +687,6 @@ bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
     return true;
 }
 
-// TODO: * Bind to the exact AirPods playback device insteam of default playback device
-//       * Allow rebind if device unavailable
-//
 bool VolumeLevelLimiter::Initialize()
 {
     SPDLOG_INFO("VolumeLevelLimiter initializing.");
@@ -680,7 +700,69 @@ bool VolumeLevelLimiter::Initialize()
         return false;
     }
 
+    OS::Windows::Com::UniquePtr<IMMDeviceCollection> collection;
+    result = deviceEnumerator->EnumAudioEndpoints(
+        eRender, DEVICE_STATE_ACTIVE, collection.ReleaseAndAddressOf());
+    if (FAILED(result)) {
+        SPDLOG_WARN("'EnumAudioEndpoints' failed. HRESULT: {:#x}", result);
+        return false;
+    }
+
+    uint32_t count = 0;
+    result = collection->GetCount(&count);
+    if (FAILED(result)) {
+        SPDLOG_WARN("'IMMDeviceCollection::GetCount' failed. HRESULT: {:#x}", result);
+        return false;
+    }
+
     OS::Windows::Com::UniquePtr<IMMDevice> audioEndpoint;
+
+    for (uint32_t i = 0; i < count; ++i) {
+        OS::Windows::Com::UniquePtr<IMMDevice> device;
+        result = collection->Item(i, device.ReleaseAndAddressOf());
+        if (FAILED(result)) {
+            SPDLOG_WARN("'IMMDeviceCollection::Item' failed. HRESULT: {:#x}", result);
+            continue;
+        }
+
+        OS::Windows::Com::UniquePtr<IPropertyStore> property;
+        result = device->OpenPropertyStore(STGM_READ, property.ReleaseAndAddressOf());
+        if (FAILED(result)) {
+            SPDLOG_WARN("'IMMDevice::OpenPropertyStore' failed. HRESULT: {:#x}", result);
+            continue;
+        }
+
+        PROPVARIANT variant;
+        result = property->GetValue(PKEY_DeviceInterface_FriendlyName, &variant);
+        if (FAILED(result)) {
+            SPDLOG_WARN(
+                "Get property PKEY_DeviceInterface_FriendlyName failed. HRESULT: {:#x}", result);
+            continue;
+        }
+
+        if (variant.pwszVal == nullptr) {
+            SPDLOG_WARN("variant.pwszVal == nullptr");
+        }
+        else {
+            std::wstring friendlyName{variant.pwszVal};
+            SPDLOG_INFO(L"IMMDevice FriendlyName: {}", friendlyName);
+            if (friendlyName == L"AirPods Stereo") {
+                audioEndpoint = std::move(device);
+            }
+        }
+
+        PropVariantClear(&variant);
+
+        if (audioEndpoint) {
+            break;
+        }
+    }
+
+    if (!audioEndpoint) {
+        SPDLOG_WARN("Cannot find the AirPods audio endpoint IMMDevice.");
+        return false;
+    }
+
     result = deviceEnumerator->GetDefaultAudioEndpoint(
         eRender, eConsole, audioEndpoint.ReleaseAndAddressOf());
     if (FAILED(result)) {
@@ -712,6 +794,8 @@ bool Initialize()
 {
     return OS::Windows::Winrt::Initialize();
 }
+
+Controller::Controller() : _volumeLevelLimiter{std::make_unique<Details::VolumeLevelLimiter>()} {}
 
 void Controller::Play()
 {
@@ -760,8 +844,23 @@ void Controller::Pause()
     }
 }
 
+void Controller::OnLimitedDeviceStateChanged()
+{
+    std::this_thread::sleep_for(1s);
+
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    auto maxVolumeLevel = _volumeLevelLimiter->GetMaxValue();
+
+    _volumeLevelLimiter.reset();
+    _volumeLevelLimiter = std::make_unique<Details::VolumeLevelLimiter>();
+    _volumeLevelLimiter->SetMaxValue(std::move(maxVolumeLevel));
+}
+
 void Controller::LimitVolume(std::optional<uint32_t> volumeLevel)
 {
-    _volumeLevelLimiter.SetMaxValue(std::move(volumeLevel));
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    _volumeLevelLimiter->SetMaxValue(std::move(volumeLevel));
 }
 } // namespace Core::GlobalMedia

@@ -433,6 +433,8 @@ public:
             _tracker.Disconnect();
         };
 
+        GlobalMedia::OnLimitedDeviceStateChanged();
+
         if (address == 0) {
             disconnect();
             UpdateUi(Action::WaitingForBinding);
@@ -443,7 +445,6 @@ public:
         UpdateUi(Action::Disconnected);
 
         auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
-
         if (!optDevice.has_value()) {
             disconnect();
             return;
@@ -466,6 +467,8 @@ public:
             SPDLOG_INFO(
                 "The device we bound is updated. current: {}, new: {}", _deviceConnected,
                 newDeviceConnected);
+
+            GlobalMedia::OnLimitedDeviceStateChanged();
         };
     }
 
