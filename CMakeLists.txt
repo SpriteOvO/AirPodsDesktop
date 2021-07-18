@@ -168,6 +168,8 @@ set(
 )
 
 set(ADD_EXECUTABLE_ARG)
+set(APD_COMPILE_DEFINITIONS)
+
 if (MSVC)
     set(
         APD_CODE_FILES ${APD_CODE_FILES}
@@ -177,7 +179,9 @@ if (MSVC)
 
         "Source/Resource/Resource.rc"
     )
-    if (NOT APD_ENABLE_CONSOLE)
+    if (APD_ENABLE_CONSOLE)
+        set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_ENABLE_CONSOLE)
+    elseif()
         set(ADD_EXECUTABLE_ARG WIN32)
     endif()
 
@@ -199,6 +203,7 @@ target_compile_definitions(
 
     $<$<CONFIG:Debug>:APD_DEBUG>
     SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+    ${APD_COMPILE_DEFINITIONS}
 )
 
 ##################################################

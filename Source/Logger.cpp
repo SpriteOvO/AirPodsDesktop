@@ -25,6 +25,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/sink.h>
 #include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/pattern_formatter.h>
 
 #include <Config.h>
@@ -166,10 +167,6 @@ protected:
     {
         std::string stdPayload{message.payload.begin(), message.payload.end()};
 
-#if defined APD_DEBUG
-        std::cout << std::string{formatted.begin(), formatted.end()};
-#endif
-
         QString payload = QString::fromStdString(stdPayload);
 
         switch (message.level) {
@@ -196,9 +193,17 @@ bool Initialize(bool enableTrace)
     auto logFilePath = workspace.filePath(CONFIG_PROGRAM_NAME ".log");
 
     try {
+        // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
-                        std::make_shared<Details::CustomFileSink<>>(logFilePath.toStdString())});
+                std::make_shared<Details::CustomFileSink<>>(logFilePath.toStdString())
+#if defined APD_ENABLE_CONSOLE
+                ,std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
+#endif
+            }
+        );
+        // clang-format on
+
         spdlog::register_logger(logger);
         spdlog::set_default_logger(logger);
 
