@@ -119,6 +119,7 @@ struct State {
 
 std::optional<State> GetState();
 void StartScanner();
+QString GetDisplayName();
 void OnBindDeviceChanged(uint64_t address);
 void OnQuit();
 

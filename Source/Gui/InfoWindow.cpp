@@ -241,7 +241,8 @@ void InfoWindow::ChangeButtonAction(ButtonAction action)
 
 void InfoWindow::UpdateState(const Core::AirPods::State &state)
 {
-    _ui.deviceLabel->setText(Helper::ToString(state.model));
+    // _ui.deviceLabel->setText(Helper::ToString(state.model));
+    _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
 
     SetAnimation(state.model);
 

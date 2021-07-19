@@ -397,6 +397,12 @@ public:
         return status;
     }
 
+    QString GetDisplayName()
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        return _displayName;
+    }
+
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
     {
         std::lock_guard<std::mutex> lock{_mutex};
@@ -455,6 +461,8 @@ public:
 
         _boundDevice = std::move(optDevice);
 
+        _displayName = QString::fromStdString(_boundDevice->GetDisplayName());
+
         _boundDevice->CbConnectionStatusChanged() += [this](Bluetooth::DeviceState state) {
             bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
             bool doDisconnet = _deviceConnected && !newDeviceConnected;
@@ -495,6 +503,7 @@ private:
 
     Bluetooth::AdvertisementWatcher _adWatcher;
     std::optional<Bluetooth::Device> _boundDevice;
+    QString _displayName;
 
     std::atomic<Action> _lastAction{Action::Unavailable};
     std::atomic<bool> _isScannerStarted{false}, _requireStartScanner{false},
@@ -609,7 +618,7 @@ private:
             }
 
             _requireStartScanner = false;
-            if (_lastAction == Action::Unavailable) {
+            if (_lastAction != Action::WaitingForBinding) {
                 UpdateUi(Action::Disconnected);
             }
             SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
@@ -652,6 +661,11 @@ std::optional<State> GetState()
 void StartScanner()
 {
     Details::Manager::GetInstance().StartScanner();
+}
+
+QString GetDisplayName()
+{
+    return Details::Manager::GetInstance().GetDisplayName();
 }
 
 void OnBindDeviceChanged(uint64_t address)
