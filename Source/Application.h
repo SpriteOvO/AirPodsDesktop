@@ -30,6 +30,11 @@
 
 class Application : public QApplication
 {
+private:
+    struct LaunchOptions {
+        bool enableTrace{false};
+    };
+
 public:
     template <class... Args>
     inline static void Initialize(Args &&...args)
@@ -40,6 +45,7 @@ public:
 
     Application(int argc, char *argv[]);
 
+    bool Prepare(int argc, char *argv[]);
     int Run();
 
     inline auto &GetSysTray()
@@ -62,6 +68,8 @@ public:
 private:
     static inline cxxopts::Options _options{Config::ProgramName, Config::Description};
     static inline bool _isFirstTimeUse{false};
+
+    LaunchOptions _launchOptions;
 
     std::unique_ptr<Gui::SysTray> _sysTray;
     std::unique_ptr<Gui::InfoWindow> _infoWindow;

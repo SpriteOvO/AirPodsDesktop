@@ -399,6 +399,8 @@ public:
 
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
     {
+        std::lock_guard<std::mutex> lock{_mutex};
+
         if (!Advertisement::IsDesiredAdv(data)) {
             return false;
         }
@@ -424,6 +426,8 @@ public:
 
     void OnBoundDeviceAddressChanged(uint64_t address)
     {
+        std::lock_guard<std::mutex> lock{_mutex};
+
         const auto &disconnect = [this]() {
             _boundDevice.reset();
             _deviceConnected = false;
@@ -496,6 +500,7 @@ private:
     std::atomic<bool> _isScannerStarted{false}, _requireStartScanner{false},
         _deviceConnected{false};
     Helper::ConWorker _scannerStartWorker;
+    std::mutex _mutex;
 
     Manager()
     {
@@ -629,10 +634,12 @@ private:
             title = QDialog::tr("Disconnected");
         }
 
-        Utils::Qt::Dispatch([=] {
+        if (App->GetInfoWindow()) {
             App->GetInfoWindow()->DisconnectSafety(title);
+        }
+        if (App->GetSysTray()) {
             App->GetSysTray()->DisconnectSafety(title);
-        });
+        }
     }
 };
 } // namespace Details

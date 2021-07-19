@@ -101,23 +101,23 @@ void Application::FirstTimeUse()
            "Enjoy it all~"));
 }
 
-Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
-{
-    bool enableTrace = false;
+Application::Application(int argc, char *argv[]) : QApplication{argc, argv} {}
 
+bool Application::Prepare(int argc, char *argv[])
+{
     try {
         _options.add_options()(
             "trace", "Enable trace level logging.", cxxopts::value<bool>()->default_value("false"));
 
         auto args = _options.parse(argc, argv);
-        enableTrace = args["trace"].as<bool>();
+        _launchOptions.enableTrace = args["trace"].as<bool>();
     }
     catch (cxxopts::OptionException &exception) {
         Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
-        APD_ASSERT(false);
+        return false;
     }
 
-    Logger::Initialize(enableTrace);
+    Logger::Initialize(_launchOptions.enableTrace);
 
     SPDLOG_INFO("Launched. Version: '{}'", Config::Version::String);
 #if defined APD_DEBUG
@@ -126,7 +126,7 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
     SPDLOG_INFO("Build configuration: Not Debug");
 #endif
 
-    SPDLOG_INFO("Args: {{ trace: {} }}", enableTrace);
+    SPDLOG_INFO("Args: {{ trace: {} }}", _launchOptions.enableTrace);
 
     InitSettings();
     Core::Bluetooth::Initialize();
@@ -140,6 +140,7 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
     _infoWindow = std::make_unique<Gui::InfoWindow>();
 
     connect(this, &Application::aboutToQuit, this, &Application::QuitHandler);
+    return true;
 }
 
 int Application::Run()

@@ -27,5 +27,8 @@ int main(int argc, char *argv[])
     }
 
     Application::Initialize(argc, argv);
+    if (!App->Prepare(argc, argv)) {
+        return 1;
+    }
     return static_cast<int>(App->Run());
 }
