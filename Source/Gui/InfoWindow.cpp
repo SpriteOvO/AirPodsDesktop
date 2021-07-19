@@ -394,14 +394,12 @@ void InfoWindow::BindDevice()
     const auto &selectedDevice = devices.at(selectedIndex);
 
     SPDLOG_INFO(
-        "Selected device index: '{}', device name: '{}'", selectedIndex,
+        "Selected device index: '{}', device name: '{}'. Bound to this device.", selectedIndex,
         selectedDevice.GetDisplayName());
 
     auto current = Core::Settings::GetCurrent();
     current.device_address = selectedDevice.GetAddress();
     Core::Settings::SaveToCurrentAndLocal(std::move(current));
-
-    SPDLOG_INFO("Remembered this device.");
 
     ChangeButtonAction(ButtonAction::NoButton);
 }
