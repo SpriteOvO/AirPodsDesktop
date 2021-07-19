@@ -33,7 +33,7 @@ class DownloadWindow : public QDialog
     Q_OBJECT
 
 public:
-    DownloadWindow(const Core::Update::Info &info, QWidget *parent = nullptr);
+    DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent = nullptr);
     ~DownloadWindow();
 
 public Q_SLOTS:
@@ -43,9 +43,11 @@ public Q_SLOTS:
 private:
     Ui::DownloadWindow _ui;
 
-    Core::Update::Info _info;
+    Core::Update::ReleaseInfo _info;
     std::atomic<bool> _destroy{false};
     std::thread _downloadThread;
+
+    void DownloadThread();
 
     UTILS_QT_DISABLE_ESC_QUIT(DownloadWindow, QDialog);
 };

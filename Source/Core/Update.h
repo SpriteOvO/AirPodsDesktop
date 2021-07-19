@@ -20,30 +20,32 @@
 
 #include <string>
 #include <QString>
+#include <QVersionNumber>
 
 #include "../Status.h"
 
 namespace Core::Update {
 
-struct Info {
-    using FnProgress = std::function<bool(size_t downloaded, size_t total)>;
+using FnProgress = std::function<bool(size_t downloaded, size_t total)>;
 
+struct ReleaseInfo {
     bool CanAutoUpdate() const;
-    Status DownloadAndInstall(const FnProgress &progressCallback) const;
-    void PopupLatestUrl() const;
+    void PopupUrl() const;
 
-    bool needToUpdate{false};
-    QString localVer;
-    QString latestVer;
-    QString latestUrl;
-    QString latestFileName;
-    std::string latestFileUrl;
+    QVersionNumber version;
+    QString url;
+    QString fileName;
+    std::string downloadUrl;
     size_t fileSize{0};
     QString changeLog;
 };
 
-using StatusInfo = std::pair<Status, std::optional<Info>>;
+QVersionNumber GetLocalVersion();
 
-StatusInfo Check();
+std::optional<ReleaseInfo> FetchLatestRelease();
+
+bool NeedToUpdate(const ReleaseInfo &info);
+
+Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback);
 
 } // namespace Core::Update

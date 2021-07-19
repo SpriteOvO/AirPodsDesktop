@@ -28,32 +28,18 @@ using namespace std::chrono_literals;
 
 namespace Gui {
 
-DownloadWindow::DownloadWindow(const Core::Update::Info &info, QWidget *parent)
-    : QDialog{parent}, _info{info}
+DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
+    : QDialog{parent}, _info{std::move(info)}
 {
     _ui.setupUi(this);
 
     setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
-        _info.PopupLatestUrl();
+        _info.PopupUrl();
     });
 
-    _downloadThread = std::thread{[this]() {
-        Status status = _info.DownloadAndInstall([this](size_t downloaded, size_t total) {
-            QMetaObject::invokeMethod(
-                this, "UpdateProgress", Q_ARG(int, (int)downloaded), Q_ARG(int, (int)total));
-
-            if (_destroy) {
-                SPDLOG_WARN("DownloadWindow destructor requests destroy.");
-                return false;
-            }
-            return true;
-        });
-        if (status.IsFailed()) {
-            QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
-        }
-    }};
+    _downloadThread = std::thread{[this]() { DownloadThread(); }};
 }
 
 DownloadWindow::~DownloadWindow()
@@ -74,14 +60,32 @@ void DownloadWindow::UpdateProgress(int downloaded, int total)
 
 void DownloadWindow::OnFailed()
 {
-    SPDLOG_WARN("DownloadAndInstall failed. Popup latest url and quit.");
+    SPDLOG_WARN("DownloadInstall failed. Popup latest url and quit.");
 
     QMessageBox::warning(
         this, Config::ProgramName,
         tr("Oops, there was a glitch in the automatic update.\n"
            "Please download and install the new version manually."));
 
-    _info.PopupLatestUrl();
+    _info.PopupUrl();
     Application::QuitSafety();
+}
+
+void DownloadWindow::DownloadThread()
+{
+    Status status = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
+        QMetaObject::invokeMethod(
+            this, "UpdateProgress", Q_ARG(int, (int)downloaded), Q_ARG(int, (int)total));
+
+        if (_destroy) {
+            SPDLOG_WARN("DownloadWindow destructor requests destroy.");
+            return false;
+        }
+        return true;
+    });
+
+    if (status.IsFailed()) {
+        QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
+    }
 }
 } // namespace Gui

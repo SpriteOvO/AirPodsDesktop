@@ -144,35 +144,49 @@ Application::Application(int argc, char *argv[]) : QApplication{argc, argv}
 
 int Application::Run()
 {
-    if (CheckUpdate()) {
+    do {
+        if (!CheckUpdate()) {
+            break;
+        }
+
         Core::AirPods::StartScanner();
-    }
+
+    } while (false);
+
     return exec();
 }
 
 bool Application::CheckUpdate()
 {
-    auto statusInfo = Core::Update::Check();
-    if (statusInfo.first.IsFailed()) {
-        // ignore
+    const auto optInfo = Core::Update::FetchLatestRelease();
+    if (!optInfo.has_value()) {
+        SPDLOG_WARN("AppUpdate: Core::Update::FetchLatestRelease() returned nullopt.");
         return true;
     }
 
-    APD_ASSERT(statusInfo.second.has_value());
+    const auto &latestInfo = optInfo.value();
 
-    const auto &info = statusInfo.second.value();
-    if (!info.needToUpdate) {
+    const auto localVerNum = Core::Update::GetLocalVersion();
+    const auto needToUpdate = Core::Update::NeedToUpdate(latestInfo);
+
+    SPDLOG_INFO(
+        "{}. Local version: {}, latest version: {}.",
+        needToUpdate ? "Need to update" : "No need to update", localVerNum.toString(),
+        latestInfo.version.toString());
+
+    if (!needToUpdate) {
+        SPDLOG_INFO("AppUpdate: No need to update.");
         return true;
     }
 
-    if (info.latestVer == Core::Settings::GetCurrent().skipped_version) {
-        SPDLOG_INFO("User skipped this new version. Ignore.");
+    if (latestInfo.version.toString() == Core::Settings::GetCurrent().skipped_version) {
+        SPDLOG_INFO("AppUpdate: User skipped this new version. Ignore.");
         return true;
     }
 
     QString changeLogBlock;
-    if (!info.changeLog.isEmpty()) {
-        changeLogBlock = QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(info.changeLog);
+    if (!latestInfo.changeLog.isEmpty()) {
+        changeLogBlock = QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(latestInfo.changeLog);
     }
 
     auto button = QMessageBox::question(
@@ -183,38 +197,37 @@ bool Application::CheckUpdate()
            "Latest version: %2\n"
            "\n"
            "%3"
-           "Click \"Ignore\" to skip this version and no longer be reminded.\n"
+           "Click \"Ignore\" to skip this new version.\n"
            "\n"
            "Do you want to update it now?")
-            .arg(info.localVer)
-            .arg(info.latestVer)
+            .arg(localVerNum.toString())
+            .arg(latestInfo.version.toString())
             .arg(changeLogBlock),
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
 
     if (button == QMessageBox::Yes) {
         SPDLOG_INFO("AppUpdate: User clicked Yes.");
 
-        if (!info.CanAutoUpdate()) {
+        if (!latestInfo.CanAutoUpdate()) {
             SPDLOG_INFO("AppUpdate: Popup latest url and quit.");
-            info.PopupLatestUrl();
+            latestInfo.PopupUrl();
             Application::QuitSafety();
             return false;
         }
 
-        _downloadWindow = std::make_unique<Gui::DownloadWindow>(info);
+        _downloadWindow = std::make_unique<Gui::DownloadWindow>(latestInfo);
         _downloadWindow->show();
     }
     else if (button == QMessageBox::Ignore) {
         SPDLOG_INFO("AppUpdate: User clicked Ignore.");
 
         auto currentSettings = Core::Settings::GetCurrent();
-        currentSettings.skipped_version = info.latestVer;
+        currentSettings.skipped_version = latestInfo.version.toString();
         Core::Settings::SaveToCurrentAndLocal(std::move(currentSettings));
     }
     else {
         SPDLOG_INFO("AppUpdate: User clicked No.");
     }
-
     return true;
 }
 

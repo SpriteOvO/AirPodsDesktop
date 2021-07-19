@@ -78,10 +78,10 @@ private:
     invoke(SettingsLoadedDataNoAbiVer,          MAKE_STATUS(State::Failure, Module::Settings, 1), "") \
     invoke(SettingsLoadedDataAbiIncompatible,   MAKE_STATUS(State::Failure, Module::Settings, 2), "") \
 \
-    invoke(UpdateResponseStatusCodeIsNot200,    MAKE_STATUS(State::Failure, Module::Update, 1), "") \
-    invoke(UpdateResponseJsonFieldsTypeMismatch,MAKE_STATUS(State::Failure, Module::Update, 2), "") \
-    invoke(UpdateResponseJsonFieldUrlInvalid,   MAKE_STATUS(State::Failure, Module::Update, 3), "") \
-    invoke(UpdateResponseJsonParseFailed,       MAKE_STATUS(State::Failure, Module::Update, 4), "") \
+    /* invoke(UpdateResponseStatusCodeIsNot200,    MAKE_STATUS(State::Failure, Module::Update, 1), "") */ \
+    /* invoke(UpdateResponseJsonFieldsTypeMismatch,MAKE_STATUS(State::Failure, Module::Update, 2), "") */ \
+    /* invoke(UpdateResponseJsonFieldUrlInvalid,   MAKE_STATUS(State::Failure, Module::Update, 3), "") */ \
+    /* invoke(UpdateResponseJsonParseFailed,       MAKE_STATUS(State::Failure, Module::Update, 4), "") */ \
     invoke(UpdateDownloadCreateDirectoryFailed, MAKE_STATUS(State::Failure, Module::Update, 5), "") \
     invoke(UpdateDownloadCannotAutoUpdate,      MAKE_STATUS(State::Failure, Module::Update, 6), "") \
     invoke(UpdateDownloadStatusCodeIsNot200,    MAKE_STATUS(State::Failure, Module::Update, 7), "") \
