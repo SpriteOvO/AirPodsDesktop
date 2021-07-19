@@ -38,11 +38,20 @@ struct ReleaseInfo {
     std::string downloadUrl;
     size_t fileSize{0};
     QString changeLog;
+    bool isPreRelease{false};
 };
 
 QVersionNumber GetLocalVersion();
 
-std::optional<ReleaseInfo> FetchLatestRelease();
+std::vector<ReleaseInfo> FetchRecentReleases();
+
+std::optional<ReleaseInfo> FetchLatestStableRelease();
+
+std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version);
+
+std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease);
+
+bool IsCurrentPreRelease();
 
 bool NeedToUpdate(const ReleaseInfo &info);
 

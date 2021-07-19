@@ -35,7 +35,7 @@ using json = nlohmann::json;
 namespace Core::Update {
 namespace Impl {
 
-std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
+std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 {
     try {
         const auto root = json::parse(text);
@@ -46,14 +46,14 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
 
         // Check url
         if (url.indexOf(Config::UrlRepository) != 0) {
-            SPDLOG_WARN("ParseResponse: 'html_url' invalid. content: {}", url);
+            SPDLOG_WARN("ParseSRResponse: 'html_url' invalid. content: {}", url);
             return std::nullopt;
         }
 
         // Check body
         QString changeLog;
         if (body.isEmpty()) {
-            SPDLOG_WARN("ParseResponse: 'body' is empty.");
+            SPDLOG_WARN("ParseSRResponse: 'body' is empty.");
         }
         else {
             // Find change log
@@ -64,7 +64,7 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
             }
 
             if (clBeginPos == -1) {
-                SPDLOG_WARN("ParseResponse: Find change log block failed. body: {}", body);
+                SPDLOG_WARN("ParseSRResponse: Find change log block failed. body: {}", body);
             }
             else {
                 changeLog = body.right(body.length() - clBeginPos).trimmed();
@@ -85,6 +85,7 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
         info.version = QVersionNumber::fromString(tag);
         info.url = std::move(url);
         info.changeLog = std::move(changeLog);
+        info.isPreRelease = root["prerelease"].get<bool>();
 
         for (const auto &asset : root["assets"]) {
 
@@ -93,21 +94,21 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
             auto downloadUrl = asset["browser_download_url"].get<std::string>();
 
             if (fileName.isEmpty() || fileSize == 0 || downloadUrl.empty()) {
-                SPDLOG_WARN("ParseResponse: Asset json fields value is empty. Continue.");
+                SPDLOG_WARN("ParseSRResponse: Asset json fields value is empty. Continue.");
                 continue;
             }
 
             // Check url
             if (downloadUrl.find(Config::UrlRepository) != 0) {
                 SPDLOG_WARN(
-                    "ParseResponse: 'browser_download_url' invalid. Continue. content: '{}'",
+                    "ParseSRResponse: 'browser_download_url' invalid. Continue. content: '{}'",
                     downloadUrl);
                 continue;
             }
 
             SPDLOG_INFO(
-                "ParseResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName, fileSize,
-                downloadUrl);
+                "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
+                fileSize, downloadUrl);
 
 #if !defined APD_OS_WIN
     #error "Need to port."
@@ -115,12 +116,12 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
             // AirPodsDesktop-x.x.x-win32.exe
             //
             if (QFileInfo{fileName}.suffix() != "exe") {
-                SPDLOG_WARN("ParseResponse: Asset suffix is unsupported. Continue.");
+                SPDLOG_WARN("ParseSRResponse: Asset suffix is unsupported. Continue.");
                 continue;
             }
 
             if (fileName.indexOf(CONFIG_CPACK_SYSTEM_NAME) == -1) {
-                SPDLOG_WARN("ParseResponse: Asset platform is mismatched. Continue.");
+                SPDLOG_WARN("ParseSRResponse: Asset platform is mismatched. Continue.");
                 continue;
             }
 
@@ -128,15 +129,38 @@ std::optional<ReleaseInfo> ParseReleaseResponse(const std::string &text)
             info.downloadUrl = std::move(downloadUrl);
             info.fileSize = fileSize;
 
-            SPDLOG_INFO("ParseResponse: Found matching file.");
+            SPDLOG_INFO("ParseSRResponse: Found matching file.");
             break;
         }
 
         return info;
     }
     catch (const json::exception &ex) {
-        SPDLOG_WARN("ParseResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
+        SPDLOG_WARN("ParseSRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
         return std::nullopt;
+    }
+}
+
+std::vector<ReleaseInfo> ParseMultipleReleasesResponse(const std::string &text)
+{
+    try {
+        std::vector<ReleaseInfo> result;
+
+        auto root = json::parse(text);
+        for (const auto &release : root) {
+            auto optInfo = ParseSingleReleaseResponse(release.dump());
+            if (!optInfo.has_value()) {
+                SPDLOG_WARN("One release info parsing failed.");
+                return {};
+            }
+            result.emplace_back(std::move(optInfo.value()));
+        }
+
+        return result;
+    }
+    catch (json::exception &ex) {
+        SPDLOG_WARN("ParseMRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
+        return {};
     }
 }
 } // namespace Impl
@@ -156,7 +180,24 @@ QVersionNumber GetLocalVersion()
     return QVersionNumber::fromString(Config::Version::String);
 }
 
-std::optional<ReleaseInfo> FetchLatestRelease()
+std::vector<ReleaseInfo> FetchRecentReleases()
+{
+    const cpr::Response response = cpr::Get(
+        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases"},
+        cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+
+    if (response.status_code != 200) {
+        SPDLOG_WARN(
+            "FetchRecentReleases: GitHub REST API response status code isn't 200. "
+            "code: {} text: '{}'",
+            response.status_code, response.text);
+        return {};
+    }
+
+    return Impl::ParseMultipleReleasesResponse(response.text);
+}
+
+std::optional<ReleaseInfo> FetchLatestStableRelease()
 {
     const cpr::Response response = cpr::Get(
         cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/latest"},
@@ -170,7 +211,55 @@ std::optional<ReleaseInfo> FetchLatestRelease()
         return std::nullopt;
     }
 
-    return Impl::ParseReleaseResponse(response.text);
+    return Impl::ParseSingleReleaseResponse(response.text);
+}
+
+std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
+{
+    const std::string tag = version.toString().toStdString();
+    const cpr::Response response = cpr::Get(
+        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/tags/" + tag},
+        cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+
+    if (response.status_code != 200) {
+        SPDLOG_WARN(
+            "FetchReleaseByVersion: GitHub REST API response status code isn't 200. "
+            "code: {} text: '{}'",
+            response.status_code, response.text);
+        return std::nullopt;
+    }
+
+    return Impl::ParseSingleReleaseResponse(response.text);
+}
+
+std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
+{
+    if (includePreRelease) {
+        auto releases = FetchRecentReleases();
+        if (releases.empty()) {
+            return std::nullopt;
+        }
+        else {
+            return releases.front();
+        }
+    }
+    else {
+        return FetchLatestStableRelease();
+    }
+}
+
+bool IsCurrentPreRelease()
+{
+    const auto optInfo = FetchReleaseByVersion(GetLocalVersion());
+    if (!optInfo.has_value()) {
+        SPDLOG_WARN("IsCurrentPreRelease: FetchReleaseByVersion() failed.");
+        return false;
+    }
+
+    const auto result = optInfo->isPreRelease;
+
+    SPDLOG_INFO("IsCurrentPreRelease: returns {}.", result);
+    return result;
 }
 
 bool NeedToUpdate(const ReleaseInfo &info)

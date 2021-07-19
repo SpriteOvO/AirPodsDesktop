@@ -158,7 +158,7 @@ int Application::Run()
 
 bool Application::CheckUpdate()
 {
-    const auto optInfo = Core::Update::FetchLatestRelease();
+    const auto optInfo = Core::Update::FetchLatestRelease(Core::Update::IsCurrentPreRelease());
     if (!optInfo.has_value()) {
         SPDLOG_WARN("AppUpdate: Core::Update::FetchLatestRelease() returned nullopt.");
         return true;
