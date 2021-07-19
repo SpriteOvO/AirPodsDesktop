@@ -643,11 +643,16 @@ private:
             title = QDialog::tr("Disconnected");
         }
 
-        if (App->GetInfoWindow()) {
+        const auto &disconnect = [title = std::move(title)]() {
             App->GetInfoWindow()->DisconnectSafety(title);
-        }
-        if (App->GetSysTray()) {
             App->GetSysTray()->DisconnectSafety(title);
+        };
+
+        if (!App->GetInfoWindow() || !App->GetSysTray()) {
+            Utils::Qt::Dispatch(disconnect);
+        }
+        else {
+            disconnect();
         }
     }
 };
