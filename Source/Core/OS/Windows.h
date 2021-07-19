@@ -23,7 +23,9 @@
 
 #include <Windows.h>
 #include <tlhelp32.h>
+#include <shellapi.h>
 #include <winrt/Windows.Foundation.h>
+#include <QDir>
 #include <QString>
 #include <spdlog/spdlog.h>
 
@@ -118,6 +120,18 @@ FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring>
     return result;
 }
 } // namespace Window
+
+namespace File {
+
+inline bool ShowFileLocation(const QDir &directory)
+{
+    QString arguments = "/select,\"" + QDir::toNativeSeparators(directory.absolutePath()) + "\"";
+
+    return (uintptr_t)ShellExecuteW(
+               nullptr, nullptr, L"explorer.exe", arguments.toStdWString().c_str(), nullptr,
+               SW_SHOWDEFAULT) > 32;
+}
+} // namespace File
 
 namespace Winrt {
 

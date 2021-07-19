@@ -135,6 +135,12 @@ void SettingsWindow::CreateUi()
 
     _buttonUnbindAirPods = new QPushButton{tr("Unbind this AirPods"), this};
     newLine(_buttonUnbindAirPods);
+
+    // Show log file location
+    //
+
+    _buttonShowLogFileLocation = new QPushButton{tr("Show log file location"), this};
+    newLine(_buttonShowLogFileLocation);
 }
 
 void SettingsWindow::ConnectUi()
@@ -193,6 +199,10 @@ void SettingsWindow::ConnectUi()
         current.device_address = 0;
         Core::Settings::SaveToCurrentAndLocal(std::move(current));
         _buttonUnbindAirPods->setDisabled(true);
+    });
+
+    connect(_buttonShowLogFileLocation, &QPushButton::clicked, this, [this]() {
+        Utils::File::ShowFileLocation(Logger::GetLogFilePath());
     });
 }
 

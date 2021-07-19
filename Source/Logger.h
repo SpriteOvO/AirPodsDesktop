@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <QDir>
 #include <QString>
 
 namespace Logger {
@@ -26,6 +27,8 @@ bool Initialize(bool enableTrace);
 
 void DoError(const QString &content, bool report);
 void DoWarn(const QString &content);
+
+QDir GetLogFilePath();
 
 } // namespace Logger
 

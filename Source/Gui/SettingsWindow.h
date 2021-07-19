@@ -47,6 +47,7 @@ private:
     bool _sliderEnableVolumeLevelWarning = true;
     QSlider *_sliderMaximumReceivingRange;
     QPushButton *_buttonUnbindAirPods;
+    QPushButton *_buttonShowLogFileLocation;
 
     Core::Settings::Data _data;
 

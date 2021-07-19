@@ -114,6 +114,15 @@ inline QDir GetWorkspace()
     }
     return result;
 }
+
+inline bool ShowFileLocation(const QDir &directory)
+{
+#if defined APD_OS_WIN
+    return Core::OS::Windows::File::ShowFileLocation(directory);
+#else
+    #error "Need to port."
+#endif
+}
 } // namespace File
 
 namespace Process {

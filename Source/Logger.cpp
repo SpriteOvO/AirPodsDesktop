@@ -184,19 +184,29 @@ protected:
 };
 } // namespace Details
 
+QDir GetLogFilePath()
+{
+    static std::optional<QDir> result;
+    if (!result.has_value()) {
+        const auto workspace = Utils::File::GetWorkspace();
+        result = QDir{workspace.absoluteFilePath(CONFIG_PROGRAM_NAME ".log")};
+    }
+    return result.value();
+}
+
 bool Initialize(bool enableTrace)
 {
 #if defined APD_DEBUG
     enableTrace = true;
 #endif
-    auto workspace = Utils::File::GetWorkspace();
-    auto logFilePath = workspace.filePath(CONFIG_PROGRAM_NAME ".log");
 
     try {
+        const auto logFilePath = GetLogFilePath().absolutePath().toStdString();
+
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
-                std::make_shared<Details::CustomFileSink<>>(logFilePath.toStdString())
+                std::make_shared<Details::CustomFileSink<>>(logFilePath)
 #if defined APD_ENABLE_CONSOLE
                 ,std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
 #endif
