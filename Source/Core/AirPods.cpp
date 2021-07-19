@@ -440,13 +440,21 @@ public:
             _tracker.Disconnect();
         };
 
+        const auto &changeButtonToBind = []() {
+            App->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind);
+        };
+
         GlobalMedia::OnLimitedDeviceStateChanged({});
 
+        disconnect();
         if (address == 0) {
-            disconnect();
             UpdateUi(Action::WaitingForBinding);
-            Utils::Qt::Dispatch(
-                []() { App->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind); });
+            if (!App->GetInfoWindow()) {
+                Utils::Qt::Dispatch(changeButtonToBind);
+            }
+            else {
+                changeButtonToBind();
+            }
             return;
         }
         UpdateUi(Action::Disconnected);
