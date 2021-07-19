@@ -285,9 +285,15 @@ AdvertisementWatcher::AdvertisementWatcher()
     _bleWatcher.Stopped(std::bind(&AdvertisementWatcher::OnStopped, this, _2));
 }
 
+AdvertisementWatcher::~AdvertisementWatcher()
+{
+    Stop();
+}
+
 Status AdvertisementWatcher::Start()
 {
     try {
+        std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Start();
         return Status::Success;
     }
@@ -299,6 +305,7 @@ Status AdvertisementWatcher::Start()
 Status AdvertisementWatcher::Stop()
 {
     try {
+        std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Stop();
         return Status::Success;
     }
@@ -326,6 +333,7 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
         receivedData.manufacturerDataMap.try_emplace(companyId, std::move(stdData));
     }
 
+    std::lock_guard<std::mutex> lock{_mutex};
     ReceivedCallbacks().Invoke(receivedData);
 }
 
@@ -346,11 +354,12 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
 
     auto status = _bleWatcher.Status();
     auto errorCode = args.Error();
+    std::optional<std::string> optError;
 
     if (errorCode == BluetoothError::Success &&
         status != BluetoothLEAdvertisementWatcherStatus::Aborted)
     {
-        StoppedCallbacks().Invoke();
+        optError = std::nullopt;
     }
     else {
         std::string info;
@@ -367,8 +376,10 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
                 info = "Unknown error (" + std::to_string((uint32_t)errorCode) + ")";
             }
         }
-
-        ErrorCallbacks().Invoke(info);
+        optError = std::move(info);
     }
+
+    std::lock_guard<std::mutex> lock{_mutex};
+    StoppedCallbacks().Invoke(optError);
 }
 } // namespace Core::Bluetooth

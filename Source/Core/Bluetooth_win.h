@@ -115,12 +115,14 @@ public:
     using Timestamp = winrt::Windows::Foundation::DateTime;
 
     explicit AdvertisementWatcher();
+    ~AdvertisementWatcher();
 
     Status Start() override;
     Status Stop() override;
 
 private:
     WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
+    std::mutex _mutex;
 
     void OnReceived(const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
     void OnStopped(const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);

@@ -369,10 +369,10 @@ public:
             return;
         }
 
+        // TODO
         _isScannerStarted = true;
-        _destroyScannerThread = false;
-        _restartScanner = true;
-        _scannerRestartThread = std::thread{&Manager::ScannerRestartThread, this};
+        _requireStartScanner = true;
+        _scannerStartWorker.Start(5s, [this] { return ScannerStartWork(); });
     }
 
     Status StopScanner()
@@ -382,10 +382,7 @@ public:
             return Status::Success;
         }
 
-        _destroyScannerThread = true;
-        if (_scannerRestartThread.joinable()) {
-            _scannerRestartThread.join();
-        }
+        _scannerStartWorker.Stop();
 
         Status status = _adWatcher.Stop();
         if (status.IsFailed()) {
@@ -496,9 +493,9 @@ private:
     std::optional<Bluetooth::Device> _boundDevice;
 
     std::atomic<Action> _lastAction{Action::Unavailable};
-    std::atomic<bool> _isScannerStarted{false}, _destroyScannerThread{false},
-        _restartScanner{false}, _deviceConnected{false};
-    std::thread _scannerRestartThread;
+    std::atomic<bool> _isScannerStarted{false}, _requireStartScanner{false},
+        _deviceConnected{false};
+    Helper::ConWorker _scannerStartWorker;
 
     Manager()
     {
@@ -578,41 +575,43 @@ private:
                 OnAdvertisementReceived(receivedData);
             };
 
-        _adWatcher.StoppedCallbacks() += [this]() {
+        _adWatcher.StoppedCallbacks() += [this](const std::optional<std::string> &optError) {
             UpdateUi(Action::Unavailable);
-            SPDLOG_WARN("Bluetooth AdvWatcher stopped. Try to restart.");
-            _restartScanner = true;
-        };
+            SPDLOG_WARN(
+                "Bluetooth AdvWatcher stopped. Error: '{}'.",
+                optError.has_value() ? optError.value() : "nullopt");
 
-        _adWatcher.ErrorCallbacks() += [this](const std::string &info) {
-            UpdateUi(Action::Unavailable);
-            SPDLOG_WARN("Bluetooth AdvWatcher occurred a error. Try to restart. Info: {}", info);
-            _restartScanner = true;
+            if (optError.has_value()) {
+                SPDLOG_WARN("Try to restart.");
+                _requireStartScanner = true;
+                // _scannerStartWorker.Notify();
+            }
         };
     }
 
-    void ScannerRestartThread()
+    bool ScannerStartWork()
     {
-        while (!_destroyScannerThread) {
-            if (!_restartScanner) {
-                std::this_thread::sleep_for(500ms);
+        do {
+            if (!_requireStartScanner) {
+                break;
             }
-            else {
-                Status status = _adWatcher.Start();
-                if (!status.IsSucceeded()) {
-                    UpdateUi(Action::Unavailable);
-                    SPDLOG_WARN("Bluetooth AdvWatcher start failed. status: {}", status);
-                }
-                else {
-                    _restartScanner = false;
-                    if (_lastAction == Action::Unavailable) {
-                        UpdateUi(Action::Disconnected);
-                    }
-                    SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
-                }
-                std::this_thread::sleep_for(5s);
+
+            Status status = _adWatcher.Start();
+            if (!status.IsSucceeded()) {
+                UpdateUi(Action::Unavailable);
+                SPDLOG_WARN("Bluetooth AdvWatcher start failed. status: {}", status);
+                break;
             }
-        }
+
+            _requireStartScanner = false;
+            if (_lastAction == Action::Unavailable) {
+                UpdateUi(Action::Disconnected);
+            }
+            SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
+
+        } while (false);
+
+        return true;
     }
 
     void UpdateUi(Action action)

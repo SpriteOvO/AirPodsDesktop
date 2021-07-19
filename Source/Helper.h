@@ -134,6 +134,66 @@ private:
     std::vector<std::pair<CbHandle, Function>> _callbacks;
 };
 
+class ConWorker
+{
+public:
+    using FnCallback = std::function<bool()>;
+
+    ConWorker() = default;
+
+    inline ConWorker(std::chrono::milliseconds interval, FnCallback callback)
+    {
+        Start(std::move(interval), std::move(callback));
+    }
+
+    inline ~ConWorker()
+    {
+        Stop();
+    }
+
+    inline void Start(std::chrono::milliseconds interval, FnCallback callback)
+    {
+        Stop();
+        _interval = std::move(interval);
+        _callback = std::move(callback);
+        _destroyFlag = false;
+        _thread = std::thread{[this] { Thread(); }};
+    }
+
+    inline void Stop()
+    {
+        _destroyFlag = true;
+        Notify();
+        if (_thread.joinable()) {
+            _thread.join();
+        }
+    }
+
+    inline void Notify()
+    {
+        _destroyConVar.notify_all();
+    }
+
+private:
+    std::chrono::milliseconds _interval{};
+    FnCallback _callback;
+    std::thread _thread;
+    std::mutex _mutex;
+    std::condition_variable _destroyConVar;
+    std::atomic<bool> _destroyFlag{false};
+
+    void Thread()
+    {
+        while (!_destroyFlag) {
+            if (!_callback()) {
+                break;
+            }
+            std::unique_lock<std::mutex> lock{_mutex};
+            _destroyConVar.wait_for(lock, _interval);
+        }
+    }
+};
+
 class Timer
 {
 public:
@@ -153,7 +213,7 @@ public:
     inline void Start(std::chrono::milliseconds interval, std::function<void()> callback)
     {
         Stop();
-        _destroy = false;
+        _destroyFlag = false;
         _interval = std::move(interval);
         Reset();
         _thread = std::thread{&Timer::Thread, this, std::move(callback)};
@@ -161,7 +221,8 @@ public:
 
     inline void Stop()
     {
-        _destroy = true;
+        _destroyFlag = true;
+        _destroyConVar.notify_all();
         if (_thread.joinable()) {
             _thread.join();
         }
@@ -176,7 +237,9 @@ private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
 
-    std::atomic<bool> _destroy{false};
+    std::atomic<bool> _destroyFlag{false};
+    std::mutex _mutex;
+    std::condition_variable _destroyConVar;
     std::atomic<std::chrono::milliseconds> _interval;
     std::atomic<TimePoint> _deadline;
     std::thread _thread;
@@ -184,8 +247,13 @@ private:
     inline void Thread(std::function<void()> callback)
     {
         while (true) {
-            std::this_thread::sleep_until(_deadline.load());
-            if (_destroy) {
+            std::unique_lock<std::mutex> lock{_mutex};
+            {
+                _destroyConVar.wait_until(lock, _deadline.load());
+            }
+            lock.unlock();
+
+            if (_destroyFlag) {
                 break;
             }
             if (_deadline.load() > Clock::now()) {

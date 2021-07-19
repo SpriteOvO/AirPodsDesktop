@@ -83,8 +83,7 @@ public:
         std::map<uint16_t, std::vector<uint8_t>> manufacturerDataMap;
     };
     using FnReceived = std::function<void(const ReceivedData &)>;
-    using FnStopped = std::function<void()>;
-    using FnError = std::function<void(const std::string &)>;
+    using FnStopped = std::function<void(const std::optional<std::string> &)>;
 
     virtual inline ~AdvertisementWatcherAbstract() {}
 
@@ -96,10 +95,6 @@ public:
     {
         return _stoppedCallbacks;
     }
-    inline auto &ErrorCallbacks()
-    {
-        return _errorCallbacks;
-    }
 
     virtual Status Start() = 0;
     virtual Status Stop() = 0;
@@ -107,7 +102,6 @@ public:
 private:
     Helper::Callback<FnReceived> _receivedCallbacks;
     Helper::Callback<FnStopped> _stoppedCallbacks;
-    Helper::Callback<FnError> _errorCallbacks;
 };
 } // namespace Details
 } // namespace Core::Bluetooth
