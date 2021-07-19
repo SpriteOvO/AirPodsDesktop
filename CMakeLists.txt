@@ -181,7 +181,7 @@ if (MSVC)
     )
     if (APD_ENABLE_CONSOLE)
         set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_ENABLE_CONSOLE)
-    elseif()
+    else()
         set(ADD_EXECUTABLE_ARG WIN32)
     endif()
 
