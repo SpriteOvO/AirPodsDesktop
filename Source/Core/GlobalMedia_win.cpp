@@ -605,10 +605,10 @@ void VolumeLevelLimiter::Callback::SetMaxValue(std::optional<uint32_t> volumeLev
 // VolumeLevelLimiter
 //
 
-VolumeLevelLimiter::VolumeLevelLimiter()
+VolumeLevelLimiter::VolumeLevelLimiter(const std::string &deviceName)
     : _callback{[this](uint32_t volumeLevel) { return SetVolumeLevel(volumeLevel); }}
 {
-    _inited = Initialize();
+    _inited = Initialize(deviceName);
 }
 
 VolumeLevelLimiter::~VolumeLevelLimiter()
@@ -687,7 +687,7 @@ bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
     return true;
 }
 
-bool VolumeLevelLimiter::Initialize()
+bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
 {
     SPDLOG_INFO("VolumeLevelLimiter initializing.");
 
@@ -746,7 +746,7 @@ bool VolumeLevelLimiter::Initialize()
         else {
             std::wstring friendlyName{variant.pwszVal};
             SPDLOG_INFO(L"IMMDevice FriendlyName: {}", friendlyName);
-            if (friendlyName == L"AirPods Stereo") {
+            if (friendlyName == QString::fromStdString(deviceName).toStdWString()) {
                 audioEndpoint = std::move(device);
             }
         }
@@ -795,7 +795,7 @@ bool Initialize()
     return OS::Windows::Winrt::Initialize();
 }
 
-Controller::Controller() : _volumeLevelLimiter{std::make_unique<Details::VolumeLevelLimiter>()} {}
+Controller::Controller() {}
 
 void Controller::Play()
 {
@@ -844,23 +844,27 @@ void Controller::Pause()
     }
 }
 
-void Controller::OnLimitedDeviceStateChanged()
+void Controller::OnLimitedDeviceStateChanged(const std::string &deviceName)
 {
-    std::this_thread::sleep_for(1s);
-
     std::lock_guard<std::mutex> lock{_mutex};
 
-    auto maxVolumeLevel = _volumeLevelLimiter->GetMaxValue();
-
     _volumeLevelLimiter.reset();
-    _volumeLevelLimiter = std::make_unique<Details::VolumeLevelLimiter>();
-    _volumeLevelLimiter->SetMaxValue(std::move(maxVolumeLevel));
+
+    if (!deviceName.empty()) {
+        std::this_thread::sleep_for(1s);
+        _volumeLevelLimiter = std::make_unique<Details::VolumeLevelLimiter>(deviceName);
+        _volumeLevelLimiter->SetMaxValue(_maxVolumeLevel);
+    }
 }
 
 void Controller::LimitVolume(std::optional<uint32_t> volumeLevel)
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
-    _volumeLevelLimiter->SetMaxValue(std::move(volumeLevel));
+    _maxVolumeLevel = std::move(volumeLevel);
+
+    if (_volumeLevelLimiter) {
+        _volumeLevelLimiter->SetMaxValue(_maxVolumeLevel);
+    }
 }
 } // namespace Core::GlobalMedia

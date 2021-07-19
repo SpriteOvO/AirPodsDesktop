@@ -94,7 +94,7 @@ private:
     };
 
 public:
-    VolumeLevelLimiter();
+    VolumeLevelLimiter(const std::string &deviceName);
     ~VolumeLevelLimiter();
 
     std::optional<uint32_t> GetMaxValue() const;
@@ -109,7 +109,7 @@ private:
     OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
     Callback _callback;
 
-    bool Initialize();
+    bool Initialize(const std::string &deviceName);
 };
 } // namespace Details
 
@@ -123,12 +123,13 @@ public:
     void Play() override;
     void Pause() override;
 
-    void OnLimitedDeviceStateChanged() override;
+    void OnLimitedDeviceStateChanged(const std::string &deviceName) override;
     void LimitVolume(std::optional<uint32_t> volumeLevel) override;
 
 private:
     std::mutex _mutex;
     std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
     std::unique_ptr<Details::VolumeLevelLimiter> _volumeLevelLimiter;
+    std::optional<uint32_t> _maxVolumeLevel;
 };
 } // namespace Core::GlobalMedia

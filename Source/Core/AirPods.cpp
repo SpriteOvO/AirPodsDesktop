@@ -432,7 +432,7 @@ public:
 
     void OnBoundDeviceAddressChanged(uint64_t address)
     {
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::unique_lock<std::mutex> lock{_mutex};
 
         const auto &disconnect = [this]() {
             _boundDevice.reset();
@@ -440,7 +440,7 @@ public:
             _tracker.Disconnect();
         };
 
-        GlobalMedia::OnLimitedDeviceStateChanged();
+        GlobalMedia::OnLimitedDeviceStateChanged({});
 
         if (address == 0) {
             disconnect();
@@ -464,6 +464,8 @@ public:
         _displayName = QString::fromStdString(_boundDevice->GetDisplayName());
 
         _boundDevice->CbConnectionStatusChanged() += [this](Bluetooth::DeviceState state) {
+            std::lock_guard<std::mutex> lock{_mutex};
+
             bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
             bool doDisconnet = _deviceConnected && !newDeviceConnected;
             _deviceConnected = newDeviceConnected;
@@ -477,8 +479,13 @@ public:
                 "The device we bound is updated. current: {}, new: {}", _deviceConnected,
                 newDeviceConnected);
 
-            GlobalMedia::OnLimitedDeviceStateChanged();
+            GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
         };
+
+        if (_boundDevice->GetConnectionState() == Bluetooth::DeviceState::Connected) {
+            lock.unlock();
+            _boundDevice->CbConnectionStatusChanged().Invoke(Bluetooth::DeviceState::Connected);
+        }
     }
 
     void OnQuit()
