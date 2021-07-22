@@ -57,7 +57,8 @@ void SysTray::UpdateState(const Core::AirPods::State &state)
 
     QString toolTip;
 
-    toolTip += Helper::ToString(state.model);
+    // toolTip += Helper::ToString(state.model);
+    toolTip += Core::AirPods::GetDisplayName();
 
     // clang-format off
 
