@@ -369,7 +369,6 @@ public:
             return;
         }
 
-        // TODO
         _isScannerStarted = true;
         _requireStartScanner = true;
         _scannerStartWorker.Start(5s, [this] { return ScannerStartWork(); });
