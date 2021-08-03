@@ -79,7 +79,7 @@ public:
         SPDLOG_TRACE("Do pause.");
 
         if (!IsPlaying()) {
-            SPDLOG_TRACE("The media program nothing is playingg.");
+            SPDLOG_TRACE("The media program nothing is playing.");
             return Status::GlobalMediaPauseNothingIsPlaying;
         }
         return Switch();
