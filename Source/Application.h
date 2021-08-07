@@ -22,7 +22,6 @@
 #include <cxxopts.hpp>
 #include <SingleApplication>
 
-#include "Config.h"
 #include "Gui/SysTray.h"
 #include "Gui/InfoWindow.h"
 #include "Gui/DownloadWindow.h"

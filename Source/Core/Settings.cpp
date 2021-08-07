@@ -22,6 +22,7 @@
 #include <QDir>
 #include <spdlog/spdlog.h>
 
+#include <Config.h>
 #include "../Helper.h"
 #include "../Logger.h"
 #include "../Application.h"

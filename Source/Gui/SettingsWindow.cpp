@@ -23,6 +23,8 @@
 #include <QToolTip>
 #include <QLabel>
 
+#include <Config.h>
+
 using namespace std::chrono_literals;
 
 namespace Gui {

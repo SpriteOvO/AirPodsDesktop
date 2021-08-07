@@ -21,6 +21,7 @@
 #include <QPushButton>
 #include <QMetaObject>
 
+#include <Config.h>
 #include "../Status.h"
 #include "../Application.h"
 

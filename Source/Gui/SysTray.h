@@ -22,7 +22,6 @@
 #include <QMenu>
 #include <QAction>
 
-#include <Config.h>
 #include "../Core/AirPods.h"
 #include "SettingsWindow.h"
 

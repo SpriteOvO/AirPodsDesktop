@@ -21,6 +21,7 @@
 #include <QScreen>
 #include <QPainter>
 
+#include <Config.h>
 #include "../Helper.h"
 #include "../ErrorHandle.h"
 #include "../Application.h"

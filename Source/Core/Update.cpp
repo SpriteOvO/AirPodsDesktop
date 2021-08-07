@@ -27,6 +27,7 @@
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
 
+#include <Config.h>
 #include "../Logger.h"
 #include "../Application.h"
 

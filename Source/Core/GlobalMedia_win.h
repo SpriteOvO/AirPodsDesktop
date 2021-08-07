@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <Config.h>
-
 #if !defined APD_OS_WIN
     #error "This file shouldn't be compiled."
 #endif

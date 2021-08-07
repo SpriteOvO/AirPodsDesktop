@@ -24,7 +24,6 @@
 #include <QMessageBox>
 #include <spdlog/fmt/ostr.h>
 
-#include "Config.h"
 #include "Helper.h"
 
 #if defined APD_OS_WIN

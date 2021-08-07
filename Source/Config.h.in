@@ -20,18 +20,6 @@
 
 #include <cstdint>
 
-#if defined __clang__
-    #define APD_CLANG
-#elif defined __GNUC__
-    #define APD_GCC
-#elif defined _MSC_VER
-    #define APD_MSVC
-#endif
-
-#if defined _WIN32
-    #define APD_OS_WIN
-#endif
-
 namespace Config {
 
 #define CONFIG_VERSION_STRING           "@AirPodsDesktop_VERSION_MAJOR@.@AirPodsDesktop_VERSION_MINOR@.@AirPodsDesktop_VERSION_PATCH@"
