@@ -163,6 +163,7 @@ set(
     "Source/Main.cpp"
     "Source/Logger.cpp"
     "Source/Assert.cpp"
+    "Source/ErrorHandle.cpp"
     "Source/Application.cpp"
 
     "Source/Gui/SysTray.cpp"

@@ -23,6 +23,7 @@
 
 #include <Config.h>
 #include "Logger.h"
+#include "ErrorHandle.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/Settings.h"
@@ -42,7 +43,7 @@ bool ApdApplication::PreInitialize(int argc, char *argv[])
         _launchOptions.enableTrace = args["trace"].as<bool>();
     }
     catch (cxxopts::OptionException &exception) {
-        Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
+        FatalError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
         return false;
     }
 
@@ -69,9 +70,10 @@ void ApdApplication::InitSettings()
             break;
 
         default:
-            Core::Settings::LoadDefault();
-            SPDLOG_CRITICAL("Unhandled error occurred while loading settings: {}", status);
-            break;
+            FatalError(
+                QString{"Unhandled error occurred while loading settings: '%1'"}.arg(
+                    status.ToMessage()),
+                true);
         }
     }
 }

@@ -24,7 +24,7 @@
 #include <QDesktopServices>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/sink.h>
-#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/pattern_formatter.h>
 
@@ -32,157 +32,11 @@
 #include "Helper.h"
 #include "Utils.h"
 #include "Application.h"
+#include "ErrorHandle.h"
 
 #include "Core/OS/Windows.h"
 
 namespace Logger {
-
-void DoError(const QString &content, bool report)
-{
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
-    // Because QMessageBox does not allow calls from non-GUI threads.
-    // So far, there seems to be no better way than using native APIs.
-    //
-
-    QString title = QMessageBox::tr("%1 fatal error").arg(Config::ProgramName);
-
-    if (report) {
-        // clang-format off
-
-        QString message = QMessageBox::tr(
-            "An error has occurred!\n"
-            "Please help us fix this problem.\n"
-            "--------------------------------------------------\n"
-            "\n"
-            "%1\n"
-            "\n"
-            "--------------------------------------------------\n"
-            "Click \"Yes\" will pop up GitHub issue tracker page.\n"
-            "You can submit this information to us there.\n"
-            "Thank you very much."
-        ).arg(content);
-
-        // clang-format on
-
-        int button = MessageBoxW(
-            nullptr, message.toStdWString().c_str(), title.toStdWString().c_str(),
-            MB_ICONERROR | MB_YESNO);
-
-#if !defined APD_DEBUG
-        if (button == IDYES) {
-            QDesktopServices::openUrl(QUrl{Config::UrlIssues});
-        }
-#endif
-    }
-    else {
-        MessageBoxW(
-            nullptr, content.toStdWString().c_str(), title.toStdWString().c_str(),
-            MB_ICONERROR | MB_OK);
-    }
-
-#if defined APD_DEBUG
-    Utils::Debug::BreakPoint();
-#endif
-
-    QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
-}
-
-void DoWarn(const QString &content)
-{
-    MessageBoxW(
-        nullptr, content.toStdWString().c_str(),
-        QString{"%1 warning"}.arg(Config::ProgramName).toStdWString().c_str(),
-        MB_ICONWARNING | MB_OK);
-}
-
-namespace Details {
-
-template <class Mutex = std::mutex>
-class CustomFileSink : public spdlog::sinks::sink, Helper::NonCopyable
-{
-public:
-    CustomFileSink(const spdlog::filename_t &filename)
-        : _formatter{spdlog::details::make_unique<spdlog::pattern_formatter>()}
-    {
-        _fileHelper.open(filename, true);
-    }
-
-    ~CustomFileSink() override = default;
-
-    void log(const spdlog::details::log_msg &message) final
-    {
-        std::lock_guard<Mutex> lock{_mutex};
-
-        // SinkIt
-        //
-        spdlog::memory_buf_t formatted;
-        _formatter->format(message, formatted);
-        _fileHelper.write(formatted);
-
-        PostHandler(message, formatted);
-    }
-
-    void flush() final
-    {
-        std::lock_guard<Mutex> lock{_mutex};
-        Flush();
-    }
-
-    void set_pattern(const std::string &pattern) final
-    {
-        std::lock_guard<Mutex> lock{_mutex};
-        SetPattern(pattern);
-    }
-
-    void set_formatter(std::unique_ptr<spdlog::formatter> sinkFormatter) final
-    {
-        std::lock_guard<Mutex> lock{_mutex};
-        SetFormatter(std::move(sinkFormatter));
-    }
-
-protected:
-    std::unique_ptr<spdlog::formatter> _formatter;
-    Mutex _mutex;
-    spdlog::details::file_helper _fileHelper;
-
-    void Flush()
-    {
-        _fileHelper.flush();
-    }
-
-    void SetPattern(const std::string &pattern)
-    {
-        SetFormatter(spdlog::details::make_unique<spdlog::pattern_formatter>(pattern));
-    }
-
-    void SetFormatter(std::unique_ptr<spdlog::formatter> sinkFormatter)
-    {
-        _formatter = std::move(sinkFormatter);
-    }
-
-    void PostHandler(const spdlog::details::log_msg &message, const spdlog::memory_buf_t &formatted)
-    {
-        std::string stdPayload{message.payload.begin(), message.payload.end()};
-
-        QString payload = QString::fromStdString(stdPayload);
-
-        switch (message.level) {
-        case spdlog::level::warn:
-            // DoWarn(payload);
-            break;
-        case spdlog::level::err:
-            DoError(payload, false);
-            break;
-        case spdlog::level::critical:
-            DoError(payload, true);
-            break;
-        }
-    }
-};
-} // namespace Details
 
 QDir GetLogFilePath()
 {
@@ -206,7 +60,7 @@ bool Initialize(bool enableTrace)
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
-                std::make_shared<Details::CustomFileSink<>>(logFilePath)
+                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logFilePath, 0x100000, 1)
 #if defined APD_ENABLE_CONSOLE
                 ,std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
 #endif
@@ -226,7 +80,7 @@ bool Initialize(bool enableTrace)
         return true;
     }
     catch (spdlog::spdlog_ex &exception) {
-        DoError(QString{"spdlog initialize failed.\n\n%1"}.arg(exception.what()), true);
+        FatalError(QString{"spdlog initialize failed.\n\n%1"}.arg(exception.what()), true);
         return false;
     }
 }

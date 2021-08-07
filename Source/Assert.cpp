@@ -18,7 +18,7 @@
 
 #include "Assert.h"
 
-#include "Logger.h"
+#include "ErrorHandle.h"
 
 namespace Assert {
 
@@ -38,7 +38,6 @@ void Trigger(const QString &condition, const QString &fileName, uint32_t line)
 
     // clang-format on
 
-    Logger::DoError(content, true);
-    std::abort();
+    FatalError(content, true);
 }
 } // namespace Assert

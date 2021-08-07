@@ -22,6 +22,7 @@
 #include <QPainter>
 
 #include "../Helper.h"
+#include "../ErrorHandle.h"
 #include "../Application.h"
 #include "../Core/AppleCP.h"
 #include "SelectWindow.h"
@@ -230,9 +231,7 @@ void InfoWindow::ChangeButtonAction(ButtonAction action)
         break;
 
     default:
-        SPDLOG_CRITICAL("Unhandled button action. Value: '{}'", action);
-        APD_ASSERT(false);
-        return;
+        FatalError(QString{"Unhandled button action. Value: '%1'"}.arg((uint32_t)action), true);
     }
 
     _buttonAction = action;
@@ -414,9 +413,8 @@ void InfoWindow::OnButtonClicked()
         break;
 
     default:
-        SPDLOG_CRITICAL("Unhandled button action. Value: '{}'", _buttonAction);
-        APD_ASSERT(false);
-        break;
+        FatalError(
+            QString{"Unhandled button action. Value: '%1'"}.arg((uint32_t)_buttonAction), true);
     }
 }
 
