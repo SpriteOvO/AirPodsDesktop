@@ -102,7 +102,7 @@ message("Fetching 'spdlog'...")
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
-    GIT_TAG "v1.8.5"
+    GIT_TAG "100f30043f33277122e0991c83845a2617172ffd" # v1.8.5
 )
 FetchContent_MakeAvailable(spdlog)
 message("Fetch 'spdlog' done.")
@@ -113,7 +113,7 @@ message("Fetching 'cxxopts'...")
 FetchContent_Declare(
     cxxopts
     GIT_REPOSITORY "https://github.com/jarro2783/cxxopts.git"
-    GIT_TAG "v2.2.1"
+    GIT_TAG "302302b30839505703d37fb82f536c53cf9172fa" # v2.2.1
 )
 FetchContent_MakeAvailable(cxxopts)
 message("Fetch 'cxxopts' done.")
@@ -138,7 +138,7 @@ message("Fetching 'json'...")
 FetchContent_Declare(
     json
     GIT_REPOSITORY "https://github.com/nlohmann/json.git"
-    GIT_TAG "v3.9.1"
+    GIT_TAG "db78ac1d7716f56fc9f1b030b715f872f93964e4" # v3.9.1
 )
 FetchContent_MakeAvailable(json)
 message("Fetch 'json' done.")
@@ -150,7 +150,7 @@ message("Fetching 'SingleApplication'...")
 FetchContent_Declare(
     SingleApplication
     GIT_REPOSITORY "https://github.com/itay-grudev/SingleApplication.git"
-    GIT_TAG "v3.3.0"
+    GIT_TAG "bdbb09b5f21ebea4cd7dfb43b29114a94e04a3a1" # v3.3.0
 )
 FetchContent_MakeAvailable(SingleApplication)
 message("Fetch 'SingleApplication' done.")
