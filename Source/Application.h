@@ -28,7 +28,7 @@
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
 
-class Application : public SingleApplication
+class ApdApplication : public SingleApplication
 {
 private:
     struct LaunchOptions {
@@ -36,16 +36,10 @@ private:
     };
 
 public:
-    template <class... Args>
-    inline static void Initialize(Args &&...args)
-    {
-        PreConstructorInit();
-        App = std::make_unique<Application>(std::forward<Args>(args)...);
-    }
+    static bool PreInitialize(int argc, char *argv[]);
+    ApdApplication(int argc, char *argv[]);
 
-    Application(int argc, char *argv[]);
-
-    bool Prepare(int argc, char *argv[]);
+    bool Prepare();
     int Run();
 
     inline auto &GetSysTray()
@@ -66,16 +60,12 @@ public:
     static void QuitSafety();
 
 private:
-    static inline cxxopts::Options _options{Config::ProgramName, Config::Description};
+    static inline LaunchOptions _launchOptions;
     static inline bool _isFirstTimeUse{false};
-
-    LaunchOptions _launchOptions;
-
     std::unique_ptr<Gui::SysTray> _sysTray;
     std::unique_ptr<Gui::InfoWindow> _infoWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
 
-    static void PreConstructorInit();
     static void InitSettings();
     static void FirstTimeUse();
 
@@ -86,4 +76,4 @@ private:
     void QuitHandler();
 };
 
-inline std::unique_ptr<Application> App;
+#define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

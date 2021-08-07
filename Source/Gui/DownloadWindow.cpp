@@ -68,7 +68,7 @@ void DownloadWindow::OnFailed()
            "Please download and install the new version manually."));
 
     _info.PopupUrl();
-    Application::QuitSafety();
+    ApdApplication::QuitSafety();
 }
 
 void DownloadWindow::DownloadThread()

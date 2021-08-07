@@ -331,7 +331,7 @@ Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallba
 
     // Quit for install new version
     //
-    Application::QuitSafety();
+    ApdApplication::QuitSafety();
 
     return Status::Success;
 }

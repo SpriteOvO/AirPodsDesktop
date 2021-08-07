@@ -21,9 +21,10 @@
 
 int main(int argc, char *argv[])
 {
-    Application::Initialize(argc, argv);
-    if (!App->Prepare(argc, argv)) {
+    ApdApplication::PreInitialize(argc, argv);
+    ApdApplication app{argc, argv};
+    if (!ApdApp->Prepare()) {
         return 1;
     }
-    return static_cast<int>(App->Run());
+    return static_cast<int>(ApdApp->Run());
 }

@@ -440,7 +440,7 @@ public:
         };
 
         const auto &changeButtonToBind = []() {
-            App->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind);
+            ApdApp->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind);
         };
 
         GlobalMedia::OnLimitedDeviceStateChanged({});
@@ -448,7 +448,7 @@ public:
         disconnect();
         if (address == 0) {
             UpdateUi(Action::WaitingForBinding);
-            if (!App->GetInfoWindow()) {
+            if (!ApdApp->GetInfoWindow()) {
                 Utils::Qt::Dispatch(changeButtonToBind);
             }
             else {
@@ -528,12 +528,12 @@ private:
     Manager()
     {
         _tracker.CbStateChanged() += [](auto, const State &newState) {
-            App->GetInfoWindow()->UpdateStateSafety(newState);
-            App->GetSysTray()->UpdateStateSafety(newState);
+            ApdApp->GetInfoWindow()->UpdateStateSafety(newState);
+            ApdApp->GetSysTray()->UpdateStateSafety(newState);
         };
 
         _cbControlInfoWindow += [](const State &state, bool show) {
-            auto &infoWindow = App->GetInfoWindow();
+            auto &infoWindow = ApdApp->GetInfoWindow();
             if (show) {
                 infoWindow->ShowSafety();
             }
@@ -658,11 +658,11 @@ private:
         }
 
         const auto &disconnect = [title = std::move(title)]() {
-            App->GetInfoWindow()->DisconnectSafety(title);
-            App->GetSysTray()->DisconnectSafety(title);
+            ApdApp->GetInfoWindow()->DisconnectSafety(title);
+            ApdApp->GetSysTray()->DisconnectSafety(title);
         };
 
-        if (!App->GetInfoWindow() || !App->GetSysTray()) {
+        if (!ApdApp->GetInfoWindow() || !ApdApp->GetSysTray()) {
             Utils::Qt::Dispatch(disconnect);
         }
         else {

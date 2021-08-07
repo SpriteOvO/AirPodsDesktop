@@ -147,7 +147,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _rightBattery->hide();
     _caseBattery->hide();
 
-    _screenSize = Application::primaryScreen()->size();
+    _screenSize = ApdApplication::primaryScreen()->size();
 
     auto deviceLabelPalette = _ui.deviceLabel->palette();
     deviceLabelPalette.setColor(QPalette::WindowText, QColor{94, 94, 94});

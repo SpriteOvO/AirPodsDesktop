@@ -157,7 +157,7 @@ void Data::OnAutoRunChanged(const Data &current, bool value)
         "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
         QSettings::Registry64Format};
 
-    QString filePath = QDir::toNativeSeparators(Application::applicationFilePath());
+    QString filePath = QDir::toNativeSeparators(ApdApplication::applicationFilePath());
     if (value) {
         regAutoRun.setValue(Config::ProgramName, filePath);
     }

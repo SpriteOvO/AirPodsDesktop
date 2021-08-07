@@ -27,7 +27,7 @@ SysTray::SysTray()
 {
     connect(_actionSettings, &QAction::triggered, this, &SysTray::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &SysTray::OnAboutClicked);
-    connect(_actionQuit, &QAction::triggered, qApp, &Application::quit, Qt::QueuedConnection);
+    connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &SysTray::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
 
@@ -40,10 +40,10 @@ SysTray::SysTray()
     _menu->addAction(_actionQuit);
 
     _tray->setContextMenu(_menu);
-    _tray->setIcon(Application::windowIcon());
+    _tray->setIcon(ApdApplication::windowIcon());
     _tray->show();
 
-    if (Application::IsFirstTimeUse()) {
+    if (ApdApplication::IsFirstTimeUse()) {
         _tray->showMessage(
             tr("You can find me in the system tray"),
             tr("Click the icon to view battery information, right-click to "
@@ -93,7 +93,7 @@ void SysTray::Disconnect(const QString &title)
 
 void SysTray::ShowInfoWindow()
 {
-    App->GetInfoWindow()->ShowSafety();
+    ApdApp->GetInfoWindow()->ShowSafety();
 }
 
 void SysTray::OnSettingsClicked()
@@ -103,7 +103,7 @@ void SysTray::OnSettingsClicked()
 
 void SysTray::OnAboutClicked()
 {
-    Application::PopupAboutWindow(this);
+    ApdApplication::PopupAboutWindow(this);
 }
 
 void SysTray::OnIconClicked(QSystemTrayIcon::ActivationReason reason)

@@ -87,7 +87,7 @@ void DoError(const QString &content, bool report)
     Utils::Debug::BreakPoint();
 #endif
 
-    QMetaObject::invokeMethod(qApp, &Application::quit, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
 }
 
 void DoWarn(const QString &content)

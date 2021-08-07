@@ -28,13 +28,30 @@
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
-void Application::PreConstructorInit()
+bool ApdApplication::PreInitialize(int argc, char *argv[])
 {
+    try {
+        using namespace cxxopts;
+
+        cxxopts::Options opts{Config::ProgramName, Config::Description};
+
+        opts.add_options()(
+            "trace", "Enable trace level logging.", value<bool>()->default_value("false"));
+
+        auto args = opts.parse(argc, argv);
+        _launchOptions.enableTrace = args["trace"].as<bool>();
+    }
+    catch (cxxopts::OptionException &exception) {
+        Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
+        return false;
+    }
+
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
+    return true;
 }
 
-void Application::InitSettings()
+void ApdApplication::InitSettings()
 {
     Status status = Core::Settings::LoadFromLocal();
     if (status.IsFailed()) {
@@ -59,7 +76,7 @@ void Application::InitSettings()
     }
 }
 
-void Application::FirstTimeUse()
+void ApdApplication::FirstTimeUse()
 {
     QMessageBox::information(
         nullptr, Config::ProgramName,
@@ -101,22 +118,10 @@ void Application::FirstTimeUse()
            "Enjoy it all~"));
 }
 
-Application::Application(int argc, char *argv[]) : SingleApplication{argc, argv} {}
+ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}
 
-bool Application::Prepare(int argc, char *argv[])
+bool ApdApplication::Prepare()
 {
-    try {
-        _options.add_options()(
-            "trace", "Enable trace level logging.", cxxopts::value<bool>()->default_value("false"));
-
-        auto args = _options.parse(argc, argv);
-        _launchOptions.enableTrace = args["trace"].as<bool>();
-    }
-    catch (cxxopts::OptionException &exception) {
-        Logger::DoError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
-        return false;
-    }
-
     Logger::Initialize(_launchOptions.enableTrace);
 
     SPDLOG_INFO("Launched. Version: '{}'", Config::Version::String);
@@ -139,11 +144,11 @@ bool Application::Prepare(int argc, char *argv[])
     _sysTray = std::make_unique<Gui::SysTray>();
     _infoWindow = std::make_unique<Gui::InfoWindow>();
 
-    connect(this, &Application::aboutToQuit, this, &Application::QuitHandler);
+    connect(this, &ApdApplication::aboutToQuit, this, &ApdApplication::QuitHandler);
     return true;
 }
 
-int Application::Run()
+int ApdApplication::Run()
 {
     do {
         if (!CheckUpdate()) {
@@ -157,7 +162,7 @@ int Application::Run()
     return exec();
 }
 
-bool Application::CheckUpdate()
+bool ApdApplication::CheckUpdate()
 {
     const auto optInfo = Core::Update::FetchLatestRelease(Core::Update::IsCurrentPreRelease());
     if (!optInfo.has_value()) {
@@ -212,7 +217,7 @@ bool Application::CheckUpdate()
         if (!latestInfo.CanAutoUpdate()) {
             SPDLOG_INFO("AppUpdate: Popup latest url and quit.");
             latestInfo.PopupUrl();
-            Application::QuitSafety();
+            ApdApplication::QuitSafety();
             return false;
         }
 
@@ -232,12 +237,12 @@ bool Application::CheckUpdate()
     return true;
 }
 
-void Application::QuitHandler()
+void ApdApplication::QuitHandler()
 {
     Core::AirPods::OnQuit();
 }
 
-void Application::PopupAboutWindow(QWidget *parent)
+void ApdApplication::PopupAboutWindow(QWidget *parent)
 {
     // clang-format off
 
@@ -261,7 +266,7 @@ void Application::PopupAboutWindow(QWidget *parent)
     QMessageBox::about(parent, tr("About %1").arg(Config::ProgramName), content);
 }
 
-void Application::QuitSafety()
+void ApdApplication::QuitSafety()
 {
-    QMetaObject::invokeMethod(qApp, &Application::quit, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
 }
