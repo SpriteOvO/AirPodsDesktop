@@ -19,8 +19,8 @@
 #pragma once
 
 #include <memory>
-#include <QApplication>
 #include <cxxopts.hpp>
+#include <SingleApplication>
 
 #include "Config.h"
 #include "Gui/SysTray.h"
@@ -28,7 +28,7 @@
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
 
-class Application : public QApplication
+class Application : public SingleApplication
 {
 private:
     struct LaunchOptions {

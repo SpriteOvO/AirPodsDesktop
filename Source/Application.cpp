@@ -101,7 +101,7 @@ void Application::FirstTimeUse()
            "Enjoy it all~"));
 }
 
-Application::Application(int argc, char *argv[]) : QApplication{argc, argv} {}
+Application::Application(int argc, char *argv[]) : SingleApplication{argc, argv} {}
 
 bool Application::Prepare(int argc, char *argv[])
 {

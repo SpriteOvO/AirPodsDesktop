@@ -124,26 +124,4 @@ inline bool ShowFileLocation(const QDir &directory)
 #endif
 }
 } // namespace File
-
-namespace Process {
-
-inline bool SingleInstance(const QString &instanceName)
-{
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-    HANDLE mutex = CreateMutexW(
-        nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
-    uint32_t lastError = GetLastError();
-
-    if (mutex == nullptr) {
-        Logger::DoError(
-            QString{"Create instance mutex failed.\nErrorCode: %1"}.arg(lastError), false);
-    }
-
-    // No need to close the handle
-    //
-    return lastError != ERROR_ALREADY_EXISTS;
-}
-} // namespace Process
 } // namespace Utils

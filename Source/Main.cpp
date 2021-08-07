@@ -21,11 +21,6 @@
 
 int main(int argc, char *argv[])
 {
-    if (!Utils::Process::SingleInstance(Config::ProgramName)) {
-        Logger::DoWarn(QString{"%1 is already running."}.arg(Config::ProgramName));
-        return 0;
-    }
-
     Application::Initialize(argc, argv);
     if (!App->Prepare(argc, argv)) {
         return 1;

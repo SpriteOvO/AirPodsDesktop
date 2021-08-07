@@ -143,6 +143,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 message("Fetch 'json' done.")
 
+# SingleApplication
+#
+set(QAPPLICATION_CLASS "QApplication" CACHE STRING "Inheritance class for SingleApplication")
+message("Fetching 'SingleApplication'...")
+FetchContent_Declare(
+    SingleApplication
+    GIT_REPOSITORY "https://github.com/itay-grudev/SingleApplication.git"
+    GIT_TAG "v3.3.0"
+)
+FetchContent_MakeAvailable(SingleApplication)
+message("Fetch 'SingleApplication' done.")
+
 ##################################################
 
 set(
@@ -300,4 +312,5 @@ target_link_libraries(
     cxxopts
     cpr::cpr
     nlohmann_json::nlohmann_json
+    SingleApplication::SingleApplication
 )
