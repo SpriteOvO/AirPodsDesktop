@@ -21,7 +21,6 @@
 #include <QUrl>
 #include <QDir>
 #include <QMessageBox>
-#include <QDesktopServices>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>

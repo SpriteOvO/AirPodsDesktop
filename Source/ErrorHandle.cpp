@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <QMessageBox>
+#include <QDesktopServices>
 #include <Windows.h>
 
 #include <Config.h>
