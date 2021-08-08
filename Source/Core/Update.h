@@ -43,8 +43,6 @@ struct ReleaseInfo {
 
 QVersionNumber GetLocalVersion();
 
-std::vector<ReleaseInfo> FetchRecentReleases();
-
 std::optional<ReleaseInfo> FetchLatestStableRelease();
 
 std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version);

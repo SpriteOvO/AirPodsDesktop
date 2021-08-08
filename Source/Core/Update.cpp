@@ -142,26 +142,21 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
     }
 }
 
-std::vector<ReleaseInfo> ParseMultipleReleasesResponse(const std::string &text)
+std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text)
 {
     try {
-        std::vector<ReleaseInfo> result;
-
         auto root = json::parse(text);
-        for (const auto &release : root) {
-            auto optInfo = ParseSingleReleaseResponse(release.dump());
-            if (!optInfo.has_value()) {
-                SPDLOG_WARN("One release info parsing failed.");
-                return {};
-            }
-            result.emplace_back(std::move(optInfo.value()));
+        const auto &release = root.front();
+        auto optInfo = ParseSingleReleaseResponse(release.dump());
+        if (!optInfo.has_value()) {
+            SPDLOG_WARN("One release info parsing failed.");
+            return std::nullopt;
         }
-
-        return result;
+        return optInfo.value();
     }
     catch (json::exception &ex) {
         SPDLOG_WARN("ParseMRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
-        return {};
+        return std::nullopt;
     }
 }
 } // namespace Impl
@@ -179,23 +174,6 @@ void ReleaseInfo::PopupUrl() const
 QVersionNumber GetLocalVersion()
 {
     return QVersionNumber::fromString(Config::Version::String);
-}
-
-std::vector<ReleaseInfo> FetchRecentReleases()
-{
-    const cpr::Response response = cpr::Get(
-        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases"},
-        cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
-
-    if (response.status_code != 200) {
-        SPDLOG_WARN(
-            "FetchRecentReleases: GitHub REST API response status code isn't 200. "
-            "code: {} text: '{}'",
-            response.status_code, response.text);
-        return {};
-    }
-
-    return Impl::ParseMultipleReleasesResponse(response.text);
 }
 
 std::optional<ReleaseInfo> FetchLatestStableRelease()
@@ -236,13 +214,19 @@ std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
 std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
 {
     if (includePreRelease) {
-        auto releases = FetchRecentReleases();
-        if (releases.empty()) {
-            return std::nullopt;
+
+        const cpr::Response response = cpr::Get(
+            cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases"},
+            cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+
+        if (response.status_code != 200) {
+            SPDLOG_WARN(
+                "FetchRecentReleases: GitHub REST API response status code isn't 200. "
+                "code: {} text: '{}'",
+                response.status_code, response.text);
+            return {};
         }
-        else {
-            return releases.front();
-        }
+        return Impl::ParseMultipleReleasesResponseFirst(response.text);
     }
     else {
         return FetchLatestStableRelease();
