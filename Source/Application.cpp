@@ -135,16 +135,16 @@ bool ApdApplication::Prepare()
 
     SPDLOG_INFO("Args: {{ trace: {} }}", _launchOptions.enableTrace);
 
-    InitSettings();
-    Core::Bluetooth::Initialize();
-    Core::GlobalMedia::Initialize();
-
     setFont(QFont{"Segoe UI", 9});
     setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
     setQuitOnLastWindowClosed(false);
 
     _sysTray = std::make_unique<Gui::SysTray>();
     _infoWindow = std::make_unique<Gui::InfoWindow>();
+
+    InitSettings();
+    Core::Bluetooth::Initialize();
+    Core::GlobalMedia::Initialize();
 
     connect(this, &ApdApplication::aboutToQuit, this, &ApdApplication::QuitHandler);
     return true;
