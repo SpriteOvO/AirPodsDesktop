@@ -81,4 +81,4 @@ jobs:
         with:
           name: ${{ env.BUILD_TYPE }}
           path: Build\${{ env.BUILD_TYPE }}\Installer\
-          retention-days: 5
+          retention-days: 90
