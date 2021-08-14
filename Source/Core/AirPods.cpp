@@ -181,14 +181,14 @@ public:
 
     bool TryTrack(Advertisement adv)
     {
-        const auto &currentSettings = Settings::GetCurrent();
+        const auto rssiMin = Settings::ConstAccess()->rssi_min;
         const auto advRssi = adv.GetRssi();
 
-        if (advRssi < currentSettings.rssi_min) {
+        if (advRssi < rssiMin) {
             SPDLOG_WARN(
                 "TryTrack returns false. Reason: RSSI is less than the limit. "
                 "curr: '{}' min: '{}'",
-                advRssi, currentSettings.rssi_min);
+                advRssi, rssiMin);
             return false;
         }
 
@@ -543,7 +543,7 @@ private:
         };
 
         _cbBothInEar += [](const State &state, bool isBothInEar) {
-            if (!Settings::GetCurrent().automatic_ear_detection) {
+            if (!Settings::ConstAccess()->automatic_ear_detection) {
                 SPDLOG_TRACE(
                     "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
                     isBothInEar);

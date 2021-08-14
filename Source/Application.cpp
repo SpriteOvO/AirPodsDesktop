@@ -54,27 +54,28 @@ bool ApdApplication::PreInitialize(int argc, char *argv[])
 
 void ApdApplication::InitSettings()
 {
-    Status status = Core::Settings::LoadFromLocal();
-    if (status.IsFailed()) {
-        switch (status.GetValue()) {
-        case Status::SettingsLoadedDataAbiIncompatible:
-            QMessageBox::information(
-                nullptr, Config::ProgramName,
-                tr("Settings format has changed a bit and needs to be reconfigured."));
-            [[fallthrough]];
+    auto result = Core::Settings::Load();
 
-        case Status::SettingsLoadedDataNoAbiVer:
-            _isFirstTimeUse = true;
-            Core::Settings::LoadDefault();
-            FirstTimeUse();
-            break;
+    switch (result) {
+    case Core::Settings::LoadResult::AbiIncompatible:
+        QMessageBox::information(
+            nullptr, Config::ProgramName,
+            tr("Settings format has changed a bit and needs to be reconfigured."));
+        [[fallthrough]];
 
-        default:
-            FatalError(
-                QString{"Unhandled error occurred while loading settings: '%1'"}.arg(
-                    status.ToMessage()),
-                true);
-        }
+    case Core::Settings::LoadResult::NoAbiField:
+        _isFirstTimeUse = true;
+        FirstTimeUse();
+        break;
+
+    case Core::Settings::LoadResult::Successful:
+        Core::Settings::Apply();
+        break;
+
+    default:
+        FatalError(
+            QString{"Unhandled error occurred while loading settings: '%1'"}.arg((uint32_t)result),
+            true);
     }
 }
 
@@ -111,7 +112,7 @@ void ApdApplication::FirstTimeUse()
                "consumption."),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
 
-    Core::Settings::SaveToCurrentAndLocal(std::move(current));
+    Core::Settings::Save(std::move(current));
 
     QMessageBox::information(
         nullptr, Config::ProgramName,
@@ -229,9 +230,7 @@ bool ApdApplication::CheckUpdate()
     else if (button == QMessageBox::Ignore) {
         SPDLOG_INFO("AppUpdate: User clicked Ignore.");
 
-        auto currentSettings = Core::Settings::GetCurrent();
-        currentSettings.skipped_version = latestInfo.version.toString();
-        Core::Settings::SaveToCurrentAndLocal(std::move(currentSettings));
+        Core::Settings::ModifiableAccess()->skipped_version = latestInfo.version.toString();
     }
     else {
         SPDLOG_INFO("AppUpdate: User clicked No.");

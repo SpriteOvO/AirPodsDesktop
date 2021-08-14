@@ -35,6 +35,8 @@ template <class T>
 inline constexpr bool is_string_v =
     std::is_same_v<T, std::string> || std::is_same_v<T, std::wstring>;
 
+//////////////////////////////////////////////////
+
 template <class... Ts>
 struct Overloaded : Ts... {
     using Ts::operator()...;
@@ -42,6 +44,8 @@ struct Overloaded : Ts... {
 
 template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
+
+//////////////////////////////////////////////////
 
 class NonCopyable
 {
@@ -51,6 +55,26 @@ protected:
     NonCopyable(const NonCopyable &) = delete;
     NonCopyable &operator=(const NonCopyable &) = delete;
 };
+
+//////////////////////////////////////////////////
+
+namespace Impl {
+template <class T>
+class MemberPointerType
+{
+private:
+    template <class ClassT, class MemberT>
+    static MemberT ExtractType(MemberT ClassT::*);
+
+public:
+    using Type = decltype(ExtractType(static_cast<T>(nullptr)));
+};
+} // namespace Impl
+
+template <class T>
+using MemberPointerType = typename Impl::MemberPointerType<T>::Type;
+
+//////////////////////////////////////////////////
 
 template <class T>
 QString ToString(const T &value);

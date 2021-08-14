@@ -24,42 +24,67 @@
 
 namespace Core::Settings {
 
-class Data
+namespace Impl {
+
+template <class T>
+class BasicSafeAccessor
 {
 public:
-    // Increase this value when the current ABI cannot be backward compatible
-    // For example, the name or type of an old key has changed
-    //
-    constexpr static inline uint32_t abi_version = 1;
+    BasicSafeAccessor(std::mutex &lock, T &fields) : _lock{lock}, _fields{fields} {}
+    BasicSafeAccessor(const BasicSafeAccessor &rhs) = delete;
 
-    bool auto_run{false};
-    bool low_audio_latency{false};
-    bool automatic_ear_detection{true};
-    QString skipped_version;
-    int16_t rssi_min{-80};
-    bool reduce_loud_sounds{false};
-    uint32_t loud_volume_level{40};
-    uint64_t device_address{0};
+    T *operator->()
+    {
+        return &_fields;
+    }
 
 private:
-    Status LoadFromQSettings(const QSettings &settings);
-    Status SaveToQSettings(QSettings &settings) const;
+    std::lock_guard<std::mutex> _lock;
+    T &_fields;
+};
+} // namespace Impl
 
-    void HandleFields(const Data &other);
+// Increase this value when the current ABI cannot be backward compatible
+// For example, the name or type of an old key has changed
+//
+constexpr inline uint32_t kFieldsAbiVersion = 1;
 
-    static void OnAutoRunChanged(const Data &current, bool value);
-    static void OnLowAudioLatencyChanged(const Data &current, bool value);
-    static void OnReduceLoudSoundsChanged(const Data &current, bool value);
-    static void OnLoudVolumeLevelChanged(const Data &current, uint32_t value);
-    static void OnDeviceAddressChanged(const Data &current, uint64_t value);
+// clang-format off
+#define SETTINGS_FIELDS(callback)                                                                  \
+    callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
+    callback(bool, low_audio_latency, {false}, Impl::OnApply(&OnApply_low_audio_latency))          \
+    callback(bool, automatic_ear_detection, {true})                                                \
+    callback(QString, skipped_version, {})                                                         \
+    callback(int16_t, rssi_min, {-80})                                                             \
+    callback(bool, reduce_loud_sounds, {false}, Impl::OnApply(&OnApply_reduce_loud_sounds))        \
+    callback(uint32_t, loud_volume_level, {40}, Impl::OnApply(&OnApply_loud_volume_level))         \
+    callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})
+// clang-format on
 
-    friend class Manager;
+struct Fields {
+#define DECLARE_FIELD(type, name, dft, ...) type name dft;
+    SETTINGS_FIELDS(DECLARE_FIELD)
+#undef DECLARE_FIELD
 };
 
-Data GetDefault();
-Data GetCurrent();
-void LoadDefault();
-Status LoadFromLocal();
-Status SaveToCurrentAndLocal(Data data);
+enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
+
+LoadResult Load();
+void Save(Fields newFields);
+void Apply();
+Fields GetCurrent();
+Fields GetDefault();
+
+using ConstSafeAccessor = Impl::BasicSafeAccessor<const Fields>;
+
+class ModifiableSafeAccessor : public Impl::BasicSafeAccessor<Fields>
+{
+public:
+    using Impl::BasicSafeAccessor<Fields>::BasicSafeAccessor;
+    ~ModifiableSafeAccessor();
+};
+
+ConstSafeAccessor ConstAccess();
+ModifiableSafeAccessor ModifiableAccess();
 
 } // namespace Core::Settings

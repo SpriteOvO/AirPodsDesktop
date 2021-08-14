@@ -398,9 +398,7 @@ void InfoWindow::BindDevice()
         "Selected device index: '{}', device name: '{}'. Bound to this device.", selectedIndex,
         selectedDevice.GetDisplayName());
 
-    auto current = Core::Settings::GetCurrent();
-    current.device_address = selectedDevice.GetAddress();
-    Core::Settings::SaveToCurrentAndLocal(std::move(current));
+    Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 
     ChangeButtonAction(ButtonAction::NoButton);
 }

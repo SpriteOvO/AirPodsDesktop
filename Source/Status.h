@@ -74,8 +74,8 @@ private:
     invoke(GlobalMediaUSSPlayFailed,            MAKE_STATUS(State::Failure, Module::GlobalMedia, 4), "") \
     invoke(GlobalMediaUSSPauseFailed,           MAKE_STATUS(State::Failure, Module::GlobalMedia, 5), "") \
 \
-    invoke(SettingsLoadedDataNoAbiVer,          MAKE_STATUS(State::Failure, Module::Settings, 1), "") \
-    invoke(SettingsLoadedDataAbiIncompatible,   MAKE_STATUS(State::Failure, Module::Settings, 2), "") \
+    /* invoke(SettingsLoadedDataNoAbiVer,          MAKE_STATUS(State::Failure, Module::Settings, 1), "") */ \
+    /* invoke(SettingsLoadedDataAbiIncompatible,   MAKE_STATUS(State::Failure, Module::Settings, 2), "") */ \
 \
     /* invoke(UpdateResponseStatusCodeIsNot200,    MAKE_STATUS(State::Failure, Module::Update, 1), "") */ \
     /* invoke(UpdateResponseJsonFieldsTypeMismatch,MAKE_STATUS(State::Failure, Module::Update, 2), "") */ \

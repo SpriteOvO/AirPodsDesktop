@@ -153,19 +153,19 @@ void SettingsWindow::ConnectUi()
         &SettingsWindow::LoadDefault);
 
     connect(_checkBoxAutoRun, &QCheckBox::toggled, this, [this](bool checked) {
-        _data.auto_run = checked;
+        _fields.auto_run = checked;
     });
 
     connect(_checkBoxLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
-        _data.low_audio_latency = checked;
+        _fields.low_audio_latency = checked;
     });
 
     connect(_checkBoxAutomaticEarDetection, &QCheckBox::toggled, this, [this](bool checked) {
-        _data.automatic_ear_detection = checked;
+        _fields.automatic_ear_detection = checked;
     });
 
     connect(_checkReduceLoudSounds, &QCheckBox::toggled, this, [this](bool checked) {
-        _data.reduce_loud_sounds = checked;
+        _fields.reduce_loud_sounds = checked;
     });
     _sliderVolumeLevel->setMinimum(0);
     _sliderVolumeLevel->setMaximum(100);
@@ -187,19 +187,17 @@ void SettingsWindow::ConnectUi()
         }
 
         _labelVolumeLevel->setText(tr("Volume Level %1").arg(value));
-        _data.loud_volume_level = value;
+        _fields.loud_volume_level = value;
     });
 
     _sliderMaximumReceivingRange->setMinimum(50);
     _sliderMaximumReceivingRange->setMaximum(100);
     connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this, [this](int value) {
-        _data.rssi_min = -value;
+        _fields.rssi_min = -value;
     });
 
     connect(_buttonUnbindAirPods, &QPushButton::clicked, this, [this]() {
-        auto current = Core::Settings::GetCurrent();
-        current.device_address = 0;
-        Core::Settings::SaveToCurrentAndLocal(std::move(current));
+        Core::Settings::ModifiableAccess()->device_address = 0;
         _buttonUnbindAirPods->setDisabled(true);
     });
 
@@ -210,38 +208,39 @@ void SettingsWindow::ConnectUi()
 
 void SettingsWindow::LoadCurrent()
 {
-    _data = Core::Settings::GetCurrent();
+    _fields = Core::Settings::GetCurrent();
     Update();
 }
 
 void SettingsWindow::LoadDefault()
 {
-    _data = Core::Settings::GetDefault();
+    _fields = Core::Settings::GetDefault();
     Update();
 }
 
 void SettingsWindow::Save()
 {
-    Core::Settings::SaveToCurrentAndLocal(_data);
+    _fields.device_address = Core::Settings::ConstAccess()->device_address;
+    Core::Settings::Save(_fields);
 }
 
 void SettingsWindow::Update()
 {
-    _checkBoxAutoRun->setChecked(_data.auto_run);
+    _checkBoxAutoRun->setChecked(_fields.auto_run);
 
-    _checkBoxLowAudioLatency->setChecked(_data.low_audio_latency);
+    _checkBoxLowAudioLatency->setChecked(_fields.low_audio_latency);
 
-    _checkBoxAutomaticEarDetection->setChecked(_data.automatic_ear_detection);
+    _checkBoxAutomaticEarDetection->setChecked(_fields.automatic_ear_detection);
 
-    _checkReduceLoudSounds->setChecked(_data.reduce_loud_sounds);
-    if (_data.loud_volume_level > kSliderVolumeLevelAlertValue) {
+    _checkReduceLoudSounds->setChecked(_fields.reduce_loud_sounds);
+    if (_fields.loud_volume_level > kSliderVolumeLevelAlertValue) {
         _sliderEnableVolumeLevelWarning = false;
     }
-    _sliderVolumeLevel->setValue(_data.loud_volume_level);
+    _sliderVolumeLevel->setValue(_fields.loud_volume_level);
 
-    _sliderMaximumReceivingRange->setValue(-_data.rssi_min);
+    _sliderMaximumReceivingRange->setValue(-_fields.rssi_min);
 
-    _buttonUnbindAirPods->setDisabled(_data.device_address == 0);
+    _buttonUnbindAirPods->setDisabled(_fields.device_address == 0);
 }
 
 void SettingsWindow::showEvent(QShowEvent *event)

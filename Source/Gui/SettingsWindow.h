@@ -49,7 +49,7 @@ private:
     QPushButton *_buttonUnbindAirPods;
     QPushButton *_buttonShowLogFileLocation;
 
-    Core::Settings::Data _data;
+    Core::Settings::Fields _fields;
 
     void CreateUi();
     void ConnectUi();
