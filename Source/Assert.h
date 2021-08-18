@@ -18,17 +18,20 @@
 
 #pragma once
 
-#include <QString>
+#include <string>
+#include <source_location>
 
 #include "Helper.h"
 
 #define APD_ASSERT(condition)                                                                      \
     while (!(condition)) {                                                                         \
-        Assert::Trigger(TO_STRING(condition), __FILE__, __LINE__);                                 \
+        Assert::Trigger(TO_STRING(condition));                                                     \
     }
 
 namespace Assert {
 
-void Trigger(const QString &condition, const QString &fileName, uint32_t line);
+void Trigger(
+    const std::string &condition,
+    const std::source_location &srcloc = std::source_location::current());
 
 } // namespace Assert

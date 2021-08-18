@@ -18,25 +18,21 @@
 
 #include "Assert.h"
 
+#include <format>
+
 #include "ErrorHandle.h"
 
 namespace Assert {
 
-void Trigger(const QString &condition, const QString &fileName, uint32_t line)
+void Trigger(const std::string &condition, const std::source_location &srcloc)
 {
-    // clang-format off
-
-    QString content = QString{
+    auto content = std::format(
         "Assertion triggered.\n"
         "\n"
-        "Condition: %1\n"
-        "File: %2\n"
-        "Line: %3\n"}
-        .arg(condition)
-        .arg(fileName)
-        .arg(line);
-
-    // clang-format on
+        "Condition: {}\n"
+        "File: {}\n"
+        "Line: {}",
+        condition, srcloc.file_name(), srcloc.line());
 
     FatalError(content, true);
 }

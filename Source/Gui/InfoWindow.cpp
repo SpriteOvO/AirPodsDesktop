@@ -232,7 +232,7 @@ void InfoWindow::ChangeButtonAction(ButtonAction action)
         break;
 
     default:
-        FatalError(QString{"Unhandled button action. Value: '%1'"}.arg((uint32_t)action), true);
+        FatalError(std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(action)), true);
     }
 
     _buttonAction = action;
@@ -413,7 +413,7 @@ void InfoWindow::OnButtonClicked()
 
     default:
         FatalError(
-            QString{"Unhandled button action. Value: '%1'"}.arg((uint32_t)_buttonAction), true);
+            std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(_buttonAction)), true);
     }
 }
 

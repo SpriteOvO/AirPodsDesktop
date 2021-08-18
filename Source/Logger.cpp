@@ -79,7 +79,7 @@ bool Initialize(bool enableTrace)
         return true;
     }
     catch (spdlog::spdlog_ex &exception) {
-        FatalError(QString{"spdlog initialize failed.\n\n%1"}.arg(exception.what()), true);
+        FatalError(std::format("spdlog initialize failed.\n\n{}", exception.what()), true);
         return false;
     }
 }

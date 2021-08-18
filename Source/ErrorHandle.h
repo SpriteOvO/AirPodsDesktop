@@ -1,5 +1,5 @@
 #pragma once
 
-#include <QString>
+#include <string>
 
-[[noreturn]] void FatalError(const QString &content, bool report);
+[[noreturn]] void FatalError(const std::string &content, bool report);

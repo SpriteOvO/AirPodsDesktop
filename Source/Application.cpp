@@ -43,7 +43,7 @@ bool ApdApplication::PreInitialize(int argc, char *argv[])
         _launchOptions.enableTrace = args["trace"].as<bool>();
     }
     catch (cxxopts::OptionException &exception) {
-        FatalError(QString{"Parse options failed.\n\n%1"}.arg(exception.what()), true);
+        FatalError(std::format("Parse options failed.\n\n{}", exception.what()), true);
         return false;
     }
 
@@ -73,9 +73,7 @@ void ApdApplication::InitSettings()
         break;
 
     default:
-        FatalError(
-            QString{"Unhandled error occurred while loading settings: '%1'"}.arg((uint32_t)result),
-            true);
+        FatalError(std::format("Unhandled LoadResult: '{}'", Helper::ToUnderlying(result)), true);
     }
 }
 

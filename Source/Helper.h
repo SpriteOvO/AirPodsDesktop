@@ -37,6 +37,14 @@ inline constexpr bool is_string_v =
 
 //////////////////////////////////////////////////
 
+template <class E>
+[[nodiscard]] constexpr decltype(auto) ToUnderlying(E e) noexcept
+{
+    return static_cast<std::underlying_type_t<E>>(e);
+}
+
+//////////////////////////////////////////////////
+
 template <class... Ts>
 struct Overloaded : Ts... {
     using Ts::operator()...;
