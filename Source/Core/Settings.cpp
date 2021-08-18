@@ -319,18 +319,32 @@ private:
 
     void ApplyWithoutLock()
     {
-        pfr::for_each_field(
-            Impl::FieldsMetaView{},
-            [&](const auto &field) { field.OnApply().Invoke(std::cref(_fields)); });
+        pfr::for_each_field(Impl::FieldsMetaView{}, [&](const auto &field) {
+            field.OnApply().Invoke(std::cref(_fields));
+        });
+    }
+
+    void ApplyChangedFieldsOnlyWithoutLock(const Fields &oldFields)
+    {
+        pfr::for_each_field(Impl::FieldsMetaView{}, [&](const auto &field) {
+            if (field.GetValue(oldFields) != field.GetValue(_fields)) {
+                field.OnApply().Invoke(std::cref(_fields));
+            }
+        });
     }
 
     friend class ModifiableSafeAccessor;
 };
 
+ModifiableSafeAccessor::ModifiableSafeAccessor(std::mutex &lock, Fields &fields)
+    : Impl::BasicSafeAccessor<Fields>{lock, fields}, _oldFields{fields}
+{
+}
+
 ModifiableSafeAccessor::~ModifiableSafeAccessor()
 {
     Manager::GetInstance().SaveWithoutLock();
-    Manager::GetInstance().ApplyWithoutLock();
+    Manager::GetInstance().ApplyChangedFieldsOnlyWithoutLock(_oldFields);
 }
 
 LoadResult Load()

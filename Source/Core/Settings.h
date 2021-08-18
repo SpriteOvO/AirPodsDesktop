@@ -81,7 +81,12 @@ class ModifiableSafeAccessor : public Impl::BasicSafeAccessor<Fields>
 {
 public:
     using Impl::BasicSafeAccessor<Fields>::BasicSafeAccessor;
+
+    ModifiableSafeAccessor(std::mutex &lock, Fields &fields);
     ~ModifiableSafeAccessor();
+
+private:
+    Fields _oldFields;
 };
 
 ConstSafeAccessor ConstAccess();
