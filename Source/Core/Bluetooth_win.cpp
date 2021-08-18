@@ -336,7 +336,7 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
     }
 
     std::lock_guard<std::mutex> lock{_mutex};
-    ReceivedCallbacks().Invoke(receivedData);
+    CbReceived().Invoke(receivedData);
 }
 
 void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppedEventArgs &args)
@@ -382,6 +382,6 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
     }
 
     std::lock_guard<std::mutex> lock{_mutex};
-    StoppedCallbacks().Invoke(optError);
+    CbStopped().Invoke(optError);
 }
 } // namespace Core::Bluetooth

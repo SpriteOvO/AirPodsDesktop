@@ -598,12 +598,12 @@ private:
 
         _tracker.CbLosted() += [this]() { UpdateUi(Action::Disconnected); };
 
-        _adWatcher.ReceivedCallbacks() +=
+        _adWatcher.CbReceived() +=
             [this](const Bluetooth::AdvertisementWatcher::ReceivedData &receivedData) {
                 OnAdvertisementReceived(receivedData);
             };
 
-        _adWatcher.StoppedCallbacks() += [this](const std::optional<std::string> &optError) {
+        _adWatcher.CbStopped() += [this](const std::optional<std::string> &optError) {
             UpdateUi(Action::Unavailable);
             SPDLOG_WARN(
                 "Bluetooth AdvWatcher stopped. Error: '{}'.",

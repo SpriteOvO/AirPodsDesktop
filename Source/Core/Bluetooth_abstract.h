@@ -86,21 +86,21 @@ public:
 
     virtual inline ~AdvertisementWatcherAbstract() {}
 
-    inline auto &ReceivedCallbacks()
+    inline auto &CbReceived()
     {
-        return _receivedCallbacks;
+        return _cbReceived;
     }
-    inline auto &StoppedCallbacks()
+    inline auto &CbStopped()
     {
-        return _stoppedCallbacks;
+        return _cbStopped;
     }
 
     virtual bool Start() = 0;
     virtual bool Stop() = 0;
 
 private:
-    Helper::Callback<FnReceived> _receivedCallbacks;
-    Helper::Callback<FnStopped> _stoppedCallbacks;
+    Helper::Callback<FnReceived> _cbReceived;
+    Helper::Callback<FnStopped> _cbStopped;
 };
 } // namespace Details
 } // namespace Core::Bluetooth
