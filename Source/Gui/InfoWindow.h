@@ -91,6 +91,6 @@ private:
     void OnButtonClicked();
     void showEvent(QShowEvent *event) override;
 
-    UTILS_QT_DISABLE_ESC_QUIT(InfoWindow, QDialog);
+    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };
 } // namespace Gui

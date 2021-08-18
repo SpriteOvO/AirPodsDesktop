@@ -24,7 +24,9 @@
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <shellapi.h>
+#include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
+
 #include <QDir>
 #include <QString>
 #include <spdlog/spdlog.h>

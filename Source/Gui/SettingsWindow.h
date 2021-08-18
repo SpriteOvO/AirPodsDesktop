@@ -62,6 +62,6 @@ private:
 
     void showEvent(QShowEvent *event) override;
 
-    UTILS_QT_DISABLE_ESC_QUIT(SettingsWindow, QDialog);
+    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };
 } // namespace Gui

@@ -20,7 +20,9 @@
 
 #include <mutex>
 #include <vector>
+#include <cwctype>
 #include <functional>
+
 #include <QDir>
 #include <QTimer>
 #include <QKeyEvent>
@@ -40,8 +42,8 @@
 namespace Utils {
 namespace Qt {
 
-#define UTILS_QT_DISABLE_ESC_QUIT(class_name, base_name)                                           \
-    inline void class_name::keyPressEvent(QKeyEvent *event) override                               \
+#define UTILS_QT_DISABLE_ESC_QUIT(base_name)                                                       \
+    inline void keyPressEvent(QKeyEvent *event) override                                           \
     {                                                                                              \
         /* Prevent users from closing window by pressing ESC */                                    \
         if (event->key() == Qt::Key_Escape) {                                                      \
@@ -92,13 +94,34 @@ inline void BreakPoint()
 
 namespace Text {
 
-template <class String, std::enable_if_t<Helper::is_string_v<String>, int> = 0>
-inline String ToLower(const String &str)
+[[nodiscard]] constexpr std::string ToLower(std::string source)
 {
-    String result = str;
-    std::transform(result.begin(), result.end(), result.begin(), std::tolower);
-    return result;
+    std::transform(source.begin(), source.end(), source.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    return source;
 }
+
+[[nodiscard]] constexpr std::wstring ToLower(std::wstring source)
+{
+    std::transform(source.begin(), source.end(), source.begin(), &std::towlower);
+    return source;
+}
+
+[[nodiscard]] constexpr std::string ToUpper(std::string source)
+{
+    std::transform(source.begin(), source.end(), source.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::toupper(ch));
+    });
+    return source;
+}
+
+[[nodiscard]] constexpr std::wstring ToUpper(std::wstring source)
+{
+    std::transform(source.begin(), source.end(), source.begin(), &std::towupper);
+    return source;
+}
+
 } // namespace Text
 
 namespace File {

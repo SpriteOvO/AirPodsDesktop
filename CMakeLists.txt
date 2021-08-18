@@ -28,7 +28,7 @@ project(
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_AUTOMOC ON)
@@ -78,8 +78,14 @@ endforeach()
 #
 
 if (MSVC)
-    # /MP: Multi-processor compilation
-    add_compile_options("/MP")
+    
+    add_compile_options(
+        "/MP"           # Multi-processor compilation
+
+        "/await"        # Enable the legacy pre-C++20 coroutine.
+                        # Workaround for cppwinrt v2.0.200609.3 in C++20.
+                        # For more information, see https://github.com/microsoft/cppwinrt/issues/866
+    )
 endif()
 
 ##################################################

@@ -44,6 +44,6 @@ private:
 
     void OnButtonClicked(QDialogButtonBox::StandardButton button);
 
-    UTILS_QT_DISABLE_ESC_QUIT(SelectWindow, QDialog);
+    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };
 } // namespace Gui

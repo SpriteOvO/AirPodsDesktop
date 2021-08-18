@@ -49,6 +49,6 @@ private:
 
     void DownloadThread();
 
-    UTILS_QT_DISABLE_ESC_QUIT(DownloadWindow, QDialog);
+    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };
 } // namespace Gui
