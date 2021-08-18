@@ -34,6 +34,8 @@
 
 namespace Core::Bluetooth {
 
+using namespace std::chrono_literals;
+
 namespace WinrtFoundation = winrt::Windows::Foundation;
 namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
 namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
@@ -120,8 +122,15 @@ public:
     bool Stop() override;
 
 private:
+    static constexpr inline auto kRetryInterval = 3s;
+
     WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
     std::mutex _mutex;
+
+    std::atomic<bool> _stop{false};
+    std::atomic<std::chrono::steady_clock::time_point> _lastStartTime;
+    std::mutex _conVarMutex;
+    std::condition_variable _stopConVar;
 
     void OnReceived(const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
     void OnStopped(const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);

@@ -75,6 +75,8 @@ template <class Derived>
 class AdvertisementWatcherAbstract
 {
 public:
+    enum class State { Started, Stopped };
+
     struct ReceivedData {
         int16_t rssi{};
         typename Derived::Timestamp timestamp;
@@ -82,7 +84,7 @@ public:
         std::map<uint16_t, std::vector<uint8_t>> manufacturerDataMap;
     };
     using FnReceived = std::function<void(const ReceivedData &)>;
-    using FnStopped = std::function<void(const std::optional<std::string> &)>;
+    using FnStateChanged = std::function<void(State, const std::optional<std::string> &)>;
 
     virtual inline ~AdvertisementWatcherAbstract() {}
 
@@ -90,9 +92,9 @@ public:
     {
         return _cbReceived;
     }
-    inline auto &CbStopped()
+    inline auto &CbStateChanged()
     {
-        return _cbStopped;
+        return _cbStateChanged;
     }
 
     virtual bool Start() = 0;
@@ -100,7 +102,7 @@ public:
 
 private:
     Helper::Callback<FnReceived> _cbReceived;
-    Helper::Callback<FnStopped> _cbStopped;
+    Helper::Callback<FnStateChanged> _cbStateChanged;
 };
 } // namespace Details
 } // namespace Core::Bluetooth

@@ -293,8 +293,13 @@ AdvertisementWatcher::~AdvertisementWatcher()
 bool AdvertisementWatcher::Start()
 {
     try {
+        _stop = false;
+        _lastStartTime = std::chrono::steady_clock::now();
+
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Start();
+        SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
+        CbStateChanged().Invoke(State::Started, std::nullopt);
         return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
@@ -306,8 +311,12 @@ bool AdvertisementWatcher::Start()
 bool AdvertisementWatcher::Stop()
 {
     try {
+        _stop = true;
+        _stopConVar.notify_all();
+
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Stop();
+        SPDLOG_INFO("Bluetooth AdvWatcher stop succeeded.");
         return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
@@ -341,6 +350,7 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
 
 void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppedEventArgs &args)
 {
+
     static std::unordered_map<BluetoothError, std::string> errorReasons = {
         {BluetoothError::Success, "Success"},
         {BluetoothError::RadioNotAvailable, "RadioNotAvailable"},
@@ -354,7 +364,10 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
         {BluetoothError::TransportNotSupported, "TransportNotSupported"},
     };
 
+    std::unique_lock<std::mutex> lock{_mutex};
     auto status = _bleWatcher.Status();
+    lock.unlock();
+
     auto errorCode = args.Error();
     std::optional<std::string> optError;
 
@@ -381,7 +394,11 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
         optError = std::move(info);
     }
 
-    std::lock_guard<std::mutex> lock{_mutex};
-    CbStopped().Invoke(optError);
+    CbStateChanged().Invoke(State::Stopped, optError);
+
+    do {
+        std::unique_lock<std::mutex> lock{_conVarMutex};
+        _stopConVar.wait_until(lock, _lastStartTime.load() + kRetryInterval);
+    } while (!_stop && !Start());
 }
 } // namespace Core::Bluetooth
