@@ -18,10 +18,11 @@
 
 #include "SettingsWindow.h"
 
-#include <QPushButton>
-#include <QCheckBox>
-#include <QToolTip>
 #include <QLabel>
+#include <QToolTip>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QMessageBox>
 
 #include <Config.h>
 

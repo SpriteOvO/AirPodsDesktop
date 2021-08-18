@@ -22,7 +22,6 @@
 #include <functional>
 
 #include "../Helper.h"
-#include "../Status.h"
 #include "Bluetooth.h"
 
 namespace Core::AirPods {

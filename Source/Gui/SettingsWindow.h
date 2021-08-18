@@ -18,11 +18,14 @@
 
 #pragma once
 
+#include <QLabel>
 #include <QDialog>
 #include <QSlider>
+#include <QCheckBox>
 
 #include "../Core/Settings.h"
 #include "../Utils.h"
+
 #include "ui_SettingsWindow.h"
 
 namespace Gui {

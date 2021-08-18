@@ -20,6 +20,7 @@
 
 #include <QScreen>
 #include <QPainter>
+#include <QMessageBox>
 
 #include <Config.h>
 #include "../Helper.h"

@@ -20,9 +20,9 @@
 
 #include <QPushButton>
 #include <QMetaObject>
+#include <QMessageBox>
 
 #include <Config.h>
-#include "../Status.h"
 #include "../Application.h"
 
 using namespace std::chrono_literals;
@@ -74,7 +74,7 @@ void DownloadWindow::OnFailed()
 
 void DownloadWindow::DownloadThread()
 {
-    Status status = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
+    bool successful = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
         QMetaObject::invokeMethod(
             this, "UpdateProgress", Q_ARG(int, (int)downloaded), Q_ARG(int, (int)total));
 
@@ -85,7 +85,7 @@ void DownloadWindow::DownloadThread()
         return true;
     });
 
-    if (status.IsFailed()) {
+    if (!successful) {
         QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
     }
 }

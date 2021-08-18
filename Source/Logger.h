@@ -21,6 +21,8 @@
 #include <QDir>
 #include <QString>
 
+#include <spdlog/fmt/ostr.h>
+
 namespace Logger {
 
 bool Initialize(bool enableTrace);

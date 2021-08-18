@@ -25,6 +25,7 @@
 
 #include <QDir>
 #include <QTimer>
+#include <QWidget>
 #include <QKeyEvent>
 #include <QApplication>
 #include <QPainterPath>

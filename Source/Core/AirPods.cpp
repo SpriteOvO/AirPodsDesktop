@@ -374,26 +374,26 @@ public:
         _scannerStartWorker.Start(5s, [this] { return ScannerStartWork(); });
     }
 
-    Status StopScanner()
+    bool StopScanner()
     {
         if (!_isScannerStarted) {
             SPDLOG_WARN("AsyncScanner::Stop() return directly. Because it's already stopped.");
-            return Status::Success;
+            return true;
         }
 
         _scannerStartWorker.Stop();
 
-        Status status = _adWatcher.Stop();
-        if (status.IsFailed()) {
-            SPDLOG_WARN("AsyncScanner::Stop() failed. Status: {}", status);
+        if (!_adWatcher.Stop()) {
+            SPDLOG_WARN("AsyncScanner::Stop() failed.");
+            return false;
         }
         else {
             _isScannerStarted = false;
             UpdateUi(Action::Unavailable);
             SPDLOG_INFO("AsyncScanner::Stop() succeeded.");
+            return true;
         }
 
-        return status;
     }
 
     QString GetDisplayName()
@@ -624,10 +624,9 @@ private:
                 break;
             }
 
-            Status status = _adWatcher.Start();
-            if (!status.IsSucceeded()) {
+            if (!_adWatcher.Start()) {
                 UpdateUi(Action::Unavailable);
-                SPDLOG_WARN("Bluetooth AdvWatcher start failed. status: {}", status);
+                SPDLOG_WARN("Bluetooth AdvWatcher start failed.");
                 break;
             }
 

@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <QSettings>
+#include <mutex>
 
-#include "../Status.h"
+#include <QSettings>
 
 namespace Core::Settings {
 

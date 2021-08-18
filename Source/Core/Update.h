@@ -19,10 +19,10 @@
 #pragma once
 
 #include <string>
+#include <optional>
+
 #include <QString>
 #include <QVersionNumber>
-
-#include "../Status.h"
 
 namespace Core::Update {
 
@@ -53,6 +53,6 @@ bool IsCurrentPreRelease();
 
 bool NeedToUpdate(const ReleaseInfo &info);
 
-Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback);
+bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback);
 
 } // namespace Core::Update

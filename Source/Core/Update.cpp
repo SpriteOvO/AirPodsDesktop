@@ -252,21 +252,20 @@ bool NeedToUpdate(const ReleaseInfo &info)
     return info.version.normalized() > GetLocalVersion().normalized();
 }
 
-Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
+bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
 {
     APD_ASSERT(NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
         SPDLOG_WARN("DownloadInstall: Cannot auto update.");
-        return Status::UpdateDownloadCannotAutoUpdate;
+        return false;
     }
 
     QTemporaryDir tempPath;
     if (!tempPath.isValid()) {
         auto errorString = tempPath.errorString();
         SPDLOG_WARN("DownloadInstall: QTemporaryDir construct failed. error: '{}'", errorString);
-        return Status{Status::UpdateDownloadCreateDirectoryFailed}.SetAdditionalData(
-            std::move(errorString));
+        return false;
     }
 
     const QString filePath = QFileInfo{tempPath.filePath(info.fileName)}.absoluteFilePath();
@@ -288,16 +287,14 @@ Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallba
         SPDLOG_WARN(
             "DownloadInstall: Download response status code is not 200. code: {}, message: '{}'",
             response.status_code, response.error.message);
-        return Status{Status::UpdateDownloadStatusCodeIsNot200}.SetAdditionalData(
-            response.status_code, response.error.message);
+        return false;
     }
 
     if (response.downloaded_bytes != info.fileSize) {
         SPDLOG_WARN(
             "Download: Download file size mismatch. Downloaded: {}, expect: {}",
             response.downloaded_bytes, info.fileSize);
-        return Status{Status::UpdateDownloadFileSizeMismatch}.SetAdditionalData(
-            (size_t)response.downloaded_bytes, info.fileSize);
+        return false;
     }
 
     outFile.close();
@@ -311,13 +308,13 @@ Status DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallba
 
     if (!QProcess::startDetached(filePath)) {
         SPDLOG_WARN("DownloadInstall: Start installer failed.");
-        return Status::UpdateDownloadStartInstallerFailed;
+        return false;
     }
 
     // Quit for install new version
     //
     ApdApplication::QuitSafety();
 
-    return Status::Success;
+    return true;
 }
 } // namespace Core::Update

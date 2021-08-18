@@ -36,9 +36,10 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include "GlobalMedia_abstract.h"
-#include "../Status.h"
+#include "OS/Windows.h"
 
 namespace Core::GlobalMedia {
 namespace Details {
@@ -61,8 +62,8 @@ public:
 
     virtual bool IsAvailable() = 0;
     virtual bool IsPlaying() const = 0;
-    virtual Status Play() = 0;
-    virtual Status Pause() = 0;
+    virtual bool Play() = 0;
+    virtual bool Pause() = 0;
 
     virtual std::wstring GetProgramName() const = 0;
     virtual Priority GetPriority() const = 0;

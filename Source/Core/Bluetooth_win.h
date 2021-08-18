@@ -30,6 +30,7 @@
 #include <winrt/Windows.Networking.h>
 
 #include "Bluetooth_abstract.h"
+#include "OS/Windows.h"
 
 namespace Core::Bluetooth {
 
@@ -115,8 +116,8 @@ public:
     explicit AdvertisementWatcher();
     ~AdvertisementWatcher();
 
-    Status Start() override;
-    Status Stop() override;
+    bool Start() override;
+    bool Stop() override;
 
 private:
     WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;

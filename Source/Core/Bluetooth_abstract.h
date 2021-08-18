@@ -21,7 +21,6 @@
 #include <functional>
 
 #include "../Helper.h"
-#include "../Status.h"
 
 namespace Core::Bluetooth {
 
@@ -96,8 +95,8 @@ public:
         return _stoppedCallbacks;
     }
 
-    virtual Status Start() = 0;
-    virtual Status Stop() = 0;
+    virtual bool Start() = 0;
+    virtual bool Stop() = 0;
 
 private:
     Helper::Callback<FnReceived> _receivedCallbacks;

@@ -19,10 +19,9 @@
 #include "GlobalMedia_win.h"
 
 #include <Functiondiscoverykeys_devpkey.h>
-#include <spdlog/spdlog.h>
 
 #include "../Utils.h"
-#include "OS/Windows.h"
+#include "../Logger.h"
 
 namespace Core::GlobalMedia {
 
@@ -63,24 +62,24 @@ public:
         return optAudioVolume.has_value() && optAudioVolume.value() != 0.f;
     }
 
-    Status Play() override
+    bool Play() override
     {
         SPDLOG_TRACE("Do play.");
 
         if (IsPlaying()) {
             SPDLOG_TRACE("The media program is already playing.");
-            return Status::GlobalMediaPlayAlreadyPlaying;
+            return true;
         }
         return Switch();
     }
 
-    Status Pause() override
+    bool Pause() override
     {
         SPDLOG_TRACE("Do pause.");
 
         if (!IsPlaying()) {
             SPDLOG_TRACE("The media program nothing is playing.");
-            return Status::GlobalMediaPauseNothingIsPlaying;
+            return true;
         }
         return Switch();
     }
@@ -273,7 +272,7 @@ private:
         return std::nullopt;
     }
 
-    Status Switch()
+    bool Switch()
     {
         bool postDown = PostMessageW(_windowProcess->first, WM_KEYDOWN, VK_SPACE, 0) != 0;
 
@@ -281,15 +280,13 @@ private:
 
         bool postUp = PostMessageW(_windowProcess->first, WM_KEYUP, VK_SPACE, 0) != 0;
 
-        Status status = Status::Success;
-
         if (!postDown || !postUp) {
-            status = Status{Status::GlobalMediaVKSwitchFailed}.SetAdditionalData(postDown, postUp);
-
-            SPDLOG_TRACE("Switch failed. Status: {}", status);
+            SPDLOG_TRACE(
+                "Switch failed. Post messages failed: hwnd '{}' down '{}' up '{}'",
+                (void *)_windowProcess->first, postDown, postUp);
+            return false;
         }
-
-        return status;
+        return true;
     }
 };
 
@@ -330,25 +327,27 @@ public:
         return IsPlaying(_currentSession.value());
     }
 
-    Status Play() override
+    bool Play() override
     {
         try {
             _currentSession->TryPlayAsync().get();
-            return Status::Success;
+            return true;
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            return Status{Status::GlobalMediaUSSPlayFailed}.SetAdditionalData(ex);
+            SPDLOG_WARN("_currentSession->TryPlayAsync() failed. {}", Helper::ToString(ex));
+            return false;
         }
     }
 
-    Status Pause() override
+    bool Pause() override
     {
         try {
             _currentSession->TryPauseAsync().get();
-            return Status::Success;
+            return true;
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            return Status{Status::GlobalMediaUSSPauseFailed}.SetAdditionalData(ex);
+            SPDLOG_WARN("_currentSession->TryPauseAsync() failed. {}", Helper::ToString(ex));
+            return false;
         }
     }
 
@@ -807,12 +806,8 @@ void Controller::Play()
     }
 
     for (const auto &program : _pausedPrograms) {
-        Status status = program->Play();
-
-        if (status.IsFailed()) {
-            SPDLOG_WARN(
-                L"Failed to play media. Program name: {}, Status: {}", program->GetProgramName(),
-                status);
+        if (!program->Play()) {
+            SPDLOG_WARN(L"Failed to play media. Program name: {}", program->GetProgramName());
         }
         else {
             SPDLOG_TRACE(L"Media played. Program name: {}", program->GetProgramName());
@@ -830,11 +825,8 @@ void Controller::Pause()
 
     for (auto &&program : programs) {
         if (program->IsPlaying()) {
-            Status status = program->Pause();
-            if (status.IsFailed()) {
-                SPDLOG_WARN(
-                    L"Failed to pause media. Program name: {}, Status: {}",
-                    program->GetProgramName(), status);
+            if (!program->Pause()) {
+                SPDLOG_WARN(L"Failed to pause media. Program name: {}", program->GetProgramName());
             }
             else {
                 SPDLOG_TRACE(L"Media paused. Program name: {}", program->GetProgramName());

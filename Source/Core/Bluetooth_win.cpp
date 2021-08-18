@@ -290,27 +290,29 @@ AdvertisementWatcher::~AdvertisementWatcher()
     Stop();
 }
 
-Status AdvertisementWatcher::Start()
+bool AdvertisementWatcher::Start()
 {
     try {
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Start();
-        return Status::Success;
+        return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
-        return Status{Status::BluetoothAdvWatcherStartFailed}.SetAdditionalData(ex);
+        SPDLOG_WARN("Start adv watcher exception: {}", Helper::ToString(ex));
+        return false;
     }
 }
 
-Status AdvertisementWatcher::Stop()
+bool AdvertisementWatcher::Stop()
 {
     try {
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Stop();
-        return Status::Success;
+        return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
-        return Status{Status::BluetoothAdvWatcherStopFailed}.SetAdditionalData(ex);
+        SPDLOG_WARN("Stop adv watcher exception: {}", Helper::ToString(ex));
+        return false;
     }
 }
 
