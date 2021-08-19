@@ -35,6 +35,7 @@
 
 #include "Helper.h"
 #include "Logger.h"
+#include "ErrorHandle.h"
 
 #if defined APD_OS_WIN
     #include "Core/OS/Windows.h"
@@ -147,4 +148,28 @@ inline bool ShowFileLocation(const QDir &directory)
 #endif
 }
 } // namespace File
+
+namespace Process {
+//
+// Retained for backward compatibility with v0.2.0 and before.
+// TODO: Remove this function in [v1.0.0]
+//
+inline bool SingleInstance(const QString &instanceName)
+{
+#if !defined APD_OS_WIN
+    #error "Need to port."
+#endif
+    HANDLE mutex = CreateMutexW(
+        nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
+    uint32_t lastError = GetLastError();
+
+    if (mutex == nullptr) {
+        FatalError(std::format("Create instance mutex failed.\nErrorCode: {}", lastError), false);
+    }
+
+    // No need to close the handle
+    //
+    return lastError != ERROR_ALREADY_EXISTS;
+}
+} // namespace Process
 } // namespace Utils

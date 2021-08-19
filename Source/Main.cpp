@@ -17,10 +17,16 @@
 //
 
 #include "Application.h"
+
+#include <Config.h>
 #include "Utils.h"
 
 int main(int argc, char *argv[])
 {
+    if (!Utils::Process::SingleInstance(Config::ProgramName)) {
+        return 0;
+    }
+
     ApdApplication::PreInitialize(argc, argv);
     ApdApplication app{argc, argv};
     if (!ApdApp->Prepare()) {
