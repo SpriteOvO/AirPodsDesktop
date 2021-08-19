@@ -32,5 +32,5 @@ int main(int argc, char *argv[])
     if (!ApdApp->Prepare()) {
         return 1;
     }
-    return static_cast<int>(ApdApp->Run());
+    return ApdApp->Run();
 }
