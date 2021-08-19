@@ -65,19 +65,19 @@ void SysTray::UpdateState(const Core::AirPods::State &state)
     if (state.pods.left.battery.has_value()) {
         toolTip += QString{tr("\nLeft: %1%%2")}
             .arg(state.pods.left.battery.value())
-            .arg(state.pods.left.isCharging ? tr(" (charing)") : "");
+            .arg(state.pods.left.isCharging ? tr(" (charging)") : "");
     }
 
     if (state.pods.right.battery.has_value()) {
         toolTip += QString{tr("\nRight: %1%%2")}
             .arg(state.pods.right.battery.value())
-            .arg(state.pods.right.isCharging ? tr(" (charing)") : "");
+            .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
     }
 
     if (state.caseBox.battery.has_value()) {
         toolTip += QString{tr("\nCase: %1%%2")}
             .arg(state.caseBox.battery.value())
-            .arg(state.caseBox.isCharging ? tr(" (charing)") : "");
+            .arg(state.caseBox.isCharging ? tr(" (charging)") : "");
     }
 
     // clang-format on
