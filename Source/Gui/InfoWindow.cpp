@@ -196,6 +196,10 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
+
+    _checkUpdateTimer->callOnTimeout([this] { CheckUpdate(); });
+    _checkUpdateTimer->start(1h);
+    CheckUpdate();
 }
 
 InfoWindow::~InfoWindow()
@@ -402,6 +406,11 @@ void InfoWindow::BindDevice()
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 
     ChangeButtonAction(ButtonAction::NoButton);
+}
+
+void InfoWindow::CheckUpdate()
+{
+    ApdApp->CheckUpdate();
 }
 
 void InfoWindow::OnButtonClicked()

@@ -58,6 +58,10 @@ public:
     static void PopupAboutWindow(QWidget *parent);
     static void QuitSafety();
 
+    // Returns false if the program will quit
+    //
+    bool CheckUpdate();
+
 private:
     static inline LaunchOptions _launchOptions;
     static inline bool _isFirstTimeUse{false};
@@ -67,10 +71,6 @@ private:
 
     static void InitSettings();
     static void FirstTimeUse();
-
-    // Returns false if the program will quit
-    //
-    bool CheckUpdate();
 
     void QuitHandler();
 };

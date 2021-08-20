@@ -153,15 +153,7 @@ bool ApdApplication::Prepare()
 
 int ApdApplication::Run()
 {
-    do {
-        if (!CheckUpdate()) {
-            break;
-        }
-
-        Core::AirPods::StartScanner();
-
-    } while (false);
-
+    Core::AirPods::StartScanner();
     return exec();
 }
 
