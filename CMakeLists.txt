@@ -28,6 +28,33 @@ project(
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
 )
 
+if(MSVC AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20.4")
+    #
+    # Workaround
+    #
+    # The current C++20 <format> is defective, and some ABI-breaking changes will be applied soon.
+    # So we can't use it in the MSVC stable ABI C++20 (compiler option `/std:c++20`).
+    # The way to use <format> now is to specify the `/std:c++latest` option to MSVC.
+    #
+    # But since CMake 3.20.4, when the value of `CMAKE_CXX_STANDARD` is `20`, the specified option
+    # is no longer `/std:c++latest` but `/std:c++20`.
+    #
+    # There are two workarounds:
+    # 1. Set `CMAKE_CXX_STANDARD` to `23`, which makes CMake specify `/std:c++latest` to the compiler.
+    # 2. Modify the compiler option specified when `CMAKE_CXX_STANDARD` is `20`.
+    #
+    # Here we choose the second one, because I think it is relatively cleaner.
+    #
+    # TODO: Remove this workaround when <format> is available in `/std:c++20`.
+    #
+    # For more details:
+    # https://github.com/microsoft/STL/issues/1814
+    # https://gitlab.kitware.com/cmake/cmake/-/commit/3aaf1d91bf353559aef7ec56ad35924383ed613a
+    #
+    set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+    set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
