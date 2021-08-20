@@ -156,9 +156,9 @@ static_assert(sizeof(AirPods) == 27);
 #pragma pack(pop)
 
 template <class T>
-constexpr inline bool IsACPStruct = std::is_base_of_v<Header, T>;
+concept KindOfACPStruct = std::is_base_of_v<Header, T>;
 
-template <class T, std::enable_if_t<IsACPStruct<T>, int> = 0>
+template <KindOfACPStruct T>
 std::optional<T> As(const std::vector<uint8_t> &data)
 {
     if (!T::IsValid(data)) {

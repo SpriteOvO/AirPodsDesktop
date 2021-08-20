@@ -31,12 +31,6 @@
 
 namespace Helper {
 
-template <class T>
-inline constexpr bool is_string_v =
-    std::is_same_v<T, std::string> || std::is_same_v<T, std::wstring>;
-
-//////////////////////////////////////////////////
-
 template <class E>
 [[nodiscard]] constexpr decltype(auto) ToUnderlying(E e) noexcept
 {

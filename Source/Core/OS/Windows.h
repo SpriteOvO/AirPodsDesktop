@@ -165,9 +165,9 @@ inline bool Initialize()
 namespace Com {
 
 template <class T>
-constexpr inline bool is_com_type_v = std::is_base_of_v<IUnknown, T>;
+concept KindOfComType = std::derived_from<T, IUnknown>;
 
-template <class T, std::enable_if_t<is_com_type_v<T>, int> = 0>
+template <KindOfComType T>
 class UniquePtr : Helper::NonCopyable
 {
 public:
