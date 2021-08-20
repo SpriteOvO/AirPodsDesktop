@@ -31,9 +31,6 @@ SysTray::SysTray()
     connect(_tray, &QSystemTrayIcon::activated, this, &SysTray::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
 
-    connect(this, &SysTray::UpdateStateSafety, this, &SysTray::UpdateState);
-    connect(this, &SysTray::DisconnectSafety, this, &SysTray::Disconnect);
-
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -53,8 +50,6 @@ SysTray::SysTray()
 
 void SysTray::UpdateState(const Core::AirPods::State &state)
 {
-    _state = state;
-
     QString toolTip;
 
     // toolTip += Helper::ToString(state.model);
@@ -85,10 +80,19 @@ void SysTray::UpdateState(const Core::AirPods::State &state)
     _tray->setToolTip(toolTip);
 }
 
-void SysTray::Disconnect(const QString &title)
+void SysTray::Unavailable()
 {
-    _state = Core::AirPods::State{};
-    _tray->setToolTip(title);
+    _tray->setToolTip(tr("Unavailable"));
+}
+
+void SysTray::Disconnect()
+{
+    _tray->setToolTip(tr("Disconnected"));
+}
+
+void SysTray::Unbind()
+{
+    _tray->setToolTip(tr("Waiting for Binding"));
 }
 
 void SysTray::ShowInfoWindow()

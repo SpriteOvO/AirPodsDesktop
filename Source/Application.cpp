@@ -153,6 +153,7 @@ bool ApdApplication::Prepare()
 
 int ApdApplication::Run()
 {
+    ApdApp->GetInfoWindow()->Unavailable();
     Core::AirPods::StartScanner();
     return exec();
 }

@@ -34,9 +34,10 @@ class SysTray : public QWidget
 public:
     SysTray();
 
-Q_SIGNALS:
-    void UpdateStateSafety(const Core::AirPods::State &state);
-    void DisconnectSafety(const QString &title);
+    void UpdateState(const Core::AirPods::State &state);
+    void Unavailable();
+    void Disconnect();
+    void Unbind();
 
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
@@ -46,9 +47,6 @@ private:
     QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
 
-    void UpdateState(const Core::AirPods::State &state);
-    void Disconnect(const QString &title);
-
     void ShowInfoWindow();
 
     void OnSettingsClicked();
@@ -56,8 +54,6 @@ private:
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
 
 protected:
-    Core::AirPods::State _state{};
-
     SettingsWindow _settingsWindow{this};
 };
 } // namespace Gui

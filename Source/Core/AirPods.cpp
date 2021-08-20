@@ -365,22 +365,20 @@ public:
     void StartScanner()
     {
         if (!_adWatcher.Start()) {
-            UpdateUi(Action::Unavailable);
             SPDLOG_WARN("Bluetooth AdvWatcher start failed.");
-            return;
+        }
+        else {
+            SPDLOG_WARN("Bluetooth AdvWatcher start succeeded.");
         }
     }
 
-    bool StopScanner()
+    void StopScanner()
     {
         if (!_adWatcher.Stop()) {
             SPDLOG_WARN("AsyncScanner::Stop() failed.");
-            return false;
         }
         else {
-            UpdateUi(Action::Unavailable);
             SPDLOG_INFO("AsyncScanner::Stop() succeeded.");
-            return true;
         }
     }
 
@@ -434,7 +432,7 @@ public:
 
         disconnect();
         if (address == 0) {
-            UpdateUi(Action::WaitingForBinding);
+            ApdApp->GetInfoWindow()->UnbindSafety();
             if (!ApdApp->GetInfoWindow()) {
                 Utils::Qt::Dispatch(changeButtonToBind);
             }
@@ -443,7 +441,7 @@ public:
             }
             return;
         }
-        UpdateUi(Action::Disconnected);
+        ApdApp->GetInfoWindow()->DisconnectSafety();
 
         auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
         if (!optDevice.has_value()) {
@@ -466,7 +464,7 @@ public:
 
             if (doDisconnet) {
                 _tracker.Disconnect();
-                UpdateUi(Action::Disconnected);
+                ApdApp->GetInfoWindow()->DisconnectSafety();
             }
 
             SPDLOG_INFO(
@@ -488,12 +486,6 @@ public:
     }
 
 private:
-    enum class Action : uint32_t {
-        Unavailable,
-        WaitingForBinding,
-        Disconnected,
-    };
-
     Tracker _tracker;
 
     using FnControlInfoWindow = std::function<void(const State &state, bool show)>;
@@ -506,7 +498,6 @@ private:
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
 
-    std::atomic<Action> _lastAction{Action::Unavailable};
     std::atomic<bool> _deviceConnected{false};
     std::mutex _mutex;
 
@@ -514,7 +505,6 @@ private:
     {
         _tracker.CbStateChanged() += [](auto, const State &newState) {
             ApdApp->GetInfoWindow()->UpdateStateSafety(newState);
-            ApdApp->GetSysTray()->UpdateStateSafety(newState);
         };
 
         _cbControlInfoWindow += [](const State &state, bool show) {
@@ -581,7 +571,7 @@ private:
                 }
             };
 
-        _tracker.CbLosted() += [this]() { UpdateUi(Action::Disconnected); };
+        _tracker.CbLosted() += [this]() { ApdApp->GetInfoWindow()->DisconnectSafety(); };
 
         _adWatcher.CbReceived() +=
             [this](const Bluetooth::AdvertisementWatcher::ReceivedData &receivedData) {
@@ -592,45 +582,15 @@ private:
                                            Bluetooth::AdvertisementWatcher::State state,
                                            const std::optional<std::string> &optError) {
             if (state == Bluetooth::AdvertisementWatcher::State::Stopped) {
-                UpdateUi(Action::Unavailable);
+                ApdApp->GetInfoWindow()->UnavailableSafety();
                 SPDLOG_WARN(
                     "Bluetooth AdvWatcher stopped. Error: '{}'.",
                     optError.has_value() ? optError.value() : "nullopt");
             }
             else {
-                if (_lastAction != Action::WaitingForBinding) {
-                    UpdateUi(Action::Disconnected);
-                }
+                ApdApp->GetInfoWindow()->DisconnectSafety();
             }
         };
-    }
-
-    void UpdateUi(Action action)
-    {
-        _lastAction = action;
-
-        QString title;
-        if (action == Action::Unavailable) {
-            title = QDialog::tr("Unavailable");
-        }
-        else if (action == Action::WaitingForBinding) {
-            title = QDialog::tr("Waiting for Binding");
-        }
-        else if (action == Action::Disconnected) {
-            title = QDialog::tr("Disconnected");
-        }
-
-        const auto &disconnect = [title = std::move(title)]() {
-            ApdApp->GetInfoWindow()->DisconnectSafety(title);
-            ApdApp->GetSysTray()->DisconnectSafety(title);
-        };
-
-        if (!ApdApp->GetInfoWindow() || !ApdApp->GetSysTray()) {
-            Utils::Qt::Dispatch(disconnect);
-        }
-        else {
-            disconnect();
-        }
     }
 };
 } // namespace Details

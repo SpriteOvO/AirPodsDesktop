@@ -182,7 +182,9 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
 
     connect(this, &InfoWindow::ChangeButtonActionSafety, this, &InfoWindow::ChangeButtonAction);
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
+    connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
     connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
+    connect(this, &InfoWindow::ShowSafety, this, &InfoWindow::show);
     connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
 
     _mediaPlayer->setMuted(true);
@@ -206,11 +208,6 @@ InfoWindow::~InfoWindow()
 {
     _showHideTimer->stop();
     _autoHideTimer->stop();
-}
-
-void InfoWindow::ShowSafety()
-{
-    QMetaObject::invokeMethod(this, &InfoWindow::show);
 }
 
 void InfoWindow::InitCommonButton()
@@ -277,45 +274,82 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state)
         _caseBattery->setValue(state.caseBox.battery.value());
         _caseBattery->show();
     }
+
+    ApdApp->GetSysTray()->UpdateState(state);
 }
 
-void InfoWindow::Disconnect(const QString &title)
+void InfoWindow::Unavailable()
 {
-    _ui.deviceLabel->setText(title);
+    _ui.deviceLabel->setText(tr("Unavailable"));
 
-    _cacheModel = Core::AirPods::Model::Unknown;
-    _mediaPlayer->setMedia(QMediaContent{});
+    SetAnimation(std::nullopt);
 
     _leftBattery->hide();
     _rightBattery->hide();
     _caseBattery->hide();
+
+    ApdApp->GetSysTray()->Unavailable();
 }
 
-void InfoWindow::SetAnimation(Core::AirPods::Model model)
+void InfoWindow::Disconnect()
+{
+    _ui.deviceLabel->setText(tr("Disconnected"));
+
+    SetAnimation(std::nullopt);
+
+    _leftBattery->hide();
+    _rightBattery->hide();
+    _caseBattery->hide();
+
+    ApdApp->GetSysTray()->Disconnect();
+}
+
+void InfoWindow::Unbind()
+{
+    _ui.deviceLabel->setText(tr("Waiting for Binding"));
+
+    SetAnimation(std::nullopt);
+
+    _leftBattery->hide();
+    _rightBattery->hide();
+    _caseBattery->hide();
+
+    ChangeButtonAction(ButtonAction::Bind);
+
+    ApdApp->GetSysTray()->Unbind();
+}
+
+void InfoWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 {
     if (model == _cacheModel) {
         return;
     }
-    _cacheModel = model;
 
-    QString media;
-    switch (model) {
-    case Core::AirPods::Model::AirPods_1:
-    case Core::AirPods::Model::AirPods_2:
-        media = "qrc:/Resource/Video/AirPods_1_2.avi";
-        break;
-    case Core::AirPods::Model::AirPods_Pro:
-        media = "qrc:/Resource/Video/AirPods_Pro.avi";
-        break;
-    case Core::AirPods::Model::Powerbeats_3:
-    case Core::AirPods::Model::Beats_X:
-    case Core::AirPods::Model::Beats_Solo3:
-    default:
-        media = "qrc:/Resource/Video/AirPods_1_2.avi";
-        break;
+    if (!model.has_value()) {
+        _mediaPlayer->setMedia(QMediaContent{});
+    }
+    else {
+        QString media;
+        switch (model.value()) {
+        case Core::AirPods::Model::AirPods_1:
+        case Core::AirPods::Model::AirPods_2:
+            media = "qrc:/Resource/Video/AirPods_1_2.avi";
+            break;
+        case Core::AirPods::Model::AirPods_Pro:
+            media = "qrc:/Resource/Video/AirPods_Pro.avi";
+            break;
+        case Core::AirPods::Model::Powerbeats_3:
+        case Core::AirPods::Model::Beats_X:
+        case Core::AirPods::Model::Beats_Solo3:
+        default:
+            media = "qrc:/Resource/Video/AirPods_1_2.avi";
+            break;
+        }
+
+        _mediaPlayer->setMedia(QUrl{media});
     }
 
-    _mediaPlayer->setMedia(QUrl{media});
+    _cacheModel = model;
 }
 
 void InfoWindow::PlayAnimation()

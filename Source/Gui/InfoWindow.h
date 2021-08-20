@@ -48,13 +48,19 @@ public:
     InfoWindow(QWidget *parent = nullptr);
     ~InfoWindow();
 
-    void ShowSafety();
+    void UpdateState(const Core::AirPods::State &state);
+    void Unavailable();
+    void Disconnect();
+    void Unbind();
 
 Q_SIGNALS:
     void ChangeButtonActionSafety(ButtonAction action);
-    void HideSafety();
     void UpdateStateSafety(const Core::AirPods::State &state);
-    void DisconnectSafety(const QString &title);
+    void UnavailableSafety();
+    void DisconnectSafety();
+    void UnbindSafety();
+    void ShowSafety();
+    void HideSafety();
 
 private:
     Ui::InfoWindow _ui;
@@ -68,7 +74,7 @@ private:
     QTimer *_checkUpdateTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
-    Core::AirPods::Model _cacheModel{Core::AirPods::Model::Unknown};
+    std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
 
     bool _isShown{false};
@@ -78,12 +84,9 @@ private:
     constexpr static int _moveStep = 2;
 
     void InitCommonButton();
-
     void ChangeButtonAction(ButtonAction action);
-    void UpdateState(const Core::AirPods::State &state);
-    void Disconnect(const QString &title);
 
-    void SetAnimation(Core::AirPods::Model model);
+    void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
 
