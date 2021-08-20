@@ -13,3 +13,6 @@ CTestTestfile.cmake
 .vs/
 out/
 CMakeSettings.json
+
+# Build
+Build/
