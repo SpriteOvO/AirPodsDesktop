@@ -142,8 +142,10 @@ bool ApdApplication::Prepare()
     _infoWindow = std::make_unique<Gui::InfoWindow>();
 
     InitSettings();
-    Core::Bluetooth::Initialize();
-    Core::GlobalMedia::Initialize();
+
+#if defined APD_OS_WIN
+    Core::OS::Windows::Winrt::Initialize();
+#endif
 
     connect(this, &ApdApplication::aboutToQuit, this, &ApdApplication::QuitHandler);
     return true;

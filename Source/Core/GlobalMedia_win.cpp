@@ -789,11 +789,6 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
 }
 } // namespace Details
 
-bool Initialize()
-{
-    return OS::Windows::Winrt::Initialize();
-}
-
 Controller::Controller() {}
 
 void Controller::Play()

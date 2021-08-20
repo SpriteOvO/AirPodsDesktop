@@ -41,8 +41,6 @@ namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
 namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
 namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
 
-bool Initialize();
-
 class Device final : public Details::DeviceAbstract<uint64_t>
 {
 public:

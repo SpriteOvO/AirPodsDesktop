@@ -139,26 +139,20 @@ namespace Winrt {
 
 using Exception = winrt::hresult_error;
 
-inline bool Initialize()
+inline void Initialize()
 {
-    static bool inited = false;
-    if (inited) {
-        return true;
-    }
-    inited = true;
+    static std::once_flag onceFlag;
 
-    try {
-        winrt::init_apartment();
-        return true;
-    }
-    catch (const Exception &ex) {
-        SPDLOG_WARN(
-            "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
-            winrt::to_string(ex.message()));
-
-        // return false;
-        return true; // workaround for "Cannot change thread mode after it is set."
-    }
+    std::call_once(onceFlag, []() {
+        try {
+            winrt::init_apartment();
+        }
+        catch (const Exception &ex) {
+            SPDLOG_WARN(
+                "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
+                winrt::to_string(ex.message()));
+        }
+    });
 }
 } // namespace Winrt
 

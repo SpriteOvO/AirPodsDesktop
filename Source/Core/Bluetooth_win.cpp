@@ -30,11 +30,6 @@ using namespace WinrtBlutooth;
 using namespace WinrtBlutoothAdv;
 using namespace WinrtDevicesEnumeration;
 
-bool Initialize()
-{
-    return OS::Windows::Winrt::Initialize();
-}
-
 //////////////////////////////////////////////////
 // Device
 //

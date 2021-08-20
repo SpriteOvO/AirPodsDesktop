@@ -112,8 +112,6 @@ private:
 };
 } // namespace Details
 
-bool Initialize();
-
 class Controller final : public Details::ControllerAbstract<Controller>
 {
 public:
