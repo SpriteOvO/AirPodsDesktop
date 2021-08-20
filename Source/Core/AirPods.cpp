@@ -407,8 +407,7 @@ public:
 
         SPDLOG_TRACE(
             "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
-            Helper::ToString(adv.GetDesensitizedData()),
-            std::hash<decltype(data.address)>{}(data.address), data.rssi);
+            Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
         if (!_tracker.TryTrack(adv)) {
             SPDLOG_WARN("It doesn't seem to be the device we desired.");

@@ -45,6 +45,14 @@ template <class E>
 
 //////////////////////////////////////////////////
 
+template <class T>
+[[nodiscard]] constexpr decltype(auto) Hash(const T &value) noexcept
+{
+    return std::hash<T>{}(value);
+}
+
+//////////////////////////////////////////////////
+
 template <class... Ts>
 struct Overloaded : Ts... {
     using Ts::operator()...;
