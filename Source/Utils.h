@@ -19,6 +19,7 @@
 #pragma once
 
 #include <mutex>
+#include <format>
 #include <vector>
 #include <cwctype>
 #include <functional>
