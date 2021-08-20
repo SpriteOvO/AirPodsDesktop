@@ -34,14 +34,7 @@ struct BasicState {
     Battery battery;
     bool isCharging{false};
 
-    inline bool operator==(const BasicState &rhs) const
-    {
-        return battery == rhs.battery && isCharging == rhs.isCharging;
-    }
-    inline bool operator!=(const BasicState &rhs) const
-    {
-        return battery != rhs.battery || isCharging != rhs.isCharging;
-    }
+    bool operator==(const BasicState &rhs) const = default;
 };
 } // namespace Details
 
@@ -60,45 +53,20 @@ enum class Side : uint32_t { Left, Right };
 struct PodState : Details::BasicState {
     bool isInEar{false};
 
-    inline bool operator==(const PodState &rhs) const
-    {
-        return *(Details::BasicState *)this == *(Details::BasicState *)&rhs &&
-               isInEar == rhs.isInEar;
-    }
-    inline bool operator!=(const PodState &rhs) const
-    {
-        return *(Details::BasicState *)this != *(Details::BasicState *)&rhs ||
-               isInEar != rhs.isInEar;
-    }
+    bool operator==(const PodState &rhs) const = default;
 };
 
 struct CaseState : Details::BasicState {
     bool isBothPodsInCase{false};
     bool isLidOpened{false};
 
-    inline bool operator==(const CaseState &rhs) const
-    {
-        return *(Details::BasicState *)this == *(Details::BasicState *)&rhs &&
-               isBothPodsInCase == rhs.isBothPodsInCase && isLidOpened == rhs.isLidOpened;
-    }
-    inline bool operator!=(const CaseState &rhs) const
-    {
-        return *(Details::BasicState *)this != *(Details::BasicState *)&rhs ||
-               isBothPodsInCase != rhs.isBothPodsInCase || isLidOpened != rhs.isLidOpened;
-    }
+    bool operator==(const CaseState &rhs) const = default;
 };
 
 struct PodsState {
     PodState left, right;
 
-    inline bool operator==(const PodsState &rhs) const
-    {
-        return left == rhs.left && right == rhs.right;
-    }
-    inline bool operator!=(const PodsState &rhs) const
-    {
-        return left != rhs.left || right != rhs.right;
-    }
+    bool operator==(const PodsState &rhs) const = default;
 };
 
 struct State {
@@ -106,14 +74,7 @@ struct State {
     PodsState pods;
     CaseState caseBox;
 
-    inline bool operator==(const State &rhs) const
-    {
-        return model == rhs.model && pods == rhs.pods && caseBox == rhs.caseBox;
-    }
-    inline bool operator!=(const State &rhs) const
-    {
-        return model != rhs.model || pods != rhs.pods || caseBox != rhs.caseBox;
-    }
+    bool operator==(const State &rhs) const = default;
 };
 
 std::optional<State> GetState();
