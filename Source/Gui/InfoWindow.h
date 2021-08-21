@@ -49,12 +49,14 @@ public:
     ~InfoWindow();
 
     void UpdateState(const Core::AirPods::State &state);
+    void Available();
     void Unavailable();
     void Disconnect();
     void Unbind();
 
 Q_SIGNALS:
     void UpdateStateSafety(const Core::AirPods::State &state);
+    void AvailableSafety();
     void UnavailableSafety();
     void DisconnectSafety();
     void UnbindSafety();
@@ -62,6 +64,8 @@ Q_SIGNALS:
     void HideSafety();
 
 private:
+    enum class State { Updating, Available, Unavailable, Disconnected, WaitingForBinding };
+
     Ui::InfoWindow _ui;
 
     QVideoWidget *_videoWidget = new QVideoWidget{this};
@@ -75,6 +79,7 @@ private:
     Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
+    State _lastState{State::Unavailable};
 
     bool _isShown{false};
     bool _isAnimationPlaying{false};

@@ -576,7 +576,7 @@ private:
     {
         switch (state) {
         case Core::Bluetooth::AdvertisementWatcher::State::Started:
-            ApdApp->GetInfoWindow()->DisconnectSafety();
+            ApdApp->GetInfoWindow()->AvailableSafety();
             SPDLOG_INFO("Bluetooth AdvWatcher started.");
             break;
 

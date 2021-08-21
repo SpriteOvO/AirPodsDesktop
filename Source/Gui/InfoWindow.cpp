@@ -181,6 +181,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
         });
 
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
+    connect(this, &InfoWindow::AvailableSafety, this, &InfoWindow::Available);
     connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
     connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
     connect(this, &InfoWindow::UnbindSafety, this, &InfoWindow::Unbind);
@@ -202,6 +203,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _checkUpdateTimer->callOnTimeout([this] { CheckUpdate(); });
     _checkUpdateTimer->start(1h);
     CheckUpdate();
+    Unavailable();
 }
 
 InfoWindow::~InfoWindow()
@@ -243,6 +245,9 @@ void InfoWindow::ChangeButtonAction(ButtonAction action)
 
 void InfoWindow::UpdateState(const Core::AirPods::State &state)
 {
+    SPDLOG_INFO("InfoWindow::UpdateState");
+    _lastState = State::Updating;
+
     // _ui.deviceLabel->setText(Helper::ToString(state.model));
     _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
 
@@ -278,8 +283,22 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state)
     ApdApp->GetSysTray()->UpdateState(state);
 }
 
+void InfoWindow::Available()
+{
+    SPDLOG_INFO("InfoWindow::Available");
+    if (_lastState != State::Unavailable) {
+        return;
+    }
+    _lastState = State::Available;
+
+    Disconnect();
+}
+
 void InfoWindow::Unavailable()
 {
+    SPDLOG_INFO("InfoWindow::Unavailable");
+    _lastState = State::Unavailable;
+
     _ui.deviceLabel->setText(tr("Unavailable"));
 
     SetAnimation(std::nullopt);
@@ -288,11 +307,19 @@ void InfoWindow::Unavailable()
     _rightBattery->hide();
     _caseBattery->hide();
 
+    ChangeButtonAction(ButtonAction::NoButton);
+
     ApdApp->GetSysTray()->Unavailable();
 }
 
 void InfoWindow::Disconnect()
 {
+    SPDLOG_INFO("InfoWindow::Disconnect");
+    if (_lastState == State::WaitingForBinding) {
+        return;
+    }
+    _lastState = State::Disconnected;
+
     _ui.deviceLabel->setText(tr("Disconnected"));
 
     SetAnimation(std::nullopt);
@@ -301,11 +328,16 @@ void InfoWindow::Disconnect()
     _rightBattery->hide();
     _caseBattery->hide();
 
+    ChangeButtonAction(ButtonAction::NoButton);
+
     ApdApp->GetSysTray()->Disconnect();
 }
 
 void InfoWindow::Unbind()
 {
+    SPDLOG_INFO("InfoWindow::Unbind");
+    _lastState = State::WaitingForBinding;
+
     _ui.deviceLabel->setText(tr("Waiting for Binding"));
 
     SetAnimation(std::nullopt);
