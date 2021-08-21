@@ -97,7 +97,7 @@ void SysTray::Unbind()
 
 void SysTray::ShowInfoWindow()
 {
-    ApdApp->GetInfoWindow()->ShowSafety();
+    ApdApp->GetInfoWindow()->show();
 }
 
 void SysTray::OnSettingsClicked()

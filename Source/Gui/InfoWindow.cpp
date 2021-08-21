@@ -161,24 +161,14 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
 
     connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
+    connect(qApp, &QGuiApplication::applicationStateChanged, this, &InfoWindow::OnAppStateChanged);
 
     // for loop play
-    //
     connect(_mediaPlayer, &QMediaPlayer::stateChanged, [this](QMediaPlayer::State newState) {
         if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
             _mediaPlayer->play();
         }
     });
-
-    QObject::connect(
-        qApp, &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
-            if (state == Qt::ApplicationActive) {
-                _autoHideTimer->stop();
-            }
-            else {
-                _autoHideTimer->start(10s);
-            }
-        });
 
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
     connect(this, &InfoWindow::AvailableSafety, this, &InfoWindow::Available);
@@ -483,6 +473,21 @@ void InfoWindow::CheckUpdate()
     ApdApp->CheckUpdate();
 }
 
+void InfoWindow::ControlAutoHideTimer(bool start) {
+    if (start) {
+        _autoHideTimer->start(10s);
+    }
+    else {
+        _autoHideTimer->stop();
+    }
+}
+
+void InfoWindow::OnAppStateChanged(Qt::ApplicationState state)
+{
+    SPDLOG_TRACE("OnAppStateChanged: '{}'", Helper::ToString(state));
+    ControlAutoHideTimer(state != Qt::ApplicationActive);
+}
+
 void InfoWindow::OnButtonClicked()
 {
     switch (_buttonAction) {
@@ -499,6 +504,8 @@ void InfoWindow::OnButtonClicked()
 
 void InfoWindow::DoHide()
 {
+    SPDLOG_TRACE("InfoWindow: Hide");
+
     if (!_isShown) {
         return;
     }
@@ -525,6 +532,8 @@ void InfoWindow::DoHide()
 
 void InfoWindow::showEvent(QShowEvent *event)
 {
+    SPDLOG_TRACE("InfoWindow: Show");
+
     if (_isShown) {
         return;
     }
@@ -532,6 +541,7 @@ void InfoWindow::showEvent(QShowEvent *event)
 
     _showHideTimer->stop();
     PlayAnimation();
+    ControlAutoHideTimer(true);
 
     move(_screenSize.width() - size().width() - _screenMargin.width(), _screenSize.height());
 

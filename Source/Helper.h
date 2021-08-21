@@ -107,6 +107,25 @@ inline QString ToString<std::vector<uint8_t>>(const std::vector<uint8_t> &value)
     return result;
 }
 
+template <>
+inline QString ToString<Qt::ApplicationState>(const Qt::ApplicationState &value)
+{
+    switch (value) {
+    case Qt::ApplicationState::ApplicationSuspended:
+        return "Qt::ApplicationState::ApplicationSuspended";
+    case Qt::ApplicationState::ApplicationHidden:
+        return "Qt::ApplicationState::ApplicationHidden";
+    case Qt::ApplicationState::ApplicationInactive:
+        return "Qt::ApplicationState::ApplicationInactive";
+    case Qt::ApplicationState::ApplicationActive:
+        return "Qt::ApplicationState::ApplicationActive";
+    default:
+        return QString{"Unhandled 'Qt::ApplicationState' value: '%1'"}.arg(value);
+    }
+}
+
+//////////////////////////////////////////////////
+
 using CbHandle = uint64_t;
 
 template <class Function>

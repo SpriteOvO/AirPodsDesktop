@@ -95,10 +95,11 @@ private:
     void StopAnimation();
 
     void BindDevice();
-
     void CheckUpdate();
+    void ControlAutoHideTimer(bool start);
 
     void DoHide();
+    void OnAppStateChanged(Qt::ApplicationState state);
     void OnButtonClicked();
     void showEvent(QShowEvent *event) override;
 
