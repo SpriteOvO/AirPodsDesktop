@@ -200,10 +200,14 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
 
-    _checkUpdateTimer->callOnTimeout([this] { CheckUpdate(); });
-    _checkUpdateTimer->start(1h);
-    CheckUpdate();
     Unavailable();
+
+    // TODO: Enable this timer after the icon notification is implemented
+    //
+    // _checkUpdateTimer->callOnTimeout([this] { CheckUpdate(); });
+    // _checkUpdateTimer->start(1h);
+    //
+    CheckUpdate();
 }
 
 InfoWindow::~InfoWindow()
