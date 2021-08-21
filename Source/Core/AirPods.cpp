@@ -160,9 +160,19 @@ public:
 
     Tracker()
     {
-        _lostTimer.Start(10s, [this] { DoLost(); });
-        _stateResetLeftTimer.Start(10s, [this] { DoStateReset(Side::Left); });
-        _stateResetRightTimer.Start(10s, [this] { DoStateReset(Side::Right); });
+        _lostTimer.Start(10s, [this] {
+            std::lock_guard<std::mutex> lock{_mutex};
+            DoLost();
+        });
+
+        _stateResetLeftTimer.Start(10s, [this] {
+            std::lock_guard<std::mutex> lock{_mutex};
+            DoStateReset(Side::Left);
+        });
+        _stateResetRightTimer.Start(10s, [this] {
+            std::lock_guard<std::mutex> lock{_mutex};
+            DoStateReset(Side::Right);
+        });
     }
 
     auto &CbStateChanged()
@@ -176,6 +186,7 @@ public:
 
     void Disconnect()
     {
+        std::lock_guard<std::mutex> lock{_mutex};
         DoLost();
     }
 
@@ -324,8 +335,6 @@ private:
 
     void DoLost()
     {
-        std::lock_guard<std::mutex> lock{_mutex};
-
         if (_leftAdv.has_value() || _rightAdv.has_value() || _cachedState.has_value()) {
             SPDLOG_INFO("Tracker: DoLost called.");
             _cbLosted.Invoke();
@@ -338,8 +347,6 @@ private:
 
     void DoStateReset(Side side)
     {
-        std::lock_guard<std::mutex> lock{_mutex};
-
         auto &adv = side == Side::Left ? _leftAdv : _rightAdv;
         if (adv.has_value()) {
             SPDLOG_INFO("Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
@@ -357,9 +364,25 @@ public:
         return i;
     }
 
-    std::optional<State> GetState() const
+    Manager()
     {
-        return _tracker.GetState();
+        _tracker.CbStateChanged() += [this](auto &&...args) {
+            std::lock_guard<std::recursive_mutex> lock{_mutex};
+            OnStateChanged(std::forward<decltype(args)>(args)...);
+        };
+        _tracker.CbLosted() += [this](auto &&...args) {
+            std::lock_guard<std::recursive_mutex> lock{_mutex};
+            OnLost(std::forward<decltype(args)>(args)...);
+        };
+
+        _adWatcher.CbReceived() += [this](auto &&...args) {
+            std::lock_guard<std::recursive_mutex> lock{_mutex};
+            OnAdvertisementReceived(std::forward<decltype(args)>(args)...);
+        };
+        _adWatcher.CbStateChanged() += [this](auto &&...args) {
+            std::lock_guard<std::recursive_mutex> lock{_mutex};
+            OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
+        };
     }
 
     void StartScanner()
@@ -368,7 +391,7 @@ public:
             SPDLOG_WARN("Bluetooth AdvWatcher start failed.");
         }
         else {
-            SPDLOG_WARN("Bluetooth AdvWatcher start succeeded.");
+            SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
         }
     }
 
@@ -384,74 +407,46 @@ public:
 
     QString GetDisplayName()
     {
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::lock_guard<std::recursive_mutex> lock{_mutex};
         return _displayName;
     }
 
     void OnBoundDeviceAddressChanged(uint64_t address)
     {
-        std::unique_lock<std::mutex> lock{_mutex};
+        std::unique_lock<std::recursive_mutex> lock{_mutex};
 
-        const auto &disconnect = [this]() {
-            _boundDevice.reset();
-            _deviceConnected = false;
-            _tracker.Disconnect();
-        };
-
-        const auto &changeButtonToBind = []() {
-            ApdApp->GetInfoWindow()->ChangeButtonActionSafety(Gui::ButtonAction::Bind);
-        };
-
+        _boundDevice.reset();
+        _deviceConnected = false;
+        _tracker.Disconnect();
         GlobalMedia::OnLimitedDeviceStateChanged({});
 
-        disconnect();
+        // Unbind device
+        //
         if (address == 0) {
-            ApdApp->GetInfoWindow()->UnbindSafety();
-            if (!ApdApp->GetInfoWindow()) {
-                Utils::Qt::Dispatch(changeButtonToBind);
-            }
-            else {
-                changeButtonToBind();
-            }
+            SPDLOG_INFO("Unbind device.");
             return;
         }
-        ApdApp->GetInfoWindow()->DisconnectSafety();
+
+        // Bind to a new device
+        //
+        SPDLOG_INFO("Bind a new device.");
 
         auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
         if (!optDevice.has_value()) {
-            disconnect();
+            SPDLOG_ERROR("Find device by address failed.");
             return;
         }
 
-        _deviceConnected = optDevice->GetConnectionState() == Bluetooth::DeviceState::Connected;
-
         _boundDevice = std::move(optDevice);
 
+        auto currentState = _boundDevice->GetConnectionState();
         _displayName = QString::fromStdString(_boundDevice->GetDisplayName());
-
-        _boundDevice->CbConnectionStatusChanged() += [this](Bluetooth::DeviceState state) {
-            std::lock_guard<std::mutex> lock{_mutex};
-
-            bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
-            bool doDisconnet = _deviceConnected && !newDeviceConnected;
-            _deviceConnected = newDeviceConnected;
-
-            if (doDisconnet) {
-                _tracker.Disconnect();
-                ApdApp->GetInfoWindow()->DisconnectSafety();
-            }
-
-            SPDLOG_INFO(
-                "The device we bound is updated. current: {}, new: {}", _deviceConnected,
-                newDeviceConnected);
-
-            GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
+        _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
+            std::lock_guard<std::recursive_mutex> lock{_mutex};
+            OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
         };
 
-        if (_boundDevice->GetConnectionState() == Bluetooth::DeviceState::Connected) {
-            lock.unlock();
-            _boundDevice->CbConnectionStatusChanged().Invoke(Bluetooth::DeviceState::Connected);
-        }
+        OnBoundDeviceConnectionStateChanged(currentState);
     }
 
     void OnQuit()
@@ -464,22 +459,25 @@ private:
     Bluetooth::AdvertisementWatcher _adWatcher;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
-    std::atomic<bool> _deviceConnected{false};
-    std::mutex _mutex;
+    bool _deviceConnected{false};
+    std::recursive_mutex _mutex;
 
-    Manager()
+    void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     {
-        _tracker.CbStateChanged() +=
-            [this](auto &&...args) { OnStateChanged(std::forward<decltype(args)>(args)...); };
-        _tracker.CbLosted() +=
-            [this](auto &&...args) { OnLost(std::forward<decltype(args)>(args)...); };
+        bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
+        bool doDisconnect = _deviceConnected && !newDeviceConnected;
+        _deviceConnected = newDeviceConnected;
 
-        _adWatcher.CbReceived() += [this](auto &&...args) {
-            OnAdvertisementReceived(std::forward<decltype(args)>(args)...);
-        };
-        _adWatcher.CbStateChanged() += [this](auto &&...args) {
-            OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
-        };
+        if (doDisconnect) {
+            _tracker.Disconnect();
+            ApdApp->GetInfoWindow()->DisconnectSafety();
+        }
+
+        SPDLOG_INFO(
+            "The device we bound is updated. current: {}, new: {}", _deviceConnected,
+            newDeviceConnected);
+
+        GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
     }
 
     void OnStateChanged(const std::optional<State> &oldState, const State &newState)
@@ -551,8 +549,6 @@ private:
 
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
     {
-        std::lock_guard<std::mutex> lock{_mutex};
-
         if (!Advertisement::IsDesiredAdv(data)) {
             return false;
         }
@@ -586,9 +582,7 @@ private:
 
         case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
             ApdApp->GetInfoWindow()->UnavailableSafety();
-            SPDLOG_WARN(
-                "Bluetooth AdvWatcher stopped. Error: '{}'.",
-                optError.has_value() ? optError.value() : "nullopt");
+            SPDLOG_WARN("Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
             break;
 
         default:
@@ -597,11 +591,6 @@ private:
     }
 };
 } // namespace Details
-
-std::optional<State> GetState()
-{
-    return Details::Manager::GetInstance().GetState();
-}
 
 void StartScanner()
 {
@@ -613,7 +602,7 @@ QString GetDisplayName()
     return Details::Manager::GetInstance().GetDisplayName();
 }
 
-void OnBindDeviceChanged(uint64_t address)
+void OnBoundDeviceAddressChanged(uint64_t address)
 {
     Details::Manager::GetInstance().OnBoundDeviceAddressChanged(address);
 }

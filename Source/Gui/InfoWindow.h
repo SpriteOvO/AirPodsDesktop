@@ -54,7 +54,6 @@ public:
     void Unbind();
 
 Q_SIGNALS:
-    void ChangeButtonActionSafety(ButtonAction action);
     void UpdateStateSafety(const Core::AirPods::State &state);
     void UnavailableSafety();
     void DisconnectSafety();

@@ -180,7 +180,6 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
             }
         });
 
-    connect(this, &InfoWindow::ChangeButtonActionSafety, this, &InfoWindow::ChangeButtonAction);
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
     connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
     connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);

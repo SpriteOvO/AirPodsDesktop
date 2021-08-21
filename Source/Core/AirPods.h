@@ -77,10 +77,9 @@ struct State {
     bool operator==(const State &rhs) const = default;
 };
 
-std::optional<State> GetState();
 void StartScanner();
 QString GetDisplayName();
-void OnBindDeviceChanged(uint64_t address);
+void OnBoundDeviceAddressChanged(uint64_t address);
 void OnQuit();
 
 } // namespace Core::AirPods

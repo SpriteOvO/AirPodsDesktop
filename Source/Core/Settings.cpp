@@ -90,7 +90,14 @@ void OnApply_device_address(const Fields &newFields)
 {
     SPDLOG_INFO("OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
 
-    AirPods::OnBindDeviceChanged(newFields.device_address);
+    if (newFields.device_address == 0) {
+        ApdApp->GetInfoWindow()->UnbindSafety();
+    }
+    else {
+        ApdApp->GetInfoWindow()->DisconnectSafety();
+    }
+
+    AirPods::OnBoundDeviceAddressChanged(newFields.device_address);
 }
 
 namespace Impl {
