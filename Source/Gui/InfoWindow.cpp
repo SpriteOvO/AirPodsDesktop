@@ -184,6 +184,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
     connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
     connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
+    connect(this, &InfoWindow::UnbindSafety, this, &InfoWindow::Unbind);
     connect(this, &InfoWindow::ShowSafety, this, &InfoWindow::show);
     connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
 
