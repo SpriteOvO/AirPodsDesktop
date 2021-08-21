@@ -388,32 +388,6 @@ public:
         return _displayName;
     }
 
-    bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
-    {
-        std::lock_guard<std::mutex> lock{_mutex};
-
-        if (!Advertisement::IsDesiredAdv(data)) {
-            return false;
-        }
-
-        if (!_deviceConnected) {
-            SPDLOG_INFO("AirPods advertisement received, but device disconnected.");
-            return false;
-        }
-
-        Advertisement adv{data};
-
-        SPDLOG_TRACE(
-            "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
-            Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
-
-        if (!_tracker.TryTrack(adv)) {
-            SPDLOG_WARN("It doesn't seem to be the device we desired.");
-            return false;
-        }
-        return true;
-    }
-
     void OnBoundDeviceAddressChanged(uint64_t address)
     {
         std::unique_lock<std::mutex> lock{_mutex};
@@ -487,110 +461,139 @@ public:
 
 private:
     Tracker _tracker;
-
-    using FnControlInfoWindow = std::function<void(const State &state, bool show)>;
-    using FnBothInEar = std::function<void(const State &state, bool isBothInEar)>;
-
-    Helper::Callback<FnControlInfoWindow> _cbControlInfoWindow;
-    Helper::Callback<FnBothInEar> _cbBothInEar;
-
     Bluetooth::AdvertisementWatcher _adWatcher;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
-
     std::atomic<bool> _deviceConnected{false};
     std::mutex _mutex;
 
     Manager()
     {
-        _tracker.CbStateChanged() += [](auto, const State &newState) {
-            ApdApp->GetInfoWindow()->UpdateStateSafety(newState);
-        };
-
-        _cbControlInfoWindow += [](const State &state, bool show) {
-            auto &infoWindow = ApdApp->GetInfoWindow();
-            if (show) {
-                infoWindow->ShowSafety();
-            }
-            else {
-                infoWindow->HideSafety();
-            }
-        };
-
-        _cbBothInEar += [](const State &state, bool isBothInEar) {
-            if (!Settings::ConstAccess()->automatic_ear_detection) {
-                SPDLOG_TRACE(
-                    "BothInEarCallbacks: Do nothing because the feature is disabled. ({})",
-                    isBothInEar);
-                return;
-            }
-
-            if (isBothInEar) {
-                Core::GlobalMedia::Play();
-            }
-            else {
-                Core::GlobalMedia::Pause();
-            }
-        };
-
         _tracker.CbStateChanged() +=
-            [this](const std::optional<State> &oldState, const State &newState) {
-                if (!_deviceConnected) {
-                    SPDLOG_INFO("AirPods state changed, but device disconnected.");
-                    return;
-                }
+            [this](auto &&...args) { OnStateChanged(std::forward<decltype(args)>(args)...); };
+        _tracker.CbLosted() +=
+            [this](auto &&...args) { OnLost(std::forward<decltype(args)>(args)...); };
 
-                // Lid opened
-                //
-                bool newLidOpened =
-                    newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
-
-                if (oldState.has_value()) {
-                    bool cachedLidOpened =
-                        oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
-
-                    if (cachedLidOpened != newLidOpened) {
-                        _cbControlInfoWindow.Invoke(newState, newLidOpened);
-                    }
-                }
-                else {
-                    if (newLidOpened) {
-                        _cbControlInfoWindow.Invoke(newState, newLidOpened);
-                    }
-                }
-
-                // Both in ear
-                //
-                if (oldState.has_value()) {
-                    bool cachedBothInEar =
-                        oldState->pods.left.isInEar && oldState->pods.right.isInEar;
-                    bool newBothInEar = newState.pods.left.isInEar && newState.pods.right.isInEar;
-                    if (cachedBothInEar != newBothInEar) {
-                        _cbBothInEar.Invoke(newState, newBothInEar);
-                    }
-                }
-            };
-
-        _tracker.CbLosted() += [this]() { ApdApp->GetInfoWindow()->DisconnectSafety(); };
-
-        _adWatcher.CbReceived() +=
-            [this](const Bluetooth::AdvertisementWatcher::ReceivedData &receivedData) {
-                OnAdvertisementReceived(receivedData);
-            };
-
-        _adWatcher.CbStateChanged() += [this](
-                                           Bluetooth::AdvertisementWatcher::State state,
-                                           const std::optional<std::string> &optError) {
-            if (state == Bluetooth::AdvertisementWatcher::State::Stopped) {
-                ApdApp->GetInfoWindow()->UnavailableSafety();
-                SPDLOG_WARN(
-                    "Bluetooth AdvWatcher stopped. Error: '{}'.",
-                    optError.has_value() ? optError.value() : "nullopt");
-            }
-            else {
-                ApdApp->GetInfoWindow()->DisconnectSafety();
-            }
+        _adWatcher.CbReceived() += [this](auto &&...args) {
+            OnAdvertisementReceived(std::forward<decltype(args)>(args)...);
         };
+        _adWatcher.CbStateChanged() += [this](auto &&...args) {
+            OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
+        };
+    }
+
+    void OnStateChanged(const std::optional<State> &oldState, const State &newState)
+    {
+        if (!_deviceConnected) {
+            SPDLOG_INFO("AirPods state changed, but device disconnected.");
+            return;
+        }
+
+        ApdApp->GetInfoWindow()->UpdateStateSafety(newState);
+
+        // Lid opened
+        //
+        bool newLidOpened = newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
+        bool lidStateSwitched;
+        if (!oldState.has_value()) {
+            lidStateSwitched = newLidOpened;
+        }
+        else {
+            bool oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
+            lidStateSwitched = oldLidOpened != newLidOpened;
+        }
+        if (lidStateSwitched) {
+            OnLidOpened(newLidOpened);
+        }
+
+        // Both in ear
+        //
+        if (oldState.has_value()) {
+            bool oldBothInEar = oldState->pods.left.isInEar && oldState->pods.right.isInEar;
+            bool newBothInEar = newState.pods.left.isInEar && newState.pods.right.isInEar;
+            if (oldBothInEar != newBothInEar) {
+                OnBothInEar(newBothInEar);
+            }
+        }
+    }
+
+    void OnLost()
+    {
+        ApdApp->GetInfoWindow()->DisconnectSafety();
+    }
+
+    void OnLidOpened(bool opened)
+    {
+        auto &infoWindow = ApdApp->GetInfoWindow();
+        if (opened) {
+            infoWindow->ShowSafety();
+        }
+        else {
+            infoWindow->HideSafety();
+        }
+    }
+
+    void OnBothInEar(bool isBothInEar)
+    {
+        if (!Settings::ConstAccess()->automatic_ear_detection) {
+            SPDLOG_INFO(
+                "automatic_ear_detection: Do nothing because it is disabled. ({})", isBothInEar);
+            return;
+        }
+
+        if (isBothInEar) {
+            Core::GlobalMedia::Play();
+        }
+        else {
+            Core::GlobalMedia::Pause();
+        }
+    }
+
+    bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+
+        if (!Advertisement::IsDesiredAdv(data)) {
+            return false;
+        }
+
+        if (!_deviceConnected) {
+            SPDLOG_INFO("AirPods advertisement received, but device disconnected.");
+            return false;
+        }
+
+        Advertisement adv{data};
+
+        SPDLOG_TRACE(
+            "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
+            Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
+
+        if (!_tracker.TryTrack(adv)) {
+            SPDLOG_WARN("It doesn't seem to be the device we desired.");
+            return false;
+        }
+        return true;
+    }
+
+    void OnAdvWatcherStateChanged(
+        Bluetooth::AdvertisementWatcher::State state, const std::optional<std::string> &optError)
+    {
+        switch (state) {
+        case Core::Bluetooth::AdvertisementWatcher::State::Started:
+            ApdApp->GetInfoWindow()->DisconnectSafety();
+            SPDLOG_INFO("Bluetooth AdvWatcher started.");
+            break;
+
+        case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
+            ApdApp->GetInfoWindow()->UnavailableSafety();
+            SPDLOG_WARN(
+                "Bluetooth AdvWatcher stopped. Error: '{}'.",
+                optError.has_value() ? optError.value() : "nullopt");
+            break;
+
+        default:
+            FatalError("Unhandled adv watcher state: '{}'", Helper::ToUnderlying(state));
+        }
     }
 };
 } // namespace Details
