@@ -94,7 +94,7 @@ void OnApply_device_address(const Fields &newFields)
         ApdApp->GetInfoWindow()->UnbindSafety();
     }
     else {
-        ApdApp->GetInfoWindow()->DisconnectSafety();
+        ApdApp->GetInfoWindow()->BindSafety();
     }
 
     AirPods::OnBoundDeviceAddressChanged(newFields.device_address);

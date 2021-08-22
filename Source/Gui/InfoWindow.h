@@ -51,6 +51,7 @@ public:
     void Available();
     void Unavailable();
     void Disconnect();
+    void Bind();
     void Unbind();
 
 Q_SIGNALS:
@@ -58,12 +59,13 @@ Q_SIGNALS:
     void AvailableSafety();
     void UnavailableSafety();
     void DisconnectSafety();
+    void BindSafety();
     void UnbindSafety();
     void ShowSafety();
     void HideSafety();
 
 private:
-    enum class State { Updating, Available, Unavailable, Disconnected, WaitingForBinding };
+    enum class State { Updating, Available, Unavailable, Disconnected, Bind, Unbind };
 
     Ui::InfoWindow _ui;
 

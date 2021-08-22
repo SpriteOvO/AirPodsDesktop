@@ -177,6 +177,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     connect(this, &InfoWindow::AvailableSafety, this, &InfoWindow::Available);
     connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
     connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
+    connect(this, &InfoWindow::BindSafety, this, &InfoWindow::Bind);
     connect(this, &InfoWindow::UnbindSafety, this, &InfoWindow::Unbind);
     connect(this, &InfoWindow::ShowSafety, this, &InfoWindow::show);
     connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
@@ -389,7 +390,7 @@ void InfoWindow::Unavailable()
 void InfoWindow::Disconnect()
 {
     SPDLOG_INFO("InfoWindow::Disconnect");
-    if (_lastState == State::WaitingForBinding) {
+    if (_lastState == State::Unbind) {
         return;
     }
     _lastState = State::Disconnected;
@@ -407,10 +408,18 @@ void InfoWindow::Disconnect()
     ApdApp->GetSysTray()->Disconnect();
 }
 
+void InfoWindow::Bind()
+{
+    SPDLOG_INFO("InfoWindow::Bind");
+    _lastState = State::Bind;
+
+    Disconnect();
+}
+
 void InfoWindow::Unbind()
 {
     SPDLOG_INFO("InfoWindow::Unbind");
-    _lastState = State::WaitingForBinding;
+    _lastState = State::Unbind;
 
     _ui.deviceLabel->setText(tr("Waiting for Binding"));
 
@@ -544,8 +553,6 @@ void InfoWindow::BindDevice()
         selectedDevice.GetDisplayName());
 
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
-
-    ChangeButtonAction(ButtonAction::NoButton);
 }
 
 void InfoWindow::ControlAutoHideTimer(bool start)
