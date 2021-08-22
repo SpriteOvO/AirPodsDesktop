@@ -277,11 +277,12 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
     std::ofstream outFile{filePath.toStdString(), std::ios::binary};
     auto response = cpr::Download(
         outFile, cpr::Url{info.downloadUrl},
-        cpr::ProgressCallback{
-            [&](size_t downloadTotal, size_t downloadNow, size_t uploadTotal, size_t uploadNow) {
-                SPDLOG_TRACE("Downloaded {} / {} bytes.", downloadNow, downloadTotal);
-                return progressCallback(downloadTotal, downloadNow);
-            }});
+        cpr::ProgressCallback{[&](cpr::cpr_off_t downloadTotal, cpr::cpr_off_t downloadNow,
+                                  cpr::cpr_off_t uploadTotal, cpr::cpr_off_t uploadNow,
+                                  intptr_t userdata) {
+            SPDLOG_TRACE("Downloaded {} / {} bytes.", downloadNow, downloadTotal);
+            return progressCallback(downloadTotal, downloadNow);
+        }});
 
     if (response.status_code != 200) {
         SPDLOG_WARN(

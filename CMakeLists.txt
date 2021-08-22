@@ -160,7 +160,7 @@ message("Fetching 'cpr'...")
 FetchContent_Declare(
     cpr
     GIT_REPOSITORY "https://github.com/whoshuu/cpr.git"
-    GIT_TAG "92009ee4bd6377837420e4e2399f24ec7c5a765a"
+    GIT_TAG "ebcbec89787338fb2968a3f8b28bd330feea52d9"
 )
 FetchContent_MakeAvailable(cpr)
 message("Fetch 'cpr' done.")
