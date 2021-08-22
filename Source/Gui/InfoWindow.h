@@ -22,9 +22,9 @@
 
 #include "ui_InfoWindow.h"
 
-#include <QTimer>
 #include <QVideoWidget>
 #include <QMediaPlayer>
+#include <QPropertyAnimation>
 
 #include "../Core/AirPods.h"
 #include "../Utils.h"
@@ -46,7 +46,6 @@ class InfoWindow : public QDialog
 
 public:
     InfoWindow(QWidget *parent = nullptr);
-    ~InfoWindow();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -71,8 +70,7 @@ private:
     QVideoWidget *_videoWidget = new QVideoWidget{this};
     QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
 
-    QSize _screenSize;
-    QTimer *_showHideTimer = new QTimer{this};
+    QPropertyAnimation _posAnimation{this, "pos"};
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
@@ -84,7 +82,6 @@ private:
     bool _isAnimationPlaying{false};
 
     constexpr static QSize _screenMargin{50, 100};
-    constexpr static int _moveStep = 2;
 
     static void CheckUpdate();
 
@@ -94,13 +91,14 @@ private:
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
-
     void BindDevice();
     void ControlAutoHideTimer(bool start);
 
-    void DoHide();
     void OnAppStateChanged(Qt::ApplicationState state);
+    void OnPosMoveFinished();
     void OnButtonClicked();
+
+    void DoHide();
     void showEvent(QShowEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);

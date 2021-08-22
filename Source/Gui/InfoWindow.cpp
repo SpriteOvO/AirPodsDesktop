@@ -153,16 +153,16 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _rightBattery->hide();
     _caseBattery->hide();
 
-    _screenSize = ApdApplication::primaryScreen()->size();
-
     auto deviceLabelPalette = _ui.deviceLabel->palette();
     deviceLabelPalette.setColor(QPalette::WindowText, QColor{94, 94, 94});
     _ui.deviceLabel->setPalette(deviceLabelPalette);
 
     InitCommonButton();
 
+    _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
 
+    connect(&_posAnimation, &QPropertyAnimation::finished, this, &InfoWindow::OnPosMoveFinished);
     connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &InfoWindow::OnAppStateChanged);
 
@@ -195,12 +195,6 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
 
     Unavailable();
     CheckUpdate();
-}
-
-InfoWindow::~InfoWindow()
-{
-    _showHideTimer->stop();
-    _autoHideTimer->stop();
 }
 
 void InfoWindow::CheckUpdate()
@@ -554,8 +548,11 @@ void InfoWindow::BindDevice()
     ChangeButtonAction(ButtonAction::NoButton);
 }
 
-void InfoWindow::ControlAutoHideTimer(bool start) {
-    if (start) {
+void InfoWindow::ControlAutoHideTimer(bool start)
+{
+    SPDLOG_TRACE("ControlAutoHideTimer: start == '{}', _isShown == '{}'", start, _isShown);
+
+    if (start && _isShown) {
         _autoHideTimer->start(10s);
     }
     else {
@@ -583,6 +580,14 @@ void InfoWindow::OnButtonClicked()
     }
 }
 
+void InfoWindow::OnPosMoveFinished()
+{
+    if (!_isShown) {
+        hide();
+        StopAnimation();
+    }
+}
+
 void InfoWindow::DoHide()
 {
     SPDLOG_TRACE("InfoWindow: Hide");
@@ -592,23 +597,15 @@ void InfoWindow::DoHide()
     }
     _isShown = false;
 
-    _showHideTimer->stop();
-    _autoHideTimer->stop();
+    ControlAutoHideTimer(false);
 
-    _showHideTimer->disconnect();
-    _showHideTimer->callOnTimeout([this]() {
-        QPoint windowPos = pos();
-        if (_screenSize.height() > windowPos.y()) {
-            move(windowPos.x(), windowPos.y() + _moveStep);
-        }
-        else {
-            _showHideTimer->stop();
-            hide();
-            StopAnimation();
-        }
-    });
+    auto screenSize = ApdApplication::primaryScreen()->size();
 
-    _showHideTimer->start(1ms);
+    _posAnimation.stop();
+    _posAnimation.setEasingCurve(QEasingCurve::InExpo);
+    _posAnimation.setStartValue(pos());
+    _posAnimation.setEndValue(QPoint{x(), screenSize.height()});
+    _posAnimation.start();
 }
 
 void InfoWindow::showEvent(QShowEvent *event)
@@ -620,24 +617,19 @@ void InfoWindow::showEvent(QShowEvent *event)
     }
     _isShown = true;
 
-    _showHideTimer->stop();
     PlayAnimation();
     ControlAutoHideTimer(true);
 
-    move(_screenSize.width() - size().width() - _screenMargin.width(), _screenSize.height());
+    auto screenSize = ApdApplication::primaryScreen()->size();
 
-    _showHideTimer->disconnect();
-    _showHideTimer->callOnTimeout([this]() {
-        QPoint windowPos = pos();
-        if (_screenSize.height() - size().height() - _screenMargin.height() < windowPos.y()) {
-            move(windowPos.x(), windowPos.y() - _moveStep);
-        }
-        else {
-            _showHideTimer->stop();
-        }
-    });
+    move(screenSize.width() - size().width() - _screenMargin.width(), screenSize.height());
 
-    _showHideTimer->start(1ms);
+    _posAnimation.stop();
+    _posAnimation.setEasingCurve(QEasingCurve::OutExpo);
+    _posAnimation.setStartValue(pos());
+    _posAnimation.setEndValue(
+        QPoint{x(), screenSize.height() - size().height() - _screenMargin.height()});
+    _posAnimation.start();
 }
 } // namespace Gui
 
