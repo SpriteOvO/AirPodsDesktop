@@ -67,29 +67,28 @@ Q_SIGNALS:
 private:
     enum class State { Updating, Available, Unavailable, Disconnected, Bind, Unbind };
 
+    constexpr static QSize _screenMargin{50, 100};
+
     Ui::InfoWindow _ui;
 
+    QPropertyAnimation _posAnimation{this, "pos"};
     QVideoWidget *_videoWidget = new QVideoWidget{this};
     QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
-
-    QPropertyAnimation _posAnimation{this, "pos"};
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
-    Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
+    Widget::Battery *_leftBattery = new Widget::Battery{this};
+    Widget::Battery *_rightBattery = new Widget::Battery{this};
+    Widget::Battery *_caseBattery = new Widget::Battery{this};
+
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
     State _lastState{State::Unavailable};
-
     bool _isShown{false};
     bool _isAnimationPlaying{false};
 
-    constexpr static QSize _screenMargin{50, 100};
-
     static void CheckUpdate();
 
-    void InitCommonButton();
     void ChangeButtonAction(ButtonAction action);
-
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
@@ -99,6 +98,7 @@ private:
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();
     void OnButtonClicked();
+    void OnPlayerStateChanged(QMediaPlayer::State newState);
 
     void DoHide();
     void showEvent(QShowEvent *event) override;

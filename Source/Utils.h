@@ -64,6 +64,13 @@ inline void SetRoundedCorners(QWidget *widget, qreal radius)
     widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
 }
 
+inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, const QColor &color)
+{
+    auto palette = widget->palette();
+    palette.setColor(colorRole, color);
+    widget->setPalette(palette);
+}
+
 inline void Dispatch(std::function<void()> callback)
 {
     QTimer *timer = new QTimer;

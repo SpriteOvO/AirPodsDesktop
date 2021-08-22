@@ -131,47 +131,26 @@ protected:
 
 InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
 {
+    qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
+
+    _closeButton = new CloseButton{this};
+
     _ui.setupUi(this);
 
     setFixedSize(300, 300);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+
     Utils::Qt::SetRoundedCorners(this, 30);
+    Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
+    Utils::Qt::SetPaletteColor(this, QPalette::Window, Qt::white);
+    Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, QColor{94, 94, 94});
 
-    auto palette = this->palette();
-    palette.setColor(QPalette::Window, Qt::white);
-    setPalette(palette);
-
-    qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
-
-    _closeButton = new CloseButton{this};
-    _leftBattery = new Widget::Battery{this};
-    _rightBattery = new Widget::Battery{this};
-    _caseBattery = new Widget::Battery{this};
-
-    _leftBattery->hide();
-    _rightBattery->hide();
-    _caseBattery->hide();
-
-    auto deviceLabelPalette = _ui.deviceLabel->palette();
-    deviceLabelPalette.setColor(QPalette::WindowText, QColor{94, 94, 94});
-    _ui.deviceLabel->setPalette(deviceLabelPalette);
-
-    InitCommonButton();
-
-    _posAnimation.setDuration(500);
-    _autoHideTimer->callOnTimeout([this] { DoHide(); });
-
+    connect(qApp, &QGuiApplication::applicationStateChanged, this, &InfoWindow::OnAppStateChanged);
+    connect(_ui.pushButton, &QPushButton::clicked, this, &InfoWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &InfoWindow::OnPosMoveFinished);
     connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
-    connect(qApp, &QGuiApplication::applicationStateChanged, this, &InfoWindow::OnAppStateChanged);
-
-    // for loop play
-    connect(_mediaPlayer, &QMediaPlayer::stateChanged, [this](QMediaPlayer::State newState) {
-        if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
-            _mediaPlayer->play();
-        }
-    });
+    connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &InfoWindow::OnPlayerStateChanged);
 
     connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
     connect(this, &InfoWindow::AvailableSafety, this, &InfoWindow::Available);
@@ -182,13 +161,14 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     connect(this, &InfoWindow::ShowSafety, this, &InfoWindow::show);
     connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
 
+    _posAnimation.setDuration(500);
+    _autoHideTimer->callOnTimeout([this] { DoHide(); });
     _mediaPlayer->setMuted(true);
     _mediaPlayer->setVideoOutput(_videoWidget);
     _videoWidget->setAspectRatioMode(Qt::IgnoreAspectRatio);
     _videoWidget->show();
 
     _ui.layoutAnimation->addWidget(_videoWidget);
-
     _ui.layoutPods->addWidget(_leftBattery);
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
@@ -196,126 +176,6 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
 
     Unavailable();
     CheckUpdate();
-}
-
-void InfoWindow::CheckUpdate()
-{
-    // SPDLOG_TRACE("CheckUpdate: Poll.");
-
-    const auto &DispatchNext = []() {
-        Utils::Qt::Dispatch(&CheckUpdate);
-    };
-
-    using OptReleaseInfo = std::optional<Core::Update::ReleaseInfo>;
-    static std::promise<OptReleaseInfo> pmsRelease;
-    static std::optional<std::future<OptReleaseInfo>> optFuture;
-
-    if (!optFuture.has_value()) {
-        SPDLOG_INFO("CheckUpdate: Prepare promise and future. Fetch release info async.");
-        pmsRelease = decltype(pmsRelease){};
-        optFuture = pmsRelease.get_future();
-        std::thread{[]() { pmsRelease.set_value(Core::Update::FetchUpdateRelease()); }}.detach();
-        DispatchNext();
-        return;
-    }
-
-    if (!Helper::IsFutureReady(optFuture.value())) {
-        // SPDLOG_TRACE("CheckUpdate: The future is not ready.");
-        DispatchNext();
-        return;
-    }
-
-    auto optRelease = optFuture->get();
-    optFuture.reset();
-    SPDLOG_INFO("CheckUpdate: Fetch release info successfully.");
-
-    do {
-        if (!optRelease.has_value()) {
-            break;
-        }
-
-        auto releaseInfo = std::move(optRelease.value());
-        auto releaseVersion = releaseInfo.version.toString();
-
-        QString changeLogBlock;
-        if (!releaseInfo.changeLog.isEmpty()) {
-            changeLogBlock =
-                QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
-        }
-
-        auto button = QMessageBox::question(
-            nullptr, Config::ProgramName,
-            tr("Hey! I found a new version available!\n"
-               "\n"
-               "Current version: %1\n"
-               "Latest version: %2\n"
-               "\n"
-               "%3"
-               "Click \"Ignore\" to skip this new version.\n"
-               "\n"
-               "Do you want to update it now?")
-                .arg(Core::Update::GetLocalVersion().toString())
-                .arg(releaseVersion)
-                .arg(changeLogBlock),
-            QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
-
-        if (button == QMessageBox::Yes) {
-            SPDLOG_INFO("CheckUpdate: User clicked Yes.");
-
-            if (!releaseInfo.CanAutoUpdate()) {
-                SPDLOG_INFO("CheckUpdate: Popup latest url and quit.");
-                QDesktopServices::openUrl(QUrl{releaseInfo.url});
-                ApdApplication::QuitSafety();
-                break;
-            }
-
-            Gui::DownloadWindow{std::move(releaseInfo)}.exec();
-        }
-        else if (button == QMessageBox::Ignore) {
-            SPDLOG_INFO("CheckUpdate: User clicked Ignore.");
-
-            Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
-        }
-        else {
-            SPDLOG_INFO("CheckUpdate: User clicked No.");
-        }
-
-    } while (false);
-
-    // TODO: Enable this timer after the icon notification is implemented
-    //
-    // QTimer::singleShot(1h, &CheckUpdate);
-}
-
-void InfoWindow::InitCommonButton()
-{
-    ChangeButtonAction(ButtonAction::NoButton);
-    Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
-    connect(_ui.pushButton, &QPushButton::clicked, this, &InfoWindow::OnButtonClicked);
-
-    if (Core::Settings::GetCurrent().device_address == 0) {
-        ChangeButtonAction(ButtonAction::Bind);
-    }
-}
-
-void InfoWindow::ChangeButtonAction(ButtonAction action)
-{
-    switch (action) {
-    case ButtonAction::NoButton:
-        _ui.pushButton->setText("");
-        _ui.pushButton->hide();
-        return;
-
-    case ButtonAction::Bind:
-        _ui.pushButton->setText(tr("Bind to AirPods"));
-        break;
-
-    default:
-        FatalError(std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(action)), true);
-    }
-
-    _buttonAction = action;
-    _ui.pushButton->show();
 }
 
 void InfoWindow::UpdateState(const Core::AirPods::State &state)
@@ -434,6 +294,113 @@ void InfoWindow::Unbind()
     ApdApp->GetSysTray()->Unbind();
 }
 
+void InfoWindow::CheckUpdate()
+{
+    // SPDLOG_TRACE("CheckUpdate: Poll.");
+
+    const auto &DispatchNext = []() { Utils::Qt::Dispatch(&CheckUpdate); };
+
+    using OptReleaseInfo = std::optional<Core::Update::ReleaseInfo>;
+    static std::promise<OptReleaseInfo> pmsRelease;
+    static std::optional<std::future<OptReleaseInfo>> optFuture;
+
+    if (!optFuture.has_value()) {
+        SPDLOG_INFO("CheckUpdate: Prepare promise and future. Fetch release info async.");
+        pmsRelease = decltype(pmsRelease){};
+        optFuture = pmsRelease.get_future();
+        std::thread{[]() { pmsRelease.set_value(Core::Update::FetchUpdateRelease()); }}.detach();
+        DispatchNext();
+        return;
+    }
+
+    if (!Helper::IsFutureReady(optFuture.value())) {
+        // SPDLOG_TRACE("CheckUpdate: The future is not ready.");
+        DispatchNext();
+        return;
+    }
+
+    auto optRelease = optFuture->get();
+    optFuture.reset();
+    SPDLOG_INFO("CheckUpdate: Fetch release info successfully.");
+
+    do {
+        if (!optRelease.has_value()) {
+            break;
+        }
+
+        auto releaseInfo = std::move(optRelease.value());
+        auto releaseVersion = releaseInfo.version.toString();
+
+        QString changeLogBlock;
+        if (!releaseInfo.changeLog.isEmpty()) {
+            changeLogBlock =
+                QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
+        }
+
+        auto button = QMessageBox::question(
+            nullptr, Config::ProgramName,
+            tr("Hey! I found a new version available!\n"
+               "\n"
+               "Current version: %1\n"
+               "Latest version: %2\n"
+               "\n"
+               "%3"
+               "Click \"Ignore\" to skip this new version.\n"
+               "\n"
+               "Do you want to update it now?")
+                .arg(Core::Update::GetLocalVersion().toString())
+                .arg(releaseVersion)
+                .arg(changeLogBlock),
+            QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
+
+        if (button == QMessageBox::Yes) {
+            SPDLOG_INFO("CheckUpdate: User clicked Yes.");
+
+            if (!releaseInfo.CanAutoUpdate()) {
+                SPDLOG_INFO("CheckUpdate: Popup latest url and quit.");
+                QDesktopServices::openUrl(QUrl{releaseInfo.url});
+                ApdApplication::QuitSafety();
+                break;
+            }
+
+            Gui::DownloadWindow{std::move(releaseInfo)}.exec();
+        }
+        else if (button == QMessageBox::Ignore) {
+            SPDLOG_INFO("CheckUpdate: User clicked Ignore.");
+
+            Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
+        }
+        else {
+            SPDLOG_INFO("CheckUpdate: User clicked No.");
+        }
+
+    } while (false);
+
+    // TODO: Enable this timer after the icon notification is implemented
+    //
+    // QTimer::singleShot(1h, &CheckUpdate);
+}
+
+void InfoWindow::ChangeButtonAction(ButtonAction action)
+{
+    switch (action) {
+    case ButtonAction::NoButton:
+        _ui.pushButton->setText("");
+        _ui.pushButton->hide();
+        return;
+
+    case ButtonAction::Bind:
+        _ui.pushButton->setText(tr("Bind to AirPods"));
+        break;
+
+    default:
+        FatalError(std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(action)), true);
+    }
+
+    _buttonAction = action;
+    _ui.pushButton->show();
+}
+
 void InfoWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 {
     if (model == _cacheModel) {
@@ -481,6 +448,10 @@ void InfoWindow::StopAnimation()
 
 void InfoWindow::BindDevice()
 {
+    //
+    // TODO: Move non-UI code to `Core::AirPods::Manager`
+    //
+
     SPDLOG_INFO("BindDevice");
 
     std::vector<Core::Bluetooth::Device> devices =
@@ -573,6 +544,14 @@ void InfoWindow::OnAppStateChanged(Qt::ApplicationState state)
     ControlAutoHideTimer(state != Qt::ApplicationActive);
 }
 
+void InfoWindow::OnPosMoveFinished()
+{
+    if (!_isShown) {
+        hide();
+        StopAnimation();
+    }
+}
+
 void InfoWindow::OnButtonClicked()
 {
     switch (_buttonAction) {
@@ -587,11 +566,11 @@ void InfoWindow::OnButtonClicked()
     }
 }
 
-void InfoWindow::OnPosMoveFinished()
+// for loop play
+void InfoWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
 {
-    if (!_isShown) {
-        hide();
-        StopAnimation();
+    if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
+        _mediaPlayer->play();
     }
 }
 
