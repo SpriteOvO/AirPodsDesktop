@@ -21,6 +21,7 @@
 #include <QPushButton>
 #include <QMetaObject>
 #include <QMessageBox>
+#include <QDesktopServices>
 
 #include <Config.h>
 #include "../Application.h"
@@ -37,8 +38,11 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
     setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
-        _info.PopupUrl();
+        QDesktopServices::openUrl(QUrl{_info.url});
     });
+
+    connect(this, &DownloadWindow::UpdateProgressSafety, this, &DownloadWindow::UpdateProgress);
+    connect(this, &DownloadWindow::OnFailedSafety, this, &DownloadWindow::OnFailed);
 
     _downloadThread = std::thread{[this]() { DownloadThread(); }};
 }
@@ -56,7 +60,8 @@ void DownloadWindow::UpdateProgress(int downloaded, int total)
     if (total == 0) {
         return;
     }
-    _ui.progressBar->setValue(downloaded / total * _ui.progressBar->maximum());
+    _ui.progressBar->setValue(downloaded);
+    _ui.progressBar->setMaximum(total);
 }
 
 void DownloadWindow::OnFailed()
@@ -68,15 +73,14 @@ void DownloadWindow::OnFailed()
         tr("Oops, there was a glitch in the automatic update.\n"
            "Please download and install the new version manually."));
 
-    _info.PopupUrl();
+    QDesktopServices::openUrl(QUrl{_info.url});
     ApdApplication::QuitSafety();
 }
 
 void DownloadWindow::DownloadThread()
 {
     bool successful = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
-        QMetaObject::invokeMethod(
-            this, "UpdateProgress", Q_ARG(int, (int)downloaded), Q_ARG(int, (int)total));
+        UpdateProgressSafety(downloaded, total);
 
         if (_destroy) {
             SPDLOG_WARN("DownloadWindow destructor requests destroy.");
@@ -86,7 +90,7 @@ void DownloadWindow::DownloadThread()
     });
 
     if (!successful) {
-        QMetaObject::invokeMethod(this, &DownloadWindow::OnFailed);
+        OnFailedSafety();
     }
 }
 } // namespace Gui

@@ -74,7 +74,6 @@ private:
     QSize _screenSize;
     QTimer *_showHideTimer = new QTimer{this};
     QTimer *_autoHideTimer = new QTimer{this};
-    QTimer *_checkUpdateTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery, *_rightBattery, *_caseBattery;
     std::optional<Core::AirPods::Model> _cacheModel;
@@ -87,6 +86,8 @@ private:
     constexpr static QSize _screenMargin{50, 100};
     constexpr static int _moveStep = 2;
 
+    static void CheckUpdate();
+
     void InitCommonButton();
     void ChangeButtonAction(ButtonAction action);
 
@@ -95,7 +96,6 @@ private:
     void StopAnimation();
 
     void BindDevice();
-    void CheckUpdate();
     void ControlAutoHideTimer(bool start);
 
     void DoHide();

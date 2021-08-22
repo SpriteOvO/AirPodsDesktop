@@ -30,7 +30,6 @@ using FnProgress = std::function<bool(size_t downloaded, size_t total)>;
 
 struct ReleaseInfo {
     bool CanAutoUpdate() const;
-    void PopupUrl() const;
 
     QVersionNumber version;
     QString url;
@@ -43,16 +42,7 @@ struct ReleaseInfo {
 
 QVersionNumber GetLocalVersion();
 
-std::optional<ReleaseInfo> FetchLatestStableRelease();
-
-std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version);
-
-std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease);
-
-bool IsCurrentPreRelease();
-
-bool NeedToUpdate(const ReleaseInfo &info);
-
+std::optional<ReleaseInfo> FetchUpdateRelease();
 bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback);
 
 } // namespace Core::Update

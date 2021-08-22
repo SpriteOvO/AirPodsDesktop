@@ -22,7 +22,6 @@
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
-#include <QDesktopServices>
 #include <cpr/cpr.h>
 #include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
@@ -159,22 +158,6 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
         return std::nullopt;
     }
 }
-} // namespace Impl
-
-bool ReleaseInfo::CanAutoUpdate() const
-{
-    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0;
-}
-
-void ReleaseInfo::PopupUrl() const
-{
-    QDesktopServices::openUrl(QUrl{url});
-}
-
-QVersionNumber GetLocalVersion()
-{
-    return QVersionNumber::fromString(Config::Version::String);
-}
 
 std::optional<ReleaseInfo> FetchLatestStableRelease()
 {
@@ -235,7 +218,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
 
 bool IsCurrentPreRelease()
 {
-    const auto optInfo = FetchReleaseByVersion(GetLocalVersion());
+    const auto optInfo = Impl::FetchReleaseByVersion(GetLocalVersion());
     if (!optInfo.has_value()) {
         SPDLOG_WARN("IsCurrentPreRelease: FetchReleaseByVersion() failed.");
         return false;
@@ -252,9 +235,58 @@ bool NeedToUpdate(const ReleaseInfo &info)
     return info.version.normalized() > GetLocalVersion().normalized();
 }
 
+} // namespace Impl
+
+//////////////////////////////////////////////////
+
+bool ReleaseInfo::CanAutoUpdate() const
+{
+    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0;
+}
+
+//////////////////////////////////////////////////
+
+QVersionNumber GetLocalVersion()
+{
+    return QVersionNumber::fromString(Config::Version::String);
+}
+
+//////////////////////////////////////////////////
+
+std::optional<ReleaseInfo> FetchUpdateRelease()
+{
+    const auto isCurrentPreRelease = Impl::IsCurrentPreRelease();
+    SPDLOG_INFO("Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
+
+    const auto optInfo = Impl::FetchLatestRelease(isCurrentPreRelease);
+    if (!optInfo.has_value()) {
+        SPDLOG_WARN("Update: FetchLatestRelease() returned nullopt.");
+        return std::nullopt;
+    }
+
+    const auto &latestInfo = optInfo.value();
+    const auto needToUpdate = Impl::NeedToUpdate(latestInfo);
+
+    SPDLOG_INFO("Update: Latest version: '{}'", latestInfo.version.toString());
+    if (!needToUpdate) {
+        SPDLOG_INFO("Update: No need to update.");
+        return std::nullopt;
+    }
+
+    SPDLOG_INFO("Update: Need to update.");
+
+    if (latestInfo.version.toString() == Core::Settings::GetCurrent().skipped_version) {
+        SPDLOG_INFO("Update: User skipped this new version. Ignore.");
+        return std::nullopt;
+    }
+    return optInfo;
+}
+
+//////////////////////////////////////////////////
+
 bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
 {
-    APD_ASSERT(NeedToUpdate(info));
+    APD_ASSERT(Impl::NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
         SPDLOG_WARN("DownloadInstall: Cannot auto update.");
@@ -281,7 +313,7 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
                                   cpr::cpr_off_t uploadTotal, cpr::cpr_off_t uploadNow,
                                   intptr_t userdata) {
             SPDLOG_TRACE("Downloaded {} / {} bytes.", downloadNow, downloadTotal);
-            return progressCallback(downloadTotal, downloadNow);
+            return progressCallback(downloadNow, downloadTotal);
         }});
 
     if (response.status_code != 200) {

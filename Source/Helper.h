@@ -22,8 +22,10 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <future>
 #include <functional>
 #include <condition_variable>
+
 #include <QString>
 
 #define __TO_STRING(expr) #expr
@@ -83,6 +85,14 @@ public:
 
 template <class T>
 using MemberPointerType = typename Impl::MemberPointerType<T>::Type;
+
+//////////////////////////////////////////////////
+
+template <class T>
+inline bool IsFutureReady(const std::future<T> &future)
+{
+    return future.wait_for(0s) == std::future_status::ready;
+}
 
 //////////////////////////////////////////////////
 

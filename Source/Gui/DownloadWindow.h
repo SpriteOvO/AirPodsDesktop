@@ -36,9 +36,9 @@ public:
     DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent = nullptr);
     ~DownloadWindow();
 
-public Q_SLOTS:
-    void UpdateProgress(int downloaded, int total);
-    void OnFailed();
+Q_SIGNALS:
+    void UpdateProgressSafety(int downloaded, int total);
+    void OnFailedSafety();
 
 private:
     Ui::DownloadWindow _ui;
@@ -46,6 +46,9 @@ private:
     Core::Update::ReleaseInfo _info;
     std::atomic<bool> _destroy{false};
     std::thread _downloadThread;
+
+    void UpdateProgress(int downloaded, int total);
+    void OnFailed();
 
     void DownloadThread();
 

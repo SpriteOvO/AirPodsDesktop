@@ -18,9 +18,12 @@
 
 #include "InfoWindow.h"
 
+#include <future>
+
 #include <QScreen>
 #include <QPainter>
 #include <QMessageBox>
+#include <QDesktopServices>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -191,12 +194,6 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutClose->addWidget(_closeButton);
 
     Unavailable();
-
-    // TODO: Enable this timer after the icon notification is implemented
-    //
-    // _checkUpdateTimer->callOnTimeout([this] { CheckUpdate(); });
-    // _checkUpdateTimer->start(1h);
-    //
     CheckUpdate();
 }
 
@@ -204,6 +201,95 @@ InfoWindow::~InfoWindow()
 {
     _showHideTimer->stop();
     _autoHideTimer->stop();
+}
+
+void InfoWindow::CheckUpdate()
+{
+    // SPDLOG_TRACE("CheckUpdate: Poll.");
+
+    const auto &DispatchNext = []() {
+        Utils::Qt::Dispatch(&CheckUpdate);
+    };
+
+    using OptReleaseInfo = std::optional<Core::Update::ReleaseInfo>;
+    static std::promise<OptReleaseInfo> pmsRelease;
+    static std::optional<std::future<OptReleaseInfo>> optFuture;
+
+    if (!optFuture.has_value()) {
+        SPDLOG_INFO("CheckUpdate: Prepare promise and future. Fetch release info async.");
+        pmsRelease = decltype(pmsRelease){};
+        optFuture = pmsRelease.get_future();
+        std::thread{[]() { pmsRelease.set_value(Core::Update::FetchUpdateRelease()); }}.detach();
+        DispatchNext();
+        return;
+    }
+
+    if (!Helper::IsFutureReady(optFuture.value())) {
+        // SPDLOG_TRACE("CheckUpdate: The future is not ready.");
+        DispatchNext();
+        return;
+    }
+
+    auto optRelease = optFuture->get();
+    optFuture.reset();
+    SPDLOG_INFO("CheckUpdate: Fetch release info successfully.");
+
+    do {
+        if (!optRelease.has_value()) {
+            break;
+        }
+
+        auto releaseInfo = std::move(optRelease.value());
+        auto releaseVersion = releaseInfo.version.toString();
+
+        QString changeLogBlock;
+        if (!releaseInfo.changeLog.isEmpty()) {
+            changeLogBlock =
+                QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
+        }
+
+        auto button = QMessageBox::question(
+            nullptr, Config::ProgramName,
+            tr("Hey! I found a new version available!\n"
+               "\n"
+               "Current version: %1\n"
+               "Latest version: %2\n"
+               "\n"
+               "%3"
+               "Click \"Ignore\" to skip this new version.\n"
+               "\n"
+               "Do you want to update it now?")
+                .arg(Core::Update::GetLocalVersion().toString())
+                .arg(releaseVersion)
+                .arg(changeLogBlock),
+            QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
+
+        if (button == QMessageBox::Yes) {
+            SPDLOG_INFO("CheckUpdate: User clicked Yes.");
+
+            if (!releaseInfo.CanAutoUpdate()) {
+                SPDLOG_INFO("CheckUpdate: Popup latest url and quit.");
+                QDesktopServices::openUrl(QUrl{releaseInfo.url});
+                ApdApplication::QuitSafety();
+                break;
+            }
+
+            Gui::DownloadWindow{std::move(releaseInfo)}.exec();
+        }
+        else if (button == QMessageBox::Ignore) {
+            SPDLOG_INFO("CheckUpdate: User clicked Ignore.");
+
+            Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
+        }
+        else {
+            SPDLOG_INFO("CheckUpdate: User clicked No.");
+        }
+
+    } while (false);
+
+    // TODO: Enable this timer after the icon notification is implemented
+    //
+    // QTimer::singleShot(1h, &CheckUpdate);
 }
 
 void InfoWindow::InitCommonButton()
@@ -466,11 +552,6 @@ void InfoWindow::BindDevice()
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 
     ChangeButtonAction(ButtonAction::NoButton);
-}
-
-void InfoWindow::CheckUpdate()
-{
-    ApdApp->CheckUpdate();
 }
 
 void InfoWindow::ControlAutoHideTimer(bool start) {
