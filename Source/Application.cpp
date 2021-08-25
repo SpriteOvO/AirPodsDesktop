@@ -135,7 +135,7 @@ bool ApdApplication::Prepare()
     SPDLOG_INFO("Args: {{ trace: {} }}", _launchOptions.enableTrace);
 
     setFont(QFont{"Segoe UI", 9});
-    setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
+    setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
     _trayIcon = std::make_unique<Gui::TrayIcon>();

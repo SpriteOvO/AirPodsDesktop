@@ -44,6 +44,7 @@ constexpr inline auto UrlCurrentRelease = CONFIG_URL_CURRENT_RELEASE;
 constexpr inline auto License = "GPLv3";
 constexpr inline auto Copyright = CONFIG_COPYRIGHT;
 constexpr inline auto Description = CONFIG_DESCRIPTION;
+constexpr inline auto QrcIconSvg = ":/Resource/Image/Icon.svg";
 
 namespace Version {
 

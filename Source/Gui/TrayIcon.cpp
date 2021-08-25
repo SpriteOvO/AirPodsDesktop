@@ -22,6 +22,7 @@
 #include <QPainter>
 #include <QSvgRenderer>
 
+#include <Config.h>
 #include "../Application.h"
 #include "InfoWindow.h"
 
@@ -137,7 +138,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
 
     result.fill(Qt::transparent);
 
-    QSvgRenderer{QString{":/Resource/Image/Icon.svg"}}.render(&painter);
+    QSvgRenderer{QString{Config::QrcIconSvg}}.render(&painter);
 
     painter.setRenderHint(QPainter::Antialiasing);
 
