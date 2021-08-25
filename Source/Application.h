@@ -22,7 +22,7 @@
 #include <cxxopts.hpp>
 #include <SingleApplication>
 
-#include "Gui/SysTray.h"
+#include "Gui/TrayIcon.h"
 #include "Gui/InfoWindow.h"
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
@@ -41,9 +41,9 @@ public:
     bool Prepare();
     int Run();
 
-    inline auto &GetSysTray()
+    inline auto &GetTrayIcon()
     {
-        return _sysTray;
+        return _trayIcon;
     }
     inline auto &GetInfoWindow()
     {
@@ -61,7 +61,7 @@ public:
 private:
     static inline LaunchOptions _launchOptions;
     static inline bool _isFirstTimeUse{false};
-    std::unique_ptr<Gui::SysTray> _sysTray;
+    std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::InfoWindow> _infoWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
 

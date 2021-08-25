@@ -138,7 +138,7 @@ bool ApdApplication::Prepare()
     setWindowIcon(QIcon{":/Resource/Image/Icon.svg"});
     setQuitOnLastWindowClosed(false);
 
-    _sysTray = std::make_unique<Gui::SysTray>();
+    _trayIcon = std::make_unique<Gui::TrayIcon>();
     _infoWindow = std::make_unique<Gui::InfoWindow>();
 
     InitSettings();

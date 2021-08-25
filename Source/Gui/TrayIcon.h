@@ -27,12 +27,12 @@
 
 namespace Gui {
 
-class SysTray : public QWidget
+class TrayIcon : public QWidget
 {
     Q_OBJECT
 
 public:
-    SysTray();
+    TrayIcon();
 
     void UpdateState(const Core::AirPods::State &state);
     void Unavailable();

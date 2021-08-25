@@ -215,7 +215,7 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state)
         _caseBattery->show();
     }
 
-    ApdApp->GetSysTray()->UpdateState(state);
+    ApdApp->GetTrayIcon()->UpdateState(state);
 }
 
 void InfoWindow::Available()
@@ -244,7 +244,7 @@ void InfoWindow::Unavailable()
 
     ChangeButtonAction(ButtonAction::NoButton);
 
-    ApdApp->GetSysTray()->Unavailable();
+    ApdApp->GetTrayIcon()->Unavailable();
 }
 
 void InfoWindow::Disconnect()
@@ -265,7 +265,7 @@ void InfoWindow::Disconnect()
 
     ChangeButtonAction(ButtonAction::NoButton);
 
-    ApdApp->GetSysTray()->Disconnect();
+    ApdApp->GetTrayIcon()->Disconnect();
 }
 
 void InfoWindow::Bind()
@@ -291,7 +291,7 @@ void InfoWindow::Unbind()
 
     ChangeButtonAction(ButtonAction::Bind);
 
-    ApdApp->GetSysTray()->Unbind();
+    ApdApp->GetTrayIcon()->Unbind();
 }
 
 void InfoWindow::CheckUpdate()

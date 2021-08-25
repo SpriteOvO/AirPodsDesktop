@@ -16,19 +16,19 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#include "SysTray.h"
+#include "TrayIcon.h"
 
 #include "../Application.h"
 #include "InfoWindow.h"
 
 namespace Gui {
 
-SysTray::SysTray()
+TrayIcon::TrayIcon()
 {
-    connect(_actionSettings, &QAction::triggered, this, &SysTray::OnSettingsClicked);
-    connect(_actionAbout, &QAction::triggered, this, &SysTray::OnAboutClicked);
+    connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
+    connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
-    connect(_tray, &QSystemTrayIcon::activated, this, &SysTray::OnIconClicked);
+    connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
 
     _menu->addAction(_actionSettings);
@@ -48,7 +48,7 @@ SysTray::SysTray()
     }
 }
 
-void SysTray::UpdateState(const Core::AirPods::State &state)
+void TrayIcon::UpdateState(const Core::AirPods::State &state)
 {
     QString toolTip;
 
@@ -80,37 +80,37 @@ void SysTray::UpdateState(const Core::AirPods::State &state)
     _tray->setToolTip(toolTip);
 }
 
-void SysTray::Unavailable()
+void TrayIcon::Unavailable()
 {
     _tray->setToolTip(tr("Unavailable"));
 }
 
-void SysTray::Disconnect()
+void TrayIcon::Disconnect()
 {
     _tray->setToolTip(tr("Disconnected"));
 }
 
-void SysTray::Unbind()
+void TrayIcon::Unbind()
 {
     _tray->setToolTip(tr("Waiting for Binding"));
 }
 
-void SysTray::ShowInfoWindow()
+void TrayIcon::ShowInfoWindow()
 {
     ApdApp->GetInfoWindow()->show();
 }
 
-void SysTray::OnSettingsClicked()
+void TrayIcon::OnSettingsClicked()
 {
     _settingsWindow.show();
 }
 
-void SysTray::OnAboutClicked()
+void TrayIcon::OnAboutClicked()
 {
     ApdApplication::PopupAboutWindow(this);
 }
 
-void SysTray::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
+void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger ||
         reason == QSystemTrayIcon::MiddleClick)

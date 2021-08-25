@@ -210,7 +210,7 @@ set(
     "Source/ErrorHandle.cpp"
     "Source/Application.cpp"
 
-    "Source/Gui/SysTray.cpp"
+    "Source/Gui/TrayIcon.cpp"
     "Source/Gui/InfoWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
