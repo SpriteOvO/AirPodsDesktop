@@ -49,6 +49,9 @@ private:
 
     void ShowInfoWindow();
 
+    std::optional<QImage>
+    GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
+
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);

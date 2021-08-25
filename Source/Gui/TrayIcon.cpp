@@ -18,6 +18,10 @@
 
 #include "TrayIcon.h"
 
+#include <QFont>
+#include <QPainter>
+#include <QSvgRenderer>
+
 #include "../Application.h"
 #include "InfoWindow.h"
 
@@ -51,6 +55,7 @@ TrayIcon::TrayIcon()
 void TrayIcon::UpdateState(const Core::AirPods::State &state)
 {
     QString toolTip;
+    std::optional<Core::AirPods::Battery::value_type> minBattery;
 
     // toolTip += Helper::ToString(state.model);
     toolTip += Core::AirPods::GetDisplayName();
@@ -58,15 +63,26 @@ void TrayIcon::UpdateState(const Core::AirPods::State &state)
     // clang-format off
 
     if (state.pods.left.battery.has_value()) {
+        const auto batteryValue = state.pods.left.battery.value();
+
         toolTip += QString{tr("\nLeft: %1%%2")}
-            .arg(state.pods.left.battery.value())
+            .arg(batteryValue)
             .arg(state.pods.left.isCharging ? tr(" (charging)") : "");
+
+        minBattery = batteryValue;
     }
 
     if (state.pods.right.battery.has_value()) {
+        const auto batteryValue = state.pods.right.battery.value();
+
         toolTip += QString{tr("\nRight: %1%%2")}
-            .arg(state.pods.right.battery.value())
+            .arg(batteryValue)
             .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
+
+        if (minBattery.has_value() && batteryValue < minBattery.value() ||
+            !minBattery.has_value()) {
+            minBattery = batteryValue;
+        }
     }
 
     if (state.caseBox.battery.has_value()) {
@@ -78,26 +94,140 @@ void TrayIcon::UpdateState(const Core::AirPods::State &state)
     // clang-format on
 
     _tray->setToolTip(toolTip);
+
+    if (minBattery.has_value()) {
+        auto optIcon = GenerateIcon(64, QString::number(minBattery.value()), std::nullopt);
+        if (optIcon.has_value()) {
+            _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
+        }
+    }
+    else {
+        _tray->setIcon(ApdApp->windowIcon());
+    }
 }
 
 void TrayIcon::Unavailable()
 {
     _tray->setToolTip(tr("Unavailable"));
+    _tray->setIcon(ApdApp->windowIcon());
 }
 
 void TrayIcon::Disconnect()
 {
     _tray->setToolTip(tr("Disconnected"));
+    _tray->setIcon(ApdApp->windowIcon());
 }
 
 void TrayIcon::Unbind()
 {
     _tray->setToolTip(tr("Waiting for Binding"));
+    _tray->setIcon(ApdApp->windowIcon());
 }
 
 void TrayIcon::ShowInfoWindow()
 {
     ApdApp->GetInfoWindow()->show();
+}
+
+std::optional<QImage> TrayIcon::GenerateIcon(
+    int size, const std::optional<QString> &optText, const std::optional<QColor> &dot)
+{
+    QImage result{size, size, QImage::Format_ARGB32};
+    QPainter painter{&result};
+
+    result.fill(Qt::transparent);
+
+    QSvgRenderer{QString{":/Resource/Image/Icon.svg"}}.render(&painter);
+
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    painter.save();
+    do {
+        if (!optText.has_value() || optText->isEmpty()) {
+            break;
+        }
+        const auto &text = optText.value();
+
+        static std::unordered_map<int, std::optional<QFont>> trayIconFonts;
+
+        const auto &adjustFont = [](const QString &family,
+                                    int desiredSize) -> std::optional<QFont> {
+            int lastHeight = 0;
+
+            for (int i = 1; i < 100; i++) {
+                QFont font{family, i};
+                font.setBold(true);
+
+                int currentHeight = QFontMetrics{font}.height();
+                if (currentHeight == desiredSize ||
+                    lastHeight < desiredSize && currentHeight > desiredSize) [[unlikely]]
+                {
+                    SPDLOG_INFO(
+                        "Found a suitable font for the tray icon. "
+                        "Family: '{}', desiredSize: '{}', fontHeight: '{}', fontSize: '{}'",
+                        family, desiredSize, currentHeight, i);
+                    return font;
+                }
+                lastHeight = currentHeight;
+            }
+
+            SPDLOG_WARN(
+                "Cannot find a suitable font for the tray icon. Family: '{}', desiredSize: "
+                "'{}'",
+                family, desiredSize);
+
+            return std::nullopt;
+        };
+
+        auto textHeight = size * 0.8;
+
+        if (!trayIconFonts.contains(textHeight)) {
+            trayIconFonts[textHeight] = adjustFont(ApdApp->font().family(), textHeight);
+        }
+
+        const auto &optFont = trayIconFonts[textHeight];
+        if (!optFont.has_value()) {
+            break;
+        }
+        const auto &font = optFont.value();
+        const auto &fontMetrics = QFontMetrics{font};
+
+        const auto textWidth = fontMetrics.width(text);
+        textHeight = fontMetrics.height();
+
+        constexpr auto kMargin = QSizeF{2, 0};
+
+        const auto textRect = QRectF{
+            (double)size - textWidth - kMargin.width(), size - textHeight - kMargin.height(),
+            (double)textWidth, textHeight};
+        const auto bgRect = QRectF{
+            textRect.left() - kMargin.width(), textRect.top() - kMargin.height(),
+            textRect.width() + kMargin.width() * 2, textRect.height() + kMargin.height() * 2};
+
+        painter.setPen(Qt::white);
+        painter.setBrush(QColor{255, 36, 66});
+        painter.setFont(font);
+
+        painter.drawRoundedRect(bgRect, 10, 10);
+        painter.drawText(textRect, text);
+
+    } while (false);
+    painter.restore();
+
+    painter.save();
+    do {
+        if (!dot.has_value()) {
+            break;
+        }
+
+        const double dotDiameter = size * 0.4;
+
+        painter.setBrush(dot.value());
+        painter.drawEllipse(QRectF{size - dotDiameter, 0, dotDiameter, dotDiameter});
+    } while (false);
+    painter.restore();
+
+    return result;
 }
 
 void TrayIcon::OnSettingsClicked()

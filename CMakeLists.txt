@@ -122,7 +122,7 @@ endif()
 # Qt
 #
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${APD_QT_PATH})
-set(APD_QT_COMPONENTS Core Gui Widgets Multimedia MultimediaWidgets)
+set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
 foreach (QT_COMPONENT ${APD_QT_COMPONENTS})
     set(APD_QT_LIBRARIES ${APD_QT_LIBRARIES} Qt5::${QT_COMPONENT})
 endforeach()
