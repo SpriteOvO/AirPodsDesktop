@@ -192,8 +192,7 @@ private:
     bool _isSensitive{false};
 };
 
-// TODO: Rename
-struct FieldsMetaView {
+struct FieldsMeta {
 #define DECLARE_META_FIELD(type, name, dft, ...)                                                   \
     MetaField<type Fields::*> name{TO_STRING(name), &Fields::name, __VA_ARGS__};
     SETTINGS_FIELDS(DECLARE_META_FIELD)
@@ -263,7 +262,7 @@ public:
                 return LoadResult::AbiIncompatible;
             }
 
-            pfr::for_each_field(Impl::FieldsMetaView{}, [&](auto &field) {
+            pfr::for_each_field(Impl::FieldsMeta{}, [&](auto &field) {
                 loadKey(field.GetName(), field.GetValue(_fields), field.IsSensitive());
             });
             return LoadResult::Successful;
@@ -326,21 +325,21 @@ private:
 
         saveKey("abi_version", kFieldsAbiVersion);
 
-        pfr::for_each_field(Impl::FieldsMetaView{}, [&](const auto &field) {
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
             saveKey(field.GetName(), field.GetValue(_fields), field.IsSensitive());
         });
     }
 
     void ApplyWithoutLock()
     {
-        pfr::for_each_field(Impl::FieldsMetaView{}, [&](const auto &field) {
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
             field.OnApply().Invoke(std::cref(_fields));
         });
     }
 
     void ApplyChangedFieldsOnlyWithoutLock(const Fields &oldFields)
     {
-        pfr::for_each_field(Impl::FieldsMetaView{}, [&](const auto &field) {
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
             if (field.GetValue(oldFields) != field.GetValue(_fields)) {
                 field.OnApply().Invoke(std::cref(_fields));
             }
