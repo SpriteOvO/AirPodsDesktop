@@ -49,6 +49,7 @@ private:
     constexpr static int kSliderVolumeLevelAlertValue = 70;
     bool _sliderEnableVolumeLevelWarning = true;
     QSlider *_sliderMaximumReceivingRange;
+    QCheckBox *_checkBoxDisplayBatteryOnTrayIcon;
     QPushButton *_buttonUnbindAirPods;
     QPushButton *_buttonShowLogFileLocation;
 

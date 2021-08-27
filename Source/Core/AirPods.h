@@ -79,6 +79,7 @@ struct State {
 
 void StartScanner();
 QString GetDisplayName();
+std::optional<State> GetCurrentState();
 void OnBoundDeviceAddressChanged(uint64_t address);
 void OnQuit();
 

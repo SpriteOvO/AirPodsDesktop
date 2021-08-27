@@ -133,6 +133,12 @@ void SettingsWindow::CreateUi()
     newLine(new QLabel{tr("Maximum receiving range"), this});
     newLine(_sliderMaximumReceivingRange);
 
+    // Display battery on tray icon
+    //
+
+    _checkBoxDisplayBatteryOnTrayIcon = new QCheckBox{tr("Display battery on tray icon"), this};
+    newLine(_checkBoxDisplayBatteryOnTrayIcon);
+
     // Unbind this AirPods
     //
 
@@ -197,6 +203,10 @@ void SettingsWindow::ConnectUi()
         _fields.rssi_min = -value;
     });
 
+    connect(_checkBoxDisplayBatteryOnTrayIcon, &QCheckBox::toggled, this, [this](bool checked) {
+        _fields.tray_icon_battery = checked;
+    });
+
     connect(_buttonUnbindAirPods, &QPushButton::clicked, this, [this]() {
         Core::Settings::ModifiableAccess()->device_address = 0;
         _buttonUnbindAirPods->setDisabled(true);
@@ -240,6 +250,8 @@ void SettingsWindow::Update()
     _sliderVolumeLevel->setValue(_fields.loud_volume_level);
 
     _sliderMaximumReceivingRange->setValue(-_fields.rssi_min);
+
+    _checkBoxDisplayBatteryOnTrayIcon->setChecked(_fields.tray_icon_battery);
 
     _buttonUnbindAirPods->setDisabled(_fields.device_address == 0);
 }

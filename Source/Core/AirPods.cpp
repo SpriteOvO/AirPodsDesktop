@@ -411,6 +411,11 @@ public:
         return _displayName;
     }
 
+    std::optional<State> GetCurrentState()
+    {
+        return _tracker.GetState();
+    }
+
     void OnBoundDeviceAddressChanged(uint64_t address)
     {
         std::unique_lock<std::recursive_mutex> lock{_mutex};
@@ -600,6 +605,11 @@ void StartScanner()
 QString GetDisplayName()
 {
     return Details::Manager::GetInstance().GetDisplayName();
+}
+
+std::optional<State> GetCurrentState()
+{
+    return Details::Manager::GetInstance().GetCurrentState();
 }
 
 void OnBoundDeviceAddressChanged(uint64_t address)

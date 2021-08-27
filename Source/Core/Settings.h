@@ -58,7 +58,8 @@ constexpr inline uint32_t kFieldsAbiVersion = 1;
     callback(int16_t, rssi_min, {-80})                                                             \
     callback(bool, reduce_loud_sounds, {false}, Impl::OnApply(&OnApply_reduce_loud_sounds))        \
     callback(uint32_t, loud_volume_level, {40}, Impl::OnApply(&OnApply_loud_volume_level))         \
-    callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})
+    callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})\
+    callback(bool, tray_icon_battery, {false}, Impl::OnApply(&OnApply_tray_icon_battery))
 // clang-format on
 
 struct Fields {

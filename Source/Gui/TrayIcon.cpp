@@ -36,6 +36,9 @@ TrayIcon::TrayIcon()
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
 
+    connect(
+        this, &TrayIcon::OnTrayIconBatteryChangedSafety, this, &TrayIcon::OnTrayIconBatteryChanged);
+
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -96,7 +99,7 @@ void TrayIcon::UpdateState(const Core::AirPods::State &state)
 
     _tray->setToolTip(toolTip);
 
-    if (minBattery.has_value()) {
+    if (minBattery.has_value() && Core::Settings::ConstAccess()->tray_icon_battery) {
         auto optIcon = GenerateIcon(64, QString::number(minBattery.value()), std::nullopt);
         if (optIcon.has_value()) {
             _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
@@ -249,4 +252,13 @@ void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
         ShowInfoWindow();
     }
 }
+
+void TrayIcon::OnTrayIconBatteryChanged(bool value)
+{
+    auto optState = Core::AirPods::GetCurrentState();
+    if (optState.has_value()) {
+        UpdateState(optState.value());
+    }
+}
+
 } // namespace Gui

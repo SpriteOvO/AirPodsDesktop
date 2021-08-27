@@ -100,6 +100,13 @@ void OnApply_device_address(const Fields &newFields)
     AirPods::OnBoundDeviceAddressChanged(newFields.device_address);
 }
 
+void OnApply_tray_icon_battery(const Fields &newFields)
+{
+    SPDLOG_INFO("OnApply_tray_icon_battery: {}", newFields.tray_icon_battery);
+
+    ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafety(newFields.tray_icon_battery);
+}
+
 namespace Impl {
 
 //////////////////////////////////////////////////

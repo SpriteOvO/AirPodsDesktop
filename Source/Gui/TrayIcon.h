@@ -39,10 +39,12 @@ public:
     void Disconnect();
     void Unbind();
 
+Q_SIGNALS:
+    void OnTrayIconBatteryChangedSafety(bool value);
+
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
-
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
@@ -55,6 +57,7 @@ private:
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
+    void OnTrayIconBatteryChanged(bool value);
 
 protected:
     SettingsWindow _settingsWindow{this};
