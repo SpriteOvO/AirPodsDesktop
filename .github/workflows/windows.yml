@@ -67,6 +67,7 @@ jobs:
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
                 -DAPD_QT_PATH=../../AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
                 -DAPD_GENERATE_INSTALLER=ON ^
+                -DAPD_BUILD_GIT_HASH=${{ github.sha }}
                 ../../
 
           cmake --build . ^
