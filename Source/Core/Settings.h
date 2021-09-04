@@ -30,7 +30,7 @@ template <class T>
 class BasicSafeAccessor
 {
 public:
-    BasicSafeAccessor(std::mutex &lock, T &fields) : _lock{lock}, _fields{fields} {}
+    BasicSafeAccessor(std::recursive_mutex &lock, T &fields) : _lock{lock}, _fields{fields} {}
     BasicSafeAccessor(const BasicSafeAccessor &rhs) = delete;
 
     T *operator->()
@@ -39,7 +39,7 @@ public:
     }
 
 private:
-    std::lock_guard<std::mutex> _lock;
+    std::lock_guard<std::recursive_mutex> _lock;
     T &_fields;
 };
 } // namespace Impl
@@ -83,7 +83,7 @@ class ModifiableSafeAccessor : public Impl::BasicSafeAccessor<Fields>
 public:
     using Impl::BasicSafeAccessor<Fields>::BasicSafeAccessor;
 
-    ModifiableSafeAccessor(std::mutex &lock, Fields &fields);
+    ModifiableSafeAccessor(std::recursive_mutex &lock, Fields &fields);
     ~ModifiableSafeAccessor();
 
 private:

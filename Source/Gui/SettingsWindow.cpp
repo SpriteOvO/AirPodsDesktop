@@ -63,203 +63,193 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 {
     _ui.setupUi(this);
 
-    CreateUi();
-    ConnectUi();
+    auto versionText = QString{"<a href=\"%1\">v%2</a>"}
+            .arg("https://github.com/SpriteOvO/AirPodsDesktop/releases/tag/" CONFIG_VERSION_STRING)
+                           .arg(CONFIG_VERSION_STRING);
+#if defined APD_BUILD_GIT_HASH
+    versionText +=
+        QString{" (<a href=\"%1\">%2</a>)"}
+            .arg("https://github.com/SpriteOvO/AirPodsDesktop/commit/" APD_BUILD_GIT_HASH)
+            .arg(QString{APD_BUILD_GIT_HASH}.left(7));
+#endif
+    _ui.lbVersion->setText(versionText);
 
-    LoadCurrent();
-}
+    _ui.hlLowAudioLatency->addWidget(new TipLabel{
+        tr("It improves the problem of short audio not playing, but may increase "
+           "battery consumption."),
+        this});
 
-void SettingsWindow::CreateUi()
-{
-    _ui.gridLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    _ui.hlTipAutoEarDetection->addWidget(new TipLabel{
+        tr("Pause the media when you remove the AirPods and play it when both "
+           "AirPods are put back on."),
+        this});
 
-    int row = -1, column = 0;
+    _ui.hsVolumeLevel->setMinimum(0);
+    _ui.hsVolumeLevel->setMaximum(100);
 
-    const auto &newLine = [&](QWidget *widget, Qt::Alignment alignment = {}) {
-        row += 1;
-        column = 0;
-        _ui.gridLayout->addWidget(widget, row, column, alignment);
-    };
+    _ui.hsMaxReceivingRange->setMinimum(50);
+    _ui.hsMaxReceivingRange->setMaximum(100);
 
-    const auto &sameLine = [&](QWidget *widget, Qt::Alignment alignment = {}) {
-        _ui.gridLayout->addWidget(widget, row, ++column, alignment);
-    };
+    Update(Core::Settings::GetCurrent(), false);
 
-    // Launch when system starts
-    //
-
-    _checkBoxAutoRun = new QCheckBox{tr("Launch when system starts"), this};
-    newLine(_checkBoxAutoRun);
-
-    // Low audio latency mode
-    //
-
-    _checkBoxLowAudioLatency = new QCheckBox{tr("Low audio latency mode"), this};
-    newLine(_checkBoxLowAudioLatency);
-    sameLine(
-        new TipLabel{
-            tr("It improves the problem of short audio not playing, but may increase "
-               "battery consumption."),
-            this},
-        Qt::AlignLeft);
-
-    // Automatic ear detection
-    //
-
-    _checkBoxAutomaticEarDetection = new QCheckBox{tr("Automatic ear detection"), this};
-    newLine(_checkBoxAutomaticEarDetection);
-    sameLine(
-        new TipLabel{
-            tr("Pause the media when you remove the AirPods and play it when both "
-               "AirPods are put back on."),
-            this},
-        Qt::AlignLeft);
-
-    // Reduce loud sounds
-    //
-
-    _checkReduceLoudSounds = new QCheckBox{tr("Reduce loud sounds"), this};
-    newLine(_checkReduceLoudSounds);
-
-    _sliderVolumeLevel = new QSlider{Qt::Horizontal, this};
-    _labelVolumeLevel = new QLabel{tr("Volume Level"), this};
-    newLine(_labelVolumeLevel);
-    newLine(_sliderVolumeLevel);
-
-    // RSSI
-    //
-
-    _sliderMaximumReceivingRange = new QSlider{Qt::Horizontal, this};
-    newLine(new QLabel{tr("Maximum receiving range"), this});
-    newLine(_sliderMaximumReceivingRange);
-
-    // Display battery on tray icon
-    //
-
-    _checkBoxDisplayBatteryOnTrayIcon = new QCheckBox{tr("Display battery on tray icon"), this};
-    newLine(_checkBoxDisplayBatteryOnTrayIcon);
-
-    // Unbind this AirPods
-    //
-
-    _buttonUnbindAirPods = new QPushButton{tr("Unbind this AirPods"), this};
-    newLine(_buttonUnbindAirPods);
-
-    // Show log file location
-    //
-
-    _buttonShowLogFileLocation = new QPushButton{tr("Show log file location"), this};
-    newLine(_buttonShowLogFileLocation);
-}
-
-void SettingsWindow::ConnectUi()
-{
-    connect(_ui.buttonBox, &QDialogButtonBox::accepted, this, &SettingsWindow::Save);
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
-        &SettingsWindow::LoadDefault);
+        &SettingsWindow::RestoreDefaults);
 
-    connect(_checkBoxAutoRun, &QCheckBox::toggled, this, [this](bool checked) {
-        _fields.auto_run = checked;
-    });
-
-    connect(_checkBoxLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
-        _fields.low_audio_latency = checked;
-    });
-
-    connect(_checkBoxAutomaticEarDetection, &QCheckBox::toggled, this, [this](bool checked) {
-        _fields.automatic_ear_detection = checked;
-    });
-
-    connect(_checkReduceLoudSounds, &QCheckBox::toggled, this, [this](bool checked) {
-        _fields.reduce_loud_sounds = checked;
-    });
-    _sliderVolumeLevel->setMinimum(0);
-    _sliderVolumeLevel->setMaximum(100);
-    connect(_sliderVolumeLevel, &QSlider::valueChanged, this, [this](int value) {
-        if (_sliderEnableVolumeLevelWarning && value > kSliderVolumeLevelAlertValue) {
-            auto button = QMessageBox::warning(
-                _sliderVolumeLevel, Config::ProgramName,
-                tr("Further increases in the volume level may harm your ears.\n"
-                   "\n"
-                   "Click \"Ignore\" if you want to disable the warning and limitation."),
-                QMessageBox::Ok | QMessageBox::Ignore, QMessageBox::Ok);
-            if (button == QMessageBox::Ignore) {
-                _sliderEnableVolumeLevelWarning = false;
-            }
-            else {
-                _sliderVolumeLevel->setValue(kSliderVolumeLevelAlertValue);
-                return;
-            }
+    connect(_ui.cbAutoRun, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbAutoRun_toggled(checked);
         }
-
-        _labelVolumeLevel->setText(tr("Volume Level %1").arg(value));
-        _fields.loud_volume_level = value;
     });
 
-    _sliderMaximumReceivingRange->setMinimum(50);
-    _sliderMaximumReceivingRange->setMaximum(100);
-    connect(_sliderMaximumReceivingRange, &QSlider::valueChanged, this, [this](int value) {
-        _fields.rssi_min = -value;
+    connect(_ui.cbLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbLowAudioLatency_toggled(checked);
+        }
     });
 
-    connect(_checkBoxDisplayBatteryOnTrayIcon, &QCheckBox::toggled, this, [this](bool checked) {
-        _fields.tray_icon_battery = checked;
+    connect(_ui.cbAutoEarDetection, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbAutoEarDetection_toggled(checked);
+        }
     });
 
-    connect(_buttonUnbindAirPods, &QPushButton::clicked, this, [this]() {
-        Core::Settings::ModifiableAccess()->device_address = 0;
-        _buttonUnbindAirPods->setDisabled(true);
+    connect(_ui.cbReduceLoudSounds, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbReduceLoudSounds_toggled(checked);
+        }
     });
 
-    connect(_buttonShowLogFileLocation, &QPushButton::clicked, this, [this]() {
-        Utils::File::ShowFileLocation(Logger::GetLogFilePath());
+    connect(_ui.hsVolumeLevel, &QSlider::valueChanged, this, [this](int value) {
+        if (_trigger) {
+            On_hsVolumeLevel_valueChanged(value);
+        }
+    });
+
+    connect(_ui.hsMaxReceivingRange, &QSlider::valueChanged, this, [this](int value) {
+        if (_trigger) {
+            On_hsMaxReceivingRange_valueChanged(value);
+        }
+    });
+
+    connect(_ui.cbDisplayBatteryOnTrayIcon, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbDisplayBatteryOnTrayIcon_toggled(checked);
+        }
+    });
+
+    connect(_ui.pbUnbind, &QPushButton::clicked, this, [this]() {
+        if (_trigger) {
+            On_pbUnbind_clicked();
+        }
+    });
+
+    connect(_ui.pbShowLogFileLocation, &QPushButton::clicked, this, [this]() {
+        if (_trigger) {
+            On_pbShowLogFileLocation_clicked();
+        }
     });
 }
 
-void SettingsWindow::LoadCurrent()
+void SettingsWindow::RestoreDefaults()
 {
-    _fields = Core::Settings::GetCurrent();
-    Update();
+    Core::Settings::Save(Core::Settings::GetDefault());
+    Update(Core::Settings::GetCurrent(), false);
 }
 
-void SettingsWindow::LoadDefault()
+void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 {
-    _fields = Core::Settings::GetDefault();
-    Update();
-}
+    _trigger = trigger;
 
-void SettingsWindow::Save()
-{
-    _fields.device_address = Core::Settings::ConstAccess()->device_address;
-    Core::Settings::Save(_fields);
-}
+    _ui.cbAutoRun->setChecked(fields.auto_run);
 
-void SettingsWindow::Update()
-{
-    _checkBoxAutoRun->setChecked(_fields.auto_run);
+    _ui.cbLowAudioLatency->setChecked(fields.low_audio_latency);
 
-    _checkBoxLowAudioLatency->setChecked(_fields.low_audio_latency);
+    _ui.cbAutoEarDetection->setChecked(fields.automatic_ear_detection);
 
-    _checkBoxAutomaticEarDetection->setChecked(_fields.automatic_ear_detection);
-
-    _checkReduceLoudSounds->setChecked(_fields.reduce_loud_sounds);
-    if (_fields.loud_volume_level > kSliderVolumeLevelAlertValue) {
+    _ui.cbReduceLoudSounds->setChecked(fields.reduce_loud_sounds);
+    if (fields.loud_volume_level > kSliderVolumeLevelAlertValue) {
         _sliderEnableVolumeLevelWarning = false;
     }
-    _sliderVolumeLevel->setValue(_fields.loud_volume_level);
+    _ui.hsVolumeLevel->setValue(fields.loud_volume_level);
 
-    _sliderMaximumReceivingRange->setValue(-_fields.rssi_min);
+    _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
-    _checkBoxDisplayBatteryOnTrayIcon->setChecked(_fields.tray_icon_battery);
+    _ui.cbDisplayBatteryOnTrayIcon->setChecked(fields.tray_icon_battery);
 
-    _buttonUnbindAirPods->setDisabled(_fields.device_address == 0);
+    _ui.pbUnbind->setDisabled(fields.device_address == 0);
+
+    _trigger = true;
 }
 
 void SettingsWindow::showEvent(QShowEvent *event)
 {
-    LoadCurrent();
+    Update(Core::Settings::GetCurrent(), false);
 }
+
+void SettingsWindow::On_cbAutoRun_toggled(bool checked)
+{
+    Core::Settings::ModifiableAccess()->auto_run = checked;
+}
+
+void SettingsWindow::On_pbUnbind_clicked()
+{
+    _ui.pbUnbind->setDisabled(true);
+    Core::Settings::ModifiableAccess()->device_address = 0;
+}
+
+void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(bool checked)
+{
+    Core::Settings::ModifiableAccess()->tray_icon_battery = checked;
+}
+
+void SettingsWindow::On_cbLowAudioLatency_toggled(bool checked)
+{
+    Core::Settings::ModifiableAccess()->low_audio_latency = checked;
+}
+
+void SettingsWindow::On_cbAutoEarDetection_toggled(bool checked)
+{
+    Core::Settings::ModifiableAccess()->automatic_ear_detection = checked;
+}
+
+void SettingsWindow::On_cbReduceLoudSounds_toggled(bool checked)
+{
+    Core::Settings::ModifiableAccess()->reduce_loud_sounds = checked;
+}
+
+void SettingsWindow::On_hsVolumeLevel_valueChanged(int value)
+{
+    if (_sliderEnableVolumeLevelWarning && value > kSliderVolumeLevelAlertValue) {
+        auto button = QMessageBox::warning(
+            this, Config::ProgramName,
+            tr("Further increases in the volume level may harm your ears.\n"
+               "\n"
+               "Click \"Ignore\" if you want to disable the warning and limitation."),
+            QMessageBox::Ok | QMessageBox::Ignore, QMessageBox::Ok);
+        if (button == QMessageBox::Ignore) {
+            _sliderEnableVolumeLevelWarning = false;
+        }
+        else {
+            _ui.hsVolumeLevel->setValue(kSliderVolumeLevelAlertValue);
+            return;
+        }
+    }
+
+    _ui.lbVolumeLevel->setText(tr("Volume Level %1").arg(value));
+    Core::Settings::ModifiableAccess()->loud_volume_level = value;
+}
+
+void SettingsWindow::On_hsMaxReceivingRange_valueChanged(int value)
+{
+    Core::Settings::ModifiableAccess()->rssi_min = -value;
+}
+
+void SettingsWindow::On_pbShowLogFileLocation_clicked()
+{
+    Utils::File::ShowFileLocation(Logger::GetLogFilePath());
+}
+
 } // namespace Gui
 
 #include "SettingsWindow.moc"

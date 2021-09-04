@@ -55,7 +55,6 @@ public:
         return _isFirstTimeUse;
     }
 
-    static void PopupAboutWindow(QWidget *parent);
     static void QuitSafety();
 
 private:

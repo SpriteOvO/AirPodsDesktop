@@ -162,30 +162,6 @@ void ApdApplication::QuitHandler()
     Core::AirPods::OnQuit();
 }
 
-void ApdApplication::PopupAboutWindow(QWidget *parent)
-{
-    // clang-format off
-
-    QString content = tr(
-        "<h3>%1</h3>"
-        "<p>%2</p>"
-        "<hr>"
-        "<p>Version %3 (<a href=\"%4\">Change log</a>)</p>"
-        "<p>Open source on <a href=\"%5\">%6</a></p>"
-        "<p>Licensed under the <a href=\"%7\">%8</a></p>"
-        "<p>%9</p>")
-        .arg(Config::ProgramName)
-        .arg(Config::Description)
-        .arg(Config::Version::String).arg(Config::UrlCurrentRelease)
-        .arg(Config::UrlRepository).arg("GitHub")
-        .arg(Config::UrlLicense).arg(Config::License)
-        .arg(Config::Copyright);
-
-    // clang-format on
-
-    QMessageBox::about(parent, tr("About %1").arg(Config::ProgramName), content);
-}
-
 void ApdApplication::QuitSafety()
 {
     QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);

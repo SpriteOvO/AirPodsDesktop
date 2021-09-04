@@ -246,7 +246,7 @@ public:
             return true;
         };
 
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::lock_guard<std::recursive_mutex> lock{_mutex};
 
         std::decay_t<decltype(kFieldsAbiVersion)> abi_version = 0;
         if (!loadKey("abi_version", abi_version)) {
@@ -271,7 +271,7 @@ public:
 
     void Save(Fields newFields)
     {
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::lock_guard<std::recursive_mutex> lock{_mutex};
 
         _fields = std::move(newFields);
         SaveWithoutLock();
@@ -280,14 +280,14 @@ public:
 
     void Apply()
     {
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::lock_guard<std::recursive_mutex> lock{_mutex};
 
         ApplyWithoutLock();
     }
 
     Fields GetCurrent()
     {
-        std::lock_guard<std::mutex> lock{_mutex};
+        std::lock_guard<std::recursive_mutex> lock{_mutex};
 
         return _fields;
     }
@@ -303,7 +303,7 @@ public:
     }
 
 private:
-    std::mutex _mutex;
+    std::recursive_mutex _mutex;
     Fields _fields;
     QSettings _settings{QSettings::UserScope, Config::ProgramName, Config::ProgramName};
 
@@ -325,23 +325,28 @@ private:
 
         saveKey("abi_version", kFieldsAbiVersion);
 
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
-            saveKey(field.GetName(), field.GetValue(_fields), field.IsSensitive());
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+            saveKey(fieldMeta.GetName(), fieldMeta.GetValue(_fields), fieldMeta.IsSensitive());
         });
     }
 
     void ApplyWithoutLock()
     {
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
-            field.OnApply().Invoke(std::cref(_fields));
+        SPDLOG_INFO("ApplyWithoutLock");
+
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+            fieldMeta.OnApply().Invoke(std::cref(_fields));
         });
     }
 
     void ApplyChangedFieldsOnlyWithoutLock(const Fields &oldFields)
     {
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &field) {
-            if (field.GetValue(oldFields) != field.GetValue(_fields)) {
-                field.OnApply().Invoke(std::cref(_fields));
+        SPDLOG_INFO("ApplyChangedFieldsOnlyWithoutLock");
+
+        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+            if (fieldMeta.GetValue(oldFields) != fieldMeta.GetValue(_fields)) {
+                SPDLOG_INFO("Changed field: {}", fieldMeta.GetName());
+                fieldMeta.OnApply().Invoke(std::cref(_fields));
             }
         });
     }
@@ -349,7 +354,7 @@ private:
     friend class ModifiableSafeAccessor;
 };
 
-ModifiableSafeAccessor::ModifiableSafeAccessor(std::mutex &lock, Fields &fields)
+ModifiableSafeAccessor::ModifiableSafeAccessor(std::recursive_mutex &lock, Fields &fields)
     : Impl::BasicSafeAccessor<Fields>{lock, fields}, _oldFields{fields}
 {
 }

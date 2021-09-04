@@ -248,6 +248,10 @@ if (MSVC)
     set_source_files_properties("Source/Resource/Resource.rc" PROPERTIES COMPILE_FLAGS "/d_MSC_VER")
 endif()
 
+if (APD_BUILD_GIT_HASH)
+    set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_BUILD_GIT_HASH="${APD_BUILD_GIT_HASH}")
+endif()
+
 qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
 
 add_executable(

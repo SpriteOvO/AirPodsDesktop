@@ -40,31 +40,31 @@ public:
 private:
     Ui::SettingsWindow _ui;
 
-    QCheckBox *_checkBoxAutoRun;
-    QCheckBox *_checkBoxLowAudioLatency;
-    QCheckBox *_checkBoxAutomaticEarDetection;
-    QCheckBox *_checkReduceLoudSounds;
-    QLabel *_labelVolumeLevel;
-    QSlider *_sliderVolumeLevel;
+    bool _trigger{true};
     constexpr static int kSliderVolumeLevelAlertValue = 70;
     bool _sliderEnableVolumeLevelWarning = true;
-    QSlider *_sliderMaximumReceivingRange;
-    QCheckBox *_checkBoxDisplayBatteryOnTrayIcon;
-    QPushButton *_buttonUnbindAirPods;
-    QPushButton *_buttonShowLogFileLocation;
 
-    Core::Settings::Fields _fields;
-
-    void CreateUi();
-    void ConnectUi();
-
-    void LoadCurrent();
-    void LoadDefault();
-    void Save();
-
-    void Update();
+    void RestoreDefaults();
+    void Update(const Core::Settings::Fields &fields, bool trigger);
 
     void showEvent(QShowEvent *event) override;
+
+    // General
+    void On_cbAutoRun_toggled(bool checked);
+    void On_pbUnbind_clicked();
+
+    // Visual
+    void On_cbDisplayBatteryOnTrayIcon_toggled(bool checked);
+
+    // Features
+    void On_cbLowAudioLatency_toggled(bool checked);
+    void On_cbAutoEarDetection_toggled(bool checked);
+    void On_cbReduceLoudSounds_toggled(bool checked);
+    void On_hsVolumeLevel_valueChanged(int value);
+    void On_hsMaxReceivingRange_valueChanged(int value);
+
+    // About
+    void On_pbShowLogFileLocation_clicked();
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };

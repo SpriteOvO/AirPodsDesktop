@@ -31,7 +31,6 @@ namespace Gui {
 TrayIcon::TrayIcon()
 {
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
-    connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
@@ -41,7 +40,6 @@ TrayIcon::TrayIcon()
 
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
-    _menu->addAction(_actionAbout);
     _menu->addAction(_actionQuit);
 
     _tray->setContextMenu(_menu);
@@ -237,11 +235,6 @@ std::optional<QImage> TrayIcon::GenerateIcon(
 void TrayIcon::OnSettingsClicked()
 {
     _settingsWindow.show();
-}
-
-void TrayIcon::OnAboutClicked()
-{
-    ApdApplication::PopupAboutWindow(this);
 }
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
