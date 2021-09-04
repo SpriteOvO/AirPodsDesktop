@@ -126,6 +126,9 @@ bool ApdApplication::Prepare()
     Logger::Initialize(_launchOptions.enableTrace);
 
     SPDLOG_INFO("Launched. Version: '{}'", Config::Version::String);
+#if defined APD_BUILD_GIT_HASH
+    SPDLOG_INFO("Build git hash: '{}'", APD_BUILD_GIT_HASH);
+#endif
 #if defined APD_DEBUG
     SPDLOG_INFO("Build configuration: Debug");
 #else
