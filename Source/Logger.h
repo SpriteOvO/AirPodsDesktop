@@ -26,6 +26,46 @@
 
 namespace Logger {
 
+namespace Details {
+
+enum class Level : uint32_t {
+    Trace,
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Critical,
+};
+
+template <Level level, class... Args>
+inline void Log(const spdlog::source_loc &srcloc, Args &&...args)
+{
+    auto logger = spdlog::default_logger_raw();
+    if constexpr (level == Level::Trace) {
+        logger->log(srcloc, spdlog::level::trace, std::forward<Args>(args)...);
+    }
+    else if constexpr (level == Level::Debug) {
+        logger->log(srcloc, spdlog::level::debug, std::forward<Args>(args)...);
+    }
+    else if constexpr (level == Level::Info) {
+        logger->log(srcloc, spdlog::level::info, std::forward<Args>(args)...);
+    }
+    else if constexpr (level == Level::Warn) {
+        logger->log(srcloc, spdlog::level::warn, std::forward<Args>(args)...);
+    }
+    else if constexpr (level == Level::Error) {
+        logger->log(srcloc, spdlog::level::err, std::forward<Args>(args)...);
+    }
+    else if constexpr (level == Level::Critical) {
+        logger->log(srcloc, spdlog::level::critical, std::forward<Args>(args)...);
+    }
+    else {
+        static_assert(false);
+    }
+}
+
+} // namespace Details
+
 bool Initialize(bool enableTrace);
 
 QDir GetLogFilePath();
@@ -37,3 +77,7 @@ inline OutStream &operator<<(OutStream &outStream, const QString &qstr)
 {
     return outStream << qstr.toStdString().c_str();
 }
+
+#define LOG(level, ...)                                                                            \
+    Logger::Details::Log<Logger::Details::Level::level>(                                           \
+        spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, __VA_ARGS__)

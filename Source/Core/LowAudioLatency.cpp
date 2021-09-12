@@ -59,7 +59,7 @@ private:
 
     void Control(bool enable)
     {
-        SPDLOG_INFO("LowAudioLatency::Controller Control: {}", enable);
+        LOG(Info, "LowAudioLatency::Controller Control: {}", enable);
 
         if (enable) {
             _mediaPlayer.play();
@@ -71,7 +71,7 @@ private:
 
     void OnError(QMediaPlayer::Error error)
     {
-        SPDLOG_WARN("LowAudioLatency::Controller error: {}", error);
+        LOG(Warn, "LowAudioLatency::Controller error: {}", error);
     }
 };
 

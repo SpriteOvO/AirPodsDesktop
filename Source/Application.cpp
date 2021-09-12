@@ -124,17 +124,17 @@ bool ApdApplication::Prepare()
 {
     Logger::Initialize(_launchOptions.enableTrace);
 
-    SPDLOG_INFO("Launched. Version: '{}'", Config::Version::String);
+    LOG(Info, "Launched. Version: '{}'", Config::Version::String);
 #if defined APD_BUILD_GIT_HASH
-    SPDLOG_INFO("Build git hash: '{}'", APD_BUILD_GIT_HASH);
+    LOG(Info, "Build git hash: '{}'", APD_BUILD_GIT_HASH);
 #endif
 #if defined APD_DEBUG
-    SPDLOG_INFO("Build configuration: Debug");
+    LOG(Info, "Build configuration: Debug");
 #else
-    SPDLOG_INFO("Build configuration: Not Debug");
+    LOG(Info, "Build configuration: Not Debug");
 #endif
 
-    SPDLOG_INFO("Args: {{ trace: {} }}", _launchOptions.enableTrace);
+    LOG(Info, "Args: {{ trace: {} }}", _launchOptions.enableTrace);
 
     setFont(QFont{"Segoe UI", 9});
     setWindowIcon(QIcon{Config::QrcIconSvg});

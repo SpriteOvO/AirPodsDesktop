@@ -95,7 +95,7 @@ inline void BreakPoint()
     __debugbreak();
     #endif
 #else
-    SPDLOG_WARN("Triggered a break point.");
+    LOG(Warn, "Triggered a break point.");
 #endif
 }
 } // namespace Debug

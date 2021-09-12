@@ -195,7 +195,7 @@ public:
         const auto advRssi = adv.GetRssi();
 
         if (advRssi < rssiMin) {
-            SPDLOG_WARN(
+            LOG(Warn,
                 "TryTrack returns false. Reason: RSSI is less than the limit. "
                 "curr: '{}' min: '{}'",
                 advRssi, rssiMin);
@@ -216,8 +216,7 @@ public:
             const auto &lastAdvState = lastAdv->GetAdvState();
 
             if (advState.model != lastAdvState.model) {
-                SPDLOG_WARN(
-                    "TryTrack returns false. Reason: model new='{}' old='{}'",
+                LOG(Warn, "TryTrack returns false. Reason: model new='{}' old='{}'",
                     Helper::ToString(advState.model), Helper::ToString(lastAdvState.model));
                 return false;
             }
@@ -246,24 +245,23 @@ public:
             // can not exceed 1, otherwise it is not our device
             //
             if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
-                SPDLOG_WARN(
-                    "TryTrack returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
+                LOG(Warn, "TryTrack returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                     leftBatteryDiff, rightBatteryDiff, caseBatteryDiff);
                 return false;
             }
 
             int16_t rssiDiff = std::abs(adv.GetRssi() - lastAdv->GetRssi());
             if (rssiDiff > 50) {
-                SPDLOG_WARN("TryTrack returns false. Reason: Current side rssiDiff '{}'", rssiDiff);
+                LOG(Warn, "TryTrack returns false. Reason: Current side rssiDiff '{}'", rssiDiff);
                 return false;
             }
 
-            SPDLOG_WARN("Address changed, but it might still be the same device.");
+            LOG(Warn, "Address changed, but it might still be the same device.");
         }
         if (lastAnotherAdv.has_value()) {
             int16_t rssiDiff = std::abs(adv.GetRssi() - lastAnotherAdv->GetRssi());
             if (rssiDiff > 50) {
-                SPDLOG_WARN("TryTrack returns false. Reason: Another side rssiDiff '{}'", rssiDiff);
+                LOG(Warn, "TryTrack returns false. Reason: Another side rssiDiff '{}'", rssiDiff);
                 return false;
             }
         }
@@ -335,7 +333,7 @@ private:
     void DoLost()
     {
         if (_leftAdv.has_value() || _rightAdv.has_value() || _cachedState.has_value()) {
-            SPDLOG_INFO("Tracker: DoLost called.");
+            LOG(Info, "Tracker: DoLost called.");
             _cbLosted.Invoke();
         }
 
@@ -348,7 +346,7 @@ private:
     {
         auto &adv = side == Side::Left ? _leftAdv : _rightAdv;
         if (adv.has_value()) {
-            SPDLOG_INFO("Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
+            LOG(Info, "Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
             adv.reset();
         }
     }
@@ -387,20 +385,20 @@ public:
     void StartScanner()
     {
         if (!_adWatcher.Start()) {
-            SPDLOG_WARN("Bluetooth AdvWatcher start failed.");
+            LOG(Warn, "Bluetooth AdvWatcher start failed.");
         }
         else {
-            SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
+            LOG(Info, "Bluetooth AdvWatcher start succeeded.");
         }
     }
 
     void StopScanner()
     {
         if (!_adWatcher.Stop()) {
-            SPDLOG_WARN("AsyncScanner::Stop() failed.");
+            LOG(Warn, "AsyncScanner::Stop() failed.");
         }
         else {
-            SPDLOG_INFO("AsyncScanner::Stop() succeeded.");
+            LOG(Info, "AsyncScanner::Stop() succeeded.");
         }
     }
 
@@ -427,13 +425,13 @@ public:
         // Unbind device
         //
         if (address == 0) {
-            SPDLOG_INFO("Unbind device.");
+            LOG(Info, "Unbind device.");
             return;
         }
 
         // Bind to a new device
         //
-        SPDLOG_INFO("Bind a new device.");
+        LOG(Info, "Bind a new device.");
 
         auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
         if (!optDevice.has_value()) {
@@ -477,8 +475,7 @@ private:
             ApdApp->GetInfoWindow()->DisconnectSafety();
         }
 
-        SPDLOG_INFO(
-            "The device we bound is updated. current: {}, new: {}", _deviceConnected,
+        LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
             newDeviceConnected);
 
         GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
@@ -487,7 +484,7 @@ private:
     void OnStateChanged(const std::optional<State> &oldState, const State &newState)
     {
         if (!_deviceConnected) {
-            SPDLOG_INFO("AirPods state changed, but device disconnected.");
+            LOG(Info, "AirPods state changed, but device disconnected.");
             return;
         }
 
@@ -538,8 +535,8 @@ private:
     void OnBothInEar(bool isBothInEar)
     {
         if (!Settings::ConstAccess()->automatic_ear_detection) {
-            SPDLOG_INFO(
-                "automatic_ear_detection: Do nothing because it is disabled. ({})", isBothInEar);
+            LOG(Info, "automatic_ear_detection: Do nothing because it is disabled. ({})",
+                isBothInEar);
             return;
         }
 
@@ -558,7 +555,7 @@ private:
         }
 
         if (!_deviceConnected) {
-            SPDLOG_INFO("AirPods advertisement received, but device disconnected.");
+            LOG(Info, "AirPods advertisement received, but device disconnected.");
             return false;
         }
 
@@ -569,7 +566,7 @@ private:
             Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
         if (!_tracker.TryTrack(adv)) {
-            SPDLOG_WARN("It doesn't seem to be the device we desired.");
+            LOG(Warn, "It doesn't seem to be the device we desired.");
             return false;
         }
         return true;
@@ -581,12 +578,12 @@ private:
         switch (state) {
         case Core::Bluetooth::AdvertisementWatcher::State::Started:
             ApdApp->GetInfoWindow()->AvailableSafety();
-            SPDLOG_INFO("Bluetooth AdvWatcher started.");
+            LOG(Info, "Bluetooth AdvWatcher started.");
             break;
 
         case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
             ApdApp->GetInfoWindow()->UnavailableSafety();
-            SPDLOG_WARN("Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
+            LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
             break;
 
         default:

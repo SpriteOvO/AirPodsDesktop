@@ -148,8 +148,7 @@ inline void Initialize()
             winrt::init_apartment();
         }
         catch (const Exception &ex) {
-            SPDLOG_WARN(
-                "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
+            LOG(Warn, "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
                 winrt::to_string(ex.message()));
         }
     });

@@ -45,14 +45,14 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 
         // Check url
         if (url.indexOf(Config::UrlRepository) != 0) {
-            SPDLOG_WARN("ParseSRResponse: 'html_url' invalid. content: {}", url);
+            LOG(Warn, "ParseSRResponse: 'html_url' invalid. content: {}", url);
             return std::nullopt;
         }
 
         // Check body
         QString changeLog;
         if (body.isEmpty()) {
-            SPDLOG_WARN("ParseSRResponse: 'body' is empty.");
+            LOG(Warn, "ParseSRResponse: 'body' is empty.");
         }
         else {
             // Find change log
@@ -63,7 +63,7 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             }
 
             if (clBeginPos == -1) {
-                SPDLOG_WARN("ParseSRResponse: Find change log block failed. body: {}", body);
+                LOG(Warn, "ParseSRResponse: Find change log block failed. body: {}", body);
             }
             else {
                 changeLog = body.right(body.length() - clBeginPos).trimmed();
@@ -93,20 +93,19 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             auto downloadUrl = asset["browser_download_url"].get<std::string>();
 
             if (fileName.isEmpty() || fileSize == 0 || downloadUrl.empty()) {
-                SPDLOG_WARN("ParseSRResponse: Asset json fields value is empty. Continue.");
+                LOG(Warn, "ParseSRResponse: Asset json fields value is empty. Continue.");
                 continue;
             }
 
             // Check url
             if (downloadUrl.find(Config::UrlRepository) != 0) {
-                SPDLOG_WARN(
+                LOG(Warn,
                     "ParseSRResponse: 'browser_download_url' invalid. Continue. content: '{}'",
                     downloadUrl);
                 continue;
             }
 
-            SPDLOG_INFO(
-                "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
+            LOG(Info, "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
                 fileSize, downloadUrl);
 
 #if !defined APD_OS_WIN
@@ -115,12 +114,12 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             // AirPodsDesktop-x.x.x-win32.exe
             //
             if (QFileInfo{fileName}.suffix() != "exe") {
-                SPDLOG_WARN("ParseSRResponse: Asset suffix is unsupported. Continue.");
+                LOG(Warn, "ParseSRResponse: Asset suffix is unsupported. Continue.");
                 continue;
             }
 
             if (fileName.indexOf(CONFIG_CPACK_SYSTEM_NAME) == -1) {
-                SPDLOG_WARN("ParseSRResponse: Asset platform is mismatched. Continue.");
+                LOG(Warn, "ParseSRResponse: Asset platform is mismatched. Continue.");
                 continue;
             }
 
@@ -128,14 +127,14 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             info.downloadUrl = std::move(downloadUrl);
             info.fileSize = fileSize;
 
-            SPDLOG_INFO("ParseSRResponse: Found matching file.");
+            LOG(Info, "ParseSRResponse: Found matching file.");
             break;
         }
 
         return info;
     }
     catch (const json::exception &ex) {
-        SPDLOG_WARN("ParseSRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
+        LOG(Warn, "ParseSRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
         return std::nullopt;
     }
 }
@@ -147,13 +146,13 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
         const auto &release = root.front();
         auto optInfo = ParseSingleReleaseResponse(release.dump());
         if (!optInfo.has_value()) {
-            SPDLOG_WARN("One release info parsing failed.");
+            LOG(Warn, "One release info parsing failed.");
             return std::nullopt;
         }
         return optInfo.value();
     }
     catch (json::exception &ex) {
-        SPDLOG_WARN("ParseMRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
+        LOG(Warn, "ParseMRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
         return std::nullopt;
     }
 }
@@ -165,7 +164,7 @@ std::optional<ReleaseInfo> FetchLatestStableRelease()
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
     if (response.status_code != 200) {
-        SPDLOG_WARN(
+        LOG(Warn,
             "FetchLatestRelease: GitHub REST API response status code isn't 200. "
             "code: {} text: '{}'",
             response.status_code, response.text);
@@ -183,7 +182,7 @@ std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
     if (response.status_code != 200) {
-        SPDLOG_WARN(
+        LOG(Warn,
             "FetchReleaseByVersion: GitHub REST API response status code isn't 200. "
             "code: {} text: '{}'",
             response.status_code, response.text);
@@ -202,7 +201,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
             cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
         if (response.status_code != 200) {
-            SPDLOG_WARN(
+            LOG(Warn,
                 "FetchRecentReleases: GitHub REST API response status code isn't 200. "
                 "code: {} text: '{}'",
                 response.status_code, response.text);
@@ -219,13 +218,13 @@ bool IsCurrentPreRelease()
 {
     const auto optInfo = Impl::FetchReleaseByVersion(GetLocalVersion());
     if (!optInfo.has_value()) {
-        SPDLOG_WARN("IsCurrentPreRelease: FetchReleaseByVersion() failed.");
+        LOG(Warn, "IsCurrentPreRelease: FetchReleaseByVersion() failed.");
         return false;
     }
 
     const auto result = optInfo->isPreRelease;
 
-    SPDLOG_INFO("IsCurrentPreRelease: returns {}.", result);
+    LOG(Info, "IsCurrentPreRelease: returns {}.", result);
     return result;
 }
 
@@ -255,27 +254,27 @@ QVersionNumber GetLocalVersion()
 std::optional<ReleaseInfo> FetchUpdateRelease()
 {
     const auto isCurrentPreRelease = Impl::IsCurrentPreRelease();
-    SPDLOG_INFO("Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
+    LOG(Info, "Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
 
     const auto optInfo = Impl::FetchLatestRelease(isCurrentPreRelease);
     if (!optInfo.has_value()) {
-        SPDLOG_WARN("Update: FetchLatestRelease() returned nullopt.");
+        LOG(Warn, "Update: FetchLatestRelease() returned nullopt.");
         return std::nullopt;
     }
 
     const auto &latestInfo = optInfo.value();
     const auto needToUpdate = Impl::NeedToUpdate(latestInfo);
 
-    SPDLOG_INFO("Update: Latest version: '{}'", latestInfo.version.toString());
+    LOG(Info, "Update: Latest version: '{}'", latestInfo.version.toString());
     if (!needToUpdate) {
-        SPDLOG_INFO("Update: No need to update.");
+        LOG(Info, "Update: No need to update.");
         return std::nullopt;
     }
 
-    SPDLOG_INFO("Update: Need to update.");
+    LOG(Info, "Update: Need to update.");
 
     if (latestInfo.version.toString() == Core::Settings::GetCurrent().skipped_version) {
-        SPDLOG_INFO("Update: User skipped this new version. Ignore.");
+        LOG(Info, "Update: User skipped this new version. Ignore.");
         return std::nullopt;
     }
     return optInfo;
@@ -288,20 +287,20 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
     APD_ASSERT(Impl::NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
-        SPDLOG_WARN("DownloadInstall: Cannot auto update.");
+        LOG(Warn, "DownloadInstall: Cannot auto update.");
         return false;
     }
 
     QTemporaryDir tempPath;
     if (!tempPath.isValid()) {
         auto errorString = tempPath.errorString();
-        SPDLOG_WARN("DownloadInstall: QTemporaryDir construct failed. error: '{}'", errorString);
+        LOG(Warn, "DownloadInstall: QTemporaryDir construct failed. error: '{}'", errorString);
         return false;
     }
 
     const QString filePath = QFileInfo{tempPath.filePath(info.fileName)}.absoluteFilePath();
 
-    SPDLOG_INFO("DownloadInstall: Ready to download to '{}'.", filePath);
+    LOG(Info, "DownloadInstall: Ready to download to '{}'.", filePath);
 
     // Begin download
 
@@ -316,15 +315,14 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         }});
 
     if (response.status_code != 200) {
-        SPDLOG_WARN(
+        LOG(Warn,
             "DownloadInstall: Download response status code is not 200. code: {}, message: '{}'",
             response.status_code, response.error.message);
         return false;
     }
 
     if (response.downloaded_bytes != info.fileSize) {
-        SPDLOG_WARN(
-            "Download: Download file size mismatch. Downloaded: {}, expect: {}",
+        LOG(Warn, "Download: Download file size mismatch. Downloaded: {}, expect: {}",
             response.downloaded_bytes, info.fileSize);
         return false;
     }
@@ -334,12 +332,11 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
 
     // Download succeeded
     //
-    SPDLOG_INFO(
-        "Download: Downloaded succeeded. filePath: '{}', size: {}", filePath,
+    LOG(Info, "Download: Downloaded succeeded. filePath: '{}', size: {}", filePath,
         response.downloaded_bytes);
 
     if (!QProcess::startDetached(filePath)) {
-        SPDLOG_WARN("DownloadInstall: Start installer failed.");
+        LOG(Warn, "DownloadInstall: Start installer failed.");
         return false;
     }
 

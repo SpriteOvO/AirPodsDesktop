@@ -81,7 +81,7 @@ private:
         try {
             const auto &optInfo = GetInfo();
             if (!optInfo.has_value()) {
-                SPDLOG_WARN("optInfo.has_value() false.");
+                LOG(Warn, "optInfo.has_value() false.");
                 return defaultValue;
             }
 
@@ -89,7 +89,7 @@ private:
             return winrt::unbox_value_or<T>(boxed, defaultValue);
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN("GetProperty() failed. {}", Helper::ToString(ex));
+            LOG(Warn, "GetProperty() failed. {}", Helper::ToString(ex));
         }
         return defaultValue;
     }

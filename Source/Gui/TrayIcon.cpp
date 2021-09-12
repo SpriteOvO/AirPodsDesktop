@@ -164,7 +164,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
                 if (currentHeight == desiredSize ||
                     lastHeight < desiredSize && currentHeight > desiredSize) [[unlikely]]
                 {
-                    SPDLOG_INFO(
+                    LOG(Info,
                         "Found a suitable font for the tray icon. "
                         "Family: '{}', desiredSize: '{}', fontHeight: '{}', fontSize: '{}'",
                         family, desiredSize, currentHeight, i);
@@ -173,7 +173,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
                 lastHeight = currentHeight;
             }
 
-            SPDLOG_WARN(
+            LOG(Warn,
                 "Cannot find a suitable font for the tray icon. Family: '{}', desiredSize: "
                 "'{}'",
                 family, desiredSize);

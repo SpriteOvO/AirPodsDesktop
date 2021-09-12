@@ -307,8 +307,7 @@ public:
             _currentSession = GetCurrentSession();
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN(
-                "UniversalSystemSession get current session failed. Code: {:#x}, Message: {}",
+            LOG(Warn, "UniversalSystemSession get current session failed. Code: {:#x}, Message: {}",
                 ex.code(), winrt::to_string(ex.message()));
             return false;
         }
@@ -334,7 +333,7 @@ public:
             return true;
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN("_currentSession->TryPlayAsync() failed. {}", Helper::ToString(ex));
+            LOG(Warn, "_currentSession->TryPlayAsync() failed. {}", Helper::ToString(ex));
             return false;
         }
     }
@@ -346,7 +345,7 @@ public:
             return true;
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN("_currentSession->TryPauseAsync() failed. {}", Helper::ToString(ex));
+            LOG(Warn, "_currentSession->TryPauseAsync() failed. {}", Helper::ToString(ex));
             return false;
         }
     }
@@ -394,8 +393,7 @@ private:
                    GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN(
-                "UniversalSystemSession Get playback status failed. Code: {:#x}, Message: {}",
+            LOG(Warn, "UniversalSystemSession Get playback status failed. Code: {:#x}, Message: {}",
                 ex.code(), winrt::to_string(ex.message()));
             return false;
         }
@@ -562,7 +560,7 @@ VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
     SPDLOG_TRACE("VolumeLevelLimiter::Callback::OnNotify() called.");
 
     if (pNotify == nullptr) {
-        SPDLOG_WARN("VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
+        LOG(Warn, "VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
         return E_INVALIDARG;
     }
 
@@ -627,12 +625,11 @@ void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
     _maxVolumeLevel = std::move(volumeLevel);
 
     if (!_inited) {
-        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        LOG(Warn, "VolumeLevelLimiter is uninitiated or the initialization is failed.");
         return;
     }
 
-    SPDLOG_INFO(
-        "VolumeLevelLimiter::SetMaxValue() value: {}",
+    LOG(Info, "VolumeLevelLimiter::SetMaxValue() value: {}",
         _maxVolumeLevel.has_value() ? std::to_string(_maxVolumeLevel.value()) : "nullopt");
 
     if (_maxVolumeLevel.has_value()) {
@@ -650,7 +647,7 @@ void VolumeLevelLimiter::SetMaxValue(std::optional<uint32_t> volumeLevel)
 std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
 {
     if (!_inited) {
-        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        LOG(Warn, "VolumeLevelLimiter is uninitiated or the initialization is failed.");
         return std::nullopt;
     }
 
@@ -671,7 +668,7 @@ std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
 bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
 {
     if (!_inited) {
-        SPDLOG_WARN("VolumeLevelLimiter is uninitiated or the initialization is failed.");
+        LOG(Warn, "VolumeLevelLimiter is uninitiated or the initialization is failed.");
         return false;
     }
 
@@ -688,14 +685,14 @@ bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
 
 bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
 {
-    SPDLOG_INFO("VolumeLevelLimiter initializing.");
+    LOG(Info, "VolumeLevelLimiter initializing.");
 
     OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
     HRESULT result = CoCreateInstance(
         __uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, deviceEnumerator.GetIID(),
         (void **)deviceEnumerator.ReleaseAndAddressOf());
     if (FAILED(result)) {
-        SPDLOG_WARN("Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}", result);
+        LOG(Warn, "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}", result);
         return false;
     }
 
@@ -703,14 +700,14 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
     result = deviceEnumerator->EnumAudioEndpoints(
         eRender, DEVICE_STATE_ACTIVE, collection.ReleaseAndAddressOf());
     if (FAILED(result)) {
-        SPDLOG_WARN("'EnumAudioEndpoints' failed. HRESULT: {:#x}", result);
+        LOG(Warn, "'EnumAudioEndpoints' failed. HRESULT: {:#x}", result);
         return false;
     }
 
     uint32_t count = 0;
     result = collection->GetCount(&count);
     if (FAILED(result)) {
-        SPDLOG_WARN("'IMMDeviceCollection::GetCount' failed. HRESULT: {:#x}", result);
+        LOG(Warn, "'IMMDeviceCollection::GetCount' failed. HRESULT: {:#x}", result);
         return false;
     }
 
@@ -720,31 +717,31 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
         OS::Windows::Com::UniquePtr<IMMDevice> device;
         result = collection->Item(i, device.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_WARN("'IMMDeviceCollection::Item' failed. HRESULT: {:#x}", result);
+            LOG(Warn, "'IMMDeviceCollection::Item' failed. HRESULT: {:#x}", result);
             continue;
         }
 
         OS::Windows::Com::UniquePtr<IPropertyStore> property;
         result = device->OpenPropertyStore(STGM_READ, property.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_WARN("'IMMDevice::OpenPropertyStore' failed. HRESULT: {:#x}", result);
+            LOG(Warn, "'IMMDevice::OpenPropertyStore' failed. HRESULT: {:#x}", result);
             continue;
         }
 
         PROPVARIANT variant;
         result = property->GetValue(PKEY_DeviceInterface_FriendlyName, &variant);
         if (FAILED(result)) {
-            SPDLOG_WARN(
-                "Get property PKEY_DeviceInterface_FriendlyName failed. HRESULT: {:#x}", result);
+            LOG(Warn, "Get property PKEY_DeviceInterface_FriendlyName failed. HRESULT: {:#x}",
+                result);
             continue;
         }
 
         if (variant.pwszVal == nullptr) {
-            SPDLOG_WARN("variant.pwszVal == nullptr");
+            LOG(Warn, "variant.pwszVal == nullptr");
         }
         else {
             std::wstring friendlyName{variant.pwszVal};
-            SPDLOG_INFO(L"IMMDevice FriendlyName: {}", friendlyName);
+            LOG(Info, L"IMMDevice FriendlyName: {}", friendlyName);
             if (friendlyName == QString::fromStdString(deviceName).toStdWString()) {
                 audioEndpoint = std::move(device);
             }
@@ -758,14 +755,14 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
     }
 
     if (!audioEndpoint) {
-        SPDLOG_WARN("Cannot find the AirPods audio endpoint IMMDevice.");
+        LOG(Warn, "Cannot find the AirPods audio endpoint IMMDevice.");
         return false;
     }
 
     result = deviceEnumerator->GetDefaultAudioEndpoint(
         eRender, eConsole, audioEndpoint.ReleaseAndAddressOf());
     if (FAILED(result)) {
-        SPDLOG_WARN("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+        LOG(Warn, "'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
         return false;
     }
 
@@ -773,18 +770,18 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
         _endpointVolume.GetIID(), CLSCTX_ALL, nullptr,
         (void **)_endpointVolume.ReleaseAndAddressOf());
     if (FAILED(result)) {
-        SPDLOG_WARN("'IMMDevice::Activate' IAudioEndpointVolume failed. HRESULT: {:#x}", result);
+        LOG(Warn, "'IMMDevice::Activate' IAudioEndpointVolume failed. HRESULT: {:#x}", result);
         return false;
     }
 
     result = _endpointVolume->RegisterControlChangeNotify(&_callback);
     if (FAILED(result)) {
-        SPDLOG_WARN(
-            "IAudioEndpointVolume::RegisterControlChangeNotify failed. HRESULT: {:#x}", result);
+        LOG(Warn, "IAudioEndpointVolume::RegisterControlChangeNotify failed. HRESULT: {:#x}",
+            result);
         return false;
     }
 
-    SPDLOG_INFO("VolumeLevelLimiter initialization succeeded.");
+    LOG(Info, "VolumeLevelLimiter initialization succeeded.");
     return true;
 }
 } // namespace Details
@@ -802,7 +799,7 @@ void Controller::Play()
 
     for (const auto &program : _pausedPrograms) {
         if (!program->Play()) {
-            SPDLOG_WARN(L"Failed to play media. Program name: {}", program->GetProgramName());
+            LOG(Warn, L"Failed to play media. Program name: {}", program->GetProgramName());
         }
         else {
             SPDLOG_TRACE(L"Media played. Program name: {}", program->GetProgramName());
@@ -821,7 +818,7 @@ void Controller::Pause()
     for (auto &&program : programs) {
         if (program->IsPlaying()) {
             if (!program->Pause()) {
-                SPDLOG_WARN(L"Failed to pause media. Program name: {}", program->GetProgramName());
+                LOG(Warn, L"Failed to pause media. Program name: {}", program->GetProgramName());
             }
             else {
                 SPDLOG_TRACE(L"Media paused. Program name: {}", program->GetProgramName());

@@ -41,7 +41,7 @@ std::string_view LogSensitiveData(const T &value)
 
 void OnApply_auto_run(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_auto_run: {}", newFields.auto_run);
+    LOG(Info, "OnApply_auto_run: {}", newFields.auto_run);
 
 #if !defined APD_OS_WIN
     #error "Need to port."
@@ -62,14 +62,14 @@ void OnApply_auto_run(const Fields &newFields)
 
 void OnApply_low_audio_latency(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_low_audio_latency: {}", newFields.low_audio_latency);
+    LOG(Info, "OnApply_low_audio_latency: {}", newFields.low_audio_latency);
 
     LowAudioLatency::Control(newFields.low_audio_latency);
 }
 
 void OnApply_reduce_loud_sounds(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_reduce_loud_sounds: {}", newFields.reduce_loud_sounds);
+    LOG(Info, "OnApply_reduce_loud_sounds: {}", newFields.reduce_loud_sounds);
 
     GlobalMedia::LimitVolume(
         newFields.reduce_loud_sounds ? std::optional<uint32_t>{newFields.loud_volume_level}
@@ -78,7 +78,7 @@ void OnApply_reduce_loud_sounds(const Fields &newFields)
 
 void OnApply_loud_volume_level(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_loud_volume_level: {}", newFields.loud_volume_level);
+    LOG(Info, "OnApply_loud_volume_level: {}", newFields.loud_volume_level);
 
     GlobalMedia::LimitVolume(
         newFields.reduce_loud_sounds ? std::optional<uint32_t>{newFields.loud_volume_level}
@@ -87,7 +87,7 @@ void OnApply_loud_volume_level(const Fields &newFields)
 
 void OnApply_device_address(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
+    LOG(Info, "OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
 
     if (newFields.device_address == 0) {
         ApdApp->GetInfoWindow()->UnbindSafety();
@@ -101,7 +101,7 @@ void OnApply_device_address(const Fields &newFields)
 
 void OnApply_tray_icon_battery(const Fields &newFields)
 {
-    SPDLOG_INFO("OnApply_tray_icon_battery: {}", newFields.tray_icon_battery);
+    LOG(Info, "OnApply_tray_icon_battery: {}", newFields.tray_icon_battery);
 
     ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafety(newFields.tray_icon_battery);
 }
@@ -211,18 +211,18 @@ public:
 
     LoadResult Load()
     {
-        const auto &loadKey = [&](const std::string_view &keyName, auto &value, bool restrict = false) {
+        const auto &loadKey = [&](const std::string_view &keyName, auto &value,
+                                  bool restrict = false) {
             using ValueType = std::decay_t<decltype(value)>;
 
             QString qstrKeyName = QString::fromStdString(std::string{keyName});
             if (!_settings.contains(qstrKeyName)) {
                 if (!restrict) {
-                    SPDLOG_WARN(
-                        "The setting key '{}' not found. Current value '{}'.", keyName, value);
+                    LOG(Warn, "The setting key '{}' not found. Current value '{}'.", keyName,
+                        value);
                 }
                 else {
-                    SPDLOG_WARN(
-                        "The setting key '{}' not found. Current value '{}'.", keyName,
+                    LOG(Warn, "The setting key '{}' not found. Current value '{}'.", keyName,
                         LogSensitiveData(value));
                 }
                 return false;
@@ -230,17 +230,17 @@ public:
 
             QVariant var = _settings.value(qstrKeyName);
             if (!var.canConvert<ValueType>() || !var.convert(qMetaTypeId<ValueType>())) {
-                SPDLOG_WARN("The value of the key '{}' cannot be convert.", keyName);
+                LOG(Warn, "The value of the key '{}' cannot be convert.", keyName);
                 return false;
             }
 
             value = var.value<ValueType>();
             if (!restrict) {
-                SPDLOG_INFO("Load key succeeded. Key: '{}', Value: '{}'", keyName, value);
+                LOG(Info, "Load key succeeded. Key: '{}', Value: '{}'", keyName, value);
             }
             else {
-                SPDLOG_INFO(
-                    "Load key succeeded. Key: '{}', Value: '{}'", keyName, LogSensitiveData(value));
+                LOG(Info, "Load key succeeded. Key: '{}', Value: '{}'", keyName,
+                    LogSensitiveData(value));
             }
             return true;
         };
@@ -249,14 +249,13 @@ public:
 
         std::decay_t<decltype(kFieldsAbiVersion)> abi_version = 0;
         if (!loadKey("abi_version", abi_version)) {
-            SPDLOG_WARN("No abi_version key. Load default settings.");
+            LOG(Warn, "No abi_version key. Load default settings.");
             _fields = Fields{};
             return LoadResult::NoAbiField;
         }
         else {
             if (abi_version != kFieldsAbiVersion) {
-                SPDLOG_WARN(
-                    "The settings abi version is incompatible. Local: '{}', Expect: '{}'",
+                LOG(Warn, "The settings abi version is incompatible. Local: '{}', Expect: '{}'",
                     abi_version, kFieldsAbiVersion);
                 return LoadResult::AbiIncompatible;
             }
@@ -314,11 +313,11 @@ private:
             _settings.setValue(qstrKeyName, value);
 
             if (!restrict) {
-                SPDLOG_INFO("Save key succeeded. Key: '{}', Value: {}", keyName, value);
+                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName, value);
             }
             else {
-                SPDLOG_INFO(
-                    "Save key succeeded. Key: '{}', Value: {}", keyName, LogSensitiveData(value));
+                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName,
+                    LogSensitiveData(value));
             }
         };
 
@@ -331,7 +330,7 @@ private:
 
     void ApplyWithoutLock()
     {
-        SPDLOG_INFO("ApplyWithoutLock");
+        LOG(Info, "ApplyWithoutLock");
 
         pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
             fieldMeta.OnApply().Invoke(std::cref(_fields));
@@ -340,11 +339,11 @@ private:
 
     void ApplyChangedFieldsOnlyWithoutLock(const Fields &oldFields)
     {
-        SPDLOG_INFO("ApplyChangedFieldsOnlyWithoutLock");
+        LOG(Info, "ApplyChangedFieldsOnlyWithoutLock");
 
         pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
             if (fieldMeta.GetValue(oldFields) != fieldMeta.GetValue(_fields)) {
-                SPDLOG_INFO("Changed field: {}", fieldMeta.GetName());
+                LOG(Info, "Changed field: {}", fieldMeta.GetName());
                 fieldMeta.OnApply().Invoke(std::cref(_fields));
             }
         });

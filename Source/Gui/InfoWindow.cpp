@@ -180,7 +180,7 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
 
 void InfoWindow::UpdateState(const Core::AirPods::State &state)
 {
-    SPDLOG_INFO("InfoWindow::UpdateState");
+    LOG(Info, "InfoWindow::UpdateState");
     _lastState = State::Updating;
 
     // _ui.deviceLabel->setText(Helper::ToString(state.model));
@@ -220,7 +220,7 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state)
 
 void InfoWindow::Available()
 {
-    SPDLOG_INFO("InfoWindow::Available");
+    LOG(Info, "InfoWindow::Available");
     if (_lastState != State::Unavailable) {
         return;
     }
@@ -231,7 +231,7 @@ void InfoWindow::Available()
 
 void InfoWindow::Unavailable()
 {
-    SPDLOG_INFO("InfoWindow::Unavailable");
+    LOG(Info, "InfoWindow::Unavailable");
     _lastState = State::Unavailable;
 
     _ui.deviceLabel->setText(tr("Unavailable"));
@@ -249,7 +249,7 @@ void InfoWindow::Unavailable()
 
 void InfoWindow::Disconnect()
 {
-    SPDLOG_INFO("InfoWindow::Disconnect");
+    LOG(Info, "InfoWindow::Disconnect");
     if (_lastState == State::Unbind) {
         return;
     }
@@ -270,7 +270,7 @@ void InfoWindow::Disconnect()
 
 void InfoWindow::Bind()
 {
-    SPDLOG_INFO("InfoWindow::Bind");
+    LOG(Info, "InfoWindow::Bind");
     _lastState = State::Bind;
 
     Disconnect();
@@ -278,7 +278,7 @@ void InfoWindow::Bind()
 
 void InfoWindow::Unbind()
 {
-    SPDLOG_INFO("InfoWindow::Unbind");
+    LOG(Info, "InfoWindow::Unbind");
     _lastState = State::Unbind;
 
     _ui.deviceLabel->setText(tr("Waiting for Binding"));
@@ -305,7 +305,7 @@ void InfoWindow::CheckUpdate()
     static std::optional<std::future<OptReleaseInfo>> optFuture;
 
     if (!optFuture.has_value()) {
-        SPDLOG_INFO("CheckUpdate: Prepare promise and future. Fetch release info async.");
+        LOG(Info, "CheckUpdate: Prepare promise and future. Fetch release info async.");
         pmsRelease = decltype(pmsRelease){};
         optFuture = pmsRelease.get_future();
         std::thread{[]() { pmsRelease.set_value(Core::Update::FetchUpdateRelease()); }}.detach();
@@ -321,7 +321,7 @@ void InfoWindow::CheckUpdate()
 
     auto optRelease = optFuture->get();
     optFuture.reset();
-    SPDLOG_INFO("CheckUpdate: Fetch release info successfully.");
+    LOG(Info, "CheckUpdate: Fetch release info successfully.");
 
     do {
         if (!optRelease.has_value()) {
@@ -354,10 +354,10 @@ void InfoWindow::CheckUpdate()
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
 
         if (button == QMessageBox::Yes) {
-            SPDLOG_INFO("CheckUpdate: User clicked Yes.");
+            LOG(Info, "CheckUpdate: User clicked Yes.");
 
             if (!releaseInfo.CanAutoUpdate()) {
-                SPDLOG_INFO("CheckUpdate: Popup latest url and quit.");
+                LOG(Info, "CheckUpdate: Popup latest url and quit.");
                 QDesktopServices::openUrl(QUrl{releaseInfo.url});
                 ApdApplication::QuitSafety();
                 break;
@@ -366,12 +366,12 @@ void InfoWindow::CheckUpdate()
             Gui::DownloadWindow{std::move(releaseInfo)}.exec();
         }
         else if (button == QMessageBox::Ignore) {
-            SPDLOG_INFO("CheckUpdate: User clicked Ignore.");
+            LOG(Info, "CheckUpdate: User clicked Ignore.");
 
             Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
         }
         else {
-            SPDLOG_INFO("CheckUpdate: User clicked No.");
+            LOG(Info, "CheckUpdate: User clicked No.");
         }
 
     } while (false);
@@ -452,12 +452,12 @@ void InfoWindow::BindDevice()
     // TODO: Move non-UI code to `Core::AirPods::Manager`
     //
 
-    SPDLOG_INFO("BindDevice");
+    LOG(Info, "BindDevice");
 
     std::vector<Core::Bluetooth::Device> devices =
         Core::Bluetooth::DeviceManager::GetDevicesByState(Core::Bluetooth::DeviceState::Paired);
 
-    SPDLOG_INFO("Devices count: {}", devices.size());
+    LOG(Info, "Devices count: {}", devices.size());
 
     devices.erase(
         std::remove_if(
@@ -478,7 +478,7 @@ void InfoWindow::BindDevice()
             }),
         devices.end());
 
-    SPDLOG_INFO("AirPods devices count: {} (filtered)", devices.size());
+    LOG(Info, "AirPods devices count: {} (filtered)", devices.size());
 
     if (devices.empty()) {
         QMessageBox::warning(
@@ -504,12 +504,12 @@ void InfoWindow::BindDevice()
 
         SelectWindow selector{tr("Please select your AirPods device below."), deviceNames, this};
         if (selector.exec() == -1) {
-            SPDLOG_WARN("selector.exec() == -1");
+            LOG(Warn, "selector.exec() == -1");
             return;
         }
 
         if (!selector.HasResult()) {
-            SPDLOG_INFO("No result for selector.");
+            LOG(Info, "No result for selector.");
             return;
         }
 
@@ -519,9 +519,8 @@ void InfoWindow::BindDevice()
 
     const auto &selectedDevice = devices.at(selectedIndex);
 
-    SPDLOG_INFO(
-        "Selected device index: '{}', device name: '{}'. Bound to this device.", selectedIndex,
-        selectedDevice.GetDisplayName());
+    LOG(Info, "Selected device index: '{}', device name: '{}'. Bound to this device.",
+        selectedIndex, selectedDevice.GetDisplayName());
 
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 }
@@ -556,7 +555,7 @@ void InfoWindow::OnButtonClicked()
 {
     switch (_buttonAction) {
     case ButtonAction::Bind:
-        SPDLOG_INFO("User clicked 'Bind'");
+        LOG(Info, "User clicked 'Bind'");
         BindDevice();
         break;
 

@@ -157,7 +157,7 @@ const std::optional<DeviceInformation> &Device::GetInfo() const
             // clang-format on
         }
         catch (const OS::Windows::Winrt::Exception &ex) {
-            SPDLOG_WARN("DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
+            LOG(Warn, "DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
         }
     }}.join();
 
@@ -225,7 +225,7 @@ public:
                     result.emplace_back(std::move(device));
                 }
                 catch (const OS::Windows::Winrt::Exception &ex) {
-                    SPDLOG_WARN("BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
+                    LOG(Warn, "BluetoothDevice::FromIdAsync() failed. {}", Helper::ToString(ex));
                 }
             }
 
@@ -293,12 +293,12 @@ bool AdvertisementWatcher::Start()
 
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Start();
-        SPDLOG_INFO("Bluetooth AdvWatcher start succeeded.");
+        LOG(Info, "Bluetooth AdvWatcher start succeeded.");
         CbStateChanged().Invoke(State::Started, std::nullopt);
         return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
-        SPDLOG_WARN("Start adv watcher exception: {}", Helper::ToString(ex));
+        LOG(Warn, "Start adv watcher exception: {}", Helper::ToString(ex));
         return false;
     }
 }
@@ -311,11 +311,11 @@ bool AdvertisementWatcher::Stop()
 
         std::lock_guard<std::mutex> lock{_mutex};
         _bleWatcher.Stop();
-        SPDLOG_INFO("Bluetooth AdvWatcher stop succeeded.");
+        LOG(Info, "Bluetooth AdvWatcher stop succeeded.");
         return true;
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
-        SPDLOG_WARN("Stop adv watcher exception: {}", Helper::ToString(ex));
+        LOG(Warn, "Stop adv watcher exception: {}", Helper::ToString(ex));
         return false;
     }
 }

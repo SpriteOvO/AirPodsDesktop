@@ -66,7 +66,7 @@ void DownloadWindow::UpdateProgress(int downloaded, int total)
 
 void DownloadWindow::OnFailed()
 {
-    SPDLOG_WARN("DownloadInstall failed. Popup latest url and quit.");
+    LOG(Warn, "DownloadInstall failed. Popup latest url and quit.");
 
     QMessageBox::warning(
         this, Config::ProgramName,
@@ -83,7 +83,7 @@ void DownloadWindow::DownloadThread()
         UpdateProgressSafety(downloaded, total);
 
         if (_destroy) {
-            SPDLOG_WARN("DownloadWindow destructor requests destroy.");
+            LOG(Warn, "DownloadWindow destructor requests destroy.");
             return false;
         }
         return true;
