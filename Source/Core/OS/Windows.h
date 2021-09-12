@@ -29,8 +29,8 @@
 
 #include <QDir>
 #include <QString>
-#include <spdlog/spdlog.h>
 
+#include "../../Logger.h"
 #include "../../Assert.h"
 
 #pragma comment(lib, "WindowsApp.lib")

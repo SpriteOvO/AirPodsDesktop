@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QString>
 
+#include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
 namespace Logger {

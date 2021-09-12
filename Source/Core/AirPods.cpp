@@ -24,12 +24,11 @@
 #include <QVector>
 #include <QMetaObject>
 
-#include <spdlog/spdlog.h>
-
 #include "Bluetooth.h"
 #include "AppleCP.h"
 #include "GlobalMedia.h"
 #include "../Helper.h"
+#include "../Logger.h"
 #include "../Assert.h"
 #include "../Application.h"
 #include "../Gui/InfoWindow.h"

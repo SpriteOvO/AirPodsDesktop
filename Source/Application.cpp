@@ -19,7 +19,6 @@
 #include "Application.h"
 
 #include <QMessageBox>
-#include <spdlog/spdlog.h>
 
 #include <Config.h>
 #include "Logger.h"

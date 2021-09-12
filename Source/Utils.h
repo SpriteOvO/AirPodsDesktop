@@ -32,8 +32,6 @@
 #include <QPainterPath>
 #include <QStandardPaths>
 
-#include <spdlog/spdlog.h>
-
 #include "Helper.h"
 #include "Logger.h"
 #include "ErrorHandle.h"

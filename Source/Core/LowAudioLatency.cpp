@@ -20,8 +20,8 @@
 
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
-#include <spdlog/spdlog.h>
 
+#include "../Logger.h"
 #include "../Application.h"
 
 namespace Core::LowAudioLatency {

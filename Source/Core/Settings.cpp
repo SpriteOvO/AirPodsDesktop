@@ -20,7 +20,6 @@
 
 #include <mutex>
 #include <QDir>
-#include <spdlog/spdlog.h>
 #include <boost/pfr.hpp>
 
 #include <Config.h>

@@ -23,7 +23,6 @@
 #include <QProcess>
 #include <QTemporaryDir>
 #include <cpr/cpr.h>
-#include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
 
 #include <Config.h>
