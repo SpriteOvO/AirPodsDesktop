@@ -92,6 +92,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 
     Update(Core::Settings::GetCurrent(), false);
 
+    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(_ui.hsVolumeLevel->value()));
+
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
         &SettingsWindow::RestoreDefaults);
@@ -236,7 +238,7 @@ void SettingsWindow::On_hsVolumeLevel_valueChanged(int value)
         }
     }
 
-    _ui.lbVolumeLevel->setText(tr("Volume Level %1").arg(value));
+    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(value));
     Core::Settings::ModifiableAccess()->loud_volume_level = value;
 }
 
