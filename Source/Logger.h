@@ -40,28 +40,31 @@ enum class Level : uint32_t {
 template <Level level, class... Args>
 inline void Log(const spdlog::source_loc &srcloc, Args &&...args)
 {
-    auto logger = spdlog::default_logger_raw();
-    if constexpr (level == Level::Trace) {
-        logger->log(srcloc, spdlog::level::trace, std::forward<Args>(args)...);
-    }
-    else if constexpr (level == Level::Debug) {
-        logger->log(srcloc, spdlog::level::debug, std::forward<Args>(args)...);
-    }
-    else if constexpr (level == Level::Info) {
-        logger->log(srcloc, spdlog::level::info, std::forward<Args>(args)...);
-    }
-    else if constexpr (level == Level::Warn) {
-        logger->log(srcloc, spdlog::level::warn, std::forward<Args>(args)...);
-    }
-    else if constexpr (level == Level::Error) {
-        logger->log(srcloc, spdlog::level::err, std::forward<Args>(args)...);
-    }
-    else if constexpr (level == Level::Critical) {
-        logger->log(srcloc, spdlog::level::critical, std::forward<Args>(args)...);
-    }
-    else {
-        static_assert(false);
-    }
+    constexpr auto spdlogLevel = []() {
+        if constexpr (level == Level::Trace) {
+            return spdlog::level::trace;
+        }
+        else if constexpr (level == Level::Debug) {
+            return spdlog::level::debug;
+        }
+        else if constexpr (level == Level::Info) {
+            return spdlog::level::info;
+        }
+        else if constexpr (level == Level::Warn) {
+            return spdlog::level::warn;
+        }
+        else if constexpr (level == Level::Error) {
+            return spdlog::level::err;
+        }
+        else if constexpr (level == Level::Critical) {
+            return spdlog::level::critical;
+        }
+        else {
+            static_assert(false);
+        }
+    }();
+
+    spdlog::default_logger_raw()->log(srcloc, spdlogLevel, std::forward<Args>(args)...);
 }
 
 } // namespace Details
