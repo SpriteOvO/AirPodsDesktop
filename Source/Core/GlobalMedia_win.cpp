@@ -786,8 +786,6 @@ bool VolumeLevelLimiter::Initialize(const std::string &deviceName)
 }
 } // namespace Details
 
-Controller::Controller() {}
-
 void Controller::Play()
 {
     std::lock_guard<std::mutex> lock{_mutex};

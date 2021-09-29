@@ -70,6 +70,22 @@ protected:
 
 //////////////////////////////////////////////////
 
+template <class D>
+class Singleton : Helper::NonCopyable
+{
+public:
+    static D &GetInstance()
+    {
+        static D i;
+        return i;
+    }
+
+protected:
+    Singleton() = default;
+};
+
+//////////////////////////////////////////////////
+
 namespace Impl {
 template <class T>
 class MemberPointerType

@@ -112,11 +112,13 @@ private:
 };
 } // namespace Details
 
-class Controller final : public Details::ControllerAbstract<Controller>
+class Controller final : public Helper::Singleton<Controller>, public Details::ControllerAbstract
 {
-public:
-    Controller();
+protected:
+    Controller() = default;
+    friend Helper::Singleton<Controller>;
 
+public:
     void Play() override;
     void Pause() override;
 

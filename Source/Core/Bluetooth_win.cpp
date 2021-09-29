@@ -179,15 +179,14 @@ void Device::OnNameChanged(const BluetoothDevice &sender)
 //
 
 namespace Details {
-class DeviceManager final : Details::DeviceManagerAbstract<Device>
+class DeviceManager final : public Helper::Singleton<DeviceManager>,
+                            Details::DeviceManagerAbstract<Device>
 {
-public:
-    static DeviceManager &GetInstance()
-    {
-        static DeviceManager i;
-        return i;
-    }
+protected:
+    DeviceManager() = default;
+    friend Helper::Singleton<DeviceManager>;
 
+public:
     std::vector<Device> GetDevicesByState(DeviceState state) const override
     {
         std::vector<Device> result;

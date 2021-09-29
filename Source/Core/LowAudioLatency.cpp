@@ -31,12 +31,6 @@ class Controller : public QObject
     Q_OBJECT
 
 public:
-    static auto &GetInstance()
-    {
-        static Controller i;
-        return i;
-    }
-
     Controller(QObject *parent = nullptr) : QObject{parent}
     {
         connect(
@@ -77,7 +71,8 @@ private:
 
 void Control(bool enable)
 {
-    Controller::GetInstance().ControlSafety(enable);
+    static auto controller = std::make_unique<Controller>();
+    controller->ControlSafety(enable);
 }
 } // namespace Core::LowAudioLatency
 

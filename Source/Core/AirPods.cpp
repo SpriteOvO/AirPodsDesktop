@@ -352,15 +352,9 @@ private:
     }
 };
 
-class Manager : Helper::NonCopyable
+class Manager : public Helper::Singleton<Manager>
 {
-public:
-    static Manager &GetInstance()
-    {
-        static Manager i;
-        return i;
-    }
-
+protected:
     Manager()
     {
         _tracker.CbStateChanged() += [this](auto &&...args) {
@@ -381,7 +375,9 @@ public:
             OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
         };
     }
+    friend Helper::Singleton<Manager>;
 
+public:
     void StartScanner()
     {
         if (!_adWatcher.Start()) {

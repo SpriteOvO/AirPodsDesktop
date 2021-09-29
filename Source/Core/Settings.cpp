@@ -193,15 +193,13 @@ private:
 
 } // namespace Impl
 
-class Manager
+class Manager : public Helper::Singleton<Manager>
 {
-public:
-    static Manager &GetInstance()
-    {
-        static Manager i;
-        return i;
-    }
+protected:
+    Manager() = default;
+    friend Helper::Singleton<Manager>;
 
+public:
     LoadResult Load()
     {
         const auto &loadKey = [&](const std::string_view &keyName, auto &value,
