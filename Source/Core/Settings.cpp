@@ -191,13 +191,6 @@ private:
     bool _isSensitive{false};
 };
 
-struct FieldsMeta {
-#define DECLARE_META_FIELD(type, name, dft, ...)                                                   \
-    MetaField<type Fields::*> name{TO_STRING(name), &Fields::name, __VA_ARGS__};
-    SETTINGS_FIELDS(DECLARE_META_FIELD)
-#undef DECLARE_FIELD
-};
-
 } // namespace Impl
 
 class Manager
@@ -260,7 +253,7 @@ public:
                 return LoadResult::AbiIncompatible;
             }
 
-            pfr::for_each_field(Impl::FieldsMeta{}, [&](auto &field) {
+            pfr::for_each_field(_fieldsMeta, [&](auto &field) {
                 loadKey(field.GetName(), field.GetValue(_fields), field.IsSensitive());
             });
             return LoadResult::Successful;
@@ -301,6 +294,13 @@ public:
     }
 
 private:
+    struct {
+#define DECLARE_META_FIELD(type, name, dft, ...)                                                   \
+    Impl::MetaField<type Fields::*> name{TO_STRING(name), &Fields::name, __VA_ARGS__};
+        SETTINGS_FIELDS(DECLARE_META_FIELD)
+#undef DECLARE_FIELD
+    } _fieldsMeta;
+
     std::recursive_mutex _mutex;
     Fields _fields;
     QSettings _settings{QSettings::UserScope, Config::ProgramName, Config::ProgramName};
@@ -323,7 +323,7 @@ private:
 
         saveKey("abi_version", kFieldsAbiVersion);
 
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+        pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
             saveKey(fieldMeta.GetName(), fieldMeta.GetValue(_fields), fieldMeta.IsSensitive());
         });
     }
@@ -332,7 +332,7 @@ private:
     {
         LOG(Info, "ApplyWithoutLock");
 
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+        pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
             fieldMeta.OnApply().Invoke(std::cref(_fields));
         });
     }
@@ -341,7 +341,7 @@ private:
     {
         LOG(Info, "ApplyChangedFieldsOnlyWithoutLock");
 
-        pfr::for_each_field(Impl::FieldsMeta{}, [&](const auto &fieldMeta) {
+        pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
             if (fieldMeta.GetValue(oldFields) != fieldMeta.GetValue(_fields)) {
                 LOG(Info, "Changed field: {}", fieldMeta.GetName());
                 fieldMeta.OnApply().Invoke(std::cref(_fields));
