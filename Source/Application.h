@@ -23,7 +23,7 @@
 #include <SingleApplication>
 
 #include "Gui/TrayIcon.h"
-#include "Gui/InfoWindow.h"
+#include "Gui/MainWindow.h"
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
 
@@ -45,9 +45,9 @@ public:
     {
         return _trayIcon;
     }
-    inline auto &GetInfoWindow()
+    inline auto &GetMainWindow()
     {
-        return _infoWindow;
+        return _mainWindow;
     }
 
     inline static bool IsFirstTimeUse()
@@ -61,7 +61,7 @@ private:
     static inline LaunchOptions _launchOptions;
     static inline bool _isFirstTimeUse{false};
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
-    std::unique_ptr<Gui::InfoWindow> _infoWindow;
+    std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
 
     static void InitSettings();

@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#include "InfoWindow.h"
+#include "MainWindow.h"
 
 #include <future>
 
@@ -129,7 +129,7 @@ protected:
     }
 };
 
-InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
+MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
 
@@ -146,20 +146,20 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     Utils::Qt::SetPaletteColor(this, QPalette::Window, Qt::white);
     Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, QColor{94, 94, 94});
 
-    connect(qApp, &QGuiApplication::applicationStateChanged, this, &InfoWindow::OnAppStateChanged);
-    connect(_ui.pushButton, &QPushButton::clicked, this, &InfoWindow::OnButtonClicked);
-    connect(&_posAnimation, &QPropertyAnimation::finished, this, &InfoWindow::OnPosMoveFinished);
-    connect(_closeButton, &CloseButton::Clicked, this, &InfoWindow::DoHide);
-    connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &InfoWindow::OnPlayerStateChanged);
+    connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
+    connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
+    connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
+    connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
+    connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
 
-    connect(this, &InfoWindow::UpdateStateSafety, this, &InfoWindow::UpdateState);
-    connect(this, &InfoWindow::AvailableSafety, this, &InfoWindow::Available);
-    connect(this, &InfoWindow::UnavailableSafety, this, &InfoWindow::Unavailable);
-    connect(this, &InfoWindow::DisconnectSafety, this, &InfoWindow::Disconnect);
-    connect(this, &InfoWindow::BindSafety, this, &InfoWindow::Bind);
-    connect(this, &InfoWindow::UnbindSafety, this, &InfoWindow::Unbind);
-    connect(this, &InfoWindow::ShowSafety, this, &InfoWindow::show);
-    connect(this, &InfoWindow::HideSafety, this, &InfoWindow::DoHide);
+    connect(this, &MainWindow::UpdateStateSafety, this, &MainWindow::UpdateState);
+    connect(this, &MainWindow::AvailableSafety, this, &MainWindow::Available);
+    connect(this, &MainWindow::UnavailableSafety, this, &MainWindow::Unavailable);
+    connect(this, &MainWindow::DisconnectSafety, this, &MainWindow::Disconnect);
+    connect(this, &MainWindow::BindSafety, this, &MainWindow::Bind);
+    connect(this, &MainWindow::UnbindSafety, this, &MainWindow::Unbind);
+    connect(this, &MainWindow::ShowSafety, this, &MainWindow::show);
+    connect(this, &MainWindow::HideSafety, this, &MainWindow::DoHide);
 
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
@@ -178,9 +178,9 @@ InfoWindow::InfoWindow(QWidget *parent) : QDialog{parent}
     CheckUpdate();
 }
 
-void InfoWindow::UpdateState(const Core::AirPods::State &state)
+void MainWindow::UpdateState(const Core::AirPods::State &state)
 {
-    LOG(Info, "InfoWindow::UpdateState");
+    LOG(Info, "MainWindow::UpdateState");
     _lastState = State::Updating;
 
     // _ui.deviceLabel->setText(Helper::ToString(state.model));
@@ -218,9 +218,9 @@ void InfoWindow::UpdateState(const Core::AirPods::State &state)
     ApdApp->GetTrayIcon()->UpdateState(state);
 }
 
-void InfoWindow::Available()
+void MainWindow::Available()
 {
-    LOG(Info, "InfoWindow::Available");
+    LOG(Info, "MainWindow::Available");
     if (_lastState != State::Unavailable) {
         return;
     }
@@ -229,9 +229,9 @@ void InfoWindow::Available()
     Disconnect();
 }
 
-void InfoWindow::Unavailable()
+void MainWindow::Unavailable()
 {
-    LOG(Info, "InfoWindow::Unavailable");
+    LOG(Info, "MainWindow::Unavailable");
     _lastState = State::Unavailable;
 
     _ui.deviceLabel->setText(tr("Unavailable"));
@@ -247,9 +247,9 @@ void InfoWindow::Unavailable()
     ApdApp->GetTrayIcon()->Unavailable();
 }
 
-void InfoWindow::Disconnect()
+void MainWindow::Disconnect()
 {
-    LOG(Info, "InfoWindow::Disconnect");
+    LOG(Info, "MainWindow::Disconnect");
     if (_lastState == State::Unbind) {
         return;
     }
@@ -268,17 +268,17 @@ void InfoWindow::Disconnect()
     ApdApp->GetTrayIcon()->Disconnect();
 }
 
-void InfoWindow::Bind()
+void MainWindow::Bind()
 {
-    LOG(Info, "InfoWindow::Bind");
+    LOG(Info, "MainWindow::Bind");
     _lastState = State::Bind;
 
     Disconnect();
 }
 
-void InfoWindow::Unbind()
+void MainWindow::Unbind()
 {
-    LOG(Info, "InfoWindow::Unbind");
+    LOG(Info, "MainWindow::Unbind");
     _lastState = State::Unbind;
 
     _ui.deviceLabel->setText(tr("Waiting for Binding"));
@@ -294,7 +294,7 @@ void InfoWindow::Unbind()
     ApdApp->GetTrayIcon()->Unbind();
 }
 
-void InfoWindow::CheckUpdate()
+void MainWindow::CheckUpdate()
 {
     // SPDLOG_TRACE("CheckUpdate: Poll.");
 
@@ -381,7 +381,7 @@ void InfoWindow::CheckUpdate()
     // QTimer::singleShot(1h, &CheckUpdate);
 }
 
-void InfoWindow::ChangeButtonAction(ButtonAction action)
+void MainWindow::ChangeButtonAction(ButtonAction action)
 {
     switch (action) {
     case ButtonAction::NoButton:
@@ -401,7 +401,7 @@ void InfoWindow::ChangeButtonAction(ButtonAction action)
     _ui.pushButton->show();
 }
 
-void InfoWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
+void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 {
     if (model == _cacheModel) {
         return;
@@ -434,19 +434,19 @@ void InfoWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
     _cacheModel = model;
 }
 
-void InfoWindow::PlayAnimation()
+void MainWindow::PlayAnimation()
 {
     _isAnimationPlaying = true;
     _mediaPlayer->play();
 }
 
-void InfoWindow::StopAnimation()
+void MainWindow::StopAnimation()
 {
     _isAnimationPlaying = false;
     _mediaPlayer->stop();
 }
 
-void InfoWindow::BindDevice()
+void MainWindow::BindDevice()
 {
     //
     // TODO: Move non-UI code to `Core::AirPods::Manager`
@@ -525,7 +525,7 @@ void InfoWindow::BindDevice()
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 }
 
-void InfoWindow::ControlAutoHideTimer(bool start)
+void MainWindow::ControlAutoHideTimer(bool start)
 {
     SPDLOG_TRACE("ControlAutoHideTimer: start == '{}', _isShown == '{}'", start, _isShown);
 
@@ -537,13 +537,13 @@ void InfoWindow::ControlAutoHideTimer(bool start)
     }
 }
 
-void InfoWindow::OnAppStateChanged(Qt::ApplicationState state)
+void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
 {
     SPDLOG_TRACE("OnAppStateChanged: '{}'", Helper::ToString(state));
     ControlAutoHideTimer(state != Qt::ApplicationActive);
 }
 
-void InfoWindow::OnPosMoveFinished()
+void MainWindow::OnPosMoveFinished()
 {
     if (!_isShown) {
         hide();
@@ -551,7 +551,7 @@ void InfoWindow::OnPosMoveFinished()
     }
 }
 
-void InfoWindow::OnButtonClicked()
+void MainWindow::OnButtonClicked()
 {
     switch (_buttonAction) {
     case ButtonAction::Bind:
@@ -566,16 +566,16 @@ void InfoWindow::OnButtonClicked()
 }
 
 // for loop play
-void InfoWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
+void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
 {
     if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
         _mediaPlayer->play();
     }
 }
 
-void InfoWindow::DoHide()
+void MainWindow::DoHide()
 {
-    SPDLOG_TRACE("InfoWindow: Hide");
+    SPDLOG_TRACE("MainWindow: Hide");
 
     if (!_isShown) {
         return;
@@ -593,9 +593,9 @@ void InfoWindow::DoHide()
     _posAnimation.start();
 }
 
-void InfoWindow::showEvent(QShowEvent *event)
+void MainWindow::showEvent(QShowEvent *event)
 {
-    SPDLOG_TRACE("InfoWindow: Show");
+    SPDLOG_TRACE("MainWindow: Show");
 
     if (_isShown) {
         return;
@@ -618,4 +618,4 @@ void InfoWindow::showEvent(QShowEvent *event)
 }
 } // namespace Gui
 
-#include "InfoWindow.moc"
+#include "MainWindow.moc"

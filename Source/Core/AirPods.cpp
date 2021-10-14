@@ -31,7 +31,7 @@
 #include "../Logger.h"
 #include "../Assert.h"
 #include "../Application.h"
-#include "../Gui/InfoWindow.h"
+#include "../Gui/MainWindow.h"
 
 using namespace Core;
 using namespace std::chrono_literals;
@@ -468,7 +468,7 @@ private:
 
         if (doDisconnect) {
             _tracker.Disconnect();
-            ApdApp->GetInfoWindow()->DisconnectSafety();
+            ApdApp->GetMainWindow()->DisconnectSafety();
         }
 
         LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
@@ -484,7 +484,7 @@ private:
             return;
         }
 
-        ApdApp->GetInfoWindow()->UpdateStateSafety(newState);
+        ApdApp->GetMainWindow()->UpdateStateSafety(newState);
 
         // Lid opened
         //
@@ -514,17 +514,17 @@ private:
 
     void OnLost()
     {
-        ApdApp->GetInfoWindow()->DisconnectSafety();
+        ApdApp->GetMainWindow()->DisconnectSafety();
     }
 
     void OnLidOpened(bool opened)
     {
-        auto &infoWindow = ApdApp->GetInfoWindow();
+        auto &mainWindow = ApdApp->GetMainWindow();
         if (opened) {
-            infoWindow->ShowSafety();
+            mainWindow->ShowSafety();
         }
         else {
-            infoWindow->HideSafety();
+            mainWindow->HideSafety();
         }
     }
 
@@ -573,12 +573,12 @@ private:
     {
         switch (state) {
         case Core::Bluetooth::AdvertisementWatcher::State::Started:
-            ApdApp->GetInfoWindow()->AvailableSafety();
+            ApdApp->GetMainWindow()->AvailableSafety();
             LOG(Info, "Bluetooth AdvWatcher started.");
             break;
 
         case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
-            ApdApp->GetInfoWindow()->UnavailableSafety();
+            ApdApp->GetMainWindow()->UnavailableSafety();
             LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
             break;
 

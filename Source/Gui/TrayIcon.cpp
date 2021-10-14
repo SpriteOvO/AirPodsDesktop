@@ -24,7 +24,7 @@
 
 #include <Config.h>
 #include "../Application.h"
-#include "InfoWindow.h"
+#include "MainWindow.h"
 
 namespace Gui {
 
@@ -33,7 +33,7 @@ TrayIcon::TrayIcon()
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
-    connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowInfoWindow(); });
+    connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafety, this, &TrayIcon::OnTrayIconBatteryChanged);
@@ -126,9 +126,9 @@ void TrayIcon::Unbind()
     _tray->setIcon(ApdApp->windowIcon());
 }
 
-void TrayIcon::ShowInfoWindow()
+void TrayIcon::ShowMainWindow()
 {
-    ApdApp->GetInfoWindow()->show();
+    ApdApp->GetMainWindow()->show();
 }
 
 std::optional<QImage> TrayIcon::GenerateIcon(
@@ -242,7 +242,7 @@ void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
     if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger ||
         reason == QSystemTrayIcon::MiddleClick)
     {
-        ShowInfoWindow();
+        ShowMainWindow();
     }
 }
 

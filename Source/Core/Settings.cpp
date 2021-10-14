@@ -90,10 +90,10 @@ void OnApply_device_address(const Fields &newFields)
     LOG(Info, "OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
 
     if (newFields.device_address == 0) {
-        ApdApp->GetInfoWindow()->UnbindSafety();
+        ApdApp->GetMainWindow()->UnbindSafety();
     }
     else {
-        ApdApp->GetInfoWindow()->BindSafety();
+        ApdApp->GetMainWindow()->BindSafety();
     }
 
     AirPods::OnBoundDeviceAddressChanged(newFields.device_address);

@@ -20,7 +20,7 @@
 
 #include <QDialog>
 
-#include "ui_InfoWindow.h"
+#include "ui_MainWindow.h"
 
 #include <QVideoWidget>
 #include <QMediaPlayer>
@@ -40,12 +40,12 @@ enum class ButtonAction : uint32_t {
     Bind,
 };
 
-class InfoWindow : public QDialog
+class MainWindow : public QDialog
 {
     Q_OBJECT
 
 public:
-    InfoWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -69,7 +69,7 @@ private:
 
     constexpr static QSize _screenMargin{50, 100};
 
-    Ui::InfoWindow _ui;
+    Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
     QVideoWidget *_videoWidget = new QVideoWidget{this};

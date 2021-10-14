@@ -141,7 +141,7 @@ bool ApdApplication::Prepare()
     setQuitOnLastWindowClosed(false);
 
     _trayIcon = std::make_unique<Gui::TrayIcon>();
-    _infoWindow = std::make_unique<Gui::InfoWindow>();
+    _mainWindow = std::make_unique<Gui::MainWindow>();
 
     InitSettings();
 

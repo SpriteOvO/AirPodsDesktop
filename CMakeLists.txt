@@ -211,7 +211,7 @@ set(
     "Source/Application.cpp"
 
     "Source/Gui/TrayIcon.cpp"
-    "Source/Gui/InfoWindow.cpp"
+    "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"

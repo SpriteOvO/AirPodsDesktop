@@ -48,7 +48,7 @@ private:
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
 
-    void ShowInfoWindow();
+    void ShowMainWindow();
 
     std::optional<QImage>
     GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
