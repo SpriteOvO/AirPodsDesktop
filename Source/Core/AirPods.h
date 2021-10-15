@@ -18,15 +18,17 @@
 
 #pragma once
 
-#include <optional>
 #include <functional>
 
 #include "../Helper.h"
 #include "Bluetooth.h"
+#include "AppleCP.h"
 
 namespace Core::AirPods {
 
-using Battery = std::optional<uint32_t>;
+//
+// Structures
+//
 
 namespace Details {
 
@@ -37,18 +39,6 @@ struct BasicState {
     bool operator==(const BasicState &rhs) const = default;
 };
 } // namespace Details
-
-enum class Model : uint32_t {
-    Unknown = 0,
-    AirPods_1,
-    AirPods_2,
-    AirPods_Pro,
-    Powerbeats_3,
-    Beats_X,
-    Beats_Solo3,
-};
-
-enum class Side : uint32_t { Left, Right };
 
 struct PodState : Details::BasicState {
     bool isInEar{false};
@@ -77,11 +67,123 @@ struct State {
     bool operator==(const State &rhs) const = default;
 };
 
-void StartScanner();
-QString GetDisplayName();
-std::optional<State> GetCurrentState();
-void OnBoundDeviceAddressChanged(uint64_t address);
-void OnQuit();
+//
+// Classes
+//
+
+namespace Details {
+
+class Advertisement
+{
+public:
+    using AddressType = decltype(Bluetooth::AdvertisementWatcher::ReceivedData::address);
+
+    struct AdvState : AirPods::State {
+        Side side;
+    };
+
+    static bool IsDesiredAdv(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
+
+    Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
+
+    int16_t GetRssi() const;
+    const auto &GetTimestamp() const;
+    AddressType GetAddress() const;
+    std::vector<uint8_t> GetDesensitizedData() const;
+    const AdvState &GetAdvState() const;
+
+private:
+    Bluetooth::AdvertisementWatcher::ReceivedData _data;
+    AppleCP::AirPods _protocol;
+    AdvState _state;
+
+    const std::vector<uint8_t> &GetMfrData() const;
+};
+
+// AirPods use Random Non-resolvable device addresses for privacy reasons. This means we
+// can't "Remember" the user's AirPods by any device property. Here we track our desired
+// devices in some non-elegant ways, but obviously it is sometimes unreliable.
+//
+class Tracker
+{
+public:
+    using FnStateChanged =
+        std::function<void(const std::optional<State> &oldState, const State &newState)>;
+    using FnLosted = std::function<void()>;
+
+    Tracker();
+
+    inline auto &CbStateChanged()
+    {
+        return _cbStateChanged;
+    }
+    inline auto &CbLosted()
+    {
+        return _cbLosted;
+    }
+
+    void Disconnect();
+
+    bool TryTrack(Advertisement adv);
+
+    std::optional<State> GetState() const;
+
+private:
+    using Clock = std::chrono::system_clock;
+    using Timestamp = std::chrono::time_point<Clock>;
+
+    mutable std::mutex _mutex;
+    std::optional<Advertisement> _leftAdv, _rightAdv;
+    std::optional<State> _cachedState;
+
+    Helper::Timer _lostTimer, _stateResetLeftTimer, _stateResetRightTimer;
+    Helper::Callback<FnStateChanged> _cbStateChanged;
+    Helper::Callback<FnLosted> _cbLosted;
+
+    void DoLost();
+    void DoStateReset(Side side);
+};
+
+class Manager : public Helper::Singleton<Manager>
+{
+protected:
+    Manager();
+    friend Helper::Singleton<Manager>;
+
+public:
+    void StartScanner();
+    void StopScanner();
+
+    QString GetDisplayName();
+    std::optional<State> GetCurrentState();
+
+    void OnBoundDeviceAddressChanged(uint64_t address);
+    void OnQuit();
+
+private:
+    Tracker _tracker;
+    Bluetooth::AdvertisementWatcher _adWatcher;
+    std::optional<Bluetooth::Device> _boundDevice;
+    QString _displayName;
+    bool _deviceConnected{false};
+    std::recursive_mutex _mutex;
+
+    void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
+    void OnStateChanged(const std::optional<State> &oldState, const State &newState);
+    void OnLost();
+    void OnLidOpened(bool opened);
+    void OnBothInEar(bool isBothInEar);
+    bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
+    void OnAdvWatcherStateChanged(
+        Bluetooth::AdvertisementWatcher::State state, const std::optional<std::string> &optError);
+};
+} // namespace Details
+
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, StartScanner)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetDisplayName)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetCurrentState)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnBoundDeviceAddressChanged)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnQuit)
 
 } // namespace Core::AirPods
 

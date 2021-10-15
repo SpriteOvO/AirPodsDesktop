@@ -84,6 +84,13 @@ protected:
     Singleton() = default;
 };
 
+#define SINGLETON_EXPOSE_FUNCTION(class_name, function)                                            \
+    template <class... Args>                                                                       \
+    inline decltype(auto) function(Args &&...args)                                                 \
+    {                                                                                              \
+        return class_name::GetInstance().function(std::forward<Args>(args)...);                    \
+    }
+
 //////////////////////////////////////////////////
 
 namespace Impl {
