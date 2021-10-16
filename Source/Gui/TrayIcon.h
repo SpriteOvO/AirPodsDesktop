@@ -47,6 +47,7 @@ private:
     QMenu *_menu = new QMenu{this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
+    std::atomic<bool> _drawBattery = false;
 
     void ShowMainWindow();
 

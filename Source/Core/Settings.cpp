@@ -236,7 +236,7 @@ public:
             return true;
         };
 
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
 
         std::decay_t<decltype(kFieldsAbiVersion)> abi_version = 0;
         if (!loadKey("abi_version", abi_version)) {
@@ -260,7 +260,7 @@ public:
 
     void Save(Fields newFields)
     {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
 
         _fields = std::move(newFields);
         SaveWithoutLock();
@@ -269,14 +269,14 @@ public:
 
     void Apply()
     {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
 
         ApplyWithoutLock();
     }
 
     Fields GetCurrent()
     {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
 
         return _fields;
     }
@@ -299,7 +299,7 @@ private:
 #undef DECLARE_FIELD
     } _fieldsMeta;
 
-    std::recursive_mutex _mutex;
+    std::mutex _mutex;
     Fields _fields;
     QSettings _settings{QSettings::UserScope, Config::ProgramName, Config::ProgramName};
 
@@ -350,7 +350,7 @@ private:
     friend class ModifiableSafeAccessor;
 };
 
-ModifiableSafeAccessor::ModifiableSafeAccessor(std::recursive_mutex &lock, Fields &fields)
+ModifiableSafeAccessor::ModifiableSafeAccessor(std::mutex &lock, Fields &fields)
     : Impl::BasicSafeAccessor<Fields>{lock, fields}, _oldFields{fields}
 {
 }

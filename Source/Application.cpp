@@ -68,12 +68,13 @@ void ApdApplication::InitSettings()
         break;
 
     case Core::Settings::LoadResult::Successful:
-        Core::Settings::Apply();
         break;
 
     default:
         FatalError(std::format("Unhandled LoadResult: '{}'", Helper::ToUnderlying(result)), true);
     }
+
+    Core::Settings::Apply();
 }
 
 void ApdApplication::FirstTimeUse()
