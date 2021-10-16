@@ -107,16 +107,10 @@ private:
 class Tracker
 {
 public:
-    using FnStateChanged =
-        std::function<void(const std::optional<State> &oldState, const State &newState)>;
     using FnLosted = std::function<void()>;
 
     Tracker();
 
-    inline auto &CbStateChanged()
-    {
-        return _cbStateChanged;
-    }
     inline auto &CbLosted()
     {
         return _cbLosted;
@@ -126,18 +120,14 @@ public:
 
     bool TryTrack(Advertisement adv);
 
-    std::optional<State> GetState() const;
-
 private:
     using Clock = std::chrono::system_clock;
     using Timestamp = std::chrono::time_point<Clock>;
 
     mutable std::mutex _mutex;
     std::optional<Advertisement> _leftAdv, _rightAdv;
-    std::optional<State> _cachedState;
 
     Helper::Timer _lostTimer, _stateResetLeftTimer, _stateResetRightTimer;
-    Helper::Callback<FnStateChanged> _cbStateChanged;
     Helper::Callback<FnLosted> _cbLosted;
 
     void DoLost();
@@ -162,11 +152,14 @@ public:
 
 private:
     Tracker _tracker;
+    std::optional<Advertisement> _leftAdv, _rightAdv;
+    std::optional<State> _cachedState;
+
     Bluetooth::AdvertisementWatcher _adWatcher;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
     bool _deviceConnected{false};
-    std::recursive_mutex _mutex;
+    std::mutex _mutex;
 
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(const std::optional<State> &oldState, const State &newState);

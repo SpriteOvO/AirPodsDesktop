@@ -246,59 +246,18 @@ bool Tracker::TryTrack(Advertisement adv)
     }
 
     lastAdv = std::move(adv);
-
-    //////////////////////////////////////////////////
-    // Update states
-    //
-
-    Advertisement::AdvState leftAdvState, rightAdvState;
-
-    if (_leftAdv.has_value()) {
-        leftAdvState = _leftAdv->GetAdvState();
-    }
-    if (_rightAdv.has_value()) {
-        rightAdvState = _rightAdv->GetAdvState();
-    }
-
-    State newState;
-
-    auto &ll = leftAdvState.pods.left;
-    auto &rl = rightAdvState.pods.left;
-    auto &lr = leftAdvState.pods.right;
-    auto &rr = rightAdvState.pods.right;
-    auto &lc = leftAdvState.caseBox;
-    auto &rc = rightAdvState.caseBox;
-
-    newState.model =
-        leftAdvState.model != Model::Unknown ? leftAdvState.model : rightAdvState.model;
-
-    newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
-    newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
-    newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
-
-    if (newState != _cachedState) {
-        _cbStateChanged.Invoke(_cachedState, newState);
-        _cachedState = std::move(newState);
-    }
     return true;
-}
-
-std::optional<State> Tracker::GetState() const
-{
-    std::lock_guard<std::mutex> lock{_mutex};
-    return _cachedState;
 }
 
 void Tracker::DoLost()
 {
-    if (_leftAdv.has_value() || _rightAdv.has_value() || _cachedState.has_value()) {
+    if (_leftAdv.has_value() || _rightAdv.has_value()) {
         LOG(Info, "Tracker: DoLost called.");
         _cbLosted.Invoke();
     }
 
     _leftAdv.reset();
     _rightAdv.reset();
-    _cachedState.reset();
 }
 
 void Tracker::DoStateReset(Side side)
@@ -316,21 +275,17 @@ void Tracker::DoStateReset(Side side)
 
 Manager::Manager()
 {
-    _tracker.CbStateChanged() += [this](auto &&...args) {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
-        OnStateChanged(std::forward<decltype(args)>(args)...);
-    };
     _tracker.CbLosted() += [this](auto &&...args) {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
         OnLost(std::forward<decltype(args)>(args)...);
     };
 
     _adWatcher.CbReceived() += [this](auto &&...args) {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
         OnAdvertisementReceived(std::forward<decltype(args)>(args)...);
     };
     _adWatcher.CbStateChanged() += [this](auto &&...args) {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
         OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
     };
 }
@@ -357,18 +312,19 @@ void Manager::StopScanner()
 
 QString Manager::GetDisplayName()
 {
-    std::lock_guard<std::recursive_mutex> lock{_mutex};
+    std::lock_guard<std::mutex> lock{_mutex};
     return _displayName;
 }
 
 std::optional<State> Manager::GetCurrentState()
 {
-    return _tracker.GetState();
+    std::lock_guard<std::mutex> lock{_mutex};
+    return _cachedState;
 }
 
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
-    std::unique_lock<std::recursive_mutex> lock{_mutex};
+    std::unique_lock<std::mutex> lock{_mutex};
 
     _boundDevice.reset();
     _deviceConnected = false;
@@ -397,7 +353,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     auto currentState = _boundDevice->GetConnectionState();
     _displayName = QString::fromStdString(_boundDevice->GetDisplayName());
     _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
-        std::lock_guard<std::recursive_mutex> lock{_mutex};
+        std::lock_guard<std::mutex> lock{_mutex};
         OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
     };
 
@@ -513,6 +469,44 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         LOG(Warn, "It doesn't seem to be the device we desired.");
         return false;
     }
+
+    if (adv.GetAdvState().side == Side::Left) {
+        _leftAdv = std::move(adv);
+    }
+    else {
+        _rightAdv = std::move(adv);
+    }
+
+    Advertisement::AdvState leftAdvState, rightAdvState;
+
+    if (_leftAdv.has_value()) {
+        leftAdvState = _leftAdv->GetAdvState();
+    }
+    if (_rightAdv.has_value()) {
+        rightAdvState = _rightAdv->GetAdvState();
+    }
+
+    State newState;
+
+    auto &ll = leftAdvState.pods.left;
+    auto &rl = rightAdvState.pods.left;
+    auto &lr = leftAdvState.pods.right;
+    auto &rr = rightAdvState.pods.right;
+    auto &lc = leftAdvState.caseBox;
+    auto &rc = rightAdvState.caseBox;
+
+    newState.model =
+        leftAdvState.model != Model::Unknown ? leftAdvState.model : rightAdvState.model;
+
+    newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
+    newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
+    newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
+
+    if (newState != _cachedState) {
+        OnStateChanged(_cachedState, newState);
+        _cachedState = std::move(newState);
+    }
+
     return true;
 }
 
