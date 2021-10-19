@@ -130,51 +130,74 @@ find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 
 # spdlog
 #
-add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
-message("Fetching 'spdlog'...")
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
-    GIT_TAG "100f30043f33277122e0991c83845a2617172ffd" # v1.8.5
-)
-FetchContent_MakeAvailable(spdlog)
-message("Fetch 'spdlog' done.")
+find_package(spdlog CONFIG)
+if (spdlog_FOUND)
+    message("Found 'spdlog' (${spdlog_VERSION}).")
+else()
+    add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
+    message("Fetching 'spdlog'...")
+    FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
+        GIT_TAG "100f30043f33277122e0991c83845a2617172ffd" # v1.8.5
+    )
+    FetchContent_MakeAvailable(spdlog)
+    message("Fetch 'spdlog' done.")
+endif()
 
 # cxxopts
 #
-message("Fetching 'cxxopts'...")
-FetchContent_Declare(
-    cxxopts
-    GIT_REPOSITORY "https://github.com/jarro2783/cxxopts.git"
-    GIT_TAG "302302b30839505703d37fb82f536c53cf9172fa" # v2.2.1
-)
-FetchContent_MakeAvailable(cxxopts)
-message("Fetch 'cxxopts' done.")
+find_package(cxxopts CONFIG)
+if (cxxopts_FOUND)
+    message("Found 'cxxopts' (${cxxopts_VERSION}).")
+else()
+    message("Fetching 'cxxopts'...")
+    FetchContent_Declare(
+        cxxopts
+        GIT_REPOSITORY "https://github.com/jarro2783/cxxopts.git"
+        GIT_TAG "302302b30839505703d37fb82f536c53cf9172fa" # v2.2.1
+    )
+    FetchContent_MakeAvailable(cxxopts)
+    message("Fetch 'cxxopts' done.")
+
+    add_library(cxxopts::cxxopts ALIAS cxxopts)
+endif()
 
 # cpr
 #
-set(CPR_BUILD_TESTS ${APD_BUILD_TESTS})
-set(CPR_BUILD_TESTS_SSL OFF)
-set(CURL_ZLIB OFF CACHE STRING "" FORCE)
-message("Fetching 'cpr'...")
-FetchContent_Declare(
-    cpr
-    GIT_REPOSITORY "https://github.com/whoshuu/cpr.git"
-    GIT_TAG "ebcbec89787338fb2968a3f8b28bd330feea52d9"
-)
-FetchContent_MakeAvailable(cpr)
-message("Fetch 'cpr' done.")
+# Commented out since we use some unreleased changes
+# find_package(cpr CONFIG)
+if (cpr_FOUND)
+    message("Found 'cpr' (${cpr_VERSION}).")
+else()
+    set(CPR_BUILD_TESTS ${APD_BUILD_TESTS})
+    set(CPR_BUILD_TESTS_SSL OFF)
+    set(CURL_ZLIB OFF CACHE STRING "" FORCE)
+    message("Fetching 'cpr'...")
+    FetchContent_Declare(
+        cpr
+        GIT_REPOSITORY "https://github.com/whoshuu/cpr.git"
+        GIT_TAG "756348ed71e0d76d3c92f3a68a9a90afeba8610f"
+    )
+    FetchContent_MakeAvailable(cpr)
+    message("Fetch 'cpr' done.")
+endif()
 
 # json
 #
-message("Fetching 'json'...")
-FetchContent_Declare(
-    json
-    GIT_REPOSITORY "https://github.com/nlohmann/json.git"
-    GIT_TAG "db78ac1d7716f56fc9f1b030b715f872f93964e4" # v3.9.1
-)
-FetchContent_MakeAvailable(json)
-message("Fetch 'json' done.")
+find_package(nlohmann_json CONFIG)
+if (nlohmann_json_FOUND)
+    message("Found 'nlohmann_json' (${nlohmann_json_VERSION}).")
+else()
+    message("Fetching 'nlohmann_json'...")
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY "https://github.com/nlohmann/json.git"
+        GIT_TAG "db78ac1d7716f56fc9f1b030b715f872f93964e4" # v3.9.1
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
+    message("Fetch 'nlohmann_json' done.")
+endif()
 
 # SingleApplication
 #
@@ -190,14 +213,20 @@ message("Fetch 'SingleApplication' done.")
 
 # pfr
 #
-message("Fetching 'pfr'...")
-FetchContent_Declare(
-    pfr
-    GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
-    GIT_TAG "87c9c2d76c09115a135498f755df78db55481a1e"
-)
-FetchContent_MakeAvailable(pfr)
-message("Fetch 'pfr' done.")
+find_package(Boost)
+if (Boost_FOUND)
+    message("Found 'Boost' (${Boost_VERSION}).")
+    add_library(Boost::pfr ALIAS Boost::boost)
+else()
+    message("Fetching 'pfr'...")
+    FetchContent_Declare(
+        pfr
+        GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
+        GIT_TAG "87c9c2d76c09115a135498f755df78db55481a1e"
+    )
+    FetchContent_MakeAvailable(pfr)
+    message("Fetch 'pfr' done.")
+endif()
 
 ##################################################
 
@@ -359,7 +388,7 @@ target_link_libraries(
     
     ${APD_QT_LIBRARIES}
     spdlog::spdlog
-    cxxopts
+    cxxopts::cxxopts
     cpr::cpr
     nlohmann_json::nlohmann_json
     SingleApplication::SingleApplication
