@@ -419,6 +419,10 @@ void Manager::OnStateChanged(const std::optional<State> &oldState, const State &
 
 void Manager::OnLost()
 {
+    _leftAdv.reset();
+    _rightAdv.reset();
+    _cachedState.reset();
+
     ApdApp->GetMainWindow()->DisconnectSafety();
 }
 
