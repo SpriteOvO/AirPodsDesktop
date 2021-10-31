@@ -359,7 +359,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
     if (!optDevice.has_value()) {
-        SPDLOG_ERROR("Find device by address failed.");
+        LOG(Error, "Find device by address failed.");
         return;
     }
 
@@ -476,8 +476,7 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
 
     Advertisement adv{data};
 
-    SPDLOG_TRACE(
-        "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
+    LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
         Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
     if (!_tracker.TryTrack(adv)) {

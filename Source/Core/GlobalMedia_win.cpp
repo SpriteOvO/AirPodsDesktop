@@ -64,10 +64,10 @@ public:
 
     bool Play() override
     {
-        SPDLOG_TRACE("Do play.");
+        LOG(Trace, "Do play.");
 
         if (IsPlaying()) {
-            SPDLOG_TRACE("The media program is already playing.");
+            LOG(Trace, "The media program is already playing.");
             return true;
         }
         return Switch();
@@ -75,10 +75,10 @@ public:
 
     bool Pause() override
     {
-        SPDLOG_TRACE("Do pause.");
+        LOG(Trace, "Do pause.");
 
         if (!IsPlaying()) {
-            SPDLOG_TRACE("The media program nothing is playing.");
+            LOG(Trace, "The media program nothing is playing.");
             return true;
         }
         return Switch();
@@ -99,15 +99,14 @@ private:
 
     OS::Windows::Com::UniquePtr<IAudioMeterInformation> GetProcessAudioMeterInfo()
     {
-        SPDLOG_TRACE("Try to get IAudioMeterInformation of this process.");
+        LOG(Trace, "Try to get IAudioMeterInformation of this process.");
 
         OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> deviceEnumerator;
         HRESULT result = CoCreateInstance(
             __uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, deviceEnumerator.GetIID(),
             (void **)deviceEnumerator.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_TRACE(
-                "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}", result);
+            LOG(Trace, "Create COM instance 'IMMDeviceEnumerator' failed. HRESULT: {:#x}", result);
             return {};
         }
 
@@ -115,7 +114,7 @@ private:
         result = deviceEnumerator->GetDefaultAudioEndpoint(
             eRender, eMultimedia, audioEndpoint.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_TRACE("'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
+            LOG(Trace, "'GetDefaultAudioEndpoint' failed. HRESULT: {:#x}", result);
             return {};
         }
 
@@ -123,34 +122,33 @@ private:
         result = audioEndpoint->Activate(
             sessionMgr.GetIID(), CLSCTX_ALL, nullptr, (void **)sessionMgr.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_TRACE(
-                "'IMMDevice::Activate' IAudioSessionManager2 failed. HRESULT: {:#x}", result);
+            LOG(Trace, "'IMMDevice::Activate' IAudioSessionManager2 failed. HRESULT: {:#x}",
+                result);
             return {};
         }
 
         OS::Windows::Com::UniquePtr<IAudioSessionEnumerator> sessionEnumerator;
         result = sessionMgr->GetSessionEnumerator(sessionEnumerator.ReleaseAndAddressOf());
         if (FAILED(result)) {
-            SPDLOG_TRACE(
-                "'IAudioSessionManager2::GetSessionEnumerator' failed. HRESULT: {:#x}", result);
+            LOG(Trace, "'IAudioSessionManager2::GetSessionEnumerator' failed. HRESULT: {:#x}",
+                result);
             return {};
         }
 
         int sessionCount = 0;
         result = sessionEnumerator->GetCount(&sessionCount);
         if (FAILED(result)) {
-            SPDLOG_TRACE("'IAudioSessionEnumerator::GetCount' failed. HRESULT: {:#x}", result);
+            LOG(Trace, "'IAudioSessionEnumerator::GetCount' failed. HRESULT: {:#x}", result);
             return {};
         }
 
         for (int i = 0; i < sessionCount; ++i) {
-            SPDLOG_TRACE("Enumerating the {}th session.", i);
+            LOG(Trace, "Enumerating the {}th session.", i);
 
             OS::Windows::Com::UniquePtr<IAudioSessionControl> session;
             result = sessionEnumerator->GetSession(i, session.ReleaseAndAddressOf());
             if (FAILED(result)) {
-                SPDLOG_TRACE(
-                    "'IAudioSessionEnumerator::GetSession' failed. HRESULT: {:#x}", result);
+                LOG(Trace, "'IAudioSessionEnumerator::GetSession' failed. HRESULT: {:#x}", result);
                 continue;
             }
 
@@ -158,7 +156,7 @@ private:
             result = session->QueryInterface(
                 sessionEx.GetIID(), (void **)sessionEx.ReleaseAndAddressOf());
             if (FAILED(result)) {
-                SPDLOG_TRACE(
+                LOG(Trace,
                     "'IAudioSessionControl::QueryInterface' IAudioSessionControl2 failed. "
                     "HRESULT: {:#x}",
                     result);
@@ -168,15 +166,14 @@ private:
             uint32_t thisProcessId = 0;
             result = sessionEx->GetProcessId((DWORD *)&thisProcessId);
             if (FAILED(result)) {
-                SPDLOG_TRACE(
-                    "'IAudioSessionControl2::GetProcessId' failed. HRESULT: {:#x}", result);
+                LOG(Trace, "'IAudioSessionControl2::GetProcessId' failed. HRESULT: {:#x}", result);
                 continue;
             }
 
-            SPDLOG_TRACE("Get the session process id: {}", thisProcessId);
+            LOG(Trace, "Get the session process id: {}", thisProcessId);
 
             if (_windowProcess->second != thisProcessId) {
-                SPDLOG_TRACE("Process id mismatch, try next.");
+                LOG(Trace, "Process id mismatch, try next.");
                 continue;
             }
 
@@ -184,18 +181,18 @@ private:
             result = sessionEx->QueryInterface(
                 audioMeterInfo.GetIID(), (void **)audioMeterInfo.ReleaseAndAddressOf());
             if (FAILED(result)) {
-                SPDLOG_TRACE(
+                LOG(Trace,
                     "'IAudioSessionControl2::QueryInterface' IAudioMeterInformation "
                     "failed. HRESULT: {:#x}",
                     result);
                 return {};
             }
 
-            SPDLOG_TRACE("Get IAudioMeterInformation successfully.");
+            LOG(Trace, "Get IAudioMeterInformation successfully.");
             return audioMeterInfo;
         }
 
-        SPDLOG_TRACE("The desired IAudioMeterInformation not found.");
+        LOG(Trace, "The desired IAudioMeterInformation not found.");
         return {};
     }
 
@@ -208,7 +205,7 @@ private:
         float peak = 0.f;
         HRESULT result = _audioMeterInfo->GetPeakValue(&peak);
         if (FAILED(result)) {
-            SPDLOG_TRACE("'IAudioMeterInformation::GetPeakValue' failed. HRESULT: {:#x}", result);
+            LOG(Trace, "'IAudioMeterInformation::GetPeakValue' failed. HRESULT: {:#x}", result);
             return std::nullopt;
         }
 
@@ -221,20 +218,19 @@ private:
         auto className = GetWindowClassName();
         auto optTitleName = GetWindowTitleName();
 
-        SPDLOG_TRACE(
-            L"Try to find the media window. Process name: '{}', Class name: '{}'", processName,
-            className);
+        LOG(Trace, L"Try to find the media window. Process name: '{}', Class name: '{}'",
+            processName, className);
 
         auto windowsInfo = OS::Windows::Window::FindWindowsInfo(className, optTitleName);
         if (windowsInfo.empty()) {
-            SPDLOG_TRACE(L"No matching media windows found.");
+            LOG(Trace, L"No matching media windows found.");
             return std::nullopt;
         }
 
         WindowMatchingFlags windowMatchingFlags = GetWindowMatchingFlags();
 
         for (const auto &info : windowsInfo) {
-            // SPDLOG_TRACE(
+            // LOG(Trace,
             //     L"Enumerating window. hwnd: {}, Process id: {}, Process name: {}",
             //     (void*)info.hwnd,
             //     info.processId,
@@ -242,25 +238,25 @@ private:
             // );
 
             if (Utils::Text::ToLower(info.processName) != Utils::Text::ToLower(processName)) {
-                // SPDLOG_TRACE(L"The media window process name mismatch.");
+                // LOG(Trace, L"The media window process name mismatch.");
                 continue;
             }
 
             if (windowMatchingFlags.testFlag(WindowMatchingFlag::HasChildren)) {
                 if (GetWindow(info.hwnd, GW_CHILD) == 0) {
-                    // SPDLOG_TRACE(L"The window doesn't have any child windows.");
+                    // LOG(Trace, L"The window doesn't have any child windows.");
                     continue;
                 }
             }
 
             if (windowMatchingFlags.testFlag(WindowMatchingFlag::NonEmptyTitle)) {
                 if (info.titleName.empty()) {
-                    // SPDLOG_TRACE(L"The window doesn't have title name.");
+                    // LOG(Trace, L"The window doesn't have title name.");
                     continue;
                 }
             }
 
-            SPDLOG_TRACE(
+            LOG(Trace,
                 L"The media window is matched. Return the information. hwnd: {}, Process "
                 L"id: {}, Process name: {}",
                 (void *)info.hwnd, info.processId, info.processName);
@@ -268,7 +264,7 @@ private:
             return std::make_pair(info.hwnd, info.processId);
         }
 
-        SPDLOG_TRACE(L"The desired media window not found.");
+        LOG(Trace, L"The desired media window not found.");
         return std::nullopt;
     }
 
@@ -281,8 +277,7 @@ private:
         bool postUp = PostMessageW(_windowProcess->first, WM_KEYUP, VK_SPACE, 0) != 0;
 
         if (!postDown || !postUp) {
-            SPDLOG_TRACE(
-                "Switch failed. Post messages failed: hwnd '{}' down '{}' up '{}'",
+            LOG(Trace, "Switch failed. Post messages failed: hwnd '{}' down '{}' up '{}'",
                 (void *)_windowProcess->first, postDown, postUp);
             return false;
         }
@@ -314,7 +309,7 @@ public:
 
         if (!_currentSession.value()) {
             _currentSession.reset();
-            SPDLOG_TRACE("UniversalSystemSession current session is unavailable.");
+            LOG(Trace, "UniversalSystemSession current session is unavailable.");
             return false;
         }
 
@@ -557,7 +552,7 @@ VolumeLevelLimiter::Callback::QueryInterface(REFIID riid, void **ppvInterface)
 HRESULT STDMETHODCALLTYPE
 VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
 {
-    SPDLOG_TRACE("VolumeLevelLimiter::Callback::OnNotify() called.");
+    LOG(Trace, "VolumeLevelLimiter::Callback::OnNotify() called.");
 
     if (pNotify == nullptr) {
         LOG(Warn, "VolumeLevelLimiter::Callback::OnNotify(): pNotify == nullptr");
@@ -568,19 +563,19 @@ VolumeLevelLimiter::Callback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
         auto optVolumeLevel = _volumeLevel.load();
 
         if (!optVolumeLevel.has_value()) {
-            SPDLOG_TRACE("VolumeLevelLimiter::Callback::OnNotify(): Volume level unlimited.");
+            LOG(Trace, "VolumeLevelLimiter::Callback::OnNotify(): Volume level unlimited.");
             break;
         }
 
         if (pNotify->fMasterVolume > optVolumeLevel.value() / 100.f) {
-            SPDLOG_TRACE(
+            LOG(Trace,
                 "VolumeLevelLimiter::Callback::OnNotify(): Exceeded the limit, reduce. "
                 "('{}', '{}')",
                 pNotify->fMasterVolume, optVolumeLevel.value());
             _volumeLevelSetter(optVolumeLevel.value());
         }
         else {
-            SPDLOG_TRACE(
+            LOG(Trace,
                 "VolumeLevelLimiter::Callback::OnNotify(): Not exceeded the limit. ('{}', '{}')",
                 pNotify->fMasterVolume, optVolumeLevel.value());
         }
@@ -654,13 +649,13 @@ std::optional<uint32_t> VolumeLevelLimiter::GetVolumeLevel() const
     float value = 0.f;
     HRESULT result = _endpointVolume->GetMasterVolumeLevelScalar(&value);
     if (FAILED(result)) {
-        SPDLOG_TRACE(
-            "'IAudioEndpointVolume::GetMasterVolumeLevelScalar' failed. HRESULT: {:#x}", result);
+        LOG(Trace, "'IAudioEndpointVolume::GetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
+            result);
         return std::nullopt;
     }
 
     uint32_t return_value = (uint32_t)(value * 100.f);
-    SPDLOG_TRACE("GetVolumeLevel() returns '{}'", return_value);
+    LOG(Trace, "GetVolumeLevel() returns '{}'", return_value);
 
     return return_value;
 }
@@ -672,12 +667,12 @@ bool VolumeLevelLimiter::SetVolumeLevel(uint32_t volumeLevel) const
         return false;
     }
 
-    SPDLOG_TRACE("SetVolumeLevel() '{}'", volumeLevel);
+    LOG(Trace, "SetVolumeLevel() '{}'", volumeLevel);
 
     HRESULT result = _endpointVolume->SetMasterVolumeLevelScalar(volumeLevel / 100.f, nullptr);
     if (FAILED(result)) {
-        SPDLOG_TRACE(
-            "'IAudioEndpointVolume::SetMasterVolumeLevelScalar' failed. HRESULT: {:#x}", result);
+        LOG(Trace, "'IAudioEndpointVolume::SetMasterVolumeLevelScalar' failed. HRESULT: {:#x}",
+            result);
         return false;
     }
     return true;
@@ -791,7 +786,7 @@ void Controller::Play()
     std::lock_guard<std::mutex> lock{_mutex};
 
     if (_pausedPrograms.empty()) {
-        SPDLOG_TRACE(L"Paused programs vector is empty.");
+        LOG(Trace, L"Paused programs vector is empty.");
         return;
     }
 
@@ -800,7 +795,7 @@ void Controller::Play()
             LOG(Warn, L"Failed to play media. Program name: {}", program->GetProgramName());
         }
         else {
-            SPDLOG_TRACE(L"Media played. Program name: {}", program->GetProgramName());
+            LOG(Trace, L"Media played. Program name: {}", program->GetProgramName());
         }
     }
 
@@ -819,7 +814,7 @@ void Controller::Pause()
                 LOG(Warn, L"Failed to pause media. Program name: {}", program->GetProgramName());
             }
             else {
-                SPDLOG_TRACE(L"Media paused. Program name: {}", program->GetProgramName());
+                LOG(Trace, L"Media paused. Program name: {}", program->GetProgramName());
                 _pausedPrograms.emplace_back(std::move(program));
             }
         }

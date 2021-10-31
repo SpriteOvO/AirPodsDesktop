@@ -310,7 +310,7 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         cpr::ProgressCallback{[&](cpr::cpr_off_t downloadTotal, cpr::cpr_off_t downloadNow,
                                   cpr::cpr_off_t uploadTotal, cpr::cpr_off_t uploadNow,
                                   intptr_t userdata) {
-            SPDLOG_TRACE("Downloaded {} / {} bytes.", downloadNow, downloadTotal);
+            LOG(Trace, "Downloaded {} / {} bytes.", downloadNow, downloadTotal);
             return progressCallback(downloadNow, downloadTotal);
         }});
 

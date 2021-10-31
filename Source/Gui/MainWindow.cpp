@@ -296,7 +296,7 @@ void MainWindow::Unbind()
 
 void MainWindow::CheckUpdate()
 {
-    // SPDLOG_TRACE("CheckUpdate: Poll.");
+    // LOG(Trace, "CheckUpdate: Poll.");
 
     const auto &DispatchNext = []() { Utils::Qt::Dispatch(&CheckUpdate); };
 
@@ -314,7 +314,7 @@ void MainWindow::CheckUpdate()
     }
 
     if (!Helper::IsFutureReady(optFuture.value())) {
-        // SPDLOG_TRACE("CheckUpdate: The future is not ready.");
+        // LOG(Trace, "CheckUpdate: The future is not ready.");
         DispatchNext();
         return;
     }
@@ -470,9 +470,8 @@ void MainWindow::BindDevice()
                     vendorId != Core::AppleCP::VendorId ||
                     Core::AppleCP::AirPods::GetModel(productId) == Core::AirPods::Model::Unknown;
 
-                SPDLOG_TRACE(
-                    "Device VendorId: '{}', ProductId: '{}', doErase: {}", vendorId, productId,
-                    doErase);
+                LOG(Trace, "Device VendorId: '{}', ProductId: '{}', doErase: {}", vendorId,
+                    productId, doErase);
 
                 return doErase;
             }),
@@ -495,9 +494,8 @@ void MainWindow::BindDevice()
         for (const auto &device : devices) {
             auto displayName = device.GetDisplayName();
 
-            SPDLOG_TRACE("Device name: '{}'", displayName);
-            SPDLOG_TRACE(
-                "GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(),
+            LOG(Trace, "Device name: '{}'", displayName);
+            LOG(Trace, "GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(),
                 device.GetVendorId());
             deviceNames.append(QString::fromStdString(displayName));
         }
@@ -527,7 +525,7 @@ void MainWindow::BindDevice()
 
 void MainWindow::ControlAutoHideTimer(bool start)
 {
-    SPDLOG_TRACE("ControlAutoHideTimer: start == '{}', _isShown == '{}'", start, _isShown);
+    LOG(Trace, "ControlAutoHideTimer: start == '{}', _isShown == '{}'", start, _isShown);
 
     if (start && _isShown) {
         _autoHideTimer->start(10s);
@@ -539,7 +537,7 @@ void MainWindow::ControlAutoHideTimer(bool start)
 
 void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
 {
-    SPDLOG_TRACE("OnAppStateChanged: '{}'", Helper::ToString(state));
+    LOG(Trace, "OnAppStateChanged: '{}'", Helper::ToString(state));
     ControlAutoHideTimer(state != Qt::ApplicationActive);
 }
 
@@ -575,7 +573,7 @@ void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
 
 void MainWindow::DoHide()
 {
-    SPDLOG_TRACE("MainWindow: Hide");
+    LOG(Trace, "MainWindow: Hide");
 
     if (!_isShown) {
         return;
@@ -595,7 +593,7 @@ void MainWindow::DoHide()
 
 void MainWindow::showEvent(QShowEvent *event)
 {
-    SPDLOG_TRACE("MainWindow: Show");
+    LOG(Trace, "MainWindow: Show");
 
     if (_isShown) {
         return;
