@@ -130,6 +130,8 @@ private:
     Helper::Timer _lostTimer, _stateResetLeftTimer, _stateResetRightTimer;
     Helper::Callback<FnLosted> _cbLosted;
 
+    void ResetState();
+
     void DoLost();
     void DoStateReset(Side side);
 };
@@ -146,6 +148,8 @@ public:
 
     QString GetDisplayName();
     std::optional<State> GetCurrentState();
+
+    void ResetState();
 
     void OnBoundDeviceAddressChanged(uint64_t address);
     void OnQuit();

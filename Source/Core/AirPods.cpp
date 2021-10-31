@@ -158,7 +158,9 @@ Tracker::Tracker()
 void Tracker::Disconnect()
 {
     std::lock_guard<std::mutex> lock{_mutex};
-    DoLost();
+
+    LOG(Info, "Tracker: Disconnect.");
+    ResetState();
 }
 
 bool Tracker::TryTrack(Advertisement adv)
@@ -249,15 +251,19 @@ bool Tracker::TryTrack(Advertisement adv)
     return true;
 }
 
+void Tracker::ResetState()
+{
+    _leftAdv.reset();
+    _rightAdv.reset();
+}
+
 void Tracker::DoLost()
 {
     if (_leftAdv.has_value() || _rightAdv.has_value()) {
-        LOG(Info, "Tracker: DoLost called.");
+        LOG(Info, "Tracker: Device is lost.");
         _cbLosted.Invoke();
     }
-
-    _leftAdv.reset();
-    _rightAdv.reset();
+    ResetState();
 }
 
 void Tracker::DoStateReset(Side side)
@@ -322,6 +328,15 @@ std::optional<State> Manager::GetCurrentState()
     return _cachedState;
 }
 
+void Manager::ResetState()
+{
+    _leftAdv.reset();
+    _rightAdv.reset();
+    _cachedState.reset();
+
+    ApdApp->GetMainWindow()->DisconnectSafety();
+}
+
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
     std::unique_lock<std::mutex> lock{_mutex};
@@ -373,7 +388,7 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 
     if (doDisconnect) {
         _tracker.Disconnect();
-        ApdApp->GetMainWindow()->DisconnectSafety();
+        ResetState();
     }
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
@@ -419,11 +434,7 @@ void Manager::OnStateChanged(const std::optional<State> &oldState, const State &
 
 void Manager::OnLost()
 {
-    _leftAdv.reset();
-    _rightAdv.reset();
-    _cachedState.reset();
-
-    ApdApp->GetMainWindow()->DisconnectSafety();
+    ResetState();
 }
 
 void Manager::OnLidOpened(bool opened)
