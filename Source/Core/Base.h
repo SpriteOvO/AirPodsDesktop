@@ -28,6 +28,7 @@ enum class Model : uint32_t {
     Unknown = 0,
     AirPods_1,
     AirPods_2,
+    AirPods_3,
     AirPods_Pro,
     Powerbeats_3,
     Beats_X,
