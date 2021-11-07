@@ -46,6 +46,7 @@ private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};
+    QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
     std::atomic<bool> _drawBattery = false;
 

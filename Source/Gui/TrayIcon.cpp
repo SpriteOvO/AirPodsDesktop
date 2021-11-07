@@ -31,6 +31,7 @@ namespace Gui {
 TrayIcon::TrayIcon()
 {
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
+    connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
@@ -40,6 +41,7 @@ TrayIcon::TrayIcon()
 
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
+    _menu->addAction(_actionAbout);
     _menu->addAction(_actionQuit);
 
     _tray->setContextMenu(_menu);
@@ -234,9 +236,19 @@ std::optional<QImage> TrayIcon::GenerateIcon(
 
 void TrayIcon::OnSettingsClicked()
 {
-    if (!_settingsWindow.isVisible()) {
+    if (!_settingsWindow.isVisible() ||
+        _settingsWindow.GetTabCurrentIndex() == _settingsWindow.GetTabCount() - 1)
+    {
         _settingsWindow.SetTabIndex(0);
     }
+
+    _settingsWindow.show();
+    _settingsWindow.raise();
+}
+
+void TrayIcon::OnAboutClicked()
+{
+    _settingsWindow.SetTabIndex(_settingsWindow.GetTabCount() - 1);
     _settingsWindow.show();
     _settingsWindow.raise();
 }

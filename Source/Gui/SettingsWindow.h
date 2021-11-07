@@ -38,6 +38,7 @@ public:
     SettingsWindow(QWidget *parent = nullptr);
 
     int GetTabCount() const;
+    int GetTabCurrentIndex() const;
     void SetTabIndex(int index);
 
 private:

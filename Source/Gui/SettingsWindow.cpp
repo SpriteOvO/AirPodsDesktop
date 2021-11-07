@@ -158,6 +158,11 @@ int SettingsWindow::GetTabCount() const
     return _ui.tabWidget->count();
 }
 
+int SettingsWindow::GetTabCurrentIndex() const
+{
+    return _ui.tabWidget->currentIndex();
+}
+
 void SettingsWindow::SetTabIndex(int index)
 {
     _ui.tabWidget->setCurrentIndex(index);
