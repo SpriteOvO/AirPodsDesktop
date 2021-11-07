@@ -33,6 +33,8 @@ enum class Model : uint32_t {
     Powerbeats_3,
     Beats_X,
     Beats_Solo3,
+
+    _Max = Beats_Solo3
 };
 
 enum class Side : uint32_t { Left, Right };

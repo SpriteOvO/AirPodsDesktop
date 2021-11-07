@@ -129,10 +129,28 @@ protected:
     }
 };
 
+class VideoWidget : public QVideoWidget
+{
+    Q_OBJECT
+
+public:
+    using QVideoWidget::QVideoWidget;
+
+Q_SIGNALS:
+    void Clicked();
+
+private:
+    void mouseReleaseEvent(QMouseEvent *event) override
+    {
+        Q_EMIT Clicked();
+    }
+};
+
 MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
 
+    _videoWidget = new VideoWidget{this};
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
@@ -149,6 +167,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
+    connect(_videoWidget, &VideoWidget::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
     connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
 
@@ -552,6 +571,23 @@ void MainWindow::OnPosMoveFinished()
         hide();
         StopAnimation();
     }
+}
+
+void MainWindow::OnAnimationClicked()
+{
+#if defined APD_DEBUG
+    using namespace Core::AirPods;
+
+    static Model next = Model::AirPods_1;
+
+    _ui.deviceLabel->setText(Helper::ToString(next));
+    SetAnimation(next);
+
+    next = static_cast<Model>(Helper::ToUnderlying(next) + 1);
+    if (next >= Model::_Max) {
+        next = Model::AirPods_1;
+    }
+#endif
 }
 
 void MainWindow::OnButtonClicked()

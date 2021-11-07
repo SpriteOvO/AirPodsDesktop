@@ -33,6 +33,7 @@
 namespace Gui {
 
 class CloseButton;
+class VideoWidget;
 class BatteryInfo;
 
 enum class ButtonAction : uint32_t {
@@ -72,7 +73,7 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
-    QVideoWidget *_videoWidget = new QVideoWidget{this};
+    VideoWidget *_videoWidget;
     QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
@@ -97,6 +98,7 @@ private:
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();
+    void OnAnimationClicked();
     void OnButtonClicked();
     void OnPlayerStateChanged(QMediaPlayer::State newState);
 
