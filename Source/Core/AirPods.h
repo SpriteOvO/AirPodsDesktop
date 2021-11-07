@@ -192,6 +192,8 @@ inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model
         return "AirPods 1";
     case Core::AirPods::Model::AirPods_2:
         return "AirPods 2";
+    case Core::AirPods::Model::AirPods_3:
+        return "AirPods 3";
     case Core::AirPods::Model::AirPods_Pro:
         return "AirPods Pro";
     case Core::AirPods::Model::Powerbeats_3:
