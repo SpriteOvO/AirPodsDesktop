@@ -20,6 +20,8 @@
 
 #include <optional>
 
+#include "../Helper.h"
+
 namespace Core::AirPods {
 
 using Battery = std::optional<uint32_t>;
@@ -40,3 +42,39 @@ enum class Model : uint32_t {
 enum class Side : uint32_t { Left, Right };
 
 } // namespace Core::AirPods
+
+template <>
+inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model &value)
+{
+    switch (value) {
+    case Core::AirPods::Model::AirPods_1:
+        return "AirPods 1";
+    case Core::AirPods::Model::AirPods_2:
+        return "AirPods 2";
+    case Core::AirPods::Model::AirPods_3:
+        return "AirPods 3";
+    case Core::AirPods::Model::AirPods_Pro:
+        return "AirPods Pro";
+    case Core::AirPods::Model::Powerbeats_3:
+        return "Powerbeats 3";
+    case Core::AirPods::Model::Beats_X:
+        return "BeatsX";
+    case Core::AirPods::Model::Beats_Solo3:
+        return "BeatsSolo3";
+    default:
+        return "Unknown";
+    }
+}
+
+template <>
+inline QString Helper::ToString<Core::AirPods::Side>(const Core::AirPods::Side &value)
+{
+    switch (value) {
+    case Core::AirPods::Side::Left:
+        return "Left";
+    case Core::AirPods::Side::Right:
+        return "Right";
+    default:
+        return "Unknown";
+    }
+}
