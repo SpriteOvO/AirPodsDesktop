@@ -234,7 +234,11 @@ std::optional<QImage> TrayIcon::GenerateIcon(
 
 void TrayIcon::OnSettingsClicked()
 {
+    if (!_settingsWindow.isVisible()) {
+        _settingsWindow.SetTabIndex(0);
+    }
     _settingsWindow.show();
+    _settingsWindow.raise();
 }
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)

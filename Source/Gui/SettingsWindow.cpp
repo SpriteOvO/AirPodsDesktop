@@ -153,6 +153,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     });
 }
 
+int SettingsWindow::GetTabCount() const
+{
+    return _ui.tabWidget->count();
+}
+
+void SettingsWindow::SetTabIndex(int index)
+{
+    _ui.tabWidget->setCurrentIndex(index);
+}
+
 void SettingsWindow::RestoreDefaults()
 {
     Core::Settings::Save(Core::Settings::GetDefault());

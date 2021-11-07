@@ -60,6 +60,6 @@ private:
     void OnTrayIconBatteryChanged(bool value);
 
 protected:
-    SettingsWindow _settingsWindow{this};
+    SettingsWindow _settingsWindow;
 };
 } // namespace Gui

@@ -37,6 +37,9 @@ class SettingsWindow : public QDialog
 public:
     SettingsWindow(QWidget *parent = nullptr);
 
+    int GetTabCount() const;
+    void SetTabIndex(int index);
+
 private:
     Ui::SettingsWindow _ui;
 
