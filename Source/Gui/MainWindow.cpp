@@ -414,8 +414,10 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         QString media;
         switch (model.value()) {
         case Core::AirPods::Model::AirPods_1:
+            media = "qrc:/Resource/Video/AirPods_1.avi";
+            break;
         case Core::AirPods::Model::AirPods_2:
-            media = "qrc:/Resource/Video/AirPods_1_2.avi";
+            media = "qrc:/Resource/Video/AirPods_2.avi";
             break;
         case Core::AirPods::Model::AirPods_Pro:
             media = "qrc:/Resource/Video/AirPods_Pro.avi";
@@ -424,7 +426,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         case Core::AirPods::Model::Beats_X:
         case Core::AirPods::Model::Beats_Solo3:
         default:
-            media = "qrc:/Resource/Video/AirPods_1_2.avi";
+            media = "qrc:/Resource/Video/AirPods_1.avi";
             break;
         }
 
