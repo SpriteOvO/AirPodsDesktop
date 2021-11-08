@@ -427,6 +427,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
     }
 
     if (!model.has_value()) {
+        StopAnimation();
         _mediaPlayer->setMedia(QMediaContent{});
     }
     else {
@@ -453,6 +454,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         }
 
         _mediaPlayer->setMedia(QUrl{media});
+        PlayAnimation();
     }
 
     _cacheModel = model;
@@ -462,10 +464,15 @@ void MainWindow::PlayAnimation()
 {
     _isAnimationPlaying = true;
     _mediaPlayer->play();
+    _videoWidget->show();
 }
 
 void MainWindow::StopAnimation()
 {
+    // The player will go black after stopping
+    // I have no idea about this, so let's hide the widget here as a workaround
+    _videoWidget->hide();
+
     _isAnimationPlaying = false;
     _mediaPlayer->stop();
 }
