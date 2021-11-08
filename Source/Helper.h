@@ -159,6 +159,15 @@ inline QString ToString<Qt::ApplicationState>(const Qt::ApplicationState &value)
 
 //////////////////////////////////////////////////
 
+template <class T>
+struct Sides {
+    using Type = T;
+
+    T left, right;
+};
+
+//////////////////////////////////////////////////
+
 using CbHandle = uint64_t;
 
 template <class Function>

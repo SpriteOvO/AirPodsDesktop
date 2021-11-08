@@ -103,33 +103,36 @@ private:
 // can't "Remember" the user's AirPods by any device property. Here we track our desired
 // devices in some non-elegant ways, but obviously it is sometimes unreliable.
 //
-class Tracker
+class StateManager
 {
 public:
-    using FnLosted = std::function<void()>;
+    struct UpdateEvent {
+        std::optional<State> oldState;
+        State newState;
+    };
 
-    Tracker();
+    StateManager();
 
-    inline auto &CbLosted()
-    {
-        return _cbLosted;
-    }
+    std::optional<State> GetCurrentState() const;
 
+    std::optional<UpdateEvent> OnAdvReceived(Advertisement adv);
     void Disconnect();
 
-    bool TryTrack(Advertisement adv);
-
 private:
-    using Clock = std::chrono::system_clock;
+    using Clock = std::chrono::steady_clock;
     using Timestamp = std::chrono::time_point<Clock>;
 
     mutable std::mutex _mutex;
-    std::optional<Advertisement> _leftAdv, _rightAdv;
 
-    Helper::Timer _lostTimer, _stateResetLeftTimer, _stateResetRightTimer;
-    Helper::Callback<FnLosted> _cbLosted;
+    Helper::Timer _lostTimer;
+    Helper::Sides<Helper::Timer> _stateResetTimer;
+    Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
+    std::optional<State> _cachedState;
 
-    void ResetState();
+    bool IsPossibleDesiredAdv(const Advertisement &adv) const;
+    void UpdateAdv(Advertisement adv);
+    std::optional<UpdateEvent> UpdateState();
+    void ResetAll();
 
     void DoLost();
     void DoStateReset(Side side);
@@ -148,25 +151,19 @@ public:
     QString GetDisplayName();
     std::optional<State> GetCurrentState();
 
-    void ResetState();
-
     void OnBoundDeviceAddressChanged(uint64_t address);
     void OnQuit();
 
 private:
-    Tracker _tracker;
-    std::optional<Advertisement> _leftAdv, _rightAdv;
-    std::optional<State> _cachedState;
-
     Bluetooth::AdvertisementWatcher _adWatcher;
+    StateManager _stateMgr;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
     bool _deviceConnected{false};
     std::mutex _mutex;
 
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
-    void OnStateChanged(const std::optional<State> &oldState, const State &newState);
-    void OnLost();
+    void OnStateChanged(StateManager::UpdateEvent updateEvent);
     void OnLidOpened(bool opened);
     void OnBothInEar(bool isBothInEar);
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data);

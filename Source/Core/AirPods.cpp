@@ -135,42 +135,62 @@ const std::vector<uint8_t> &Advertisement::GetMfrData() const
 }
 
 //
-// Tracker
+// StateManager
 //
 
-Tracker::Tracker()
+StateManager::StateManager()
 {
     _lostTimer.Start(10s, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoLost();
     });
 
-    _stateResetLeftTimer.Start(10s, [this] {
+    _stateResetTimer.left.Start(10s, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Left);
     });
-    _stateResetRightTimer.Start(10s, [this] {
+
+    _stateResetTimer.right.Start(10s, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Right);
     });
 }
 
-void Tracker::Disconnect()
+std::optional<State> StateManager::GetCurrentState() const
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    return _cachedState;
+}
+
+auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent>
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
-    LOG(Info, "Tracker: Disconnect.");
-    ResetState();
+    if (!IsPossibleDesiredAdv(adv)) {
+        LOG(Warn, "This adv may not be broadcast from the device we desire.");
+        return std::nullopt;
+    }
+
+    UpdateAdv(std::move(adv));
+    return UpdateState();
 }
 
-bool Tracker::TryTrack(Advertisement adv)
+void StateManager::Disconnect()
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    LOG(Info, "StateManager: Disconnect.");
+    ResetAll();
+}
+
+bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
     const auto rssiMin = Settings::ConstAccess()->rssi_min;
     const auto advRssi = adv.GetRssi();
 
     if (advRssi < rssiMin) {
         LOG(Warn,
-            "TryTrack returns false. Reason: RSSI is less than the limit. "
+            "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
             "curr: '{}' min: '{}'",
             advRssi, rssiMin);
         return false;
@@ -178,19 +198,17 @@ bool Tracker::TryTrack(Advertisement adv)
 
     const auto &advState = adv.GetAdvState();
 
-    std::lock_guard<std::mutex> lock{_mutex};
-
-    auto &lastAdv = advState.side == Side::Left ? _leftAdv : _rightAdv;
-    auto &lastAnotherAdv = advState.side == Side::Left ? _rightAdv : _leftAdv;
+    auto &lastAdv = advState.side == Side::Left ? _adv.left : _adv.right;
+    auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
 
     // If the Random Non-resolvable Address of our devices is changed
     // or the packet is sent from another device that it isn't ours
     //
-    if (lastAdv.has_value() && lastAdv->GetAddress() != adv.GetAddress()) {
-        const auto &lastAdvState = lastAdv->GetAdvState();
+    if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
+        const auto &lastAdvState = lastAdv->first.GetAdvState();
 
         if (advState.model != lastAdvState.model) {
-            LOG(Warn, "TryTrack returns false. Reason: model new='{}' old='{}'",
+            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model new='{}' old='{}'",
                 Helper::ToString(advState.model), Helper::ToString(lastAdvState.model));
             return false;
         }
@@ -218,60 +236,121 @@ bool Tracker::TryTrack(Advertisement adv)
         // can not exceed 1, otherwise it is not our device
         //
         if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
-            LOG(Warn, "TryTrack returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
+            LOG(Warn,
+                "IsPossibleDesiredAdv returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                 leftBatteryDiff, rightBatteryDiff, caseBatteryDiff);
             return false;
         }
 
-        int16_t rssiDiff = std::abs(adv.GetRssi() - lastAdv->GetRssi());
+        int16_t rssiDiff = std::abs(advRssi - lastAdv->first.GetRssi());
         if (rssiDiff > 50) {
-            LOG(Warn, "TryTrack returns false. Reason: Current side rssiDiff '{}'", rssiDiff);
+            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Current side rssiDiff '{}'",
+                rssiDiff);
             return false;
         }
 
         LOG(Warn, "Address changed, but it might still be the same device.");
     }
+
     if (lastAnotherAdv.has_value()) {
-        int16_t rssiDiff = std::abs(adv.GetRssi() - lastAnotherAdv->GetRssi());
+        int16_t rssiDiff = std::abs(advRssi - lastAnotherAdv->first.GetRssi());
         if (rssiDiff > 50) {
-            LOG(Warn, "TryTrack returns false. Reason: Another side rssiDiff '{}'", rssiDiff);
+            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
+                rssiDiff);
             return false;
         }
     }
 
-    _lostTimer.Reset();
-    if (advState.side == Side::Left) {
-        _stateResetLeftTimer.Reset();
-    }
-    else if (advState.side == Side::Right) {
-        _stateResetRightTimer.Reset();
-    }
-
-    lastAdv = std::move(adv);
     return true;
 }
 
-void Tracker::ResetState()
+void StateManager::UpdateAdv(Advertisement adv)
 {
-    _leftAdv.reset();
-    _rightAdv.reset();
-}
+    _lostTimer.Reset();
 
-void Tracker::DoLost()
-{
-    if (_leftAdv.has_value() || _rightAdv.has_value()) {
-        LOG(Info, "Tracker: Device is lost.");
-        _cbLosted.Invoke();
+    const auto &advState = adv.GetAdvState();
+
+    if (advState.side == Side::Left) {
+        _stateResetTimer.left.Reset();
+        _adv.left = std::make_pair(std::move(adv), Clock::now());
     }
-    ResetState();
+    else if (advState.side == Side::Right) {
+        _stateResetTimer.right.Reset();
+        _adv.right = std::make_pair(std::move(adv), Clock::now());
+    }
 }
 
-void Tracker::DoStateReset(Side side)
+auto StateManager::UpdateState() -> std::optional<UpdateEvent>
 {
-    auto &adv = side == Side::Left ? _leftAdv : _rightAdv;
+    Helper::Sides<std::pair<Advertisement::AdvState, Timestamp>> cachedAdvState;
+
+    if (_adv.left.has_value()) {
+        cachedAdvState.left = std::make_pair(_adv.left->first.GetAdvState(), _adv.left->second);
+    }
+    if (_adv.right.has_value()) {
+        cachedAdvState.right = std::make_pair(_adv.right->first.GetAdvState(), _adv.right->second);
+    }
+
+    State newState;
+
+#define PICK_SIDE(available_condition_field)                                                       \
+    [&]() -> decltype(auto) {                                                                      \
+        const Helper::Sides<bool> available = {                                                    \
+            .left = cachedAdvState.left.first.available_condition_field,                           \
+            .right = cachedAdvState.right.first.available_condition_field,                         \
+        };                                                                                         \
+        if (available.left && available.right) {                                                   \
+            return cachedAdvState.left.second > cachedAdvState.right.second                        \
+                       ? cachedAdvState.left.first                                                 \
+                       : cachedAdvState.right.first;                                               \
+        }                                                                                          \
+        else {                                                                                     \
+            return available.left ? cachedAdvState.left.first : cachedAdvState.right.first;        \
+        }                                                                                          \
+    }()
+
+    newState.model = PICK_SIDE(model != Model::Unknown).model;
+
+    newState.pods.left = std::move(PICK_SIDE(pods.left.battery.has_value()).pods.left);
+    newState.pods.right = std::move(PICK_SIDE(pods.right.battery.has_value()).pods.right);
+    newState.caseBox = std::move(PICK_SIDE(caseBox.battery.has_value()).caseBox);
+
+#undef PICK_SIDE
+
+    if (newState == _cachedState) {
+        return std::nullopt;
+    }
+
+    auto oldState = std::move(_cachedState);
+    _cachedState = std::move(newState);
+
+    return UpdateEvent{.oldState = std::move(oldState), .newState = _cachedState.value()};
+}
+
+void StateManager::ResetAll()
+{
+    if (_cachedState.has_value()) {
+        ApdApp->GetMainWindow()->DisconnectSafety();
+    }
+
+    _adv.left.reset();
+    _adv.right.reset();
+    _cachedState.reset();
+}
+
+void StateManager::DoLost()
+{
+    LOG(Info, "StateManager: Device is lost.");
+    ResetAll();
+}
+
+void StateManager::DoStateReset(Side side)
+{
+    auto &adv = side == Side::Left ? _adv.left : _adv.right;
     if (adv.has_value()) {
-        LOG(Info, "Tracker: DoStateReset called. Side: {}", Helper::ToString(side));
+        LOG(Info, "StateManager: DoStateReset called. Side: {}", Helper::ToString(side));
         adv.reset();
+        UpdateState();
     }
 }
 
@@ -281,15 +360,11 @@ void Tracker::DoStateReset(Side side)
 
 Manager::Manager()
 {
-    _tracker.CbLosted() += [this](auto &&...args) {
-        std::lock_guard<std::mutex> lock{_mutex};
-        OnLost(std::forward<decltype(args)>(args)...);
-    };
-
     _adWatcher.CbReceived() += [this](auto &&...args) {
         std::lock_guard<std::mutex> lock{_mutex};
         OnAdvertisementReceived(std::forward<decltype(args)>(args)...);
     };
+
     _adWatcher.CbStateChanged() += [this](auto &&...args) {
         std::lock_guard<std::mutex> lock{_mutex};
         OnAdvWatcherStateChanged(std::forward<decltype(args)>(args)...);
@@ -325,16 +400,7 @@ QString Manager::GetDisplayName()
 std::optional<State> Manager::GetCurrentState()
 {
     std::lock_guard<std::mutex> lock{_mutex};
-    return _cachedState;
-}
-
-void Manager::ResetState()
-{
-    _leftAdv.reset();
-    _rightAdv.reset();
-    _cachedState.reset();
-
-    ApdApp->GetMainWindow()->DisconnectSafety();
+    return _stateMgr.GetCurrentState();
 }
 
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
@@ -343,7 +409,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     _boundDevice.reset();
     _deviceConnected = false;
-    _tracker.Disconnect();
+    _stateMgr.Disconnect();
     GlobalMedia::OnLimitedDeviceStateChanged({});
 
     // Unbind device
@@ -387,8 +453,7 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     _deviceConnected = newDeviceConnected;
 
     if (doDisconnect) {
-        _tracker.Disconnect();
-        ResetState();
+        _stateMgr.Disconnect();
     }
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
@@ -397,12 +462,10 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
 }
 
-void Manager::OnStateChanged(const std::optional<State> &oldState, const State &newState)
+void Manager::OnStateChanged(StateManager::UpdateEvent updateEvent)
 {
-    if (!_deviceConnected) {
-        LOG(Info, "AirPods state changed, but device disconnected.");
-        return;
-    }
+    const auto &oldState = updateEvent.oldState;
+    const auto &newState = updateEvent.newState;
 
     ApdApp->GetMainWindow()->UpdateStateSafety(newState);
 
@@ -430,11 +493,6 @@ void Manager::OnStateChanged(const std::optional<State> &oldState, const State &
             OnBothInEar(newBothInEar);
         }
     }
-}
-
-void Manager::OnLost()
-{
-    ResetState();
 }
 
 void Manager::OnLidOpened(bool opened)
@@ -479,48 +537,10 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
     LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
         Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
-    if (!_tracker.TryTrack(adv)) {
-        LOG(Warn, "It doesn't seem to be the device we desired.");
-        return false;
+    auto optUpdateEvent = _stateMgr.OnAdvReceived(Advertisement{data});
+    if (optUpdateEvent.has_value()) {
+        OnStateChanged(std::move(optUpdateEvent.value()));
     }
-
-    if (adv.GetAdvState().side == Side::Left) {
-        _leftAdv = std::move(adv);
-    }
-    else {
-        _rightAdv = std::move(adv);
-    }
-
-    Advertisement::AdvState leftAdvState, rightAdvState;
-
-    if (_leftAdv.has_value()) {
-        leftAdvState = _leftAdv->GetAdvState();
-    }
-    if (_rightAdv.has_value()) {
-        rightAdvState = _rightAdv->GetAdvState();
-    }
-
-    State newState;
-
-    auto &ll = leftAdvState.pods.left;
-    auto &rl = rightAdvState.pods.left;
-    auto &lr = leftAdvState.pods.right;
-    auto &rr = rightAdvState.pods.right;
-    auto &lc = leftAdvState.caseBox;
-    auto &rc = rightAdvState.caseBox;
-
-    newState.model =
-        leftAdvState.model != Model::Unknown ? leftAdvState.model : rightAdvState.model;
-
-    newState.pods.left = ll.battery.has_value() ? std::move(ll) : std::move(rl);
-    newState.pods.right = rr.battery.has_value() ? std::move(rr) : std::move(lr);
-    newState.caseBox = rc.battery.has_value() ? std::move(rc) : std::move(lc);
-
-    if (newState != _cachedState) {
-        OnStateChanged(_cachedState, newState);
-        _cachedState = std::move(newState);
-    }
-
     return true;
 }
 
