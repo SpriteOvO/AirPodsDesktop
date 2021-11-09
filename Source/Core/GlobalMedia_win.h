@@ -22,9 +22,6 @@
     #error "This file shouldn't be compiled."
 #endif
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-
 #include <Windows.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>

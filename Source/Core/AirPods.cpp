@@ -183,16 +183,20 @@ void StateManager::Disconnect()
     ResetAll();
 }
 
+void StateManager::OnRssiMinChanged(int16_t rssiMin)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _rssiMin = rssiMin;
+}
+
 bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
-    const auto rssiMin = Settings::ConstAccess()->rssi_min;
     const auto advRssi = adv.GetRssi();
-
-    if (advRssi < rssiMin) {
+    if (advRssi < _rssiMin) {
         LOG(Warn,
             "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
             "curr: '{}' min: '{}'",
-            advRssi, rssiMin);
+            advRssi, _rssiMin);
         return false;
     }
 
@@ -403,6 +407,18 @@ std::optional<State> Manager::GetCurrentState()
     return _stateMgr.GetCurrentState();
 }
 
+void Manager::OnRssiMinChanged(int16_t rssiMin)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _stateMgr.OnRssiMinChanged(rssiMin);
+}
+
+void Manager::OnAutomaticEarDetectionChanged(bool enable)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _automaticEarDetection = enable;
+}
+
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
     std::unique_lock<std::mutex> lock{_mutex};
@@ -508,7 +524,7 @@ void Manager::OnLidOpened(bool opened)
 
 void Manager::OnBothInEar(bool isBothInEar)
 {
-    if (!Settings::ConstAccess()->automatic_ear_detection) {
+    if (!_automaticEarDetection) {
         LOG(Info, "automatic_ear_detection: Do nothing because it is disabled. ({})", isBothInEar);
         return;
     }

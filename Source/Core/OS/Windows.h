@@ -18,9 +18,6 @@
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <shellapi.h>

@@ -118,6 +118,8 @@ public:
     std::optional<UpdateEvent> OnAdvReceived(Advertisement adv);
     void Disconnect();
 
+    void OnRssiMinChanged(int16_t rssiMin);
+
 private:
     using Clock = std::chrono::steady_clock;
     using Timestamp = std::chrono::time_point<Clock>;
@@ -128,6 +130,7 @@ private:
     Helper::Sides<Helper::Timer> _stateResetTimer;
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
     std::optional<State> _cachedState;
+    int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
 
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
     void UpdateAdv(Advertisement adv);
@@ -151,6 +154,8 @@ public:
     QString GetDisplayName();
     std::optional<State> GetCurrentState();
 
+    void OnRssiMinChanged(int16_t rssiMin);
+    void OnAutomaticEarDetectionChanged(bool enable);
     void OnBoundDeviceAddressChanged(uint64_t address);
     void OnQuit();
 
@@ -161,6 +166,7 @@ private:
     QString _displayName;
     bool _deviceConnected{false};
     std::mutex _mutex;
+    bool _automaticEarDetection{false};
 
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(StateManager::UpdateEvent updateEvent);
@@ -175,6 +181,8 @@ private:
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, StartScanner)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetDisplayName)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetCurrentState)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnRssiMinChanged)
+SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnAutomaticEarDetectionChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnBoundDeviceAddressChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnQuit)
 

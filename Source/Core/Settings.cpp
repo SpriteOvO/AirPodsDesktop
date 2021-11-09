@@ -67,6 +67,20 @@ void OnApply_low_audio_latency(const Fields &newFields)
     LowAudioLatency::Control(newFields.low_audio_latency);
 }
 
+void OnApply_automatic_ear_detection(const Fields &newFields)
+{
+    LOG(Info, "OnApply_automatic_ear_detection: {}", newFields.automatic_ear_detection);
+
+    AirPods::OnAutomaticEarDetectionChanged(newFields.automatic_ear_detection);
+}
+
+void OnApply_rssi_min(const Fields &newFields)
+{
+    LOG(Info, "OnApply_rssi_min: {}", newFields.rssi_min);
+
+    AirPods::OnRssiMinChanged(newFields.rssi_min);
+}
+
 void OnApply_reduce_loud_sounds(const Fields &newFields)
 {
     LOG(Info, "OnApply_reduce_loud_sounds: {}", newFields.reduce_loud_sounds);

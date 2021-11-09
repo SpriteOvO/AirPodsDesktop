@@ -53,9 +53,9 @@ constexpr inline uint32_t kFieldsAbiVersion = 1;
 #define SETTINGS_FIELDS(callback)                                                                  \
     callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
     callback(bool, low_audio_latency, {false}, Impl::OnApply(&OnApply_low_audio_latency))          \
-    callback(bool, automatic_ear_detection, {true})                                                \
+    callback(bool, automatic_ear_detection, {true}, Impl::OnApply(&OnApply_automatic_ear_detection))\
     callback(QString, skipped_version, {})                                                         \
-    callback(int16_t, rssi_min, {-80})                                                             \
+    callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
     callback(bool, reduce_loud_sounds, {false}, Impl::OnApply(&OnApply_reduce_loud_sounds))        \
     callback(uint32_t, loud_volume_level, {40}, Impl::OnApply(&OnApply_loud_volume_level))         \
     callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})\
@@ -90,7 +90,7 @@ private:
     Fields _oldFields;
 };
 
-ConstSafeAccessor ConstAccess();
+// ConstSafeAccessor ConstAccess();
 ModifiableSafeAccessor ModifiableAccess();
 
 } // namespace Core::Settings
