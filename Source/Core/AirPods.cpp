@@ -581,4 +581,33 @@ void Manager::OnAdvWatcherStateChanged(
 
 } // namespace Details
 
+std::vector<Bluetooth::Device> GetDevices()
+{
+    std::vector<Bluetooth::Device> devices =
+        Bluetooth::DeviceManager::GetDevicesByState(Bluetooth::DeviceState::Paired);
+
+    LOG(Info, "Paired devices count: {}", devices.size());
+
+    devices.erase(
+        std::remove_if(
+            devices.begin(), devices.end(),
+            [](const auto &device) {
+                const auto vendorId = device.GetVendorId();
+                const auto productId = device.GetProductId();
+
+                const auto doErase =
+                    vendorId != AppleCP::VendorId ||
+                    AppleCP::AirPods::GetModel(productId) == AirPods::Model::Unknown;
+
+                LOG(Trace, "Device VendorId: '{}', ProductId: '{}', doErase: {}", vendorId,
+                    productId, doErase);
+
+                return doErase;
+            }),
+        devices.end());
+
+    LOG(Info, "AirPods devices count: {} (filtered)", devices.size());
+    return devices;
+}
+
 } // namespace Core::AirPods

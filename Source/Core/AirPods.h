@@ -186,4 +186,6 @@ SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnAutomaticEarDetectionChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnBoundDeviceAddressChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnQuit)
 
+std::vector<Core::Bluetooth::Device> GetDevices();
+
 } // namespace Core::AirPods

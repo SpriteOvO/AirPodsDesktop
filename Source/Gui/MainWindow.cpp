@@ -479,37 +479,9 @@ void MainWindow::StopAnimation()
 
 void MainWindow::BindDevice()
 {
-    //
-    // TODO: Move non-UI code to `Core::AirPods::Manager`
-    //
-
     LOG(Info, "BindDevice");
 
-    std::vector<Core::Bluetooth::Device> devices =
-        Core::Bluetooth::DeviceManager::GetDevicesByState(Core::Bluetooth::DeviceState::Paired);
-
-    LOG(Info, "Devices count: {}", devices.size());
-
-    devices.erase(
-        std::remove_if(
-            devices.begin(), devices.end(),
-            [](const auto &device) {
-                const auto vendorId = device.GetVendorId();
-                const auto productId = device.GetProductId();
-
-                const auto doErase =
-                    vendorId != Core::AppleCP::VendorId ||
-                    Core::AppleCP::AirPods::GetModel(productId) == Core::AirPods::Model::Unknown;
-
-                LOG(Trace, "Device VendorId: '{}', ProductId: '{}', doErase: {}", vendorId,
-                    productId, doErase);
-
-                return doErase;
-            }),
-        devices.end());
-
-    LOG(Info, "AirPods devices count: {} (filtered)", devices.size());
-
+    const auto devices = Core::AirPods::GetDevices();
     if (devices.empty()) {
         QMessageBox::warning(
             this, Config::ProgramName,
