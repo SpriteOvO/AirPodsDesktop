@@ -354,7 +354,6 @@ void StateManager::DoStateReset(Side side)
     if (adv.has_value()) {
         LOG(Info, "StateManager: DoStateReset called. Side: {}", Helper::ToString(side));
         adv.reset();
-        UpdateState();
     }
 }
 
