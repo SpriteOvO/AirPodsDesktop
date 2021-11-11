@@ -19,9 +19,12 @@
 #include "Update.h"
 
 #include <optional>
+
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
+#include <QDesktopServices>
+
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 
@@ -242,6 +245,11 @@ bool ReleaseInfo::CanAutoUpdate() const
     return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0;
 }
 
+void ReleaseInfo::OpenUrl() const
+{
+    QDesktopServices::openUrl(QUrl{url});
+}
+
 //////////////////////////////////////////////////
 
 QVersionNumber GetLocalVersion()
@@ -346,4 +354,42 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
 
     return true;
 }
+
+//////////////////////////////////////////////////
+
+AsyncChecker::AsyncChecker(FnCallback callback) : _callback{std::move(callback)} {}
+
+AsyncChecker::~AsyncChecker()
+{
+    Stop();
+}
+
+void AsyncChecker::Start()
+{
+    // clang-format off
+    _timer.Start(kInterval, [this] { Checker(); }, true);
+    // clang-format on
+}
+
+void AsyncChecker::Stop()
+{
+    _timer.Stop();
+}
+
+void AsyncChecker::Checker()
+{
+    LOG(Info, "Checking update...");
+
+    do {
+        const auto optReleaseInfo = Core::Update::FetchUpdateRelease();
+        if (!optReleaseInfo.has_value()) {
+            break;
+        }
+
+        _callback(optReleaseInfo.value(), !_isFirst);
+    } while (false);
+
+    _isFirst = false;
+}
+
 } // namespace Core::Update

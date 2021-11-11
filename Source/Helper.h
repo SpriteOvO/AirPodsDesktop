@@ -292,6 +292,8 @@ private:
 class Timer
 {
 public:
+    using FnTrigger = std::function<void()>;
+
     Timer() = default;
 
     template <class... Args>
@@ -305,13 +307,14 @@ public:
         Stop();
     }
 
-    inline void Start(std::chrono::milliseconds interval, std::function<void()> callback)
+    inline void
+    Start(std::chrono::milliseconds interval, FnTrigger callback, bool immediatelyOnce = false)
     {
         Stop();
         _destroyFlag = false;
         _interval = std::move(interval);
-        Reset();
-        _thread = std::thread{&Timer::Thread, this, std::move(callback)};
+        _thread =
+            std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
     }
 
     inline void Stop()
@@ -339,8 +342,14 @@ private:
     std::atomic<TimePoint> _deadline;
     std::thread _thread;
 
-    inline void Thread(std::function<void()> callback)
+    inline void Thread(FnTrigger callback, bool immediatelyOnce)
     {
+        if (immediatelyOnce) {
+            callback();
+        }
+
+        Reset();
+
         while (true) {
             std::unique_lock<std::mutex> lock{_mutex};
             {

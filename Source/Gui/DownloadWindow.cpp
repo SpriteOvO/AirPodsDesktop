@@ -21,7 +21,6 @@
 #include <QPushButton>
 #include <QMetaObject>
 #include <QMessageBox>
-#include <QDesktopServices>
 
 #include <Config.h>
 #include "../Application.h"
@@ -38,7 +37,7 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
     setWindowFlags(windowFlags() & ~Qt::WindowCloseButtonHint);
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
-        QDesktopServices::openUrl(QUrl{_info.url});
+        _info.OpenUrl();
     });
 
     connect(this, &DownloadWindow::UpdateProgressSafety, this, &DownloadWindow::UpdateProgress);
@@ -73,7 +72,7 @@ void DownloadWindow::OnFailed()
         tr("Oops, there was a glitch in the automatic update.\n"
            "Please download and install the new version manually."));
 
-    QDesktopServices::openUrl(QUrl{_info.url});
+    _info.OpenUrl();
     ApdApplication::QuitSafety();
 }
 

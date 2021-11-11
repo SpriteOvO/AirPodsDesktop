@@ -23,6 +23,8 @@
 #include <QAction>
 
 #include "../Core/AirPods.h"
+#include "../Core/Update.h"
+#include "Base.h"
 #include "SettingsWindow.h"
 
 namespace Gui {
@@ -38,6 +40,7 @@ public:
     void Unavailable();
     void Disconnect();
     void Unbind();
+    void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 Q_SIGNALS:
     void OnTrayIconBatteryChangedSafety(bool value);
@@ -45,16 +48,22 @@ Q_SIGNALS:
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
+    QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
-    std::atomic<bool> _drawBattery = false;
+    bool _drawBattery = false;
+    Status _status{Status::Unavailable};
+    std::optional<Core::AirPods::State> _airPodsState;
+    std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
 
     void ShowMainWindow();
+    void Repaint();
 
-    std::optional<QImage>
+    static std::optional<QImage>
     GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
 
+    void OnNewVersionClicked();
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);

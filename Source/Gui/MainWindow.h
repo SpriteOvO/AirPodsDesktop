@@ -26,8 +26,10 @@
 #include <QMediaPlayer>
 #include <QPropertyAnimation>
 
-#include "../Core/AirPods.h"
 #include "../Utils.h"
+#include "../Core/AirPods.h"
+#include "../Core/Update.h"
+#include "Base.h"
 #include "Widget/Battery.h"
 
 namespace Gui {
@@ -54,6 +56,7 @@ public:
     void Disconnect();
     void Bind();
     void Unbind();
+    void AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo);
 
 Q_SIGNALS:
     void UpdateStateSafety(const Core::AirPods::State &state);
@@ -64,10 +67,9 @@ Q_SIGNALS:
     void UnbindSafety();
     void ShowSafety();
     void HideSafety();
+    bool VersionUpdateAvailableSafety(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
 
 private:
-    enum class State { Updating, Available, Unavailable, Disconnected, Bind, Unbind };
-
     constexpr static QSize _screenMargin{50, 100};
 
     Ui::MainWindow _ui;
@@ -81,13 +83,14 @@ private:
     Widget::Battery *_rightBattery = new Widget::Battery{this};
     Widget::Battery *_caseBattery = new Widget::Battery{this};
 
+    Core::Update::AsyncChecker _updateChecker{[this](auto &&...args) {
+        VersionUpdateAvailableSafety(std::forward<decltype(args)>(args)...);
+    }};
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
-    State _lastState{State::Unavailable};
+    Status _lastStatus{Status::Unavailable};
     bool _isShown{false};
     bool _isAnimationPlaying{false};
-
-    static void CheckUpdate();
 
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
@@ -95,6 +98,7 @@ private:
     void StopAnimation();
     void BindDevice();
     void ControlAutoHideTimer(bool start);
+    void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();

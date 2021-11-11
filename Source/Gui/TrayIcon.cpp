@@ -30,6 +30,7 @@ namespace Gui {
 
 TrayIcon::TrayIcon()
 {
+    connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
@@ -39,6 +40,10 @@ TrayIcon::TrayIcon()
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafety, this, &TrayIcon::OnTrayIconBatteryChanged);
 
+    _actionNewVersion->setVisible(false);
+
+    _menu->addAction(_actionNewVersion);
+    _menu->addSeparator();
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -58,79 +63,126 @@ TrayIcon::TrayIcon()
 
 void TrayIcon::UpdateState(const Core::AirPods::State &state)
 {
-    QString toolTip;
-    std::optional<Core::AirPods::Battery::value_type> minBattery;
-
-    // toolTip += Helper::ToString(state.model);
-    toolTip += Core::AirPods::GetDisplayName();
-
-    // clang-format off
-
-    if (state.pods.left.battery.has_value()) {
-        const auto batteryValue = state.pods.left.battery.value();
-
-        toolTip += QString{tr("\nLeft: %1%%2")}
-            .arg(batteryValue)
-            .arg(state.pods.left.isCharging ? tr(" (charging)") : "");
-
-        minBattery = batteryValue;
-    }
-
-    if (state.pods.right.battery.has_value()) {
-        const auto batteryValue = state.pods.right.battery.value();
-
-        toolTip += QString{tr("\nRight: %1%%2")}
-            .arg(batteryValue)
-            .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
-
-        if (minBattery.has_value() && batteryValue < minBattery.value() ||
-            !minBattery.has_value()) {
-            minBattery = batteryValue;
-        }
-    }
-
-    if (state.caseBox.battery.has_value()) {
-        toolTip += QString{tr("\nCase: %1%%2")}
-            .arg(state.caseBox.battery.value())
-            .arg(state.caseBox.isCharging ? tr(" (charging)") : "");
-    }
-
-    // clang-format on
-
-    _tray->setToolTip(toolTip);
-
-    if (minBattery.has_value() && _drawBattery) {
-        auto optIcon = GenerateIcon(64, QString::number(minBattery.value()), std::nullopt);
-        if (optIcon.has_value()) {
-            _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
-        }
-    }
-    else {
-        _tray->setIcon(ApdApp->windowIcon());
-    }
+    _status = Status::Updating;
+    _airPodsState = state;
+    Repaint();
 }
 
 void TrayIcon::Unavailable()
 {
-    _tray->setToolTip(tr("Unavailable"));
-    _tray->setIcon(ApdApp->windowIcon());
+    _status = Status::Unavailable;
+    _airPodsState.reset();
+    Repaint();
 }
 
 void TrayIcon::Disconnect()
 {
-    _tray->setToolTip(tr("Disconnected"));
-    _tray->setIcon(ApdApp->windowIcon());
+    _status = Status::Disconnected;
+    _airPodsState.reset();
+    Repaint();
 }
 
 void TrayIcon::Unbind()
 {
-    _tray->setToolTip(tr("Waiting for Binding"));
-    _tray->setIcon(ApdApp->windowIcon());
+    _status = Status::Unbind;
+    _airPodsState.reset();
+    Repaint();
+}
+
+void TrayIcon::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo)
+{
+    _updateReleaseInfo = releaseInfo;
+    _actionNewVersion->setVisible(true);
+    Repaint();
 }
 
 void TrayIcon::ShowMainWindow()
 {
     ApdApp->GetMainWindow()->show();
+}
+
+void TrayIcon::Repaint()
+{
+    QString toolTipContent;
+    std::optional<Core::AirPods::Battery::value_type> minBattery;
+
+    switch (_status) {
+    case Status::Unavailable:
+    case Status::Disconnected:
+    case Status::Unbind:
+        toolTipContent = DisplayableStatus(_status);
+        break;
+    case Status::Updating: {
+        if (!_airPodsState.has_value()) {
+            break;
+        }
+        const auto &state = _airPodsState.value();
+
+        // toolTipContent += Helper::ToString(state.model);
+        toolTipContent += Core::AirPods::GetDisplayName();
+
+        // clang-format off
+        if (state.pods.left.battery.has_value()) {
+            const auto batteryValue = state.pods.left.battery.value();
+
+            toolTipContent += QString{tr("\nLeft: %1%%2")}
+                .arg(batteryValue)
+                .arg(state.pods.left.isCharging ? tr(" (charging)") : "");
+
+            minBattery = batteryValue;
+        }
+
+        if (state.pods.right.battery.has_value()) {
+            const auto batteryValue = state.pods.right.battery.value();
+
+            toolTipContent += QString{tr("\nRight: %1%%2")}
+                .arg(batteryValue)
+                .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
+
+            if (minBattery.has_value() && batteryValue < minBattery.value() ||
+                !minBattery.has_value()) {
+                minBattery = batteryValue;
+            }
+        }
+
+        if (state.caseBox.battery.has_value()) {
+            toolTipContent += QString{tr("\nCase: %1%%2")}
+                .arg(state.caseBox.battery.value())
+                .arg(state.caseBox.isCharging ? tr(" (charging)") : "");
+        }
+        // clang-format on
+        break;
+    }
+    default:
+        APD_ASSERT(false);
+    }
+
+    if (_updateReleaseInfo.has_value()) {
+        toolTipContent += '\n' + _actionNewVersion->text();
+    }
+
+    _tray->setToolTip("AirPodsDesktop\n" + toolTipContent.trimmed());
+
+    // RepaintIcon
+
+    std::optional<QString> iconText;
+
+    if (minBattery.has_value() && _drawBattery) {
+        iconText = QString::number(minBattery.value());
+    }
+    else {
+        iconText.reset();
+    }
+
+    static const QColor kNewVersionAvailableDot = Qt::yellow;
+
+    auto optIcon = GenerateIcon(
+        64, iconText,
+        _updateReleaseInfo.has_value() ? std::optional<QColor>{kNewVersionAvailableDot}
+                                       : std::nullopt);
+    if (optIcon.has_value()) {
+        _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
+    }
 }
 
 std::optional<QImage> TrayIcon::GenerateIcon(
@@ -232,6 +284,19 @@ std::optional<QImage> TrayIcon::GenerateIcon(
     painter.restore();
 
     return result;
+}
+
+void TrayIcon::OnNewVersionClicked()
+{
+    APD_ASSERT(_updateReleaseInfo.has_value());
+
+    _actionNewVersion->setVisible(false);
+
+    auto releaseInfo = std::move(_updateReleaseInfo.value());
+    _updateReleaseInfo.reset();
+    Repaint();
+
+    ApdApp->GetMainWindow()->AskUserUpdate(releaseInfo);
 }
 
 void TrayIcon::OnSettingsClicked()

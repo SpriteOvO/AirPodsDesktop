@@ -23,7 +23,6 @@
 #include <QScreen>
 #include <QPainter>
 #include <QMessageBox>
-#include <QDesktopServices>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -149,6 +148,7 @@ private:
 MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
+    qRegisterMetaType<Core::Update::ReleaseInfo>("Core::Update::ReleaseInfo");
 
     _videoWidget = new VideoWidget{this};
     _closeButton = new CloseButton{this};
@@ -179,6 +179,8 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::UnbindSafety, this, &MainWindow::Unbind);
     connect(this, &MainWindow::ShowSafety, this, &MainWindow::show);
     connect(this, &MainWindow::HideSafety, this, &MainWindow::DoHide);
+    connect(
+        this, &MainWindow::VersionUpdateAvailableSafety, this, &MainWindow::VersionUpdateAvailable);
 
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
@@ -194,13 +196,13 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutClose->addWidget(_closeButton);
 
     Unavailable();
-    CheckUpdate();
+    _updateChecker.Start();
 }
 
 void MainWindow::UpdateState(const Core::AirPods::State &state)
 {
     LOG(Info, "MainWindow::UpdateState");
-    _lastState = State::Updating;
+    _lastStatus = Status::Updating;
 
     // _ui.deviceLabel->setText(Helper::ToString(state.model));
     _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
@@ -240,10 +242,10 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
 void MainWindow::Available()
 {
     LOG(Info, "MainWindow::Available");
-    if (_lastState != State::Unavailable) {
+    if (_lastStatus != Status::Unavailable) {
         return;
     }
-    _lastState = State::Available;
+    _lastStatus = Status::Available;
 
     Disconnect();
 }
@@ -251,7 +253,7 @@ void MainWindow::Available()
 void MainWindow::Unavailable()
 {
     LOG(Info, "MainWindow::Unavailable");
-    _lastState = State::Unavailable;
+    _lastStatus = Status::Unavailable;
 
     _ui.deviceLabel->setText(tr("Unavailable"));
 
@@ -269,10 +271,10 @@ void MainWindow::Unavailable()
 void MainWindow::Disconnect()
 {
     LOG(Info, "MainWindow::Disconnect");
-    if (_lastState == State::Unbind) {
+    if (_lastStatus == Status::Unbind) {
         return;
     }
-    _lastState = State::Disconnected;
+    _lastStatus = Status::Disconnected;
 
     _ui.deviceLabel->setText(tr("Disconnected"));
 
@@ -290,7 +292,7 @@ void MainWindow::Disconnect()
 void MainWindow::Bind()
 {
     LOG(Info, "MainWindow::Bind");
-    _lastState = State::Bind;
+    _lastStatus = Status::Bind;
 
     Disconnect();
 }
@@ -298,7 +300,7 @@ void MainWindow::Bind()
 void MainWindow::Unbind()
 {
     LOG(Info, "MainWindow::Unbind");
-    _lastState = State::Unbind;
+    _lastStatus = Status::Unbind;
 
     _ui.deviceLabel->setText(tr("Waiting for Binding"));
 
@@ -313,91 +315,57 @@ void MainWindow::Unbind()
     ApdApp->GetTrayIcon()->Unbind();
 }
 
-void MainWindow::CheckUpdate()
+void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
 {
-    // LOG(Trace, "CheckUpdate: Poll.");
+    auto releaseVersion = releaseInfo.version.toString();
 
-    const auto &DispatchNext = []() { Utils::Qt::Dispatch(&CheckUpdate); };
-
-    using OptReleaseInfo = std::optional<Core::Update::ReleaseInfo>;
-    static std::promise<OptReleaseInfo> pmsRelease;
-    static std::optional<std::future<OptReleaseInfo>> optFuture;
-
-    if (!optFuture.has_value()) {
-        LOG(Info, "CheckUpdate: Prepare promise and future. Fetch release info async.");
-        pmsRelease = decltype(pmsRelease){};
-        optFuture = pmsRelease.get_future();
-        std::thread{[]() { pmsRelease.set_value(Core::Update::FetchUpdateRelease()); }}.detach();
-        DispatchNext();
-        return;
+    QString changeLogBlock;
+    if (!releaseInfo.changeLog.isEmpty()) {
+        changeLogBlock = QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
     }
 
-    if (!Helper::IsFutureReady(optFuture.value())) {
-        // LOG(Trace, "CheckUpdate: The future is not ready.");
-        DispatchNext();
-        return;
-    }
+    auto button = QMessageBox::question(
+        nullptr, Config::ProgramName,
+        tr("Hey! I found a new version available!\n"
+           "\n"
+           "Current version: %1\n"
+           "Latest version: %2\n"
+           "\n"
+           "%3"
+           "Click \"Ignore\" to skip this new version.\n"
+           "\n"
+           "Do you want to update it now?")
+            .arg(Core::Update::GetLocalVersion().toString())
+            .arg(releaseVersion)
+            .arg(changeLogBlock),
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
 
-    auto optRelease = optFuture->get();
-    optFuture.reset();
-    LOG(Info, "CheckUpdate: Fetch release info successfully.");
+    if (button == QMessageBox::Yes) {
+        LOG(Info, "VersionUpdate: User clicked Yes.");
 
-    do {
-        if (!optRelease.has_value()) {
-            break;
-        }
-
-        auto releaseInfo = std::move(optRelease.value());
-        auto releaseVersion = releaseInfo.version.toString();
-
-        QString changeLogBlock;
-        if (!releaseInfo.changeLog.isEmpty()) {
-            changeLogBlock =
-                QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
-        }
-
-        auto button = QMessageBox::question(
-            nullptr, Config::ProgramName,
-            tr("Hey! I found a new version available!\n"
-               "\n"
-               "Current version: %1\n"
-               "Latest version: %2\n"
-               "\n"
-               "%3"
-               "Click \"Ignore\" to skip this new version.\n"
-               "\n"
-               "Do you want to update it now?")
-                .arg(Core::Update::GetLocalVersion().toString())
-                .arg(releaseVersion)
-                .arg(changeLogBlock),
-            QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
-
-        if (button == QMessageBox::Yes) {
-            LOG(Info, "CheckUpdate: User clicked Yes.");
-
-            if (!releaseInfo.CanAutoUpdate()) {
-                LOG(Info, "CheckUpdate: Popup latest url and quit.");
-                QDesktopServices::openUrl(QUrl{releaseInfo.url});
-                ApdApplication::QuitSafety();
-                break;
-            }
-
-            Gui::DownloadWindow{std::move(releaseInfo)}.exec();
-        }
-        else if (button == QMessageBox::Ignore) {
-            LOG(Info, "CheckUpdate: User clicked Ignore.");
-
-            Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
+        if (!releaseInfo.CanAutoUpdate()) {
+            LOG(Info, "VersionUpdate: Cannot auto update. Popup latest url and quit.");
+            releaseInfo.OpenUrl();
         }
         else {
-            LOG(Info, "CheckUpdate: User clicked No.");
+            Gui::DownloadWindow{releaseInfo}.exec();
         }
 
-    } while (false);
+        ApdApplication::QuitSafety();
+        return;
+    }
+    else if (button == QMessageBox::Ignore) {
+        LOG(Info, "VersionUpdate: User clicked Ignore.");
 
-    // TODO: Enable this timer after the icon notification is implemented
-    //
-    // QTimer::singleShot(1h, &CheckUpdate);
+        Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
+
+        // Continue checking for new versions after the skipped version
+    }
+    else {
+        LOG(Info, "VersionUpdate: User clicked No.");
+
+        _updateChecker.Stop();
+    }
 }
 
 void MainWindow::ChangeButtonAction(ButtonAction action)
@@ -535,6 +503,18 @@ void MainWindow::ControlAutoHideTimer(bool start)
     }
     else {
         _autoHideTimer->stop();
+    }
+}
+
+void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent)
+{
+    LOG(Info, "MainWindow::VersionUpdateAvailable: silent: `{}`", silent);
+
+    if (!silent) {
+        AskUserUpdate(releaseInfo);
+    }
+    else {
+        ApdApp->GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
     }
 }
 
