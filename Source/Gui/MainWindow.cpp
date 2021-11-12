@@ -242,116 +242,62 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 void MainWindow::UpdateState(const Core::AirPods::State &state)
 {
     LOG(Info, "MainWindow::UpdateState");
-    _lastStatus = Status::Updating;
 
-    // _ui.deviceLabel->setText(Helper::ToString(state.model));
-    _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
-
-    SetAnimation(state.model);
-
-    if (!state.pods.left.battery.has_value()) {
-        _leftBattery->hide();
-    }
-    else {
-        _leftBattery->setCharging(state.pods.left.isCharging);
-        _leftBattery->setValue(state.pods.left.battery.value());
-        _leftBattery->show();
-    }
-
-    if (!state.pods.right.battery.has_value()) {
-        _rightBattery->hide();
-    }
-    else {
-        _rightBattery->setCharging(state.pods.right.isCharging);
-        _rightBattery->setValue(state.pods.right.battery.value());
-        _rightBattery->show();
-    }
-
-    if (!state.caseBox.battery.has_value()) {
-        _caseBattery->hide();
-    }
-    else {
-        _caseBattery->setCharging(state.caseBox.isCharging);
-        _caseBattery->setValue(state.caseBox.battery.value());
-        _caseBattery->show();
-    }
-
+    _status = Status::Updating;
+    _cachedState = state;
+    Repaint();
     ApdApp->GetTrayIcon()->UpdateState(state);
 }
 
 void MainWindow::Available()
 {
     LOG(Info, "MainWindow::Available");
-    if (_lastStatus != Status::Unavailable) {
+
+    if (_status != Status::Unavailable) {
         return;
     }
-    _lastStatus = Status::Available;
-
+    _status = Status::Available;
     Disconnect();
 }
 
 void MainWindow::Unavailable()
 {
     LOG(Info, "MainWindow::Unavailable");
-    _lastStatus = Status::Unavailable;
 
-    _ui.deviceLabel->setText(tr("Unavailable"));
-
-    SetAnimation(std::nullopt);
-
-    _leftBattery->hide();
-    _rightBattery->hide();
-    _caseBattery->hide();
-
-    ChangeButtonAction(ButtonAction::NoButton);
-
+    _status = Status::Unavailable;
+    _cachedState.reset();
+    Repaint();
     ApdApp->GetTrayIcon()->Unavailable();
 }
 
 void MainWindow::Disconnect()
 {
     LOG(Info, "MainWindow::Disconnect");
-    if (_lastStatus == Status::Unbind) {
+
+    if (_status == Status::Unbind) {
         return;
     }
-    _lastStatus = Status::Disconnected;
-
-    _ui.deviceLabel->setText(tr("Disconnected"));
-
-    SetAnimation(std::nullopt);
-
-    _leftBattery->hide();
-    _rightBattery->hide();
-    _caseBattery->hide();
-
-    ChangeButtonAction(ButtonAction::NoButton);
-
+    _status = Status::Disconnected;
+    _cachedState.reset();
+    Repaint();
     ApdApp->GetTrayIcon()->Disconnect();
 }
 
 void MainWindow::Bind()
 {
     LOG(Info, "MainWindow::Bind");
-    _lastStatus = Status::Bind;
 
+    _status = Status::Bind;
     Disconnect();
 }
 
 void MainWindow::Unbind()
 {
     LOG(Info, "MainWindow::Unbind");
-    _lastStatus = Status::Unbind;
 
-    _ui.deviceLabel->setText(tr("Waiting for Binding"));
-
-    SetAnimation(std::nullopt);
-
-    _leftBattery->hide();
-    _rightBattery->hide();
-    _caseBattery->hide();
-
-    ChangeButtonAction(ButtonAction::Bind);
-
+    _status = Status::Unbind;
+    _cachedState.reset();
+    Repaint();
     ApdApp->GetTrayIcon()->Unbind();
 }
 
@@ -556,6 +502,79 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
     }
     else {
         ApdApp->GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
+    }
+}
+
+void MainWindow::Repaint()
+{
+    const auto &noState = [this] {
+        SetAnimation(std::nullopt);
+        _leftBattery->hide();
+        _rightBattery->hide();
+        _caseBattery->hide();
+    };
+
+    QString title;
+
+    switch (_status) {
+    case Status::Unavailable:
+    case Status::Disconnected:
+    case Status::Unbind:
+        title = DisplayableStatus(_status);
+        noState();
+        break;
+    default:
+        break;
+    }
+
+    _ui.deviceLabel->setText(title);
+
+    if (_status == Status::Unavailable || _status == Status::Disconnected) {
+        ChangeButtonAction(ButtonAction::NoButton);
+    }
+    else if (_status == Status::Unbind) {
+        ChangeButtonAction(ButtonAction::Bind);
+    }
+
+    //////////////////////////////////////////////////
+
+    if (!_cachedState.has_value()) {
+        noState();
+        return;
+    }
+
+    const auto &state = _cachedState.value();
+
+    // _ui.deviceLabel->setText(Helper::ToString(state.model));
+    _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
+
+    SetAnimation(state.model);
+
+    if (!state.pods.left.battery.has_value()) {
+        _leftBattery->hide();
+    }
+    else {
+        _leftBattery->setCharging(state.pods.left.isCharging);
+        _leftBattery->setValue(state.pods.left.battery.value());
+        _leftBattery->show();
+    }
+
+    if (!state.pods.right.battery.has_value()) {
+        _rightBattery->hide();
+    }
+    else {
+        _rightBattery->setCharging(state.pods.right.isCharging);
+        _rightBattery->setValue(state.pods.right.battery.value());
+        _rightBattery->show();
+    }
+
+    if (!state.caseBox.battery.has_value()) {
+        _caseBattery->hide();
+    }
+    else {
+        _caseBattery->setCharging(state.caseBox.isCharging);
+        _caseBattery->setValue(state.caseBox.battery.value());
+        _caseBattery->show();
     }
 }
 

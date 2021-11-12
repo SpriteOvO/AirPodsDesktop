@@ -88,7 +88,8 @@ private:
     }};
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
-    Status _lastStatus{Status::Unavailable};
+    Status _status{Status::Unavailable};
+    std::optional<Core::AirPods::State> _cachedState;
     bool _isShown{false};
     bool _isAnimationPlaying{false};
 
@@ -99,6 +100,7 @@ private:
     void BindDevice();
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+    void Repaint();
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();
