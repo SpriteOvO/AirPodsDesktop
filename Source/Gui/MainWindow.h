@@ -90,7 +90,7 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     Status _status{Status::Unavailable};
     std::optional<Core::AirPods::State> _cachedState;
-    bool _isShown{false};
+    bool _isVisible{false};
     bool _isAnimationPlaying{false};
 
     void ChangeButtonAction(ButtonAction action);

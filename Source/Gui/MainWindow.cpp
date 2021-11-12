@@ -18,8 +18,6 @@
 
 #include "MainWindow.h"
 
-#include <future>
-
 #include <QScreen>
 #include <QPainter>
 #include <QMessageBox>
@@ -483,9 +481,9 @@ void MainWindow::BindDevice()
 
 void MainWindow::ControlAutoHideTimer(bool start)
 {
-    LOG(Trace, "ControlAutoHideTimer: start == '{}', _isShown == '{}'", start, _isShown);
+    LOG(Trace, "ControlAutoHideTimer: start == '{}', _isVisible == '{}'", start, _isVisible);
 
-    if (start && _isShown) {
+    if (start && _isVisible) {
         _autoHideTimer->start(10s);
     }
     else {
@@ -586,7 +584,7 @@ void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
 
 void MainWindow::OnPosMoveFinished()
 {
-    if (!_isShown) {
+    if (!_isVisible) {
         hide();
         StopAnimation();
     }
@@ -635,10 +633,10 @@ void MainWindow::DoHide()
 {
     LOG(Trace, "MainWindow: Hide");
 
-    if (!_isShown) {
+    if (!_isVisible) {
         return;
     }
-    _isShown = false;
+    _isVisible = false;
 
     ControlAutoHideTimer(false);
 
@@ -655,10 +653,10 @@ void MainWindow::showEvent(QShowEvent *event)
 {
     LOG(Trace, "MainWindow: Show");
 
-    if (_isShown) {
+    if (_isVisible) {
         return;
     }
-    _isShown = true;
+    _isVisible = true;
 
     PlayAnimation();
     ControlAutoHideTimer(true);
