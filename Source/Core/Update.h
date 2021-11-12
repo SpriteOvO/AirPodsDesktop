@@ -45,6 +45,8 @@ struct ReleaseInfo {
     bool isPreRelease{false};
 };
 
+QVersionNumber ToVersionNumber(QString str);
+
 QVersionNumber GetLocalVersion();
 
 std::optional<ReleaseInfo> FetchUpdateRelease();

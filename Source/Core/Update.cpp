@@ -35,6 +35,17 @@
 using json = nlohmann::json;
 
 namespace Core::Update {
+
+// TODO: Write a test for this function
+QVersionNumber ToVersionNumber(QString str)
+{
+    // If "v1.2.3", set to "1.2.3"
+    if (str.size() >= 2 && str.at(0).toLower() == 'v' && str.at(1).isNumber()) {
+        str = str.remove(0, 1);
+    }
+    return QVersionNumber::fromString(str);
+}
+
 namespace Impl {
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
@@ -84,7 +95,7 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 
         ReleaseInfo info;
 
-        info.version = QVersionNumber::fromString(tag);
+        info.version = ToVersionNumber(tag);
         info.url = std::move(url);
         info.changeLog = std::move(changeLog);
         info.isPreRelease = root["prerelease"].get<bool>();
@@ -254,7 +265,7 @@ void ReleaseInfo::OpenUrl() const
 
 QVersionNumber GetLocalVersion()
 {
-    return QVersionNumber::fromString(Config::Version::String);
+    return ToVersionNumber(Config::Version::String);
 }
 
 //////////////////////////////////////////////////
