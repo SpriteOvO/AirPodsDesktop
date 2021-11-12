@@ -134,11 +134,30 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
         }
     });
 
-    connect(_ui.cbDisplayBatteryOnTrayIcon, &QCheckBox::toggled, this, [this](bool checked) {
-        if (_trigger) {
-            On_cbDisplayBatteryOnTrayIcon_toggled(checked);
-        }
-    });
+    connect(
+        _ui.rbDisplayBatteryOnTrayIconDisable, &QRadioButton::toggled, this, [this](bool checked) {
+            if (_trigger) {
+                On_cbDisplayBatteryOnTrayIcon_toggled(
+                    Core::Settings::TrayIconBatteryBehavior::Disable);
+            }
+        });
+
+    connect(
+        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery, &QRadioButton::toggled, this,
+        [this](bool checked) {
+            if (_trigger) {
+                On_cbDisplayBatteryOnTrayIcon_toggled(
+                    Core::Settings::TrayIconBatteryBehavior::WhenLowBattery);
+            }
+        });
+
+    connect(
+        _ui.rbDisplayBatteryOnTrayIconAlways, &QRadioButton::toggled, this, [this](bool checked) {
+            if (_trigger) {
+                On_cbDisplayBatteryOnTrayIcon_toggled(
+                    Core::Settings::TrayIconBatteryBehavior::Always);
+            }
+        });
 
     connect(_ui.pbUnbind, &QPushButton::clicked, this, [this]() {
         if (_trigger) {
@@ -192,7 +211,25 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
-    _ui.cbDisplayBatteryOnTrayIcon->setChecked(fields.tray_icon_battery);
+    switch (fields.tray_icon_battery) {
+    case Core::Settings::TrayIconBatteryBehavior::Disable:
+        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(true);
+        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(false);
+        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(false);
+        break;
+    case Core::Settings::TrayIconBatteryBehavior::WhenLowBattery:
+        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(false);
+        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(true);
+        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(false);
+        break;
+    case Core::Settings::TrayIconBatteryBehavior::Always:
+        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(false);
+        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(false);
+        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(true);
+        break;
+    default:
+        APD_ASSERT(false);
+    }
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
@@ -215,9 +252,10 @@ void SettingsWindow::On_pbUnbind_clicked()
     Core::Settings::ModifiableAccess()->device_address = 0;
 }
 
-void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(bool checked)
+void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(
+    Core::Settings::TrayIconBatteryBehavior behavior)
 {
-    Core::Settings::ModifiableAccess()->tray_icon_battery = checked;
+    Core::Settings::ModifiableAccess()->tray_icon_battery = behavior;
 }
 
 void SettingsWindow::On_cbLowAudioLatency_toggled(bool checked)

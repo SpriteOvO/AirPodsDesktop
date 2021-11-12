@@ -58,7 +58,7 @@ private:
     void On_pbUnbind_clicked();
 
     // Visual
-    void On_cbDisplayBatteryOnTrayIcon_toggled(bool checked);
+    void On_cbDisplayBatteryOnTrayIcon_toggled(Core::Settings::TrayIconBatteryBehavior behavior);
 
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);

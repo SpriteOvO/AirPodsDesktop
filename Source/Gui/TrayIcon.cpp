@@ -104,7 +104,7 @@ void TrayIcon::ShowMainWindow()
 void TrayIcon::Repaint()
 {
     QString toolTipContent;
-    std::optional<Core::AirPods::Battery::ValueType> minBattery;
+    Core::AirPods::Battery minBattery;
 
     switch (_status) {
     case Status::Unavailable:
@@ -139,8 +139,8 @@ void TrayIcon::Repaint()
                 .arg(batteryValue)
                 .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
 
-            if (minBattery.has_value() && batteryValue < minBattery.value() ||
-                !minBattery.has_value()) {
+            if (minBattery.Available() && batteryValue < minBattery.Value() ||
+                !minBattery.Available()) {
                 minBattery = batteryValue;
             }
         }
@@ -167,12 +167,29 @@ void TrayIcon::Repaint()
 
     std::optional<QString> iconText;
 
-    if (minBattery.has_value() && _drawBattery) {
-        iconText = QString::number(minBattery.value());
-    }
-    else {
+    do {
+        if (minBattery.Available()) {
+            const auto drawBattery = [&] {
+                switch (_trayIconBatteryBehavior) {
+                case Core::Settings::TrayIconBatteryBehavior::Disable:
+                    return false;
+                case Core::Settings::TrayIconBatteryBehavior::WhenLowBattery:
+                    return minBattery.IsLowBattery();
+                case Core::Settings::TrayIconBatteryBehavior::Always:
+                    return true;
+                default:
+                    return false;
+                }
+            }();
+
+            if (drawBattery) {
+                iconText = QString::number(minBattery.Value());
+                break;
+            }
+        }
+
         iconText.reset();
-    }
+    } while (false);
 
     static const QColor kNewVersionAvailableDot = Qt::yellow;
 
@@ -327,14 +344,10 @@ void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
     }
 }
 
-void TrayIcon::OnTrayIconBatteryChanged(bool value)
+void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value)
 {
-    _drawBattery = value;
-
-    auto optState = Core::AirPods::GetCurrentState();
-    if (optState.has_value()) {
-        UpdateState(optState.value());
-    }
+    _trayIconBatteryBehavior = value;
+    Repaint();
 }
 
 } // namespace Gui

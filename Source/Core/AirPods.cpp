@@ -401,12 +401,6 @@ QString Manager::GetDisplayName()
     return _displayName;
 }
 
-std::optional<State> Manager::GetCurrentState()
-{
-    std::lock_guard<std::mutex> lock{_mutex};
-    return _stateMgr.GetCurrentState();
-}
-
 void Manager::OnRssiMinChanged(int16_t rssiMin)
 {
     std::lock_guard<std::mutex> lock{_mutex};

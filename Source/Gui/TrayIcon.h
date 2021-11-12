@@ -43,7 +43,7 @@ public:
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 Q_SIGNALS:
-    void OnTrayIconBatteryChangedSafety(bool value);
+    void OnTrayIconBatteryChangedSafety(Core::Settings::TrayIconBatteryBehavior value);
 
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
@@ -52,7 +52,8 @@ private:
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
-    bool _drawBattery = false;
+    Core::Settings::TrayIconBatteryBehavior _trayIconBatteryBehavior{
+        Core::Settings::TrayIconBatteryBehavior::Disable};
     Status _status{Status::Unavailable};
     std::optional<Core::AirPods::State> _airPodsState;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
@@ -67,7 +68,7 @@ private:
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
-    void OnTrayIconBatteryChanged(bool value);
+    void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value);
 
 protected:
     SettingsWindow _settingsWindow;

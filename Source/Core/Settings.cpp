@@ -21,6 +21,7 @@
 #include <mutex>
 #include <QDir>
 #include <boost/pfr.hpp>
+#include <magic_enum.hpp>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -219,6 +220,8 @@ public:
         const auto &loadKey = [&](const std::string_view &keyName, auto &value,
                                   bool restrict = false) {
             using ValueType = std::decay_t<decltype(value)>;
+            using ValueStorageType =
+                std::conditional_t<!std::is_enum_v<ValueType>, ValueType, QString>;
 
             QString qstrKeyName = QString::fromStdString(std::string{keyName});
             if (!_settings.contains(qstrKeyName)) {
@@ -234,12 +237,25 @@ public:
             }
 
             QVariant var = _settings.value(qstrKeyName);
-            if (!var.canConvert<ValueType>() || !var.convert(qMetaTypeId<ValueType>())) {
+            if (!var.canConvert<ValueStorageType>() ||
+                !var.convert(qMetaTypeId<ValueStorageType>())) {
                 LOG(Warn, "The value of the key '{}' cannot be convert.", keyName);
                 return false;
             }
 
-            value = var.value<ValueType>();
+            if constexpr (!std::is_enum_v<ValueType>) {
+                value = var.value<ValueStorageType>();
+            }
+            else {
+                auto optValue =
+                    magic_enum::enum_cast<ValueType>(var.value<ValueStorageType>().toStdString());
+                if (!optValue.has_value()) {
+                    LOG(Warn, "enum_cast the value of the key '{}' failed.", keyName);
+                    return false;
+                }
+                value = optValue.value();
+            }
+
             if (!restrict) {
                 LOG(Info, "Load key succeeded. Key: '{}', Value: '{}'", keyName, value);
             }
@@ -319,19 +335,27 @@ private:
 
     void SaveWithoutLock()
     {
-        const auto &saveKey = [&](const std::string_view &keyName, const auto &value,
-                                  bool restrict = false) {
-            QString qstrKeyName = QString::fromStdString(std::string{keyName});
-            _settings.setValue(qstrKeyName, value);
+        const auto &saveKey =
+            [&]<class T>(const std::string_view &keyName, const T &value, bool restrict = false) {
+                QString qstrKeyName = QString::fromStdString(std::string{keyName});
 
-            if (!restrict) {
-                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName, value);
-            }
-            else {
-                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName,
-                    LogSensitiveData(value));
-            }
-        };
+                if constexpr (!std::is_enum_v<T>) {
+                    _settings.setValue(qstrKeyName, value);
+                }
+                else {
+                    _settings.setValue(
+                        qstrKeyName,
+                        QString::fromStdString(std::string{magic_enum::enum_name(value)}));
+                }
+
+                if (!restrict) {
+                    LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName, value);
+                }
+                else {
+                    LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName,
+                        LogSensitiveData(value));
+                }
+            };
 
         saveKey("abi_version", kFieldsAbiVersion);
 

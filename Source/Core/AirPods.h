@@ -152,7 +152,6 @@ public:
     void StopScanner();
 
     QString GetDisplayName();
-    std::optional<State> GetCurrentState();
 
     void OnRssiMinChanged(int16_t rssiMin);
     void OnAutomaticEarDetectionChanged(bool enable);
@@ -180,7 +179,6 @@ private:
 
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, StartScanner)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetDisplayName)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetCurrentState)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnRssiMinChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnAutomaticEarDetectionChanged)
 SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnBoundDeviceAddressChanged)
