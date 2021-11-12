@@ -548,30 +548,30 @@ void MainWindow::Repaint()
 
     SetAnimation(state.model);
 
-    if (!state.pods.left.battery.has_value()) {
+    if (!state.pods.left.battery.Available()) {
         _leftBattery->hide();
     }
     else {
         _leftBattery->setCharging(state.pods.left.isCharging);
-        _leftBattery->setValue(state.pods.left.battery.value());
+        _leftBattery->setValue(state.pods.left.battery.Value());
         _leftBattery->show();
     }
 
-    if (!state.pods.right.battery.has_value()) {
+    if (!state.pods.right.battery.Available()) {
         _rightBattery->hide();
     }
     else {
         _rightBattery->setCharging(state.pods.right.isCharging);
-        _rightBattery->setValue(state.pods.right.battery.value());
+        _rightBattery->setValue(state.pods.right.battery.Value());
         _rightBattery->show();
     }
 
-    if (!state.caseBox.battery.has_value()) {
+    if (!state.caseBox.battery.Available()) {
         _caseBattery->hide();
     }
     else {
         _caseBattery->setCharging(state.caseBox.isCharging);
-        _caseBattery->setValue(state.caseBox.battery.value());
+        _caseBattery->setValue(state.caseBox.battery.Value());
         _caseBattery->show();
     }
 }

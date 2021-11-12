@@ -86,14 +86,14 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     _state.caseBox.isBothPodsInCase = _protocol.IsBothPodsInCase();
     _state.caseBox.isLidOpened = _protocol.IsLidOpened();
 
-    if (_state.pods.left.battery.has_value()) {
-        _state.pods.left.battery = _state.pods.left.battery.value() * 10;
+    if (_state.pods.left.battery.Available()) {
+        _state.pods.left.battery = _state.pods.left.battery.Value() * 10;
     }
-    if (_state.pods.right.battery.has_value()) {
-        _state.pods.right.battery = _state.pods.right.battery.value() * 10;
+    if (_state.pods.right.battery.Available()) {
+        _state.pods.right.battery = _state.pods.right.battery.Value() * 10;
     }
-    if (_state.caseBox.battery.has_value()) {
-        _state.caseBox.battery = _state.caseBox.battery.value() * 10;
+    if (_state.caseBox.battery.Available()) {
+        _state.caseBox.battery = _state.caseBox.battery.Value() * 10;
     }
 }
 
@@ -217,23 +217,25 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
             return false;
         }
 
-        Battery::value_type leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
+        Battery::ValueType leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
 
-        if (advState.pods.left.battery.has_value() && lastAdvState.pods.left.battery.has_value()) {
+        using SignedBatteryValueT = std::make_signed_t<Battery::ValueType>;
+
+        if (advState.pods.left.battery.Available() && lastAdvState.pods.left.battery.Available()) {
             leftBatteryDiff = std::abs(
-                (int32_t)advState.pods.left.battery.value() -
-                (int32_t)lastAdvState.pods.left.battery.value());
+                static_cast<SignedBatteryValueT>(advState.pods.left.battery.Value()) -
+                static_cast<SignedBatteryValueT>(lastAdvState.pods.left.battery.Value()));
         }
-        if (advState.pods.right.battery.has_value() && lastAdvState.pods.right.battery.has_value())
+        if (advState.pods.right.battery.Available() && lastAdvState.pods.right.battery.Available())
         {
             rightBatteryDiff = std::abs(
-                (int32_t)advState.pods.right.battery.value() -
-                (int32_t)lastAdvState.pods.right.battery.value());
+                static_cast<SignedBatteryValueT>(advState.pods.right.battery.Value()) -
+                static_cast<SignedBatteryValueT>(lastAdvState.pods.right.battery.Value()));
         }
-        if (advState.caseBox.battery.has_value() && lastAdvState.caseBox.battery.has_value()) {
+        if (advState.caseBox.battery.Available() && lastAdvState.caseBox.battery.Available()) {
             caseBatteryDiff = std::abs(
-                (int32_t)advState.caseBox.battery.value() -
-                (int32_t)lastAdvState.caseBox.battery.value());
+                static_cast<SignedBatteryValueT>(advState.caseBox.battery.Value()) -
+                static_cast<SignedBatteryValueT>(lastAdvState.caseBox.battery.Value()));
         }
 
         // The battery changes in steps of 1, so the data of two packets in a short time
@@ -297,11 +299,11 @@ auto StateManager::UpdateState() -> std::optional<UpdateEvent>
 
     State newState;
 
-#define PICK_SIDE(available_condition_field)                                                       \
+#define PICK_SIDE(available_condition_with_field)                                                  \
     [&]() -> decltype(auto) {                                                                      \
         const Helper::Sides<bool> available = {                                                    \
-            .left = cachedAdvState.left.first.available_condition_field,                           \
-            .right = cachedAdvState.right.first.available_condition_field,                         \
+            .left = cachedAdvState.left.first.available_condition_with_field,                      \
+            .right = cachedAdvState.right.first.available_condition_with_field,                    \
         };                                                                                         \
         if (available.left && available.right) {                                                   \
             return cachedAdvState.left.second > cachedAdvState.right.second                        \
@@ -314,10 +316,9 @@ auto StateManager::UpdateState() -> std::optional<UpdateEvent>
     }()
 
     newState.model = PICK_SIDE(model != Model::Unknown).model;
-
-    newState.pods.left = std::move(PICK_SIDE(pods.left.battery.has_value()).pods.left);
-    newState.pods.right = std::move(PICK_SIDE(pods.right.battery.has_value()).pods.right);
-    newState.caseBox = std::move(PICK_SIDE(caseBox.battery.has_value()).caseBox);
+    newState.pods.left = std::move(PICK_SIDE(pods.left.battery.Available()).pods.left);
+    newState.pods.right = std::move(PICK_SIDE(pods.right.battery.Available()).pods.right);
+    newState.caseBox = std::move(PICK_SIDE(caseBox.battery.Available()).caseBox);
 
 #undef PICK_SIDE
 

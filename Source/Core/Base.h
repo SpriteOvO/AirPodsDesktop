@@ -21,10 +21,46 @@
 #include <optional>
 
 #include "../Helper.h"
+#include "../Logger.h"
 
 namespace Core::AirPods {
 
-using Battery = std::optional<uint32_t>;
+class Battery
+{
+public:
+    using ValueType = uint32_t;
+
+    Battery() = default;
+    inline Battery(ValueType value) : _optValue{value} {}
+
+    bool operator==(const Battery &rhs) const = default;
+
+    inline bool Available() const
+    {
+        return _optValue.has_value();
+    }
+
+    inline ValueType Value() const
+    {
+        if (!_optValue.has_value()) {
+            LOG(Warn, "Trying to get the battery value but unavailable.");
+            return 0;
+        }
+        return _optValue.value();
+    }
+
+    inline bool IsLowBattery() const
+    {
+        if (!_optValue.has_value()) {
+            LOG(Warn, "Trying to determine that the battery is low but unavailable.");
+            return false;
+        }
+        return _optValue.value() <= 20;
+    }
+
+private:
+    std::optional<ValueType> _optValue;
+};
 
 enum class Model : uint32_t {
     Unknown = 0,

@@ -84,19 +84,19 @@ Core::AirPods::Model AirPods::GetModel() const
 Core::AirPods::Battery AirPods::GetLeftBattery() const
 {
     const auto val = (IsLeftBroadcasted() ? battery.curr : battery.anot);
-    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{};
 }
 
 Core::AirPods::Battery AirPods::GetRightBattery() const
 {
     const auto val = (IsRightBroadcasted() ? battery.curr : battery.anot);
-    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{};
 }
 
 Core::AirPods::Battery AirPods::GetCaseBattery() const
 {
     const auto val = battery.caseBox;
-    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{std::nullopt};
+    return (val >= 0 && val <= 10) ? val : Core::AirPods::Battery{};
 }
 
 bool AirPods::IsLeftCharging() const

@@ -104,7 +104,7 @@ void TrayIcon::ShowMainWindow()
 void TrayIcon::Repaint()
 {
     QString toolTipContent;
-    std::optional<Core::AirPods::Battery::value_type> minBattery;
+    std::optional<Core::AirPods::Battery::ValueType> minBattery;
 
     switch (_status) {
     case Status::Unavailable:
@@ -122,8 +122,8 @@ void TrayIcon::Repaint()
         toolTipContent += Core::AirPods::GetDisplayName();
 
         // clang-format off
-        if (state.pods.left.battery.has_value()) {
-            const auto batteryValue = state.pods.left.battery.value();
+        if (state.pods.left.battery.Available()) {
+            const auto batteryValue = state.pods.left.battery.Value();
 
             toolTipContent += QString{tr("\nLeft: %1%%2")}
                 .arg(batteryValue)
@@ -132,8 +132,8 @@ void TrayIcon::Repaint()
             minBattery = batteryValue;
         }
 
-        if (state.pods.right.battery.has_value()) {
-            const auto batteryValue = state.pods.right.battery.value();
+        if (state.pods.right.battery.Available()) {
+            const auto batteryValue = state.pods.right.battery.Value();
 
             toolTipContent += QString{tr("\nRight: %1%%2")}
                 .arg(batteryValue)
@@ -145,9 +145,9 @@ void TrayIcon::Repaint()
             }
         }
 
-        if (state.caseBox.battery.has_value()) {
+        if (state.caseBox.battery.Available()) {
             toolTipContent += QString{tr("\nCase: %1%%2")}
-                .arg(state.caseBox.battery.value())
+                .arg(state.caseBox.battery.Value())
                 .arg(state.caseBox.isCharging ? tr(" (charging)") : "");
         }
         // clang-format on
