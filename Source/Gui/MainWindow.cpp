@@ -128,6 +128,8 @@ protected:
     }
 };
 
+//////////////////////////////////////////////////
+
 class VideoWidget : public QVideoWidget
 {
     Q_OBJECT
@@ -144,6 +146,44 @@ private:
         Q_EMIT Clicked();
     }
 };
+
+//////////////////////////////////////////////////
+
+enum class NewVersionAction {
+    Update,
+    Skip,
+    Later,
+};
+
+NewVersionAction NewVersionMessageBox(QWidget *parent, const QString &title, const QString &text)
+{
+    QMessageBox msgBox{QMessageBox::Question, title, text, QMessageBox::NoButton, parent};
+
+    const auto buttonUpdate = msgBox.addButton(QObject::tr("Update now"), QMessageBox::YesRole);
+    const auto buttonSkip =
+        msgBox.addButton(QObject::tr("Skip this version"), QMessageBox::AcceptRole);
+    const auto buttonLater = msgBox.addButton(QObject::tr("Remind me later"), QMessageBox::NoRole);
+
+    msgBox.setDefaultButton(buttonUpdate);
+
+    if (msgBox.exec() == -1) {
+        return NewVersionAction::Later;
+    }
+
+    const auto clickedButton = msgBox.clickedButton();
+
+    if (clickedButton == buttonUpdate) {
+        return NewVersionAction::Update;
+    }
+    else if (clickedButton == buttonSkip) {
+        return NewVersionAction::Skip;
+    }
+    else {
+        return NewVersionAction::Later;
+    }
+}
+
+//////////////////////////////////////////////////
 
 MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
@@ -321,27 +361,23 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
 
     QString changeLogBlock;
     if (!releaseInfo.changeLog.isEmpty()) {
-        changeLogBlock = QString{"%1\n%2\n\n"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
+        changeLogBlock = QString{"\n\n%1\n%2"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
     }
 
-    auto button = QMessageBox::question(
+    auto action = NewVersionMessageBox(
         nullptr, Config::ProgramName,
         tr("Hey! I found a new version available!\n"
            "\n"
            "Current version: %1\n"
-           "Latest version: %2\n"
-           "\n"
-           "%3"
-           "Click \"Ignore\" to skip this new version.\n"
-           "\n"
-           "Do you want to update it now?")
+           "Latest version: %2"
+           "%3")
             .arg(Core::Update::GetLocalVersion().toString())
             .arg(releaseVersion)
-            .arg(changeLogBlock),
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Ignore, QMessageBox::Yes);
+            .arg(changeLogBlock));
 
-    if (button == QMessageBox::Yes) {
-        LOG(Info, "VersionUpdate: User clicked Yes.");
+    switch (action) {
+    case Gui::NewVersionAction::Update:
+        LOG(Info, "VersionUpdate: User clicked Update.");
 
         if (!releaseInfo.CanAutoUpdate()) {
             LOG(Info, "VersionUpdate: Cannot auto update. Popup latest url and quit.");
@@ -353,18 +389,23 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
 
         ApdApplication::QuitSafety();
         return;
-    }
-    else if (button == QMessageBox::Ignore) {
-        LOG(Info, "VersionUpdate: User clicked Ignore.");
+
+    case Gui::NewVersionAction::Skip:
+        LOG(Info, "VersionUpdate: User clicked Skip.");
 
         Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
 
         // Continue checking for new versions after the skipped version
-    }
-    else {
-        LOG(Info, "VersionUpdate: User clicked No.");
+        break;
+
+    case Gui::NewVersionAction::Later:
+        LOG(Info, "VersionUpdate: User clicked Later.");
 
         _updateChecker.Stop();
+        break;
+
+    default:
+        APD_ASSERT(false);
     }
 }
 
