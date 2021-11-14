@@ -72,14 +72,15 @@ void OnApply_automatic_ear_detection(const Fields &newFields)
 {
     LOG(Info, "OnApply_automatic_ear_detection: {}", newFields.automatic_ear_detection);
 
-    AirPods::OnAutomaticEarDetectionChanged(newFields.automatic_ear_detection);
+    ApdApp->GetMainWindow()->GetApdMgr().OnAutomaticEarDetectionChanged(
+        newFields.automatic_ear_detection);
 }
 
 void OnApply_rssi_min(const Fields &newFields)
 {
     LOG(Info, "OnApply_rssi_min: {}", newFields.rssi_min);
 
-    AirPods::OnRssiMinChanged(newFields.rssi_min);
+    ApdApp->GetMainWindow()->GetApdMgr().OnRssiMinChanged(newFields.rssi_min);
 }
 
 void OnApply_reduce_loud_sounds(const Fields &newFields)
@@ -111,7 +112,7 @@ void OnApply_device_address(const Fields &newFields)
         ApdApp->GetMainWindow()->BindSafety();
     }
 
-    AirPods::OnBoundDeviceAddressChanged(newFields.device_address);
+    ApdApp->GetMainWindow()->GetApdMgr().OnBoundDeviceAddressChanged(newFields.device_address);
 }
 
 void OnApply_tray_icon_battery(const Fields &newFields)

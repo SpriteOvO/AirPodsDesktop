@@ -56,6 +56,7 @@ private:
         Core::Settings::TrayIconBatteryBehavior::Disable};
     Status _status{Status::Unavailable};
     std::optional<Core::AirPods::State> _airPodsState;
+    std::optional<QString> _displayName;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
 
     void ShowMainWindow();

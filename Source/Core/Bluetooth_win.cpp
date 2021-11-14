@@ -281,7 +281,12 @@ AdvertisementWatcher::AdvertisementWatcher()
 
 AdvertisementWatcher::~AdvertisementWatcher()
 {
-    Stop();
+    if (!_stop) {
+        _destroy = true;
+        Stop();
+        std::unique_lock<std::mutex> lock{_conVarMutex};
+        _destroyConVar.wait(lock);
+    }
 }
 
 bool AdvertisementWatcher::Start()
@@ -344,7 +349,6 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
 
 void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppedEventArgs &args)
 {
-
     static std::unordered_map<BluetoothError, std::string> errorReasons = {
         {BluetoothError::Success, "Success"},
         {BluetoothError::RadioNotAvailable, "RadioNotAvailable"},
@@ -390,9 +394,14 @@ void AdvertisementWatcher::OnStopped(const BluetoothLEAdvertisementWatcherStoppe
 
     CbStateChanged().Invoke(State::Stopped, optError);
 
-    do {
-        std::unique_lock<std::mutex> lock{_conVarMutex};
-        _stopConVar.wait_until(lock, _lastStartTime.load() + kRetryInterval);
-    } while (!_stop && !Start());
+    if (!_destroy) {
+        do {
+            std::unique_lock<std::mutex> lock{_conVarMutex};
+            _stopConVar.wait_until(lock, _lastStartTime.load() + kRetryInterval);
+        } while (!_stop && !Start());
+    }
+    else {
+        _destroyConVar.notify_all();
+    }
 }
 } // namespace Core::Bluetooth

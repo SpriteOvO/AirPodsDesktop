@@ -357,6 +357,7 @@ void StateManager::DoStateReset(Side side)
         adv.reset();
     }
 }
+} // namespace Details
 
 //
 // Manager
@@ -393,12 +394,6 @@ void Manager::StopScanner()
     else {
         LOG(Info, "AsyncScanner::Stop() succeeded.");
     }
-}
-
-QString Manager::GetDisplayName()
-{
-    std::lock_guard<std::mutex> lock{_mutex};
-    return _displayName;
 }
 
 void Manager::OnRssiMinChanged(int16_t rssiMin)
@@ -451,11 +446,6 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     OnBoundDeviceConnectionStateChanged(currentState);
 }
 
-void Manager::OnQuit()
-{
-    StopScanner();
-}
-
 void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 {
     bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
@@ -472,10 +462,12 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
 }
 
-void Manager::OnStateChanged(StateManager::UpdateEvent updateEvent)
+void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 {
     const auto &oldState = updateEvent.oldState;
-    const auto &newState = updateEvent.newState;
+    auto &newState = updateEvent.newState;
+
+    newState.displayName = _displayName;
 
     ApdApp->GetMainWindow()->UpdateStateSafety(newState);
 
@@ -533,7 +525,7 @@ void Manager::OnBothInEar(bool isBothInEar)
 
 bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data)
 {
-    if (!Advertisement::IsDesiredAdv(data)) {
+    if (!Details::Advertisement::IsDesiredAdv(data)) {
         return false;
     }
 
@@ -542,12 +534,12 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         return false;
     }
 
-    Advertisement adv{data};
+    Details::Advertisement adv{data};
 
     LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
         Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
-    auto optUpdateEvent = _stateMgr.OnAdvReceived(Advertisement{data});
+    auto optUpdateEvent = _stateMgr.OnAdvReceived(Details::Advertisement{data});
     if (optUpdateEvent.has_value()) {
         OnStateChanged(std::move(optUpdateEvent.value()));
     }
@@ -572,8 +564,6 @@ void Manager::OnAdvWatcherStateChanged(
         FatalError("Unhandled adv watcher state: '{}'", Helper::ToUnderlying(state));
     }
 }
-
-} // namespace Details
 
 std::vector<Bluetooth::Device> GetDevices()
 {

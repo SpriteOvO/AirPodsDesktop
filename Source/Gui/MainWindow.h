@@ -50,6 +50,11 @@ class MainWindow : public QDialog
 public:
     MainWindow(QWidget *parent = nullptr);
 
+    inline auto &GetApdMgr()
+    {
+        return _apdMgr;
+    }
+
     void UpdateState(const Core::AirPods::State &state);
     void Available();
     void Unavailable();
@@ -83,6 +88,7 @@ private:
     Widget::Battery *_rightBattery = new Widget::Battery{this};
     Widget::Battery *_caseBattery = new Widget::Battery{this};
 
+    Core::AirPods::Manager _apdMgr;
     Core::Update::AsyncChecker _updateChecker{[this](auto &&...args) {
         VersionUpdateAvailableSafety(std::forward<decltype(args)>(args)...);
     }};

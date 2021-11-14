@@ -151,19 +151,13 @@ bool ApdApplication::Prepare()
     Core::OS::Windows::Winrt::Initialize();
 #endif
 
-    connect(this, &ApdApplication::aboutToQuit, this, &ApdApplication::QuitHandler);
     return true;
 }
 
 int ApdApplication::Run()
 {
-    Core::AirPods::StartScanner();
+    _mainWindow->GetApdMgr().StartScanner();
     return exec();
-}
-
-void ApdApplication::QuitHandler()
-{
-    Core::AirPods::OnQuit();
 }
 
 void ApdApplication::QuitSafety()

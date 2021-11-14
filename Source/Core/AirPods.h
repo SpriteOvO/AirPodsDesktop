@@ -62,6 +62,7 @@ struct State {
     Model model{Model::Unknown};
     PodsState pods;
     CaseState caseBox;
+    QString displayName;
 
     bool operator==(const State &rhs) const = default;
 };
@@ -140,49 +141,37 @@ private:
     void DoLost();
     void DoStateReset(Side side);
 };
+} // namespace Details
 
-class Manager : public Helper::Singleton<Manager>
+class Manager
 {
-protected:
-    Manager();
-    friend Helper::Singleton<Manager>;
-
 public:
+    Manager();
+
     void StartScanner();
     void StopScanner();
-
-    QString GetDisplayName();
 
     void OnRssiMinChanged(int16_t rssiMin);
     void OnAutomaticEarDetectionChanged(bool enable);
     void OnBoundDeviceAddressChanged(uint64_t address);
-    void OnQuit();
 
 private:
+    std::mutex _mutex;
     Bluetooth::AdvertisementWatcher _adWatcher;
-    StateManager _stateMgr;
+    Details::StateManager _stateMgr;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _displayName;
     bool _deviceConnected{false};
-    std::mutex _mutex;
     bool _automaticEarDetection{false};
 
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
-    void OnStateChanged(StateManager::UpdateEvent updateEvent);
+    void OnStateChanged(Details::StateManager::UpdateEvent updateEvent);
     void OnLidOpened(bool opened);
     void OnBothInEar(bool isBothInEar);
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
     void OnAdvWatcherStateChanged(
         Bluetooth::AdvertisementWatcher::State state, const std::optional<std::string> &optError);
 };
-} // namespace Details
-
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, StartScanner)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, GetDisplayName)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnRssiMinChanged)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnAutomaticEarDetectionChanged)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnBoundDeviceAddressChanged)
-SINGLETON_EXPOSE_FUNCTION(Details::Manager, OnQuit)
 
 std::vector<Core::Bluetooth::Device> GetDevices();
 

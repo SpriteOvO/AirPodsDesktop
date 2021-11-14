@@ -72,8 +72,6 @@ private:
 
     static void InitSettings();
     static void FirstTimeUse();
-
-    void QuitHandler();
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

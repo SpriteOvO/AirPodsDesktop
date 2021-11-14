@@ -118,8 +118,7 @@ void TrayIcon::Repaint()
         }
         const auto &state = _airPodsState.value();
 
-        // toolTipContent += Helper::ToString(state.model);
-        toolTipContent += Core::AirPods::GetDisplayName();
+        toolTipContent += state.displayName;
 
         // clang-format off
         if (state.pods.left.battery.Available()) {

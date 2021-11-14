@@ -125,10 +125,10 @@ private:
     WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
     std::mutex _mutex;
 
-    std::atomic<bool> _stop{false};
+    std::atomic<bool> _stop{false}, _destroy{false};
     std::atomic<std::chrono::steady_clock::time_point> _lastStartTime;
     std::mutex _conVarMutex;
-    std::condition_variable _stopConVar;
+    std::condition_variable _stopConVar, _destroyConVar;
 
     void OnReceived(const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
     void OnStopped(const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);

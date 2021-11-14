@@ -543,8 +543,7 @@ void MainWindow::Repaint()
 
     const auto &state = _cachedState.value();
 
-    // _ui.deviceLabel->setText(Helper::ToString(state.model));
-    _ui.deviceLabel->setText(Core::AirPods::GetDisplayName());
+    _ui.deviceLabel->setText(state.displayName);
 
     SetAnimation(state.model);
 
