@@ -18,8 +18,28 @@
 
 #pragma once
 
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
+
 namespace Core::LowAudioLatency {
 
-void Control(bool enable);
+class Controller : public QObject
+{
+    Q_OBJECT
+
+public:
+    Controller(QObject *parent = nullptr);
+
+Q_SIGNALS:
+    void ControlSafety(bool enable);
+
+private:
+    QMediaPlayer _mediaPlayer;
+    QMediaPlaylist _mediaPlaylist;
+
+    void Control(bool enable);
+
+    void OnError(QMediaPlayer::Error error);
+};
 
 } // namespace Core::LowAudioLatency

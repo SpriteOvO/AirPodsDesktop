@@ -143,6 +143,7 @@ bool ApdApplication::Prepare()
 
     _trayIcon = std::make_unique<Gui::TrayIcon>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
+    _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
 
     InitSettings();
 

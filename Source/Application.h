@@ -26,6 +26,7 @@
 #include "Gui/MainWindow.h"
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
+#include "Core/LowAudioLatency.h"
 
 class ApdApplication : public SingleApplication
 {
@@ -49,6 +50,10 @@ public:
     {
         return _mainWindow;
     }
+    inline auto &GetLowAudioLatencyController()
+    {
+        return _lowAudioLatencyController;
+    }
 
     inline static bool IsFirstTimeUse()
     {
@@ -63,6 +68,7 @@ private:
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
+    std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
 
     static void InitSettings();
     static void FirstTimeUse();

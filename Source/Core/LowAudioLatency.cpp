@@ -18,62 +18,39 @@
 
 #include "LowAudioLatency.h"
 
-#include <QMediaPlayer>
-#include <QMediaPlaylist>
-
 #include "../Logger.h"
 #include "../Application.h"
 
 namespace Core::LowAudioLatency {
 
-class Controller : public QObject
+Controller::Controller(QObject *parent) : QObject{parent}
 {
-    Q_OBJECT
+    connect(
+        &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
+        &Controller::OnError);
 
-public:
-    Controller(QObject *parent = nullptr) : QObject{parent}
-    {
-        connect(
-            &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
-            &Controller::OnError);
+    connect(this, &Controller::ControlSafety, this, &Controller::Control);
 
-        connect(this, &Controller::ControlSafety, this, &Controller::Control);
-
-        _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
-        _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
-        _mediaPlayer.setPlaylist(&_mediaPlaylist);
-    }
-
-Q_SIGNALS:
-    void ControlSafety(bool enable);
-
-private:
-    QMediaPlayer _mediaPlayer;
-    QMediaPlaylist _mediaPlaylist;
-
-    void Control(bool enable)
-    {
-        LOG(Info, "LowAudioLatency::Controller Control: {}", enable);
-
-        if (enable) {
-            _mediaPlayer.play();
-        }
-        else {
-            _mediaPlayer.stop();
-        }
-    }
-
-    void OnError(QMediaPlayer::Error error)
-    {
-        LOG(Warn, "LowAudioLatency::Controller error: {}", error);
-    }
-};
-
-void Control(bool enable)
-{
-    static auto controller = std::make_unique<Controller>();
-    controller->ControlSafety(enable);
+    _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
+    _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
+    _mediaPlayer.setPlaylist(&_mediaPlaylist);
 }
-} // namespace Core::LowAudioLatency
 
-#include "LowAudioLatency.moc"
+void Controller::Control(bool enable)
+{
+    LOG(Info, "LowAudioLatency::Controller Control: {}", enable);
+
+    if (enable) {
+        _mediaPlayer.play();
+    }
+    else {
+        _mediaPlayer.stop();
+    }
+}
+
+void Controller::OnError(QMediaPlayer::Error error)
+{
+    LOG(Warn, "LowAudioLatency::Controller error: {}", error);
+}
+
+} // namespace Core::LowAudioLatency
