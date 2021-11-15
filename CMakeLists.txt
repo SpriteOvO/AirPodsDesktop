@@ -22,7 +22,7 @@ include(FetchContent)
 
 project(
     AirPodsDesktop
-    VERSION 0.2.1
+    VERSION 0.3.0
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
