@@ -27,9 +27,10 @@
 #include <QDir>
 #include <QTimer>
 #include <QWidget>
+#include <QBitmap>
+#include <QPainter>
 #include <QKeyEvent>
 #include <QApplication>
-#include <QPainterPath>
 #include <QStandardPaths>
 
 #include "Helper.h"
@@ -57,9 +58,14 @@ namespace Qt {
 
 inline void SetRoundedCorners(QWidget *widget, qreal radius)
 {
-    QPainterPath path;
-    path.addRoundedRect(widget->rect(), radius, radius);
-    widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
+    QBitmap bmp{widget->size()};
+    QPainter painter{&bmp};
+    bmp.clear();
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(::Qt::black);
+    painter.setBrush(::Qt::black);
+    painter.drawRoundedRect(widget->geometry(), radius, radius, ::Qt::AbsoluteSize);
+    widget->setMask(bmp);
 }
 
 inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, const QColor &color)
