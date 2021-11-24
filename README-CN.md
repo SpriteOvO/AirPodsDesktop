@@ -11,6 +11,9 @@
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/releases">
         <img src="https://img.shields.io/github/v/release/SpriteOvO/AirPodsDesktop?include_prereleases"/>
     </a>
+    <a href="https://github.com/SpriteOvO/AirPodsDesktop/releases">
+        <img src="https://img.shields.io/github/downloads/SpriteOvO/AirPodsDesktop/total.svg"/>
+    </a>
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/compare">
         <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"/>
     </a>
