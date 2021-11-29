@@ -195,6 +195,8 @@ void SettingsWindow::RestoreDefaults()
 
 void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 {
+    using Core::Settings::TrayIconBatteryBehavior;
+
     _trigger = trigger;
 
     _ui.cbAutoRun->setChecked(fields.auto_run);
@@ -211,25 +213,14 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
-    switch (fields.tray_icon_battery) {
-    case Core::Settings::TrayIconBatteryBehavior::Disable:
-        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(true);
-        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(false);
-        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(false);
-        break;
-    case Core::Settings::TrayIconBatteryBehavior::WhenLowBattery:
-        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(false);
-        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(true);
-        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(false);
-        break;
-    case Core::Settings::TrayIconBatteryBehavior::Always:
-        _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(false);
-        _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(false);
-        _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(true);
-        break;
-    default:
-        APD_ASSERT(false);
-    }
+    auto [batteryIconDisable, batteryIconWhenLowBattery, batteryIconAlways] = std::make_tuple(
+        fields.tray_icon_battery == TrayIconBatteryBehavior::Disable,
+        fields.tray_icon_battery == TrayIconBatteryBehavior::WhenLowBattery,
+        fields.tray_icon_battery == TrayIconBatteryBehavior::Always);
+
+    _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(batteryIconDisable);
+    _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(batteryIconWhenLowBattery);
+    _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(batteryIconAlways);
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
