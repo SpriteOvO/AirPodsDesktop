@@ -50,6 +50,7 @@ private:
 
     void RestoreDefaults();
     void Update(const Core::Settings::Fields &fields, bool trigger);
+    void SetVolumeLevelLabel(int value);
 
     void showEvent(QShowEvent *event) override;
 

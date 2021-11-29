@@ -210,6 +210,7 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
         _sliderEnableVolumeLevelWarning = false;
     }
     _ui.hsVolumeLevel->setValue(fields.loud_volume_level);
+    SetVolumeLevelLabel(fields.loud_volume_level);
 
     _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
@@ -225,6 +226,11 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
     _trigger = true;
+}
+
+void SettingsWindow::SetVolumeLevelLabel(int value)
+{
+    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(value));
 }
 
 void SettingsWindow::showEvent(QShowEvent *event)
@@ -282,7 +288,7 @@ void SettingsWindow::On_hsVolumeLevel_valueChanged(int value)
         }
     }
 
-    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(value));
+    SetVolumeLevelLabel(value);
     Core::Settings::ModifiableAccess()->loud_volume_level = value;
 }
 
