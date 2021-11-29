@@ -37,14 +37,14 @@ namespace Core::Bluetooth {
 using namespace std::chrono_literals;
 
 namespace WinrtFoundation = winrt::Windows::Foundation;
-namespace WinrtBlutooth = winrt::Windows::Devices::Bluetooth;
-namespace WinrtBlutoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
+namespace WinrtBluetooth = winrt::Windows::Devices::Bluetooth;
+namespace WinrtBluetoothAdv = winrt::Windows::Devices::Bluetooth::Advertisement;
 namespace WinrtDevicesEnumeration = winrt::Windows::Devices::Enumeration;
 
 class Device final : public Details::DeviceAbstract<uint64_t>
 {
 public:
-    Device(WinrtBlutooth::BluetoothDevice device);
+    Device(WinrtBluetooth::BluetoothDevice device);
     Device(const Device &rhs);
     Device(Device &&rhs) noexcept;
     ~Device();
@@ -64,7 +64,7 @@ private:
         L"System.DeviceInterface.Bluetooth.ProductId";
     constexpr static auto kPropertyAepContainerId = L"System.Devices.Aep.ContainerId";
 
-    std::optional<WinrtBlutooth::BluetoothDevice> _device;
+    std::optional<WinrtBluetooth::BluetoothDevice> _device;
     mutable std::optional<WinrtDevicesEnumeration::DeviceInformation> _info;
     winrt::event_token _tokenConnectionStatusChanged, _tokenNameChanged;
 
@@ -96,8 +96,8 @@ private:
 
     winrt::hstring GetAepId() const;
 
-    void OnConnectionStatusChanged(const WinrtBlutooth::BluetoothDevice &sender);
-    void OnNameChanged(const WinrtBlutooth::BluetoothDevice &sender);
+    void OnConnectionStatusChanged(const WinrtBluetooth::BluetoothDevice &sender);
+    void OnNameChanged(const WinrtBluetooth::BluetoothDevice &sender);
 };
 
 namespace DeviceManager {
@@ -122,7 +122,7 @@ public:
 private:
     static constexpr inline auto kRetryInterval = 3s;
 
-    WinrtBlutoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
+    WinrtBluetoothAdv::BluetoothLEAdvertisementWatcher _bleWatcher;
     std::mutex _mutex;
 
     std::atomic<bool> _stop{false}, _destroy{false};
@@ -130,7 +130,7 @@ private:
     std::mutex _conVarMutex;
     std::condition_variable _stopConVar, _destroyConVar;
 
-    void OnReceived(const WinrtBlutoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
-    void OnStopped(const WinrtBlutoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);
+    void OnReceived(const WinrtBluetoothAdv::BluetoothLEAdvertisementReceivedEventArgs &args);
+    void OnStopped(const WinrtBluetoothAdv::BluetoothLEAdvertisementWatcherStoppedEventArgs &args);
 };
 } // namespace Core::Bluetooth

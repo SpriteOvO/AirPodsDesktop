@@ -26,8 +26,8 @@ namespace Core::Bluetooth {
 using namespace std::placeholders;
 
 using namespace WinrtFoundation;
-using namespace WinrtBlutooth;
-using namespace WinrtBlutoothAdv;
+using namespace WinrtBluetooth;
+using namespace WinrtBluetoothAdv;
 using namespace WinrtDevicesEnumeration;
 
 //////////////////////////////////////////////////
