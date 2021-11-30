@@ -33,14 +33,4 @@ inline void Pause()
 {
     Controller::GetInstance().Pause();
 }
-
-inline void OnLimitedDeviceStateChanged(const std::string &deviceName)
-{
-    Controller::GetInstance().OnLimitedDeviceStateChanged(deviceName);
-}
-
-inline void LimitVolume(std::optional<uint32_t> volumeLevel)
-{
-    Controller::GetInstance().LimitVolume(std::move(volumeLevel));
-}
 } // namespace Core::GlobalMedia

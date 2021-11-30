@@ -415,7 +415,6 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundDevice.reset();
     _deviceConnected = false;
     _stateMgr.Disconnect();
-    GlobalMedia::OnLimitedDeviceStateChanged({});
 
     // Unbind device
     //
@@ -458,8 +457,6 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
         newDeviceConnected);
-
-    GlobalMedia::OnLimitedDeviceStateChanged((_displayName + " Stereo").toStdString());
 }
 
 void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)

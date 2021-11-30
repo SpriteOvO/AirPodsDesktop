@@ -65,48 +65,6 @@ public:
     virtual std::wstring GetProgramName() const = 0;
     virtual Priority GetPriority() const = 0;
 };
-
-class VolumeLevelLimiter
-{
-private:
-    class Callback : public IAudioEndpointVolumeCallback
-    {
-    public:
-        Callback(std::function<bool(uint32_t)> volumeLevelSetter);
-
-        ULONG STDMETHODCALLTYPE AddRef() override;
-        ULONG STDMETHODCALLTYPE Release() override;
-
-        HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvInterface) override;
-
-        HRESULT STDMETHODCALLTYPE OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) override;
-
-        void SetMaxValue(std::optional<uint32_t> volumeLevel);
-
-    private:
-        std::atomic<ULONG> _ref{1};
-        std::atomic<std::optional<uint32_t>> _volumeLevel;
-        std::function<bool(uint32_t)> _volumeLevelSetter;
-    };
-
-public:
-    VolumeLevelLimiter(const std::string &deviceName);
-    ~VolumeLevelLimiter();
-
-    std::optional<uint32_t> GetMaxValue() const;
-    void SetMaxValue(std::optional<uint32_t> volumeLevel);
-
-    std::optional<uint32_t> GetVolumeLevel() const;
-    bool SetVolumeLevel(uint32_t volumeLevel) const;
-
-private:
-    std::atomic<bool> _inited{false};
-    std::optional<uint32_t> _maxVolumeLevel;
-    OS::Windows::Com::UniquePtr<IAudioEndpointVolume> _endpointVolume;
-    Callback _callback;
-
-    bool Initialize(const std::string &deviceName);
-};
 } // namespace Details
 
 class Controller final : public Helper::Singleton<Controller>, public Details::ControllerAbstract
@@ -119,13 +77,8 @@ public:
     void Play() override;
     void Pause() override;
 
-    void OnLimitedDeviceStateChanged(const std::string &deviceName) override;
-    void LimitVolume(std::optional<uint32_t> volumeLevel) override;
-
 private:
     std::mutex _mutex;
     std::vector<std::unique_ptr<Details::MediaProgramAbstract>> _pausedPrograms;
-    std::unique_ptr<Details::VolumeLevelLimiter> _volumeLevelLimiter;
-    std::optional<uint32_t> _maxVolumeLevel;
 };
 } // namespace Core::GlobalMedia

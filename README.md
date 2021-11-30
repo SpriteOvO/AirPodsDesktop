@@ -29,7 +29,6 @@
 ## :sparkles: Features
 * :battery: Battery information display.
 * :ear: Automatic ear detection.
-* :sound: Reduce loud sounds.
 * :rocket: Low audio latency mode.
 * :rainbow: Beautiful animation.  
 

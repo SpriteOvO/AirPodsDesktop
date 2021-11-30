@@ -58,8 +58,8 @@ constexpr inline uint32_t kFieldsAbiVersion = 1;
     callback(bool, automatic_ear_detection, {true}, Impl::OnApply(&OnApply_automatic_ear_detection))\
     callback(QString, skipped_version, {})                                                         \
     callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
-    callback(bool, reduce_loud_sounds, {false}, Impl::OnApply(&OnApply_reduce_loud_sounds))        \
-    callback(uint32_t, loud_volume_level, {40}, Impl::OnApply(&OnApply_loud_volume_level))         \
+    callback(bool, reduce_loud_sounds, {false}, Impl::Deprecated())                                \
+    callback(uint32_t, loud_volume_level, {40}, Impl::Deprecated())                                \
     callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})\
     callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable}, Impl::OnApply(&OnApply_tray_icon_battery))
 // clang-format on

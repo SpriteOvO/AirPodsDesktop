@@ -84,15 +84,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
            "AirPods are put back on."),
         this});
 
-    _ui.hsVolumeLevel->setMinimum(0);
-    _ui.hsVolumeLevel->setMaximum(100);
-
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
 
     Update(Core::Settings::GetCurrent(), false);
-
-    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(_ui.hsVolumeLevel->value()));
 
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
@@ -113,18 +108,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     connect(_ui.cbAutoEarDetection, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
             On_cbAutoEarDetection_toggled(checked);
-        }
-    });
-
-    connect(_ui.cbReduceLoudSounds, &QCheckBox::toggled, this, [this](bool checked) {
-        if (_trigger) {
-            On_cbReduceLoudSounds_toggled(checked);
-        }
-    });
-
-    connect(_ui.hsVolumeLevel, &QSlider::valueChanged, this, [this](int value) {
-        if (_trigger) {
-            On_hsVolumeLevel_valueChanged(value);
         }
     });
 
@@ -205,13 +188,6 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _ui.cbAutoEarDetection->setChecked(fields.automatic_ear_detection);
 
-    _ui.cbReduceLoudSounds->setChecked(fields.reduce_loud_sounds);
-    if (fields.loud_volume_level > kSliderVolumeLevelAlertValue) {
-        _sliderEnableVolumeLevelWarning = false;
-    }
-    _ui.hsVolumeLevel->setValue(fields.loud_volume_level);
-    SetVolumeLevelLabel(fields.loud_volume_level);
-
     _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
     auto [batteryIconDisable, batteryIconWhenLowBattery, batteryIconAlways] = std::make_tuple(
@@ -226,11 +202,6 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
     _trigger = true;
-}
-
-void SettingsWindow::SetVolumeLevelLabel(int value)
-{
-    _ui.lbVolumeLevel->setText(tr("Volume level %1").arg(value));
 }
 
 void SettingsWindow::showEvent(QShowEvent *event)
@@ -263,33 +234,6 @@ void SettingsWindow::On_cbLowAudioLatency_toggled(bool checked)
 void SettingsWindow::On_cbAutoEarDetection_toggled(bool checked)
 {
     Core::Settings::ModifiableAccess()->automatic_ear_detection = checked;
-}
-
-void SettingsWindow::On_cbReduceLoudSounds_toggled(bool checked)
-{
-    Core::Settings::ModifiableAccess()->reduce_loud_sounds = checked;
-}
-
-void SettingsWindow::On_hsVolumeLevel_valueChanged(int value)
-{
-    if (_sliderEnableVolumeLevelWarning && value > kSliderVolumeLevelAlertValue) {
-        auto button = QMessageBox::warning(
-            this, Config::ProgramName,
-            tr("Further increases in the volume level may harm your ears.\n"
-               "\n"
-               "Click \"Ignore\" if you want to disable the warning and limitation."),
-            QMessageBox::Ok | QMessageBox::Ignore, QMessageBox::Ok);
-        if (button == QMessageBox::Ignore) {
-            _sliderEnableVolumeLevelWarning = false;
-        }
-        else {
-            _ui.hsVolumeLevel->setValue(kSliderVolumeLevelAlertValue);
-            return;
-        }
-    }
-
-    SetVolumeLevelLabel(value);
-    Core::Settings::ModifiableAccess()->loud_volume_level = value;
 }
 
 void SettingsWindow::On_hsMaxReceivingRange_valueChanged(int value)

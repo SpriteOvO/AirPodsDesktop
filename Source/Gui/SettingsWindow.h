@@ -45,12 +45,9 @@ private:
     Ui::SettingsWindow _ui;
 
     bool _trigger{true};
-    constexpr static int kSliderVolumeLevelAlertValue = 70;
-    bool _sliderEnableVolumeLevelWarning = true;
 
     void RestoreDefaults();
     void Update(const Core::Settings::Fields &fields, bool trigger);
-    void SetVolumeLevelLabel(int value);
 
     void showEvent(QShowEvent *event) override;
 
@@ -64,8 +61,6 @@ private:
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);
     void On_cbAutoEarDetection_toggled(bool checked);
-    void On_cbReduceLoudSounds_toggled(bool checked);
-    void On_hsVolumeLevel_valueChanged(int value);
     void On_hsMaxReceivingRange_valueChanged(int value);
 
     // About

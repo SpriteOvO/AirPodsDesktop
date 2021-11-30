@@ -83,24 +83,6 @@ void OnApply_rssi_min(const Fields &newFields)
     ApdApp->GetMainWindow()->GetApdMgr().OnRssiMinChanged(newFields.rssi_min);
 }
 
-void OnApply_reduce_loud_sounds(const Fields &newFields)
-{
-    LOG(Info, "OnApply_reduce_loud_sounds: {}", newFields.reduce_loud_sounds);
-
-    GlobalMedia::LimitVolume(
-        newFields.reduce_loud_sounds ? std::optional<uint32_t>{newFields.loud_volume_level}
-                                     : std::nullopt);
-}
-
-void OnApply_loud_volume_level(const Fields &newFields)
-{
-    LOG(Info, "OnApply_loud_volume_level: {}", newFields.loud_volume_level);
-
-    GlobalMedia::LimitVolume(
-        newFields.reduce_loud_sounds ? std::optional<uint32_t>{newFields.loud_volume_level}
-                                     : std::nullopt);
-}
-
 void OnApply_device_address(const Fields &newFields)
 {
     LOG(Info, "OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
@@ -148,9 +130,10 @@ private:
     FnCallbackT _callback;
 };
 
-class Sensitive
-{
-};
+// clang-format off
+class Sensitive {};
+class Deprecated {};
+// clang-format on
 
 //////////////////////////////////////////////////
 
@@ -190,6 +173,11 @@ public:
         _isSensitive = true;
     }
 
+    void SetOption(Deprecated)
+    {
+        _isDeprecated = true;
+    }
+
     const OnApply &OnApply() const
     {
         return _onApply;
@@ -200,11 +188,16 @@ public:
         return _isSensitive;
     }
 
+    bool IsDeprecated() const
+    {
+        return _isDeprecated;
+    }
+
 private:
     std::string_view _name;
     T _member;
     Impl::OnApply _onApply;
-    bool _isSensitive{false};
+    bool _isSensitive{false}, _isDeprecated{false};
 };
 
 } // namespace Impl
@@ -219,14 +212,14 @@ public:
     LoadResult Load()
     {
         const auto &loadKey = [&](const std::string_view &keyName, auto &value,
-                                  bool restrict = false) {
+                                  bool isSensitive = false) {
             using ValueType = std::decay_t<decltype(value)>;
             using ValueStorageType =
                 std::conditional_t<!std::is_enum_v<ValueType>, ValueType, QString>;
 
             QString qstrKeyName = QString::fromStdString(std::string{keyName});
             if (!_settings.contains(qstrKeyName)) {
-                if (!restrict) {
+                if (!isSensitive) {
                     LOG(Warn, "The setting key '{}' not found. Current value '{}'.", keyName,
                         value);
                 }
@@ -257,7 +250,7 @@ public:
                 value = optValue.value();
             }
 
-            if (!restrict) {
+            if (!isSensitive) {
                 LOG(Info, "Load key succeeded. Key: '{}', Value: '{}'", keyName, value);
             }
             else {
@@ -336,32 +329,40 @@ private:
 
     void SaveWithoutLock()
     {
-        const auto &saveKey =
-            [&]<class T>(const std::string_view &keyName, const T &value, bool restrict = false) {
-                QString qstrKeyName = QString::fromStdString(std::string{keyName});
+        const auto &saveKey = [&]<class T>(
+                                  const std::string_view &keyName, const T &value,
+                                  bool isSensitive = false, bool isDeprecated = false) {
+            QString qstrKeyName = QString::fromStdString(std::string{keyName});
 
-                if constexpr (!std::is_enum_v<T>) {
-                    _settings.setValue(qstrKeyName, value);
-                }
-                else {
-                    _settings.setValue(
-                        qstrKeyName,
-                        QString::fromStdString(std::string{magic_enum::enum_name(value)}));
-                }
+            if (isDeprecated) {
+                _settings.remove(qstrKeyName);
+                LOG(Info, "Remove deprecated key succeeded. Key: '{}'", keyName);
+                return;
+            }
 
-                if (!restrict) {
-                    LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName, value);
-                }
-                else {
-                    LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName,
-                        LogSensitiveData(value));
-                }
-            };
+            if constexpr (!std::is_enum_v<T>) {
+                _settings.setValue(qstrKeyName, value);
+            }
+            else {
+                _settings.setValue(
+                    qstrKeyName, QString::fromStdString(std::string{magic_enum::enum_name(value)}));
+            }
+
+            if (!isSensitive) {
+                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName, value);
+            }
+            else {
+                LOG(Info, "Save key succeeded. Key: '{}', Value: {}", keyName,
+                    LogSensitiveData(value));
+            }
+        };
 
         saveKey("abi_version", kFieldsAbiVersion);
 
         pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
-            saveKey(fieldMeta.GetName(), fieldMeta.GetValue(_fields), fieldMeta.IsSensitive());
+            saveKey(
+                fieldMeta.GetName(), fieldMeta.GetValue(_fields), fieldMeta.IsSensitive(),
+                fieldMeta.IsDeprecated());
         });
     }
 
@@ -422,6 +423,7 @@ Fields GetCurrent()
 
 Fields GetDefault()
 {
+
     return Fields{};
 }
 

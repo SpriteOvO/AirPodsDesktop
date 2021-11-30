@@ -29,7 +29,6 @@
 ## :sparkles: 特性
 * :battery: 电池信息显示。
 * :ear: 自动人耳检测。
-* :sound: 降低高音量
 * :rocket: 低音频延迟模式。
 * :rainbow: 精美的动画。  
 
