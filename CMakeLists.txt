@@ -130,11 +130,16 @@ find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 
 # spdlog
 #
-find_package(spdlog CONFIG)
+add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+# 
+# TODO: Commented out since I don't how to enable `SPDLOG_WCHAR_FILENAMES` for vcpkg, I have tried
+#       `set(SPDLOG_WCHAR_FILENAMES ON)` and `add_compile_definitions(SPDLOG_WCHAR_FILENAMES)`,
+#       but still not working
+#
+# find_package(spdlog CONFIG)
 if (spdlog_FOUND)
     message("Found 'spdlog' (${spdlog_VERSION}).")
 else()
-    add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT)
     message("Fetching 'spdlog'...")
     FetchContent_Declare(
         spdlog

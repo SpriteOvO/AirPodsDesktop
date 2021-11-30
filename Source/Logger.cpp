@@ -53,7 +53,7 @@ bool Initialize(bool enableTrace)
 #endif
 
     try {
-        const auto logFilePath = GetLogFilePath().absolutePath().toStdString();
+        const auto logFilePath = GetLogFilePath().absolutePath().toStdWString();
 
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
