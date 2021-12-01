@@ -435,14 +435,18 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     _boundDevice = std::move(optDevice);
 
-    auto currentState = _boundDevice->GetConnectionState();
-    _displayName = QString::fromStdString(_boundDevice->GetDisplayName());
+    _deviceName = QString::fromStdString([&] {
+        auto name = _boundDevice->GetName();
+        // See https://github.com/SpriteOvO/AirPodsDesktop/issues/15
+        return name.find("Bluetooth") != std::string::npos ? std::string{} : name;
+    }());
+
     _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
         std::lock_guard<std::mutex> lock{_mutex};
         OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
     };
 
-    OnBoundDeviceConnectionStateChanged(currentState);
+    OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
 }
 
 void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
@@ -464,7 +468,7 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
     const auto &oldState = updateEvent.oldState;
     auto &newState = updateEvent.newState;
 
-    newState.displayName = _displayName;
+    newState.displayName = _deviceName.isEmpty() ? Helper::ToString(newState.model) : _deviceName;
 
     ApdApp->GetMainWindow()->UpdateStateSafety(newState);
 

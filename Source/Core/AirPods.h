@@ -160,7 +160,7 @@ private:
     Bluetooth::AdvertisementWatcher _adWatcher;
     Details::StateManager _stateMgr;
     std::optional<Bluetooth::Device> _boundDevice;
-    QString _displayName;
+    QString _deviceName;
     bool _deviceConnected{false};
     bool _automaticEarDetection{false};
 

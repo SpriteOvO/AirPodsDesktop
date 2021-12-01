@@ -42,7 +42,7 @@ public:
     virtual inline ~DeviceAbstract() {}
 
     virtual ConcreteAddressT GetAddress() const = 0;
-    virtual std::string GetDisplayName() const = 0;
+    virtual std::string GetName() const = 0;
     virtual uint16_t GetProductId() const = 0;
     virtual uint16_t GetVendorId() const = 0;
     virtual DeviceState GetConnectionState() const = 0;

@@ -53,7 +53,7 @@ public:
     Device &operator=(Device &&rhs) noexcept;
 
     uint64_t GetAddress() const override;
-    std::string GetDisplayName() const override;
+    std::string GetName() const override;
     uint16_t GetVendorId() const override;
     uint16_t GetProductId() const override;
     DeviceState GetConnectionState() const override;

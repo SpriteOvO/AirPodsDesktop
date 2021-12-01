@@ -71,7 +71,7 @@ uint64_t Device::GetAddress() const
     return _device->BluetoothAddress();
 }
 
-std::string Device::GetDisplayName() const
+std::string Device::GetName() const
 {
     return winrt::to_string(_device->Name());
 }
@@ -171,7 +171,7 @@ void Device::OnConnectionStatusChanged(const BluetoothDevice &sender)
 
 void Device::OnNameChanged(const BluetoothDevice &sender)
 {
-    CbNameChanged().Invoke(GetDisplayName());
+    CbNameChanged().Invoke(GetName());
 }
 
 //////////////////////////////////////////////////

@@ -448,12 +448,12 @@ void MainWindow::BindDevice()
     if (devices.size() > 1) {
         QStringList deviceNames;
         for (const auto &device : devices) {
-            auto displayName = device.GetDisplayName();
+            auto deviceName = device.GetName();
 
-            LOG(Trace, "Device name: '{}'", displayName);
+            LOG(Trace, "Device name: '{}'", deviceName);
             LOG(Trace, "GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(),
                 device.GetVendorId());
-            deviceNames.append(QString::fromStdString(displayName));
+            deviceNames.append(QString::fromStdString(deviceName));
         }
 
         SelectWindow selector{tr("Please select your AirPods device below."), deviceNames, this};
@@ -474,7 +474,7 @@ void MainWindow::BindDevice()
     const auto &selectedDevice = devices.at(selectedIndex);
 
     LOG(Info, "Selected device index: '{}', device name: '{}'. Bound to this device.",
-        selectedIndex, selectedDevice.GetDisplayName());
+        selectedIndex, selectedDevice.GetName());
 
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 }
