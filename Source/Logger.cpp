@@ -30,7 +30,7 @@
 #include "Helper.h"
 #include "Utils.h"
 #include "Application.h"
-#include "ErrorHandle.h"
+#include "Error.h"
 
 #include "Core/OS/Windows.h"
 

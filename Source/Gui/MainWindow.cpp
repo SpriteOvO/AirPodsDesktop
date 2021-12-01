@@ -24,7 +24,7 @@
 
 #include <Config.h>
 #include "../Helper.h"
-#include "../ErrorHandle.h"
+#include "../Error.h"
 #include "../Application.h"
 #include "../Core/AppleCP.h"
 #include "SelectWindow.h"

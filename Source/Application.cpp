@@ -22,7 +22,7 @@
 
 #include <Config.h>
 #include "Logger.h"
-#include "ErrorHandle.h"
+#include "Error.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/Settings.h"

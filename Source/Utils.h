@@ -35,7 +35,7 @@
 
 #include "Helper.h"
 #include "Logger.h"
-#include "ErrorHandle.h"
+#include "Error.h"
 
 #if defined APD_OS_WIN
     #include "Core/OS/Windows.h"
