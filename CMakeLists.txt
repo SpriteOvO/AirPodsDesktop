@@ -216,23 +216,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(SingleApplication)
 message("Fetch 'SingleApplication' done.")
 
-# pfr
-#
-find_package(Boost)
-if (Boost_FOUND)
-    message("Found 'Boost' (${Boost_VERSION}).")
-    add_library(Boost::pfr ALIAS Boost::boost)
-else()
-    message("Fetching 'pfr'...")
-    FetchContent_Declare(
-        pfr
-        GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
-        GIT_TAG "87c9c2d76c09115a135498f755df78db55481a1e"
-    )
-    FetchContent_MakeAvailable(pfr)
-    message("Fetch 'pfr' done.")
-endif()
-
 # magic_enum
 #
 find_package(magic_enum CONFIG)
@@ -247,6 +230,34 @@ else()
     )
     FetchContent_MakeAvailable(magic_enum)
     message("Fetch 'magic_enum' done.")
+endif()
+
+#
+# Boost libraries
+#
+
+# stacktrace
+#
+if (MSVC)
+    set(APD_STACKTRACE_COMPONENT stacktrace_windbg)
+endif()
+
+find_package(Boost REQUIRED COMPONENTS ${APD_STACKTRACE_COMPONENT})
+
+# pfr
+#
+if (Boost_FOUND)
+    message("Found 'Boost' (${Boost_VERSION}).")
+    add_library(Boost::pfr ALIAS Boost::boost)
+else()
+    message("Fetching 'pfr'...")
+    FetchContent_Declare(
+        pfr
+        GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
+        GIT_TAG "87c9c2d76c09115a135498f755df78db55481a1e"
+    )
+    FetchContent_MakeAvailable(pfr)
+    message("Fetch 'pfr' done.")
 endif()
 
 ##################################################
@@ -420,6 +431,7 @@ target_link_libraries(
     cpr::cpr
     nlohmann_json::nlohmann_json
     SingleApplication::SingleApplication
-    Boost::pfr
     magic_enum::magic_enum
+    Boost::pfr
+    Boost::${APD_STACKTRACE_COMPONENT}
 )
