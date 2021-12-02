@@ -20,4 +20,10 @@
 
 #include <string>
 
+namespace Error {
+
+void Initialize();
+
+} // namespace Error
+
 [[noreturn]] void FatalError(const std::string &content, bool report);

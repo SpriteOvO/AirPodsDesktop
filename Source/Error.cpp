@@ -20,16 +20,46 @@
 
 #include <format>
 #include <cstdlib>
+#include <fstream>
 
 #include <QMessageBox>
 #include <QDesktopServices>
-#include <Windows.h>
+
+#include <boost/stacktrace.hpp>
 
 #include <Config.h>
 #include "Utils.h"
 
+constexpr auto kStackTraceFileName = "StackTrace.log";
+
+namespace Error {
+namespace Impl {
+
+void WriteStackTraceFile()
+{
+    using namespace boost;
+
+    auto workspace = Utils::File::GetWorkspace();
+    std::ofstream file{workspace.absoluteFilePath(kStackTraceFileName).toStdString()};
+
+    file << stacktrace::stacktrace();
+}
+} // namespace Impl
+
+void Initialize()
+{
+    auto workspace = Utils::File::GetWorkspace();
+
+    // Delete the last StackTrace log file, if any
+    //
+    workspace.remove(kStackTraceFileName);
+}
+} // namespace Error
+
 [[noreturn]] void FatalError(const std::string &content, bool report)
 {
+    Error::Impl::WriteStackTraceFile();
+
 #if !defined APD_OS_WIN
     #error "Need to port."
 #endif

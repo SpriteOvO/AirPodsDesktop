@@ -19,7 +19,7 @@ on:
 
 env:
   PLATFORM_NAME: Win32
-  BUILD_TYPE: Release
+  BUILD_TYPE: RelWithDebInfo
   UPLOAD_ARTIFACT: true
   CACHE_DEPS: false
 
@@ -37,10 +37,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Prepare build directory
+        run: mkdir Build
+
       - name: Generate dependencies cache key
         if: env.CACHE_DEPS == 'true'
         run: |
-          curl -o DepsRef.json https://api.github.com/repos/SpriteOvO/AirPodsDesktop-Deps/git/refs/heads/main
+          curl -o Build/DepsRef.json https://api.github.com/repos/SpriteOvO/AirPodsDesktop-Deps/git/refs/heads/main
           type DepsRef.json
 
       - name: Dependencies cache
@@ -48,24 +51,32 @@ jobs:
         if: env.CACHE_DEPS == 'true'
         uses: actions/cache@v2
         with:
-          path: AirPodsDesktop-Deps
-          key: ${{ hashFiles('DepsRef.json') }}
+          path: Build/AirPodsDesktop-Deps
+          key: ${{ hashFiles('Build/DepsRef.json') }}
 
       - name: Clone dependencies
         if: env.CACHE_DEPS != 'true' || steps.cache-deps.outputs.cache-hit != 'true'
+        working-directory: Build
         run: |
           git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop-Deps.git
           dir AirPodsDesktop-Deps
 
-      - name: Generate project and build
+      - name: Clone and bootstrap vcpkg
+        working-directory: Build
         run: |
-          mkdir Build && cd Build
+          git clone --recursive https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Generate project and build
+        working-directory: Build
+        run: |
           mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
 
           cmake -G "Visual Studio 16 2019" ^
                 -A ${{ env.PLATFORM_NAME }} ^
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
-                -DAPD_QT_PATH=../../AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
+                -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^
+                -DAPD_QT_PATH=../AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
                 -DAPD_GENERATE_INSTALLER=ON ^
                 -DAPD_BUILD_GIT_HASH=${{ github.sha }} ^
                 ../../

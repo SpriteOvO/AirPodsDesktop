@@ -27,9 +27,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    ApdApplication::PreInitialize(argc, argv);
+    ApdApplication::PreConstruction();
     ApdApplication app{argc, argv};
-    if (!ApdApp->Prepare()) {
+    if (!ApdApp->Prepare(argc, argv)) {
         return 1;
     }
     return ApdApp->Run();

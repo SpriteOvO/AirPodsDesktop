@@ -18,8 +18,6 @@
 
 cmake_minimum_required(VERSION 3.20)
 
-include(FetchContent)
-
 project(
     AirPodsDesktop
     VERSION 0.3.0
@@ -27,6 +25,9 @@ project(
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
 )
+
+include(FetchContent)
+include(CMake/Utils.cmake)
 
 if(MSVC AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20.4")
     #
@@ -246,19 +247,7 @@ find_package(Boost REQUIRED COMPONENTS ${APD_STACKTRACE_COMPONENT})
 
 # pfr
 #
-if (Boost_FOUND)
-    message("Found 'Boost' (${Boost_VERSION}).")
-    add_library(Boost::pfr ALIAS Boost::boost)
-else()
-    message("Fetching 'pfr'...")
-    FetchContent_Declare(
-        pfr
-        GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
-        GIT_TAG "87c9c2d76c09115a135498f755df78db55481a1e"
-    )
-    FetchContent_MakeAvailable(pfr)
-    message("Fetch 'pfr' done.")
-endif()
+add_library(Boost::pfr ALIAS Boost::boost)
 
 ##################################################
 
@@ -400,7 +389,6 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.ilk" EXCLUDE
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
-        PATTERN "*.pdb" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 
@@ -435,3 +423,13 @@ target_link_libraries(
     Boost::pfr
     Boost::${APD_STACKTRACE_COMPONENT}
 )
+
+##################################################
+
+#
+# Use PDB file name as alternate PDB path, it is used to make stacktrace work
+# See https://github.com/boostorg/stacktrace/issues/55
+#
+if (MSVC)
+    apply_pdbaltpath_pdb_for_all_targets()
+endif()

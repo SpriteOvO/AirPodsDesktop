@@ -1,0 +1,8 @@
+{
+  "name": "airpods-desktop",
+  "version-string": "0.3.0",
+  "dependencies": [
+    "boost-pfr",
+    "boost-stacktrace"
+  ]
+}

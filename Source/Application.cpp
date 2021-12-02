@@ -28,27 +28,10 @@
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
-bool ApdApplication::PreInitialize(int argc, char *argv[])
+void ApdApplication::PreConstruction()
 {
-    try {
-        using namespace cxxopts;
-
-        cxxopts::Options opts{Config::ProgramName, Config::Description};
-
-        opts.add_options()(
-            "trace", "Enable trace level logging.", value<bool>()->default_value("false"));
-
-        auto args = opts.parse(argc, argv);
-        _launchOptions.enableTrace = args["trace"].as<bool>();
-    }
-    catch (cxxopts::OptionException &exception) {
-        FatalError(std::format("Parse options failed.\n\n{}", exception.what()), true);
-        return false;
-    }
-
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
-    return true;
 }
 
 void ApdApplication::InitSettings()
@@ -121,8 +104,26 @@ void ApdApplication::FirstTimeUse()
 
 ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}
 
-bool ApdApplication::Prepare()
+bool ApdApplication::Prepare(int argc, char *argv[])
 {
+    Error::Initialize();
+
+    try {
+        using namespace cxxopts;
+
+        cxxopts::Options opts{Config::ProgramName, Config::Description};
+
+        opts.add_options()(
+            "trace", "Enable trace level logging.", value<bool>()->default_value("false"));
+
+        auto args = opts.parse(argc, argv);
+        _launchOptions.enableTrace = args["trace"].as<bool>();
+    }
+    catch (cxxopts::OptionException &exception) {
+        FatalError(std::format("Parse options failed.\n\n{}", exception.what()), true);
+        return false;
+    }
+
     Logger::Initialize(_launchOptions.enableTrace);
 
     LOG(Info, "Launched. Version: '{}'", Config::Version::String);

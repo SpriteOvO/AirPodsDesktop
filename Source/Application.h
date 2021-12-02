@@ -36,10 +36,10 @@ private:
     };
 
 public:
-    static bool PreInitialize(int argc, char *argv[]);
+    static void PreConstruction();
     ApdApplication(int argc, char *argv[]);
 
-    bool Prepare();
+    bool Prepare(int argc, char *argv[]);
     int Run();
 
     inline auto &GetTrayIcon()
