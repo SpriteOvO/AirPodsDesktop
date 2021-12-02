@@ -87,10 +87,25 @@ jobs:
           dir /s Binary
           dir /s Installer
 
-      - name: Upload artifact
+      - name: Prepare artifacts
+        if: env.UPLOAD_ARTIFACT == 'true'
+        working-directory: Build\${{ env.BUILD_TYPE }}\Installer
+        run: |
+          cd _CPack_Packages\win32\NSIS
+          move AirPodsDesktop-*-win32 AirPodsDesktop-${{ github.sha }}-win32
+
+      - name: Upload artifact - Installer
         uses: actions/upload-artifact@v2
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
-          name: ${{ env.BUILD_TYPE }}
-          path: Build\${{ env.BUILD_TYPE }}\Installer\
+          name: AirPodsDesktop-${{ github.sha }}-Installer
+          path: Build\${{ env.BUILD_TYPE }}\Installer\AirPodsDesktop-*-win32.exe
+          retention-days: 90
+
+      - name: Upload artifact - Portable
+        uses: actions/upload-artifact@v2
+        if: env.UPLOAD_ARTIFACT == 'true'
+        with:
+          name: AirPodsDesktop-${{ github.sha }}-Portable
+          path: Build\${{ env.BUILD_TYPE }}\Installer\_CPack_Packages\win32\NSIS\AirPodsDesktop-${{ github.sha }}-win32\AirPodsDesktop
           retention-days: 90
