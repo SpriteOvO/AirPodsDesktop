@@ -9,7 +9,7 @@ assignees: ''
 
 <!--
 Thank you for submitting an issue to us!
-Please check if there are existing related issues before submitting to prevent duplication.
+Please check if there are existing related issues before submitting to avoid duplication.
 
 感谢您向我们提交问题！
 请在提交前检查是否已有相关问题，以防重复。

@@ -9,7 +9,7 @@ assignees: ''
 
 <!--
 Thank you for submitting an issue to us!
-Please check if there are existing related issues before submitting to prevent duplication.
+Please check if there are existing related issues before submitting to avoid duplication.
 
 感谢您向我们提交问题！
 请在提交前检查是否已有相关问题，以防重复。
@@ -38,3 +38,24 @@ If applicable, add screenshots to help explain your problem.
 
 ## :star2: **Additional context**
 Add any other context about the problem here.
+
+<!--
+Upload the contents of log files below.
+You can open their directory in AirPodsDesktop settings or manually navigate to "C:\Users\<Username>\AppData\Local\AirPodsDesktop".
+-->
+
+<details><summary><b>AirPodsDesktop.log</b></summary>
+
+```
+Launch AirPodsDesktop with "--trace" parameter.
+Then after the bug occurred, insert the contents of "AirPodsDesktop.log" here.
+```
+</details>
+
+<details><summary><b>StackTrace.log</b></summary>
+
+```
+Insert the contents of "StackTrace.log" here, if any.
+```
+</details>
+
