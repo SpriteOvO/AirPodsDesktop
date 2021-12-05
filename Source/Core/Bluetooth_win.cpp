@@ -285,7 +285,7 @@ AdvertisementWatcher::~AdvertisementWatcher()
         _destroy = true;
         Stop();
         std::unique_lock<std::mutex> lock{_conVarMutex};
-        _destroyConVar.wait(lock);
+        _destroyConVar.wait_for(lock, 1s);
     }
 }
 
