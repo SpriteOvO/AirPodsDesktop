@@ -142,15 +142,15 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
+#if defined APD_OS_WIN
+    Core::OS::Windows::Winrt::Initialize();
+#endif
+
     _trayIcon = std::make_unique<Gui::TrayIcon>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
 
     InitSettings();
-
-#if defined APD_OS_WIN
-    Core::OS::Windows::Winrt::Initialize();
-#endif
 
     return true;
 }
