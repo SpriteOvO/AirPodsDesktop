@@ -2,6 +2,9 @@
   "name": "airpods-desktop",
   "version-string": "0.3.0",
   "dependencies": [
+    "cxxopts",
+    "nlohmann-json",
+    "magic-enum",
     "boost-pfr",
     "boost-stacktrace"
   ]
