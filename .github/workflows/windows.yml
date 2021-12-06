@@ -18,10 +18,10 @@ on:
   workflow_dispatch:
 
 env:
-  PLATFORM_NAME: Win32
   BUILD_TYPE: RelWithDebInfo
   UPLOAD_ARTIFACT: true
   CACHE_DEPS: false
+  VSVARS_FILE: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsamd64_x86.bat'
 
 jobs:
   Build:
@@ -70,10 +70,11 @@ jobs:
       - name: Generate project and build
         working-directory: Build
         run: |
+          call "${{ env.VSVARS_FILE }}"
+
           mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
 
-          cmake -G "Visual Studio 16 2019" ^
-                -A ${{ env.PLATFORM_NAME }} ^
+          cmake -G "Ninja" ^
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
                 -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^
                 -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
