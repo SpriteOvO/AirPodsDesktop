@@ -76,7 +76,7 @@ jobs:
                 -A ${{ env.PLATFORM_NAME }} ^
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
                 -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^
-                -DAPD_QT_PATH=../AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
+                -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
                 -DAPD_GENERATE_INSTALLER=ON ^
                 -DAPD_BUILD_GIT_HASH=${{ github.sha }} ^
                 ../../

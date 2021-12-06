@@ -34,5 +34,5 @@ Modify the following arguments according to your needs and run it.
     ls ./Binary
     ```
 
-    - Note that if you have not just added the Qt directory to the `PATH` environment variable, you need to pass it to the `APD_QT_PATH` option in the first line this way `-DAPD_QT_PATH=path\to\Qt\5.15.2\msvc2019`.
+    - Note that if you have not just added the Qt directory to the `PATH` environment variable, you need to pass it to the `CMAKE_PREFIX_PATH` option in the first line this way `-DCMAKE_PREFIX_PATH=path\to\Qt\5.15.2\msvc2019`.
     - See the [CMakeLists.txt](/CMakeLists.txt) `Build options` section for more options.

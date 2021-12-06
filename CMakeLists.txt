@@ -70,7 +70,6 @@ set(CMAKE_AUTOUIC ON)
 set(APD_BUILD_TESTS OFF CACHE BOOL "Build tests.")
 set(APD_ENABLE_CONSOLE OFF CACHE BOOL "Enable console.")
 set(APD_GENERATE_INSTALLER OFF CACHE BOOL "Generate installer after build.")
-set(APD_QT_PATH CACHE PATH "Qt 5 path. Can be empty if you have set it in the PATH env variable.")
 set(APD_QT_DEPLOY ON CACHE BOOL "Run Qt deployment tool after build")
 
 ##################################################
@@ -122,7 +121,6 @@ endif()
 
 # Qt
 #
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${APD_QT_PATH})
 set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
 foreach (QT_COMPONENT ${APD_QT_COMPONENTS})
     set(APD_QT_LIBRARIES ${APD_QT_LIBRARIES} Qt5::${QT_COMPONENT})
