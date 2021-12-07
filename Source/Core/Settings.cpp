@@ -24,7 +24,6 @@
 #include <magic_enum.hpp>
 
 #include <Config.h>
-#include "../Helper.h"
 #include "../Logger.h"
 #include "../Application.h"
 #include "GlobalMedia.h"
@@ -103,104 +102,6 @@ void OnApply_tray_icon_battery(const Fields &newFields)
 
     ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafety(newFields.tray_icon_battery);
 }
-
-namespace Impl {
-
-//////////////////////////////////////////////////
-// Options
-//
-
-class OnApply
-{
-public:
-    using FnCallbackT = std::function<void(const Fields &)>;
-
-    OnApply() = default;
-    OnApply(FnCallbackT callback) : _callback{std::move(callback)} {}
-
-    template <class... ArgsT>
-    void Invoke(ArgsT &&...args) const
-    {
-        if (_callback) {
-            _callback(std::forward<ArgsT>(args)...);
-        }
-    }
-
-private:
-    FnCallbackT _callback;
-};
-
-// clang-format off
-class Sensitive {};
-class Deprecated {};
-// clang-format on
-
-//////////////////////////////////////////////////
-
-template <class T>
-class MetaField
-{
-public:
-    template <class... ArgsT>
-    MetaField(std::string_view name, T member, ArgsT &&...args)
-        : _name{std::move(name)}, _member{std::move(member)}
-    {
-        std::initializer_list<int> ignore = {(SetOption(std::forward<ArgsT>(args)), 0)...};
-    }
-
-    const std::string_view &GetName() const
-    {
-        return _name;
-    }
-
-    const Helper::MemberPointerType<T> &GetValue(const Fields &fields) const
-    {
-        return fields.*_member;
-    }
-
-    Helper::MemberPointerType<T> &GetValue(Fields &fields)
-    {
-        return fields.*_member;
-    }
-
-    void SetOption(OnApply onApply)
-    {
-        _onApply = std::move(onApply);
-    }
-
-    void SetOption(Sensitive)
-    {
-        _isSensitive = true;
-    }
-
-    void SetOption(Deprecated)
-    {
-        _isDeprecated = true;
-    }
-
-    const OnApply &OnApply() const
-    {
-        return _onApply;
-    }
-
-    bool IsSensitive() const
-    {
-        return _isSensitive;
-    }
-
-    bool IsDeprecated() const
-    {
-        return _isDeprecated;
-    }
-
-private:
-    std::string_view _name;
-    T _member;
-    Impl::OnApply _onApply;
-    bool _isSensitive{false}, _isDeprecated{false};
-};
-
-} // namespace Impl
 
 class Manager : public Helper::Singleton<Manager>
 {
@@ -316,12 +217,7 @@ public:
     }
 
 private:
-    struct {
-#define DECLARE_META_FIELD(type, name, dft, ...)                                                   \
-    Impl::MetaField<type Fields::*> name{TO_STRING(name), &Fields::name, __VA_ARGS__};
-        SETTINGS_FIELDS(DECLARE_META_FIELD)
-#undef DECLARE_FIELD
-    } _fieldsMeta;
+    MetaFields _fieldsMeta;
 
     std::mutex _mutex;
     Fields _fields;

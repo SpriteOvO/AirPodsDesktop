@@ -22,11 +22,160 @@
 
 #include <QSettings>
 
+#include "../Helper.h"
+
 namespace Core::Settings {
 
 enum class TrayIconBatteryBehavior : uint32_t { Disable, WhenLowBattery, Always };
+enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
+
+// clang-format off
+#define SETTINGS_FIELDS(callback)                                                                  \
+    callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
+    callback(bool, low_audio_latency, {false},                                                     \
+        Impl::OnApply(&OnApply_low_audio_latency),                                                 \
+        Impl::Desc{QObject::tr("It improves the problem of short audio not playing, but may increase battery consumption.")}) \
+    callback(bool, automatic_ear_detection, {true},                                                \
+        Impl::OnApply(&OnApply_automatic_ear_detection),                                           \
+        Impl::Desc{QObject::tr("Pause the media when you remove the AirPods and play it when both AirPods are put back on.")}) \
+    callback(QString, skipped_version, {})                                                         \
+    callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
+    callback(bool, reduce_loud_sounds, {false}, Impl::Deprecated())                                \
+    callback(uint32_t, loud_volume_level, {40}, Impl::Deprecated())                                \
+    callback(uint64_t, device_address, {0},                                                        \
+        Impl::OnApply(&OnApply_device_address),                                                    \
+        Impl::Sensitive{})                                                                         \
+    callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable},       \
+        Impl::OnApply(&OnApply_tray_icon_battery))
+// clang-format on
+
+struct Fields {
+#define DECLARE_FIELD(type, name, dft, ...) type name dft;
+    SETTINGS_FIELDS(DECLARE_FIELD)
+#undef DECLARE_FIELD
+};
 
 namespace Impl {
+
+//////////////////////////////////////////////////
+// Options
+//
+
+class OnApply
+{
+public:
+    using FnCallbackT = std::function<void(const Fields &)>;
+
+    OnApply() = default;
+    OnApply(FnCallbackT callback) : _callback{std::move(callback)} {}
+
+    template <class... ArgsT>
+    void Invoke(ArgsT &&...args) const
+    {
+        if (_callback) {
+            _callback(std::forward<ArgsT>(args)...);
+        }
+    }
+
+private:
+    FnCallbackT _callback;
+};
+
+class Desc
+{
+public:
+    Desc() = default;
+    Desc(QString description) : _description{std::move(description)} {}
+
+    const QString &Description() const
+    {
+        return _description;
+    }
+
+private:
+    QString _description;
+};
+
+// clang-format off
+class Sensitive {};
+class Deprecated {};
+// clang-format on
+
+//////////////////////////////////////////////////
+
+template <class T>
+class MetaField
+{
+public:
+    template <class... ArgsT>
+    MetaField(std::string_view name, T member, ArgsT &&...args)
+        : _name{std::move(name)}, _member{std::move(member)}
+    {
+        std::initializer_list<int> ignore = {(SetOption(std::forward<ArgsT>(args)), 0)...};
+    }
+
+    const std::string_view &GetName() const
+    {
+        return _name;
+    }
+
+    const Helper::MemberPointerType<T> &GetValue(const Fields &fields) const
+    {
+        return fields.*_member;
+    }
+
+    Helper::MemberPointerType<T> &GetValue(Fields &fields)
+    {
+        return fields.*_member;
+    }
+
+    void SetOption(OnApply onApply)
+    {
+        _onApply = std::move(onApply);
+    }
+
+    void SetOption(Desc description)
+    {
+        _description = std::move(description);
+    }
+
+    void SetOption(Sensitive)
+    {
+        _isSensitive = true;
+    }
+
+    void SetOption(Deprecated)
+    {
+        _isDeprecated = true;
+    }
+
+    const OnApply &OnApply() const
+    {
+        return _onApply;
+    }
+
+    const QString &Description() const
+    {
+        return _description.Description();
+    }
+
+    bool IsSensitive() const
+    {
+        return _isSensitive;
+    }
+
+    bool IsDeprecated() const
+    {
+        return _isDeprecated;
+    }
+
+private:
+    std::string_view _name;
+    T _member;
+    Impl::OnApply _onApply;
+    Impl::Desc _description;
+    bool _isSensitive{false}, _isDeprecated{false};
+};
 
 template <class T>
 class BasicSafeAccessor
@@ -51,26 +200,25 @@ private:
 //
 constexpr inline uint32_t kFieldsAbiVersion = 1;
 
-// clang-format off
-#define SETTINGS_FIELDS(callback)                                                                  \
-    callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
-    callback(bool, low_audio_latency, {false}, Impl::OnApply(&OnApply_low_audio_latency))          \
-    callback(bool, automatic_ear_detection, {true}, Impl::OnApply(&OnApply_automatic_ear_detection))\
-    callback(QString, skipped_version, {})                                                         \
-    callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
-    callback(bool, reduce_loud_sounds, {false}, Impl::Deprecated())                                \
-    callback(uint32_t, loud_volume_level, {40}, Impl::Deprecated())                                \
-    callback(uint64_t, device_address, {0}, Impl::OnApply(&OnApply_device_address), Impl::Sensitive{})\
-    callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable}, Impl::OnApply(&OnApply_tray_icon_battery))
-// clang-format on
+void OnApply_auto_run(const Fields &newFields);
+void OnApply_low_audio_latency(const Fields &newFields);
+void OnApply_automatic_ear_detection(const Fields &newFields);
+void OnApply_rssi_min(const Fields &newFields);
+void OnApply_device_address(const Fields &newFields);
+void OnApply_tray_icon_battery(const Fields &newFields);
 
-struct Fields {
-#define DECLARE_FIELD(type, name, dft, ...) type name dft;
-    SETTINGS_FIELDS(DECLARE_FIELD)
+struct MetaFields {
+#define DECLARE_META_FIELD(type, name, dft, ...)                                                   \
+    Impl::MetaField<type Fields::*> name{TO_STRING(name), &Fields::name, __VA_ARGS__};
+    SETTINGS_FIELDS(DECLARE_META_FIELD)
 #undef DECLARE_FIELD
 };
 
-enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
+inline const auto &GetConstMetaFields()
+{
+    static MetaFields i;
+    return i;
+}
 
 LoadResult Load();
 void Save(Fields newFields);

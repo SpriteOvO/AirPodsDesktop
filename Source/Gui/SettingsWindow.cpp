@@ -61,11 +61,14 @@ private:
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 {
+    const auto &constMetaFields = Core::Settings::GetConstMetaFields();
+
     _ui.setupUi(this);
 
-    auto versionText = QString{"<a href=\"%1\">v%2</a>"}
+    auto versionText =
+        QString{"<a href=\"%1\">v%2</a>"}
             .arg("https://github.com/SpriteOvO/AirPodsDesktop/releases/tag/" CONFIG_VERSION_STRING)
-                           .arg(CONFIG_VERSION_STRING);
+            .arg(CONFIG_VERSION_STRING);
 #if defined APD_BUILD_GIT_HASH
     versionText +=
         QString{" (<a href=\"%1\">%2</a>)"}
@@ -74,15 +77,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 #endif
     _ui.lbVersion->setText(versionText);
 
-    _ui.hlLowAudioLatency->addWidget(new TipLabel{
-        tr("It improves the problem of short audio not playing, but may increase "
-           "battery consumption."),
-        this});
+    _ui.hlLowAudioLatency->addWidget(
+        new TipLabel{constMetaFields.low_audio_latency.Description(), this});
 
-    _ui.hlTipAutoEarDetection->addWidget(new TipLabel{
-        tr("Pause the media when you remove the AirPods and play it when both "
-           "AirPods are put back on."),
-        this});
+    _ui.hlTipAutoEarDetection->addWidget(
+        new TipLabel{constMetaFields.automatic_ear_detection.Description(), this});
 
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);

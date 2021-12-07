@@ -62,6 +62,8 @@ void ApdApplication::InitSettings()
 
 void ApdApplication::FirstTimeUse()
 {
+    const auto &constMetaFields = Core::Settings::GetConstMetaFields();
+
     QMessageBox::information(
         nullptr, Config::ProgramName,
         tr("Hello, welcome to %1!\n"
@@ -88,9 +90,8 @@ void ApdApplication::FirstTimeUse()
         QMessageBox::question(
             nullptr, Config::ProgramName,
             tr("Do you want to enable \"low audio latency\" mode?\n"
-               "\n"
-               "It improves the problem of short audio not playing, but may increase battery "
-               "consumption."),
+               "\n%1")
+                .arg(constMetaFields.low_audio_latency.Description()),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
 
     Core::Settings::Save(std::move(current));
