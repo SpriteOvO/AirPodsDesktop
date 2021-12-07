@@ -122,7 +122,7 @@ FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring>
 
 namespace File {
 
-inline bool ShowFileLocation(const QDir &directory)
+inline bool OpenFileLocation(const QDir &directory)
 {
     QString arguments = "/select,\"" + QDir::toNativeSeparators(directory.absolutePath()) + "\"";
 

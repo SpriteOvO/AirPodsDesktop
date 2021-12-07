@@ -147,9 +147,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
         }
     });
 
-    connect(_ui.pbShowLogFileLocation, &QPushButton::clicked, this, [this]() {
+    connect(_ui.pbOpenLogsDirectory, &QPushButton::clicked, this, [this]() {
         if (_trigger) {
-            On_pbShowLogFileLocation_clicked();
+            On_pbOpenLogsDirectory_clicked();
         }
     });
 }
@@ -240,9 +240,9 @@ void SettingsWindow::On_hsMaxReceivingRange_valueChanged(int value)
     Core::Settings::ModifiableAccess()->rssi_min = -value;
 }
 
-void SettingsWindow::On_pbShowLogFileLocation_clicked()
+void SettingsWindow::On_pbOpenLogsDirectory_clicked()
 {
-    Utils::File::ShowFileLocation(Logger::GetLogFilePath());
+    Utils::File::OpenFileLocation(Logger::GetLogFilePath());
 }
 
 } // namespace Gui

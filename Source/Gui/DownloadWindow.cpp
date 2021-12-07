@@ -69,7 +69,7 @@ void DownloadWindow::OnFailed()
 
     QMessageBox::warning(
         this, Config::ProgramName,
-        tr("Oops, there was a glitch in the automatic update.\n"
+        tr("Oops, an error occurred during the automatic update.\n"
            "Please download and install the new version manually."));
 
     _info.OpenUrl();

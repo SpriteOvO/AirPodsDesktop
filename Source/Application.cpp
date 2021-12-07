@@ -81,7 +81,8 @@ void ApdApplication::FirstTimeUse()
             nullptr, Config::ProgramName,
             tr("Do you want this program to launch when the system starts?\n"
                "\n"
-               "If you frequently use AirPods on the desktop, I recommend that you click \"Yes\"."),
+               "If you frequently use AirPods with this computer, it is recommended that you click "
+               "\"Yes\"."),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
 
     // Low audio latency
@@ -89,7 +90,7 @@ void ApdApplication::FirstTimeUse()
     current.low_audio_latency =
         QMessageBox::question(
             nullptr, Config::ProgramName,
-            tr("Do you want to enable \"low audio latency\" mode?\n"
+            tr("Do you want to enable the \"low audio latency\" feature?\n"
                "\n%1")
                 .arg(constMetaFields.low_audio_latency.Description()),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
@@ -100,7 +101,7 @@ void ApdApplication::FirstTimeUse()
         nullptr, Config::ProgramName,
         tr("Great! Everything is ready!\n"
            "\n"
-           "Enjoy it all~"));
+           "Enjoy it all."));
 }
 
 ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}

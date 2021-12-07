@@ -151,10 +151,10 @@ inline QDir GetWorkspace()
     return result;
 }
 
-inline bool ShowFileLocation(const QDir &directory)
+inline bool OpenFileLocation(const QDir &directory)
 {
 #if defined APD_OS_WIN
-    return Core::OS::Windows::File::ShowFileLocation(directory);
+    return Core::OS::Windows::File::OpenFileLocation(directory);
 #else
     #error "Need to port."
 #endif

@@ -34,10 +34,10 @@ enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
     callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
     callback(bool, low_audio_latency, {false},                                                     \
         Impl::OnApply(&OnApply_low_audio_latency),                                                 \
-        Impl::Desc{QObject::tr("It improves the problem of short audio not playing, but may increase battery consumption.")}) \
+        Impl::Desc{QObject::tr("It fixes short audio playback problems, but may increase battery consumption.")}) \
     callback(bool, automatic_ear_detection, {true},                                                \
         Impl::OnApply(&OnApply_automatic_ear_detection),                                           \
-        Impl::Desc{QObject::tr("Pause the media when you remove the AirPods and play it when both AirPods are put back on.")}) \
+        Impl::Desc{QObject::tr("It automatically pauses or resumes media when your AirPods are taken out or put in your ears.")}) \
     callback(QString, skipped_version, {})                                                         \
     callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
     callback(bool, reduce_loud_sounds, {false}, Impl::Deprecated())                                \

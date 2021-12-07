@@ -64,7 +64,7 @@ private:
     void On_hsMaxReceivingRange_valueChanged(int value);
 
     // About
-    void On_pbShowLogFileLocation_clicked();
+    void On_pbOpenLogsDirectory_clicked();
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
 };
