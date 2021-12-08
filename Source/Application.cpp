@@ -142,7 +142,11 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     SetTranslator();
 
-    setFont(QFont{"Segoe UI", 9});
+    QFont font;
+    font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
+    font.setPointSize(9);
+
+    setFont(font);
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
