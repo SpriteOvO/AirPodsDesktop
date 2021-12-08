@@ -254,6 +254,7 @@ set(
     APD_CODE_FILES
 
     "Source/Main.cpp"
+    "Source/Opts.cpp"
     "Source/Logger.cpp"
     "Source/Assert.cpp"
     "Source/Error.cpp"

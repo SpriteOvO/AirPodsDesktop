@@ -19,7 +19,6 @@
 #pragma once
 
 #include <memory>
-#include <cxxopts.hpp>
 #include <SingleApplication>
 
 #include <QTranslator>
@@ -29,15 +28,11 @@
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
 #include "Core/LowAudioLatency.h"
+#include "Opts.h"
 
 class ApdApplication : public SingleApplication
 {
     Q_OBJECT
-
-private:
-    struct LaunchOptions {
-        bool enableTrace{false};
-    };
 
 public:
     static void PreConstruction();
@@ -69,7 +64,7 @@ public:
     static void QuitSafety();
 
 private:
-    static inline LaunchOptions _launchOptions;
+    static inline Opts::LaunchOptsManager _launchOptsMgr;
     static inline bool _isFirstTimeUse{false};
     QTranslator _translator;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
