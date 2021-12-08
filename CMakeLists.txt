@@ -321,18 +321,45 @@ qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
 # Translation
 #
 
+#
+# Workaround: Well, another ancient CMake or Qt bug
+#             CMake will delete all translation files when you rebuild, not just update them
+#             So `qt5_create_translation` doesn't work
+#             We have to add a TARGET ourselves to execute the `lupdate` cli
+#
+# See also: https://bugreports.qt.io/browse/QTBUG-31860 (reported 8 years ago)
+#           https://stackoverflow.com/a/60848939
+#
+
 set(APD_TRANSLATION_LANGS zh_CN)
+set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
+set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 
 set(APD_TS_FILES ${APD_TRANSLATION_LANGS})
-list(TRANSFORM APD_TS_FILES PREPEND "./Source/Resource/Translation/apd_")
+list(TRANSFORM APD_TS_FILES PREPEND "${APD_TS_DIR}/apd_")
 list(TRANSFORM APD_TS_FILES APPEND ".ts")
-set_source_files_properties(${APD_TS_FILES} PROPERTIES OUTPUT_LOCATION "${APD_BINARY_OUT_DIR}/translations")
 
-qt5_create_translation(
+set_source_files_properties(${APD_TS_FILES} PROPERTIES OUTPUT_LOCATION ${APD_QM_DIR})
+
+#
+# Create or update .ts files
+#
+
+add_custom_target(
+    APD_CREATE_UPDATE_TS
+    COMMAND ${Qt5_LUPDATE_EXECUTABLE} -recursive "${CMAKE_SOURCE_DIR}/Source/"
+                                      -ts ${APD_TS_FILES}
+                                      -locations none
+    WORKING_DIRECTORY ${APD_TS_DIR}
+)
+
+#
+# Add .ts files as .qm files
+#
+
+qt5_add_translation(
     APD_QM_FILES
-    "./Source/"
     ${APD_TS_FILES}
-    OPTIONS -locations none
 )
 
 ##################################################
@@ -343,6 +370,8 @@ add_executable(
     ${APD_CODE_FILES}
     ${APD_QM_FILES}
 )
+
+add_dependencies(${PROJECT_NAME} APD_CREATE_UPDATE_TS)
 
 target_compile_definitions(
     ${PROJECT_NAME} PRIVATE
