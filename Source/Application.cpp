@@ -140,6 +140,8 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     LOG(Info, "Args: {{ trace: {} }}", _launchOptions.enableTrace);
 
+    SetTranslator();
+
     setFont(QFont{"Segoe UI", 9});
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
@@ -161,6 +163,16 @@ int ApdApplication::Run()
 {
     _mainWindow->GetApdMgr().StartScanner();
     return exec();
+}
+
+void ApdApplication::SetTranslator(const QLocale &locale)
+{
+    LOG(Info, "SetTranslator() locale: {}", locale.name());
+
+    QDir translationFolder = QCoreApplication::applicationDirPath();
+    translationFolder.cd("translations");
+    _translator.load(locale, "apd", "_", translationFolder.absolutePath());
+    installTranslator(&_translator);
 }
 
 void ApdApplication::QuitSafety()

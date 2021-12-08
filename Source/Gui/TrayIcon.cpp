@@ -120,13 +120,20 @@ void TrayIcon::Repaint()
 
         toolTipContent += state.displayName;
 
+        static auto strLeft{tr("Left")}, strRight{tr("Right")}, strCase{tr("Case")},
+            strCharging{tr("charging")};
+
+        static auto textCharging = QString{" (%1)"}.arg(strCharging),
+                    textPlaceHolder = QString{"\n%1: %2%%3"};
+
         // clang-format off
         if (state.pods.left.battery.Available()) {
             const auto batteryValue = state.pods.left.battery.Value();
 
-            toolTipContent += QString{tr("\nLeft: %1%%2")}
+            toolTipContent += textPlaceHolder
+                .arg(strLeft)
                 .arg(batteryValue)
-                .arg(state.pods.left.isCharging ? tr(" (charging)") : "");
+                .arg(state.pods.left.isCharging ? textCharging : QString{});
 
             minBattery = batteryValue;
         }
@@ -134,9 +141,10 @@ void TrayIcon::Repaint()
         if (state.pods.right.battery.Available()) {
             const auto batteryValue = state.pods.right.battery.Value();
 
-            toolTipContent += QString{tr("\nRight: %1%%2")}
+            toolTipContent += textPlaceHolder
+                .arg(strRight)
                 .arg(batteryValue)
-                .arg(state.pods.right.isCharging ? tr(" (charging)") : "");
+                .arg(state.pods.right.isCharging ? textCharging : QString{});
 
             if (minBattery.Available() && batteryValue < minBattery.Value() ||
                 !minBattery.Available()) {
@@ -145,9 +153,10 @@ void TrayIcon::Repaint()
         }
 
         if (state.caseBox.battery.Available()) {
-            toolTipContent += QString{tr("\nCase: %1%%2")}
+            toolTipContent += textPlaceHolder
+                .arg(strCase)
                 .arg(state.caseBox.battery.Value())
-                .arg(state.caseBox.isCharging ? tr(" (charging)") : "");
+                .arg(state.caseBox.isCharging ? textCharging : QString{});
         }
         // clang-format on
         break;

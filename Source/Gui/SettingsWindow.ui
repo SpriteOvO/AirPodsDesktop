@@ -281,14 +281,14 @@
               </font>
              </property>
              <property name="text">
-              <string>AirPodsDesktop</string>
+              <string notr="true">AirPodsDesktop</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QLabel" name="lbVersion">
              <property name="text">
-              <string>v</string>
+              <string notr="true">v</string>
              </property>
              <property name="openExternalLinks">
               <bool>true</bool>

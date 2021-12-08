@@ -22,6 +22,8 @@
 #include <cxxopts.hpp>
 #include <SingleApplication>
 
+#include <QTranslator>
+
 #include "Gui/TrayIcon.h"
 #include "Gui/MainWindow.h"
 #include "Gui/DownloadWindow.h"
@@ -30,6 +32,8 @@
 
 class ApdApplication : public SingleApplication
 {
+    Q_OBJECT
+
 private:
     struct LaunchOptions {
         bool enableTrace{false};
@@ -60,11 +64,14 @@ public:
         return _isFirstTimeUse;
     }
 
+    void SetTranslator(const QLocale &locale = {});
+
     static void QuitSafety();
 
 private:
     static inline LaunchOptions _launchOptions;
     static inline bool _isFirstTimeUse{false};
+    QTranslator _translator;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;

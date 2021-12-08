@@ -126,6 +126,7 @@ foreach (QT_COMPONENT ${APD_QT_COMPONENTS})
     set(APD_QT_LIBRARIES ${APD_QT_LIBRARIES} Qt5::${QT_COMPONENT})
 endforeach()
 find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
+find_package(Qt5LinguistTools REQUIRED)
 
 # spdlog
 #
@@ -307,12 +308,39 @@ if (APD_BUILD_GIT_HASH)
     set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_BUILD_GIT_HASH="${APD_BUILD_GIT_HASH}")
 endif()
 
+##################################################
+# Qt configurations
+#
+
+# Resource
+
 qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
+
+#
+# Translation
+#
+
+set(APD_TRANSLATION_LANGS zh_CN)
+
+set(APD_TS_FILES ${APD_TRANSLATION_LANGS})
+list(TRANSFORM APD_TS_FILES PREPEND "./Source/Resource/Translation/apd_")
+list(TRANSFORM APD_TS_FILES APPEND ".ts")
+set_source_files_properties(${APD_TS_FILES} PROPERTIES OUTPUT_LOCATION "${APD_BINARY_OUT_DIR}/translations")
+
+qt5_create_translation(
+    APD_QM_FILES
+    "./Source/"
+    ${APD_TS_FILES}
+    OPTIONS -locations none
+)
+
+##################################################
 
 add_executable(
     ${PROJECT_NAME} ${ADD_EXECUTABLE_ARG}
 
     ${APD_CODE_FILES}
+    ${APD_QM_FILES}
 )
 
 target_compile_definitions(
