@@ -349,6 +349,7 @@ add_custom_target(
     APD_CREATE_UPDATE_TS
     COMMAND ${Qt5_LUPDATE_EXECUTABLE} -recursive "${CMAKE_SOURCE_DIR}/Source/"
                                       -ts ${APD_TS_FILES}
+                                      -no-obsolete
                                       -locations none
     WORKING_DIRECTORY ${APD_TS_DIR}
 )
