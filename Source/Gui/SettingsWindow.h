@@ -52,6 +52,7 @@ private:
     void showEvent(QShowEvent *event) override;
 
     // General
+    void On_cbLanguages_currentIndexChanged(int index);
     void On_cbAutoRun_toggled(bool checked);
     void On_pbUnbind_clicked();
 
@@ -67,5 +68,6 @@ private:
     void On_pbOpenLogsDirectory_clicked();
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
+    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
 };
 } // namespace Gui

@@ -79,5 +79,7 @@ private:
 
 protected:
     SettingsWindow _settingsWindow;
+
+    UTILS_QT_REGISTER_LANGUAGECHANGE(QWidget, [this] { Repaint(); });
 };
 } // namespace Gui

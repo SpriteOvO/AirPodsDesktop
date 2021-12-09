@@ -113,11 +113,11 @@ void TrayIcon::Repaint()
 
         toolTipContent += state.displayName;
 
-        static auto strLeft{tr("Left")}, strRight{tr("Right")}, strCase{tr("Case")},
+        const auto strLeft{tr("Left")}, strRight{tr("Right")}, strCase{tr("Case")},
             strCharging{tr("charging")};
 
-        static auto textCharging = QString{" (%1)"}.arg(strCharging),
-                    textPlaceHolder = QString{"\n%1: %2%%3"};
+        const auto textCharging = QString{" (%1)"}.arg(strCharging),
+                   textPlaceHolder = QString{"\n%1: %2%%3"};
 
         // clang-format off
         if (state.pods.left.battery.Available()) {

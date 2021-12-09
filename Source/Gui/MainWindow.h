@@ -118,5 +118,9 @@ private:
     void showEvent(QShowEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
+    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
+        _ui.retranslateUi(this);
+        Repaint();
+    });
 };
 } // namespace Gui

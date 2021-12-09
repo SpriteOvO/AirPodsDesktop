@@ -45,6 +45,7 @@ constexpr inline auto License = "GPLv3";
 constexpr inline auto Copyright = CONFIG_COPYRIGHT;
 constexpr inline auto Description = CONFIG_DESCRIPTION;
 constexpr inline auto QrcIconSvg = ":/Resource/Image/Icon.svg";
+constexpr inline auto TranslationLocales = "@APD_TRANSLATION_LOCALES@";
 
 namespace Version {
 

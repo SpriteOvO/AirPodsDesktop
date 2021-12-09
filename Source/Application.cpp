@@ -34,9 +34,9 @@ void ApdApplication::PreConstruction()
     setAttribute(Qt::AA_EnableHighDpiScaling);
 }
 
-void ApdApplication::InitSettings()
+void ApdApplication::InitSettings(Core::Settings::LoadResult loadResult)
 {
-    auto result = Core::Settings::Load();
+    const auto result = loadResult;
 
     switch (result) {
     case Core::Settings::LoadResult::AbiIncompatible:
@@ -130,7 +130,12 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     LOG(Info, "Opts: {}", opts);
 
-    SetTranslator();
+    connect(this, &ApdApplication::SetTranslatorSafety, this, &ApdApplication::SetTranslator);
+
+    // pre-load for InitTranslator
+    const auto settingsLoadResult = Core::Settings::Load();
+
+    InitTranslator();
 
     QFont font;
     font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
@@ -148,7 +153,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
 
-    InitSettings();
+    InitSettings(settingsLoadResult);
 
     return true;
 }
@@ -159,14 +164,79 @@ int ApdApplication::Run()
     return exec();
 }
 
+const QVector<QLocale> &ApdApplication::AvailableLocales()
+{
+    static QVector<QLocale> locales = []() {
+        const auto localeNames = QString{Config::TranslationLocales}.split(';', Qt::SkipEmptyParts);
+
+        QVector<QLocale> result = {QLocale{"en"}};
+
+        for (const auto &localName : localeNames) {
+            QLocale locale{localName};
+
+            if (locale.language() == QLocale::C) {
+                LOG(Warn, "Possibly invalid locale name '{}', ignore", localName);
+                continue;
+            }
+
+            result.push_back(locale);
+        }
+
+        return result;
+    }();
+
+    return locales;
+}
+
 void ApdApplication::SetTranslator(const QLocale &locale)
 {
-    LOG(Info, "SetTranslator() locale: {}", locale.name());
+    const auto localeName = locale.name();
+
+    LOG(Info, "SetTranslator() locale: {}", localeName);
+
+    if (locale.language() == QLocale::C) {
+        LOG(Warn, "Try to set a possibly invalid locale name '{}', ignore", localeName);
+        return;
+    }
+
+    const auto &availableLocales = ApdApplication::AvailableLocales();
+
+    int index = -1;
+    for (int i = 0; i < availableLocales.size(); ++i) {
+        if (availableLocales.at(i).name() == localeName) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        LOG(Warn, "Try to set a untranslated language. locale name '{}', ignore", localeName);
+        return;
+    }
+
+    if (_currentLoadedLocaleIndex == index) {
+        LOG(Warn, "Try to set a same locale name '{}', ignore", localeName);
+        return;
+    }
 
     QDir translationFolder = QCoreApplication::applicationDirPath();
     translationFolder.cd("translations");
     _translator.load(locale, "apd", "_", translationFolder.absolutePath());
+
     installTranslator(&_translator);
+
+    _currentLoadedLocaleIndex = index;
+}
+
+void ApdApplication::InitTranslator()
+{
+    LOG(Info, "currentLocale: {}", QLocale{}.name());
+
+    const auto &localeFromSettings = Core::Settings::GetCurrent().language_locale;
+
+    LOG(Info, "Locale from settings: '{}'", localeFromSettings);
+
+    SetTranslator(localeFromSettings.isEmpty() ? QLocale{} : QLocale{localeFromSettings});
 }
 
 void ApdApplication::QuitSafety()

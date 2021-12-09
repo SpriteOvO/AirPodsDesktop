@@ -262,5 +262,9 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Copyright © 2021 SpriteOvO. All rights reserved.</source>
         <translation>版权所有 © 2021 SpriteOvO. 保留所有权利。</translation>
     </message>
+    <message>
+        <source>Language</source>
+        <translation>语言</translation>
+    </message>
 </context>
 </TS>

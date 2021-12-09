@@ -54,20 +54,32 @@ public:
         return _lowAudioLatencyController;
     }
 
-    void SetTranslator(const QLocale &locale = {});
+    inline auto GetCurrentLoadedLocaleIndex()
+    {
+        return _currentLoadedLocaleIndex;
+    }
+
+    const QVector<QLocale> &AvailableLocales();
 
     static void QuitSafety();
+
+Q_SIGNALS:
+    void SetTranslatorSafety(const QLocale &locale);
 
 private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
     QTranslator _translator;
+    int _currentLoadedLocaleIndex{0};
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
 
-    void InitSettings();
+    void InitSettings(Core::Settings::LoadResult loadResult);
     void FirstTimeUse();
+
+    void SetTranslator(const QLocale &locale);
+    void InitTranslator();
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

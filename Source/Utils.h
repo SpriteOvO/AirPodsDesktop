@@ -56,6 +56,15 @@ namespace Qt {
         }                                                                                          \
     }
 
+#define UTILS_QT_REGISTER_LANGUAGECHANGE(base_name, callback)                                      \
+    inline void changeEvent(QEvent *event) override                                                \
+    {                                                                                              \
+        if (event->type() == QEvent::LanguageChange) {                                             \
+            callback();                                                                            \
+        }                                                                                          \
+        base_name::changeEvent(event);                                                             \
+    }
+
 inline void SetRoundedCorners(QWidget *widget, qreal radius)
 {
     QBitmap bmp{widget->size()};

@@ -31,6 +31,7 @@ enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
 
 // clang-format off
 #define SETTINGS_FIELDS(callback)                                                                  \
+    callback(QString, language_locale, {}, Impl::OnApply(&OnApply_language_locale))                \
     callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
     callback(bool, low_audio_latency, {false},                                                     \
         Impl::OnApply(&OnApply_low_audio_latency),                                                 \
@@ -200,6 +201,7 @@ private:
 //
 constexpr inline uint32_t kFieldsAbiVersion = 1;
 
+void OnApply_language_locale(const Fields &newFields);
 void OnApply_auto_run(const Fields &newFields);
 void OnApply_low_audio_latency(const Fields &newFields);
 void OnApply_automatic_ear_detection(const Fields &newFields);

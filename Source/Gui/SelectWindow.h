@@ -45,5 +45,6 @@ private:
     void OnButtonClicked(QDialogButtonBox::StandardButton button);
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
+    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
 };
 } // namespace Gui

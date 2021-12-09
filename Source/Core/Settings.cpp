@@ -39,6 +39,14 @@ std::string_view LogSensitiveData(const T &value)
     return value != std::decay_t<T>{} ? "** MAYBE HAVE VALUE **" : "** MAYBE NO VALUE **";
 }
 
+void OnApply_language_locale(const Fields &newFields)
+{
+    LOG(Info, "OnApply_language_locale: {}", newFields.language_locale);
+
+    ApdApp->SetTranslatorSafety(
+        newFields.language_locale.isEmpty() ? QLocale{} : QLocale{newFields.language_locale});
+}
+
 void OnApply_auto_run(const Fields &newFields)
 {
     LOG(Info, "OnApply_auto_run: {}", newFields.auto_run);

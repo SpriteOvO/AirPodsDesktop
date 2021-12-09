@@ -26,6 +26,8 @@
 
 #include <Config.h>
 
+#include "../Application.h"
+
 using namespace std::chrono_literals;
 
 namespace Gui {
@@ -86,11 +88,22 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
 
+    for (const auto &locale : ApdApp->AvailableLocales()) {
+        _ui.cbLanguages->addItem(locale.nativeLanguageName());
+    }
+
     Update(Core::Settings::GetCurrent(), false);
 
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
         &SettingsWindow::RestoreDefaults);
+
+    connect(
+        _ui.cbLanguages, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+            if (_trigger) {
+                On_cbLanguages_currentIndexChanged(index);
+            }
+        });
 
     connect(_ui.cbAutoRun, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
@@ -181,6 +194,8 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _trigger = trigger;
 
+    _ui.cbLanguages->setCurrentIndex(ApdApp->GetCurrentLoadedLocaleIndex());
+
     _ui.cbAutoRun->setChecked(fields.auto_run);
 
     _ui.cbLowAudioLatency->setChecked(fields.low_audio_latency);
@@ -206,6 +221,14 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 void SettingsWindow::showEvent(QShowEvent *event)
 {
     Update(Core::Settings::GetCurrent(), false);
+}
+
+void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
+{
+    const auto &availableLocales = ApdApp->AvailableLocales();
+    const auto &locale = availableLocales.at(index);
+
+    Core::Settings::ModifiableAccess()->language_locale = locale.name();
 }
 
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
