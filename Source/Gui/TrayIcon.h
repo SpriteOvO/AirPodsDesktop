@@ -36,6 +36,12 @@ class TrayIcon : public QWidget
 public:
     TrayIcon();
 
+    template <class... ArgsT>
+    inline void ShowMessage(ArgsT &&...args)
+    {
+        _tray->showMessage(std::forward<ArgsT>(args)...);
+    }
+
     void UpdateState(const Core::AirPods::State &state);
     void Unavailable();
     void Disconnect();

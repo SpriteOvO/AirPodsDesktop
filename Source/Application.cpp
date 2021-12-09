@@ -46,7 +46,6 @@ void ApdApplication::InitSettings()
         [[fallthrough]];
 
     case Core::Settings::LoadResult::NoAbiField:
-        _isFirstTimeUse = true;
         FirstTimeUse();
         break;
 
@@ -102,6 +101,11 @@ void ApdApplication::FirstTimeUse()
         tr("Great! Everything is ready!\n"
            "\n"
            "Enjoy it all."));
+
+    _trayIcon->ShowMessage(
+        tr("You can find me in the system tray"),
+        tr("Click the icon to view battery information, right-click to "
+           "customize settings or quit."));
 }
 
 ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}

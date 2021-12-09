@@ -54,26 +54,20 @@ public:
         return _lowAudioLatencyController;
     }
 
-    inline static bool IsFirstTimeUse()
-    {
-        return _isFirstTimeUse;
-    }
-
     void SetTranslator(const QLocale &locale = {});
 
     static void QuitSafety();
 
 private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
-    static inline bool _isFirstTimeUse{false};
     QTranslator _translator;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
 
-    static void InitSettings();
-    static void FirstTimeUse();
+    void InitSettings();
+    void FirstTimeUse();
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

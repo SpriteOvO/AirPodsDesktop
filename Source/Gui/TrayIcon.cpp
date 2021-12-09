@@ -52,13 +52,6 @@ TrayIcon::TrayIcon()
     _tray->setContextMenu(_menu);
     _tray->setIcon(ApdApplication::windowIcon());
     _tray->show();
-
-    if (ApdApplication::IsFirstTimeUse()) {
-        _tray->showMessage(
-            tr("You can find me in the system tray"),
-            tr("Click the icon to view battery information, right-click to "
-               "customize settings or quit."));
-    }
 }
 
 void TrayIcon::UpdateState(const Core::AirPods::State &state)

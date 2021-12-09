@@ -41,6 +41,14 @@ Enjoy it all.</source>
 
 尽情享受吧。</translation>
     </message>
+    <message>
+        <source>You can find me in the system tray</source>
+        <translation>您可以在系统托盘找到我</translation>
+    </message>
+    <message>
+        <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
+        <translation>点击图标以查看电池信息，右键以自定义设置或退出。</translation>
+    </message>
 </context>
 <context>
     <name>DownloadWindow</name>
@@ -93,14 +101,6 @@ Latest version: %2%3</source>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
-    <message>
-        <source>You can find me in the system tray</source>
-        <translation>您可以在系统托盘找到我</translation>
-    </message>
-    <message>
-        <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>点击图标以查看电池信息，右键以自定义设置或退出。</translation>
-    </message>
     <message>
         <source>Left</source>
         <translation>左</translation>
