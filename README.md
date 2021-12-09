@@ -21,26 +21,26 @@
         <img src="https://img.shields.io/badge/license-GPLv3-yellow.svg"/>
     </a>
 </p>
-<p align="center">:earth_americas: English | :earth_asia: <a href="/README-CN.md">简体中文</a></p>
+<p align="center">🌎 English | 🌏 <a href="/README-CN.md">简体中文</a></p>
 
-## :mag: Preview
+## 🔍 Preview
 ![Preview Image](/Assets/Preview.gif)
 
-## :sparkles: Features
-* :battery: Battery information display.
-* :ear: Automatic ear detection.
-* :rocket: Low audio latency mode.
-* :rainbow: Beautiful animation.  
+## ✨ Features
+* 🔋 Battery information display.
+* 👂 Automatic ear detection.
+* 🚀 Low audio latency mode.
+* 🌈 Beautiful animation.  
 
-## :hammer_and_wrench: Build
+## 🛠️ Build
 See the [Build Instructions](/Docs/Build.md).
 
-## :handshake: Contribute
+## 🤝 Contribute
 *AirPodsDesktop* is an open source project, here are some ways you can contribute:
 * [Open an issue](https://github.com/SpriteOvO/AirPodsDesktop/issues/new/choose) to report bugs or suggest new features.
 * [Submit a PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) to fix a known bug or try something from the TODO list.
 
-## :gem: ThirdParty
+## 💎 ThirdParty
 * [Qt 5.15.2](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-5/lgpl.html))
 * [spdlog](https://github.com/gabime/spdlog) ([MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE))
 * [cxxopts](https://github.com/jarro2783/cxxopts) ([MIT License](https://github.com/jarro2783/cxxopts/blob/master/LICENSE))
@@ -51,6 +51,6 @@ See the [Build Instructions](/Docs/Build.md).
 * [magic_enum](https://github.com/Neargye/magic_enum) ([MIT License](https://github.com/Neargye/magic_enum/blob/master/LICENSE))
 * [stacktrace](https://github.com/boostorg/stacktrace) ([BSL-1.0 License](https://www.boost.org/LICENSE_1_0.txt))
 
-## :beer: Credits
+## 🍺 Credits
 * [OpenPods](https://github.com/adolfintel/OpenPods)
 * [Discontinued Privacy: Personal Data Leaks in Apple Bluetooth-Low-Energy Continuity Protocols](https://hal.inria.fr/hal-02394619/document)
