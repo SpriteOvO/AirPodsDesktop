@@ -39,6 +39,7 @@ See the [Build Instructions](/Docs/Build.md).
 *AirPodsDesktop* is an open source project, here are some ways you can contribute:
 * [Open an issue](https://github.com/SpriteOvO/AirPodsDesktop/issues/new/choose) to report bugs or suggest new features.
 * [Submit a PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) to fix a known bug or try something from the TODO list.
+* [Translate to other languages](/CONTRIBUTING.md#-translation-guide) or [improve existing translations](/CONTRIBUTING.md#-translation-guide).
 
 ## 💎 ThirdParty
 * [Qt 5.15.2](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-5/lgpl.html))
