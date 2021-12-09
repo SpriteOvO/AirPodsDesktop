@@ -27,10 +27,12 @@
 #include <QDir>
 #include <QTimer>
 #include <QWidget>
+#include <QDialog>
 #include <QBitmap>
 #include <QPainter>
 #include <QKeyEvent>
 #include <QApplication>
+#include <QPainterPath>
 #include <QStandardPaths>
 
 #include "Helper.h"
@@ -65,7 +67,8 @@ namespace Qt {
         base_name::changeEvent(event);                                                             \
     }
 
-inline void SetRoundedCorners(QWidget *widget, qreal radius)
+// for windows
+inline void SetRoundedCorners(QDialog *widget, qreal radius)
 {
     QBitmap bmp{widget->size()};
     QPainter painter{&bmp};
@@ -75,6 +78,14 @@ inline void SetRoundedCorners(QWidget *widget, qreal radius)
     painter.setBrush(::Qt::black);
     painter.drawRoundedRect(widget->geometry(), radius, radius, ::Qt::AbsoluteSize);
     widget->setMask(bmp);
+}
+
+// for widgets
+inline void SetRoundedCorners(QWidget *widget, qreal radius)
+{
+    QPainterPath path;
+    path.addRoundedRect(widget->rect(), radius, radius);
+    widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
 }
 
 inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, const QColor &color)
