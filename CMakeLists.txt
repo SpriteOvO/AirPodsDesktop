@@ -331,11 +331,11 @@ qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
 #           https://stackoverflow.com/a/60848939
 #
 
-set(APD_TRANSLATION_LANGS zh_CN)
+set(APD_TRANSLATION_LOCALES zh_CN)
 set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
 set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 
-set(APD_TS_FILES ${APD_TRANSLATION_LANGS})
+set(APD_TS_FILES ${APD_TRANSLATION_LOCALES})
 list(TRANSFORM APD_TS_FILES PREPEND "${APD_TS_DIR}/apd_")
 list(TRANSFORM APD_TS_FILES APPEND ".ts")
 
