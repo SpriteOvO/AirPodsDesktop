@@ -22,6 +22,7 @@ env:
   BUILD_TYPE: RelWithDebInfo
   UPLOAD_ARTIFACT: true
   CACHE_DEPS: false
+  FIXED_CMAKE_VERSION: 3.21.4
 
 jobs:
   Build:
@@ -60,6 +61,15 @@ jobs:
         run: |
           git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop-Deps.git
           dir AirPodsDesktop-Deps
+
+      - name: Print CMake version
+        run: cmake --version
+
+      - name: Use a fixed version of CMake
+        if: env.FIXED_CMAKE_VERSION != ''
+        run: |
+          choco install cmake.install --version ${{ env.FIXED_CMAKE_VERSION }} --installargs 'ADD_CMAKE_TO_PATH=System' --force
+          cmake --version
 
       - name: Clone and bootstrap vcpkg
         working-directory: Build
