@@ -159,11 +159,12 @@ NewVersionAction NewVersionMessageBox(
 {
     QMessageBox msgBox{QMessageBox::Question, title, text, QMessageBox::NoButton, parent};
 
-    const auto buttonUpdate = msgBox.addButton(QObject::tr("Update now"), QMessageBox::YesRole);
+    const auto buttonUpdate = msgBox.addButton(QMessageBox::tr("Update now"), QMessageBox::YesRole);
     const auto buttonSkip =
-        msgBox.addButton(QObject::tr("Skip this version"), QMessageBox::AcceptRole);
-    const auto buttonView = msgBox.addButton(QObject::tr("View release"), QMessageBox::NoRole);
-    const auto buttonLater = msgBox.addButton(QObject::tr("Remind me later"), QMessageBox::NoRole);
+        msgBox.addButton(QMessageBox::tr("Skip this version"), QMessageBox::AcceptRole);
+    const auto buttonView = msgBox.addButton(QMessageBox::tr("View release"), QMessageBox::NoRole);
+    const auto buttonLater =
+        msgBox.addButton(QMessageBox::tr("Remind me later"), QMessageBox::NoRole);
 
     msgBox.setDefaultButton(buttonUpdate);
 

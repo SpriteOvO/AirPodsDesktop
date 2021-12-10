@@ -149,6 +149,22 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>没有找到配对的设备。
 您需要先在 Windows 蓝牙设置中配对您的 AirPods。</translation>
     </message>
+    <message>
+        <source>Update now</source>
+        <translation>现在更新</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation>跳过这个版本</translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>查看发布</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation>稍后提醒我</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -171,22 +187,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Waiting for Binding</source>
         <translation>等待绑定</translation>
-    </message>
-    <message>
-        <source>Update now</source>
-        <translation>现在更新</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>跳过这个版本</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>稍后提醒我</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>查看发布</translation>
     </message>
 </context>
 <context>
