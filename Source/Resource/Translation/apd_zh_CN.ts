@@ -184,6 +184,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Remind me later</source>
         <translation>稍后提醒我</translation>
     </message>
+    <message>
+        <source>View release</source>
+        <translation>查看发布</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>

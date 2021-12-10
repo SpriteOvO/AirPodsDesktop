@@ -153,16 +153,22 @@ enum class NewVersionAction {
     Later,
 };
 
-NewVersionAction NewVersionMessageBox(QWidget *parent, const QString &title, const QString &text)
+NewVersionAction NewVersionMessageBox(
+    QWidget *parent, const QString &title, const QString &text,
+    const Core::Update::ReleaseInfo &releaseInfo)
 {
     QMessageBox msgBox{QMessageBox::Question, title, text, QMessageBox::NoButton, parent};
 
     const auto buttonUpdate = msgBox.addButton(QObject::tr("Update now"), QMessageBox::YesRole);
     const auto buttonSkip =
         msgBox.addButton(QObject::tr("Skip this version"), QMessageBox::AcceptRole);
+    const auto buttonView = msgBox.addButton(QObject::tr("View release"), QMessageBox::NoRole);
     const auto buttonLater = msgBox.addButton(QObject::tr("Remind me later"), QMessageBox::NoRole);
 
     msgBox.setDefaultButton(buttonUpdate);
+
+    buttonView->disconnect();
+    msgBox.connect(buttonView, &QPushButton::clicked, &msgBox, [&] { releaseInfo.OpenUrl(); });
 
     if (msgBox.exec() == -1) {
         return NewVersionAction::Later;
@@ -317,7 +323,8 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
            "%3")
             .arg(Core::Update::GetLocalVersion().toString())
             .arg(releaseVersion)
-            .arg(changeLogBlock));
+            .arg(changeLogBlock),
+        releaseInfo);
 
     switch (action) {
     case Gui::NewVersionAction::Update:
@@ -349,7 +356,8 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
         break;
 
     default:
-        APD_ASSERT(false);
+        LOG(Warn, "VersionUpdate: Unhandled user clicked button.");
+        break;
     }
 }
 
