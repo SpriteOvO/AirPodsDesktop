@@ -38,6 +38,7 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
         _info.OpenUrl();
+        ApdApplication::QuitSafety();
     });
 
     connect(this, &DownloadWindow::UpdateProgressSafety, this, &DownloadWindow::UpdateProgress);
