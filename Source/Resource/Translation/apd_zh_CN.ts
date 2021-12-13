@@ -174,7 +174,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>当您取下或放入耳朵时自动暂停或恢复媒体。</translation>
+        <translation>当您的 AirPods 被取下或放入耳朵时自动暂停或恢复媒体。</translation>
     </message>
     <message>
         <source>Unavailable</source>
