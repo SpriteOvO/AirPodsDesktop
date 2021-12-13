@@ -216,16 +216,16 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
     connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
 
-    connect(this, &MainWindow::UpdateStateSafety, this, &MainWindow::UpdateState);
-    connect(this, &MainWindow::AvailableSafety, this, &MainWindow::Available);
-    connect(this, &MainWindow::UnavailableSafety, this, &MainWindow::Unavailable);
-    connect(this, &MainWindow::DisconnectSafety, this, &MainWindow::Disconnect);
-    connect(this, &MainWindow::BindSafety, this, &MainWindow::Bind);
-    connect(this, &MainWindow::UnbindSafety, this, &MainWindow::Unbind);
-    connect(this, &MainWindow::ShowSafety, this, &MainWindow::show);
-    connect(this, &MainWindow::HideSafety, this, &MainWindow::DoHide);
+    connect(this, &MainWindow::UpdateStateSafely, this, &MainWindow::UpdateState);
+    connect(this, &MainWindow::AvailableSafely, this, &MainWindow::Available);
+    connect(this, &MainWindow::UnavailableSafely, this, &MainWindow::Unavailable);
+    connect(this, &MainWindow::DisconnectSafely, this, &MainWindow::Disconnect);
+    connect(this, &MainWindow::BindSafely, this, &MainWindow::Bind);
+    connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
+    connect(this, &MainWindow::ShowSafely, this, &MainWindow::show);
+    connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
     connect(
-        this, &MainWindow::VersionUpdateAvailableSafety, this, &MainWindow::VersionUpdateAvailable);
+        this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
 
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
@@ -339,7 +339,7 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
             Gui::DownloadWindow{releaseInfo}.exec();
         }
 
-        ApdApplication::QuitSafety();
+        ApdApplication::QuitSafely();
         return;
 
     case Gui::NewVersionAction::Skip:

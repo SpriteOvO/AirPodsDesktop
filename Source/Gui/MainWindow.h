@@ -64,15 +64,15 @@ public:
     void AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo);
 
 Q_SIGNALS:
-    void UpdateStateSafety(const Core::AirPods::State &state);
-    void AvailableSafety();
-    void UnavailableSafety();
-    void DisconnectSafety();
-    void BindSafety();
-    void UnbindSafety();
-    void ShowSafety();
-    void HideSafety();
-    bool VersionUpdateAvailableSafety(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+    void UpdateStateSafely(const Core::AirPods::State &state);
+    void AvailableSafely();
+    void UnavailableSafely();
+    void DisconnectSafely();
+    void BindSafely();
+    void UnbindSafely();
+    void ShowSafely();
+    void HideSafely();
+    bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
 
 private:
     constexpr static QSize _screenMargin{50, 100};
@@ -90,7 +90,7 @@ private:
 
     Core::AirPods::Manager _apdMgr;
     Core::Update::AsyncChecker _updateChecker{[this](auto &&...args) {
-        VersionUpdateAvailableSafety(std::forward<decltype(args)>(args)...);
+        VersionUpdateAvailableSafely(std::forward<decltype(args)>(args)...);
     }};
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};

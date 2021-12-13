@@ -38,7 +38,7 @@ TrayIcon::TrayIcon()
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
 
     connect(
-        this, &TrayIcon::OnTrayIconBatteryChangedSafety, this, &TrayIcon::OnTrayIconBatteryChanged);
+        this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
 
     _actionNewVersion->setVisible(false);
 

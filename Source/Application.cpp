@@ -130,7 +130,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     LOG(Info, "Opts: {}", opts);
 
-    connect(this, &ApdApplication::SetTranslatorSafety, this, &ApdApplication::SetTranslator);
+    connect(this, &ApdApplication::SetTranslatorSafely, this, &ApdApplication::SetTranslator);
 
     // pre-load for InitTranslator
     const auto settingsLoadResult = Core::Settings::Load();
@@ -239,7 +239,7 @@ void ApdApplication::InitTranslator()
     SetTranslator(localeFromSettings.isEmpty() ? QLocale{} : QLocale{localeFromSettings});
 }
 
-void ApdApplication::QuitSafety()
+void ApdApplication::QuitSafely()
 {
     QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
 }

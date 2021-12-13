@@ -31,7 +31,7 @@ public:
     Controller(QObject *parent = nullptr);
 
 Q_SIGNALS:
-    void ControlSafety(bool enable);
+    void ControlSafely(bool enable);
 
 private:
     QMediaPlayer _mediaPlayer;

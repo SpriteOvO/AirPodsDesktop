@@ -29,7 +29,7 @@ Controller::Controller(QObject *parent) : QObject{parent}
         &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
         &Controller::OnError);
 
-    connect(this, &Controller::ControlSafety, this, &Controller::Control);
+    connect(this, &Controller::ControlSafely, this, &Controller::Control);
 
     _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
     _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);

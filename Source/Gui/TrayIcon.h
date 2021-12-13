@@ -49,7 +49,7 @@ public:
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 Q_SIGNALS:
-    void OnTrayIconBatteryChangedSafety(Core::Settings::TrayIconBatteryBehavior value);
+    void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
 
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};

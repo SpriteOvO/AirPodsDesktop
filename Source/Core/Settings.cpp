@@ -43,7 +43,7 @@ void OnApply_language_locale(const Fields &newFields)
 {
     LOG(Info, "OnApply_language_locale: {}", newFields.language_locale);
 
-    ApdApp->SetTranslatorSafety(
+    ApdApp->SetTranslatorSafely(
         newFields.language_locale.isEmpty() ? QLocale{} : QLocale{newFields.language_locale});
 }
 
@@ -72,7 +72,7 @@ void OnApply_low_audio_latency(const Fields &newFields)
 {
     LOG(Info, "OnApply_low_audio_latency: {}", newFields.low_audio_latency);
 
-    ApdApp->GetLowAudioLatencyController()->ControlSafety(newFields.low_audio_latency);
+    ApdApp->GetLowAudioLatencyController()->ControlSafely(newFields.low_audio_latency);
 }
 
 void OnApply_automatic_ear_detection(const Fields &newFields)
@@ -95,10 +95,10 @@ void OnApply_device_address(const Fields &newFields)
     LOG(Info, "OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
 
     if (newFields.device_address == 0) {
-        ApdApp->GetMainWindow()->UnbindSafety();
+        ApdApp->GetMainWindow()->UnbindSafely();
     }
     else {
-        ApdApp->GetMainWindow()->BindSafety();
+        ApdApp->GetMainWindow()->BindSafely();
     }
 
     ApdApp->GetMainWindow()->GetApdMgr().OnBoundDeviceAddressChanged(newFields.device_address);
@@ -108,7 +108,7 @@ void OnApply_tray_icon_battery(const Fields &newFields)
 {
     LOG(Info, "OnApply_tray_icon_battery: {}", newFields.tray_icon_battery);
 
-    ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafety(newFields.tray_icon_battery);
+    ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafely(newFields.tray_icon_battery);
 }
 
 class Manager : public Helper::Singleton<Manager>

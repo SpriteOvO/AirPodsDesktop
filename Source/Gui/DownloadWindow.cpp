@@ -38,11 +38,11 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
         _info.OpenUrl();
-        ApdApplication::QuitSafety();
+        ApdApplication::QuitSafely();
     });
 
-    connect(this, &DownloadWindow::UpdateProgressSafety, this, &DownloadWindow::UpdateProgress);
-    connect(this, &DownloadWindow::OnFailedSafety, this, &DownloadWindow::OnFailed);
+    connect(this, &DownloadWindow::UpdateProgressSafely, this, &DownloadWindow::UpdateProgress);
+    connect(this, &DownloadWindow::OnFailedSafely, this, &DownloadWindow::OnFailed);
 
     _downloadThread = std::thread{[this]() { DownloadThread(); }};
 }
@@ -74,13 +74,13 @@ void DownloadWindow::OnFailed()
            "Please download and install the new version manually."));
 
     _info.OpenUrl();
-    ApdApplication::QuitSafety();
+    ApdApplication::QuitSafely();
 }
 
 void DownloadWindow::DownloadThread()
 {
     bool successful = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
-        UpdateProgressSafety(downloaded, total);
+        UpdateProgressSafely(downloaded, total);
 
         if (_destroy) {
             LOG(Warn, "DownloadWindow destructor requests destroy.");
@@ -90,7 +90,7 @@ void DownloadWindow::DownloadThread()
     });
 
     if (!successful) {
-        OnFailedSafety();
+        OnFailedSafely();
     }
 }
 } // namespace Gui

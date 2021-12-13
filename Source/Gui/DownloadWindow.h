@@ -37,8 +37,8 @@ public:
     ~DownloadWindow();
 
 Q_SIGNALS:
-    void UpdateProgressSafety(int downloaded, int total);
-    void OnFailedSafety();
+    void UpdateProgressSafely(int downloaded, int total);
+    void OnFailedSafely();
 
 private:
     Ui::DownloadWindow _ui;

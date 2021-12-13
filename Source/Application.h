@@ -61,10 +61,10 @@ public:
 
     const QVector<QLocale> &AvailableLocales();
 
-    static void QuitSafety();
+    static void QuitSafely();
 
 Q_SIGNALS:
-    void SetTranslatorSafety(const QLocale &locale);
+    void SetTranslatorSafely(const QLocale &locale);
 
 private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;

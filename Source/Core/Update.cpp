@@ -361,7 +361,7 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
 
     // Quit for install new version
     //
-    ApdApplication::QuitSafety();
+    ApdApplication::QuitSafely();
 
     return true;
 }

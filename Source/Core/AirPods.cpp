@@ -335,7 +335,7 @@ auto StateManager::UpdateState() -> std::optional<UpdateEvent>
 void StateManager::ResetAll()
 {
     if (_cachedState.has_value()) {
-        ApdApp->GetMainWindow()->DisconnectSafety();
+        ApdApp->GetMainWindow()->DisconnectSafely();
     }
 
     _adv.left.reset();
@@ -470,7 +470,7 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 
     newState.displayName = _deviceName.isEmpty() ? Helper::ToString(newState.model) : _deviceName;
 
-    ApdApp->GetMainWindow()->UpdateStateSafety(newState);
+    ApdApp->GetMainWindow()->UpdateStateSafely(newState);
 
     // Lid opened
     //
@@ -502,10 +502,10 @@ void Manager::OnLidOpened(bool opened)
 {
     auto &mainWindow = ApdApp->GetMainWindow();
     if (opened) {
-        mainWindow->ShowSafety();
+        mainWindow->ShowSafely();
     }
     else {
-        mainWindow->HideSafety();
+        mainWindow->HideSafely();
     }
 }
 
@@ -552,12 +552,12 @@ void Manager::OnAdvWatcherStateChanged(
 {
     switch (state) {
     case Core::Bluetooth::AdvertisementWatcher::State::Started:
-        ApdApp->GetMainWindow()->AvailableSafety();
+        ApdApp->GetMainWindow()->AvailableSafely();
         LOG(Info, "Bluetooth AdvWatcher started.");
         break;
 
     case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
-        ApdApp->GetMainWindow()->UnavailableSafety();
+        ApdApp->GetMainWindow()->UnavailableSafely();
         LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
         break;
 
