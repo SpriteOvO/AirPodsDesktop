@@ -138,6 +138,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     InitTranslator();
 
     QFont font;
+    font.setFamily("Segoe UI");
     font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
     font.setPointSize(9);
 
