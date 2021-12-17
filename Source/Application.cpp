@@ -130,13 +130,6 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     LOG(Info, "Opts: {}", opts);
 
-    connect(this, &ApdApplication::SetTranslatorSafely, this, &ApdApplication::SetTranslator);
-
-    // pre-load for InitTranslator
-    const auto settingsLoadResult = Core::Settings::Load();
-
-    InitTranslator();
-
     QFont font;
     font.setFamily("Segoe UI");
     font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
@@ -146,9 +139,16 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
+    connect(this, &ApdApplication::SetTranslatorSafely, this, &ApdApplication::SetTranslator);
+
 #if defined APD_OS_WIN
     Core::OS::Windows::Winrt::Initialize();
 #endif
+
+    // pre-load for InitTranslator
+    const auto settingsLoadResult = Core::Settings::Load();
+
+    InitTranslator();
 
     _trayIcon = std::make_unique<Gui::TrayIcon>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
