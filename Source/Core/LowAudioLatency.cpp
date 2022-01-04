@@ -18,34 +18,79 @@
 
 #include "LowAudioLatency.h"
 
+#include <thread>
+
+#include <QAudioDeviceInfo>
+
 #include "../Logger.h"
 #include "../Application.h"
+
+using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
 
 Controller::Controller(QObject *parent) : QObject{parent}
 {
-    connect(
-        &_mediaPlayer, qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
-        &Controller::OnError);
-
     connect(this, &Controller::ControlSafely, this, &Controller::Control);
 
-    _mediaPlaylist.addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
-    _mediaPlaylist.setPlaybackMode(QMediaPlaylist::Loop);
-    _mediaPlayer.setPlaylist(&_mediaPlaylist);
+    if (!Initialize()) {
+        // retry later
+        _initTimer.callOnTimeout([this] {
+            if (Initialize()) {
+                _initTimer.stop();
+            }
+        });
+        _initTimer.start(30s);
+    }
+}
+
+bool Controller::Initialize()
+{
+    // issue #20
+    //
+    // Constructing `QMediaPlayer` when no audio output device is enabled will cause `play` to
+    // continually raise errors and is unrecoverable.
+    if (QAudioDeviceInfo::availableDevices(QAudio::AudioOutput).size() == 0) {
+        LOG(Warn, "LowAudioLatency: Try to init, but no audio output device is enabled.");
+        return false;
+    }
+
+    _mediaPlayer = std::make_unique<QMediaPlayer>();
+    _mediaPlaylist = std::make_unique<QMediaPlaylist>();
+
+    connect(
+        _mediaPlayer.get(), qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
+        &Controller::OnError);
+
+    _mediaPlaylist->addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
+    _mediaPlaylist->setPlaybackMode(QMediaPlaylist::Loop);
+    _mediaPlayer->setPlaylist(_mediaPlaylist.get());
+
+    _inited = true;
+
+    LOG(Info, "LowAudioLatency: Init successful. _enabled: {}", _enabled);
+
+    if (_enabled) {
+        Control(true);
+    }
+
+    return true;
 }
 
 void Controller::Control(bool enable)
 {
-    LOG(Info, "LowAudioLatency::Controller Control: {}", enable);
+    LOG(Info, "LowAudioLatency::Controller Control: {}, _inited: {}", enable, _inited);
 
-    if (enable) {
-        _mediaPlayer.play();
+    if (_inited) {
+        if (enable) {
+            _mediaPlayer->play();
+        }
+        else {
+            _mediaPlayer->stop();
+        }
     }
-    else {
-        _mediaPlayer.stop();
-    }
+
+    _enabled = enable;
 }
 
 void Controller::OnError(QMediaPlayer::Error error)

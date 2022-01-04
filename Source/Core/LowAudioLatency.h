@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <memory>
+
+#include <QTimer>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 
@@ -34,9 +37,12 @@ Q_SIGNALS:
     void ControlSafely(bool enable);
 
 private:
-    QMediaPlayer _mediaPlayer;
-    QMediaPlaylist _mediaPlaylist;
+    std::unique_ptr<QMediaPlayer> _mediaPlayer;
+    std::unique_ptr<QMediaPlaylist> _mediaPlaylist;
+    QTimer _initTimer;
+    bool _inited{false}, _enabled{false};
 
+    bool Initialize();
     void Control(bool enable);
 
     void OnError(QMediaPlayer::Error error);
