@@ -19,10 +19,13 @@
 #pragma once
 
 #include <memory>
+#include <chrono>
 
 #include <QTimer>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
+
+using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
 
@@ -37,6 +40,8 @@ Q_SIGNALS:
     void ControlSafely(bool enable);
 
 private:
+    constexpr static inline auto kRetryInterval = 30s;
+
     std::unique_ptr<QMediaPlayer> _mediaPlayer;
     std::unique_ptr<QMediaPlaylist> _mediaPlaylist;
     QTimer _initTimer;

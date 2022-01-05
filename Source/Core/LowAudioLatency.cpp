@@ -18,14 +18,10 @@
 
 #include "LowAudioLatency.h"
 
-#include <thread>
-
 #include <QAudioDeviceInfo>
 
 #include "../Logger.h"
 #include "../Application.h"
-
-using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
 
@@ -33,14 +29,15 @@ Controller::Controller(QObject *parent) : QObject{parent}
 {
     connect(this, &Controller::ControlSafely, this, &Controller::Control);
 
+    _initTimer.callOnTimeout([this] {
+        if (Initialize()) {
+            _initTimer.stop();
+        }
+    });
+
     if (!Initialize()) {
         // retry later
-        _initTimer.callOnTimeout([this] {
-            if (Initialize()) {
-                _initTimer.stop();
-            }
-        });
-        _initTimer.start(30s);
+        _initTimer.start(kRetryInterval);
     }
 }
 
@@ -50,7 +47,7 @@ bool Controller::Initialize()
     //
     // Constructing `QMediaPlayer` when no audio output device is enabled will cause `play` to
     // continually raise errors and is unrecoverable.
-    if (QAudioDeviceInfo::availableDevices(QAudio::AudioOutput).size() == 0) {
+    if (QAudioDeviceInfo::availableDevices(QAudio::AudioOutput).empty()) {
         LOG(Warn, "LowAudioLatency: Try to init, but no audio output device is enabled.");
         return false;
     }
@@ -95,7 +92,11 @@ void Controller::Control(bool enable)
 
 void Controller::OnError(QMediaPlayer::Error error)
 {
-    LOG(Warn, "LowAudioLatency::Controller error: {}", error);
+    LOG(Warn, "LowAudioLatency::Controller error: {}. Reinit later.", error);
+
+    _mediaPlayer->stop();
+    _inited = false;
+    _initTimer.start(kRetryInterval);
 }
 
 } // namespace Core::LowAudioLatency
