@@ -345,7 +345,9 @@ void StateManager::ResetAll()
 
 void StateManager::DoLost()
 {
-    LOG(Info, "StateManager: Device is lost.");
+    if (_cachedState.has_value()) {
+        LOG(Info, "StateManager: Device is lost.");
+    }
     ResetAll();
 }
 
