@@ -22,7 +22,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include <spdlog/sinks/sink.h>
-#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/pattern_formatter.h>
 
@@ -58,7 +58,7 @@ bool Initialize(bool enableTrace)
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
-                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logFilePath, 0x100000, 1)
+                std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, true)
 #if defined APD_ENABLE_CONSOLE
                 ,std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
 #endif
