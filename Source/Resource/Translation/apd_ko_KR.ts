@@ -43,7 +43,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>시스템 트레이에서 찾을 수 있습니다.</translation>
+        <translation>시스템 트레이에서 찾을 수 있습니다</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
@@ -62,7 +62,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>다운로드 속도가 지연되거나, 실패하면 경우 다음과 같이 할 수 있습니다.</translation>
+        <translation>다운로드 속도가 지연되거나, 실패하면 경우 다음과 같이 할 수 있습니다:</translation>
     </message>
 </context>
 <context>
@@ -78,14 +78,14 @@ Please download and install the new version manually.</source>
     <name>Gui::MainWindow</name>
     <message>
         <source>Change log:</source>
-        <translation>변경 로그</translation>
+        <translation>변경 로그:</translation>
     </message>
     <message>
         <source>Hey! I found a new version available!
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation type="unfinished">새로운 버전을 찾았습니다!
+        <translation>새로운 버전을 찾았습니다!
 현재버전 : %1
 최종버전 : %2%3</translation>
     </message>
@@ -95,7 +95,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
-        <translation>아래에서 AirPod 장치를 선택해주세요</translation>
+        <translation>아래에서 AirPod 장치를 선택해주세요.</translation>
     </message>
 </context>
 <context>
