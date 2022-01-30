@@ -85,7 +85,7 @@ Please download and install the new version manually.</source>
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>새로운 버전을 찾았습니다!
+        <translation type="unfinished">새로운 버전을 찾았습니다!
 현재버전 : %1
 최종버전 : %2%3</translation>
     </message>
@@ -126,7 +126,6 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>About</source>
-        <translatorcomment>It is interpreted as &quot;information&quot; in the Korean IT glossary.</translatorcomment>
         <translation>정보</translation>
     </message>
     <message>
@@ -260,7 +259,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>About</source>
-        <translatorcomment>It is interpreted as &quot;information&quot; in the Korean IT glossary.</translatorcomment>
         <translation>정보</translation>
     </message>
     <message>
