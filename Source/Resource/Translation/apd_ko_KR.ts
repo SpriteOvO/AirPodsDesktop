@@ -2,6 +2,7 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ko_KR">
 <context>
+    .
     <name>ApdApplication</name>
     <message>
         <source>Settings format has changed a bit and needs to be reconfigured.</source>
