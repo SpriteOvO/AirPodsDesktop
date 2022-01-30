@@ -14,8 +14,8 @@ This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
         <translation type="unfinished">안녕하세요, %1!
 	
-이 프로그램을 처음 사용하시는 것 같습니다.
-함께 구성해 봅시다.
+이 프로그램을 처음 사용하시군요!
+함께 설정 해봅시다.
 	</translation>
     </message>
     <message>
@@ -89,7 +89,7 @@ Current version: %1
 Latest version: %2%3</source>
         <translation type="unfinished">새로운 버전을 찾았습니다!
 현재버전 : %1
-최종 버전 : %2%3</translation>
+최종버전 : %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
@@ -171,7 +171,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation type="unfinished">짧은 오디오 재생 문제를 해결하지만 배터리 소모를 증가 될수 있습니다.</translation>
+        <translation type="unfinished">짧은 오디오 재생 문제를 해결하지만 배터리 소모가 증가 될수있습니다..</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
@@ -270,7 +270,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Copyright © 2021 SpriteOvO. All rights reserved.</source>
-        <translation type="unfinished">저작권 © 2021 저작권은 Sprite0v0에게 있습니다. </translation>
+        <translation type="unfinished">저작권 © 2021 모든 저작권은 Sprite0v0 에게 있습니다. </translation>
     </message>
 </context>
 </TS>
