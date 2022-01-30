@@ -49,7 +49,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation type="unfinished">배터리 정보를 확인하려면, 아이콘을 클릭하고 설정을 사용자 지정하거나 종료하려면 마우스 우클릭 해주세요. </translation>
+        <translation type="unfinished">배터리 정보를 확인 하려면 아이콘을 클릭하고 설정을 사용자 지정 하거나, 종료하려면 마우스 우클릭 해주세요. </translation>
     </message>
 </context>
 <context>
