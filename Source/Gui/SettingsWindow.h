@@ -46,6 +46,7 @@ private:
 
     bool _trigger{true};
 
+    void InitCreditsText();
     void RestoreDefaults();
     void Update(const Core::Settings::Fields &fields, bool trigger);
 
@@ -68,6 +69,9 @@ private:
     void On_pbOpenLogsDirectory_clicked();
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
-    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
+    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
+        _ui.retranslateUi(this);
+        InitCreditsText();
+    });
 };
 } // namespace Gui

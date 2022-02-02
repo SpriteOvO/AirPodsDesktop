@@ -99,6 +99,22 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::SettingsWindow</name>
+    <message>
+        <source>|</source>
+        <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translation Contributors:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Third-Party Libraries:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Gui::TrayIcon</name>
     <message>
         <source>Left</source>

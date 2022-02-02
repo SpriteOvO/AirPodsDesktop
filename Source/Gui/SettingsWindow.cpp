@@ -67,6 +67,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 
     _ui.setupUi(this);
 
+    InitCreditsText();
+
     auto versionText =
         QString{"<a href=\"%1\">v%2</a>"}
             .arg("https://github.com/SpriteOvO/AirPodsDesktop/releases/tag/" CONFIG_VERSION_STRING)
@@ -180,6 +182,58 @@ int SettingsWindow::GetTabCurrentIndex() const
 void SettingsWindow::SetTabIndex(int index)
 {
     _ui.tabWidget->setCurrentIndex(index);
+}
+
+void SettingsWindow::InitCreditsText()
+{
+    //: To credit translators, you can leave your name here if you wish.
+    //: (Sorted by time added, separated by "|" character, only single "|" for empty)
+    auto l10nContributorsStr = tr("|");
+    if (!l10nContributorsStr.isEmpty()) {
+        auto l10nContributors = l10nContributorsStr.split('|', Qt::SkipEmptyParts);
+        if (l10nContributors.isEmpty()) {
+            l10nContributorsStr.clear();
+        }
+        else {
+            l10nContributorsStr = tr("Translation Contributors:");
+            for (const auto &contributor : l10nContributors) {
+                l10nContributorsStr += "<br> - " + contributor.trimmed();
+            }
+            l10nContributorsStr += "<br><br>";
+        }
+    }
+
+    static QString libs = [] {
+        struct LibInfo {
+            const char *name, *url, *license, *licenseUrl;
+        };
+        static std::vector<LibInfo> libs{
+            // clang-format off
+            { "Qt 5", "https://www.qt.io/download-qt-installer", "LGPLv3", "https://doc.qt.io/qt-5/lgpl.html" },
+            { "spdlog", "https://github.com/gabime/spdlog", "MIT", "https://github.com/gabime/spdlog/blob/v1.x/LICENSE" },
+            { "cxxopts", "https://github.com/jarro2783/cxxopts", "MIT", "https://github.com/jarro2783/cxxopts/blob/master/LICENSE" },
+            { "cpr", "https://github.com/whoshuu/cpr", "MIT", "https://github.com/whoshuu/cpr/blob/master/LICENSE" },
+            { "json", "https://github.com/nlohmann/json", "MIT", "https://github.com/nlohmann/json/blob/develop/LICENSE.MIT" },
+            { "SingleApplication", "https://github.com/itay-grudev/SingleApplication", "MIT", "https://github.com/itay-grudev/SingleApplication/blob/master/LICENSE" },
+            { "pfr", "https://github.com/boostorg/pfr", "BSL-1.0", "https://github.com/boostorg/pfr/blob/develop/LICENSE_1_0.txt" },
+            { "magic_enum", "https://github.com/Neargye/magic_enum", "MIT", "https://github.com/Neargye/magic_enum/blob/master/LICENSE" },
+            { "stacktrace", "https://github.com/boostorg/stacktrace", "BSL-1.0", "https://www.boost.org/LICENSE_1_0.txt" }
+            // clang-format on
+        };
+
+        QString result;
+        for (const auto &lib : libs) {
+            result += QString{"<br> - <a href=\"%2\">%1</a> (<a href=\"%4\">%3 License</a>)"}
+                          .arg(lib.name)
+                          .arg(lib.url)
+                          .arg(lib.license)
+                          .arg(lib.licenseUrl);
+        }
+        return result;
+    }();
+    auto libsStr = tr("Third-Party Libraries:") + libs;
+
+    _ui.tbCredits->setHtml(l10nContributorsStr + libsStr);
 }
 
 void SettingsWindow::RestoreDefaults()
