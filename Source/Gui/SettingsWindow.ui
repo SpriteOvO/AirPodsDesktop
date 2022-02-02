@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>450</width>
+    <height>350</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -380,7 +380,7 @@
          <item>
           <widget class="QLabel" name="label_4">
            <property name="text">
-            <string>Copyright © 2021 SpriteOvO. All rights reserved.</string>
+            <string>Copyright © 2021-2022 SpriteOvO. All rights reserved.</string>
            </property>
           </widget>
          </item>

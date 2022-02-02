@@ -263,12 +263,12 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;开源 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;仓库&lt;/span&gt;&lt;/a&gt; 根据 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt; 许可。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <source>Copyright © 2021 SpriteOvO. All rights reserved.</source>
-        <translation>版权所有 © 2021 SpriteOvO. 保留所有权利。</translation>
-    </message>
-    <message>
         <source>Language</source>
         <translation>语言</translation>
+    </message>
+    <message>
+        <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
+        <translation>版权所有 © 2021-2022 SpriteOvO. 保留所有权利。</translation>
     </message>
 </context>
 </TS>

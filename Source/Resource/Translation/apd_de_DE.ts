@@ -267,8 +267,8 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open-source-&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Repository&lt;/span&gt;&lt;/a&gt; und lizensiert unter &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <source>Copyright © 2021 SpriteOvO. All rights reserved.</source>
-        <translation>Copyright © 2021 SpriteOvO. Alle Rechte vorbehalten.</translation>
+        <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
+        <translation>Copyright © 2021-2022 SpriteOvO. Alle Rechte vorbehalten.</translation>
     </message>
 </context>
 </TS>
