@@ -130,6 +130,8 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     LOG(Info, "Opts: {}", opts);
 
+    Logger::CleanUpOldLogFiles();
+
     QFont font;
     font.setFamily("Segoe UI");
     font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});

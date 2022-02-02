@@ -73,6 +73,8 @@ bool Initialize(bool enableTrace);
 
 QDir GetLogFilePath();
 
+void CleanUpOldLogFiles();
+
 } // namespace Logger
 
 template <class OutStream>

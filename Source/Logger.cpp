@@ -82,4 +82,22 @@ bool Initialize(bool enableTrace)
         return false;
     }
 }
+
+// TODO: Remove this function in [v1.0.0]
+void CleanUpOldLogFiles()
+{
+    auto workspace = Utils::File::GetWorkspace();
+
+    for (size_t i = 1; i < 10000; ++i) {
+        auto logFile = QString{CONFIG_PROGRAM_NAME ".%1.log"}.arg(i);
+
+        if (!workspace.exists(logFile)) {
+            LOG(Info, "Clean up old log file: '{}' doesn't exist, break the loop", logFile);
+            break;
+        }
+
+        LOG(Info, "Clean up old log file: '{}' exists, remove it", logFile);
+        workspace.remove(logFile);
+    }
+}
 } // namespace Logger
