@@ -23,6 +23,7 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QMessageBox>
+#include <QDesktopServices>
 
 #include <Config.h>
 
@@ -93,8 +94,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     for (const auto &locale : ApdApp->AvailableLocales()) {
         _ui.cbLanguages->addItem(locale.nativeLanguageName());
     }
-
-    Update(Core::Settings::GetCurrent(), false);
+    _ui.cbLanguages->addItem("...");
 
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
@@ -102,8 +102,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 
     connect(
         _ui.cbLanguages, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+            static auto lastIndex = _ui.cbLanguages->currentIndex();
+            bool isMore = _ui.cbLanguages->count() == index + 1;
+            if (!isMore) {
+                lastIndex = _ui.cbLanguages->currentIndex();
+            }
             if (_trigger) {
-                On_cbLanguages_currentIndexChanged(index);
+                On_cbLanguages_currentIndexChanged(index, isMore);
+            }
+            if (isMore) {
+                _ui.cbLanguages->setCurrentIndex(lastIndex);
             }
         });
 
@@ -167,6 +175,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
             On_pbOpenLogsDirectory_clicked();
         }
     });
+
+    Update(Core::Settings::GetCurrent(), false);
 }
 
 int SettingsWindow::GetTabCount() const
@@ -277,12 +287,21 @@ void SettingsWindow::showEvent(QShowEvent *event)
     Update(Core::Settings::GetCurrent(), false);
 }
 
-void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
+void SettingsWindow::On_cbLanguages_currentIndexChanged(int index, bool isMore)
 {
-    const auto &availableLocales = ApdApp->AvailableLocales();
-    const auto &locale = availableLocales.at(index);
+    if (!isMore) {
+        const auto &availableLocales = ApdApp->AvailableLocales();
+        const auto &locale = availableLocales.at(index);
 
-    Core::Settings::ModifiableAccess()->language_locale = locale.name();
+        Core::Settings::ModifiableAccess()->language_locale = locale.name();
+    }
+    else {
+        // clang-format off
+        QDesktopServices::openUrl(QUrl{
+            "https://github.com/SpriteOvO/AirPodsDesktop/blob/main/CONTRIBUTING.md#-translation-guide"
+        });
+        // clang-format on
+    }
 }
 
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
