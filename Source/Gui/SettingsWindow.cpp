@@ -96,22 +96,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     }
     _ui.cbLanguages->addItem("...");
 
+    Update(Core::Settings::GetCurrent(), false);
+
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
         &SettingsWindow::RestoreDefaults);
 
     connect(
         _ui.cbLanguages, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
-            static auto lastIndex = _ui.cbLanguages->currentIndex();
-            bool isMore = _ui.cbLanguages->count() == index + 1;
-            if (!isMore) {
-                lastIndex = _ui.cbLanguages->currentIndex();
-            }
             if (_trigger) {
-                On_cbLanguages_currentIndexChanged(index, isMore);
-            }
-            if (isMore) {
-                _ui.cbLanguages->setCurrentIndex(lastIndex);
+                On_cbLanguages_currentIndexChanged(index);
             }
         });
 
@@ -175,8 +169,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
             On_pbOpenLogsDirectory_clicked();
         }
     });
-
-    Update(Core::Settings::GetCurrent(), false);
 }
 
 int SettingsWindow::GetTabCount() const
@@ -258,7 +250,9 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _trigger = trigger;
 
-    _ui.cbLanguages->setCurrentIndex(ApdApp->GetCurrentLoadedLocaleIndex());
+    auto currentLangIndex = ApdApp->GetCurrentLoadedLocaleIndex();
+    _lastLanguageIndex = currentLangIndex;
+    _ui.cbLanguages->setCurrentIndex(currentLangIndex);
 
     _ui.cbAutoRun->setChecked(fields.auto_run);
 
@@ -287,15 +281,18 @@ void SettingsWindow::showEvent(QShowEvent *event)
     Update(Core::Settings::GetCurrent(), false);
 }
 
-void SettingsWindow::On_cbLanguages_currentIndexChanged(int index, bool isMore)
+void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
 {
-    if (!isMore) {
+    if (_ui.cbLanguages->count() != index + 1) {
+        _lastLanguageIndex = index;
+
         const auto &availableLocales = ApdApp->AvailableLocales();
         const auto &locale = availableLocales.at(index);
 
         Core::Settings::ModifiableAccess()->language_locale = locale.name();
     }
     else {
+        _ui.cbLanguages->setCurrentIndex(_lastLanguageIndex);
         // clang-format off
         QDesktopServices::openUrl(QUrl{
             "https://github.com/SpriteOvO/AirPodsDesktop/blob/main/CONTRIBUTING.md#-translation-guide"

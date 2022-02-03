@@ -43,8 +43,8 @@ public:
 
 private:
     Ui::SettingsWindow _ui;
-
     bool _trigger{true};
+    int _lastLanguageIndex{0};
 
     void InitCreditsText();
     void RestoreDefaults();
@@ -53,7 +53,7 @@ private:
     void showEvent(QShowEvent *event) override;
 
     // General
-    void On_cbLanguages_currentIndexChanged(int index, bool isMore);
+    void On_cbLanguages_currentIndexChanged(int index);
     void On_cbAutoRun_toggled(bool checked);
     void On_pbUnbind_clicked();
 
