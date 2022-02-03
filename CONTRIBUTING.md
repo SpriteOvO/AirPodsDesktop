@@ -34,4 +34,6 @@ Before you start contributing, make sure you already understand how Git works. Y
 
    If you don't know how to use the tool, please read [Qt Linguist Manual: Translators](https://doc.qt.io/qt-5/linguist-translators.html).
 
-5. After completing the translation work, [submit a PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) for merging.
+5. If you search for comments containing "credit" in *Qt Linguist*, you will see a text for crediting translators. If you wish, you can add your name to its translation as required by the developer comment.
+
+6. After completing the translation work, [submit a PR](https://github.com/SpriteOvO/AirPodsDesktop/compare) for merging.
