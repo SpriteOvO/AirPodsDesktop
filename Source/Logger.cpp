@@ -58,10 +58,8 @@ bool Initialize(bool enableTrace)
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
-                std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, true)
-#if defined APD_ENABLE_CONSOLE
-                ,std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
-#endif
+                std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath, true),
+                std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
             }
         );
         // clang-format on

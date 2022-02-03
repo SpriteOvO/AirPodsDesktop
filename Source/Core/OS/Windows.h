@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <shellapi.h>
@@ -59,6 +61,25 @@ inline std::optional<std::wstring> GetNameById(uint32_t targetId)
     CloseHandle(hSnapshot);
     return result;
 }
+
+inline void AttachConsole()
+{
+    if (!::AttachConsole(ATTACH_PARENT_PROCESS)) {
+#if defined APD_DEBUG
+        std::cout << "Not attached to the cosole of the parent process" << std::endl;
+#endif
+        return;
+    }
+
+    FILE *_;
+    freopen_s(&_, "CONOUT$", "w", stdout);
+    freopen_s(&_, "CONOUT$", "w", stderr);
+
+#if defined APD_DEBUG
+    std::cout << "Attached to the cosole of the parent process" << std::endl;
+#endif
+}
+
 } // namespace Process
 
 namespace Window {

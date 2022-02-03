@@ -23,6 +23,8 @@
 
 int main(int argc, char *argv[])
 {
+    Utils::Process::AttachConsole();
+
     if (!Utils::Process::SingleInstance(Config::ProgramName)) {
         return 0;
     }

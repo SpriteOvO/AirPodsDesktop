@@ -203,5 +203,15 @@ inline bool SingleInstance(const QString &instanceName)
     //
     return lastError != ERROR_ALREADY_EXISTS;
 }
+
+inline void AttachConsole()
+{
+#if defined APD_OS_WIN
+    Core::OS::Windows::Process::AttachConsole();
+#else
+    #error "Need to port."
+#endif
+}
+
 } // namespace Process
 } // namespace Utils
