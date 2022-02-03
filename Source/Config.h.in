@@ -1,6 +1,6 @@
 //
 // AirPodsDesktop - AirPods Desktop User Experience Enhancement Program.
-// Copyright (C) 2021 SpriteOvO
+// Copyright (C) 2021-2022 SpriteOvO
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ namespace Config {
 #define CONFIG_WINRC_VERSION_STRING     CONFIG_VERSION_STRING ".0"
 #define CONFIG_PROGRAM_NAME             "@PROJECT_NAME@"
 #define CONFIG_DESCRIPTION              "@PROJECT_DESCRIPTION@"
-#define CONFIG_COPYRIGHT                "Copyright © 2021 SpriteOvO. All rights reserved."
+#define CONFIG_COPYRIGHT                "Copyright © 2021-2022 SpriteOvO. All rights reserved."
 #define CONFIG_CPACK_SYSTEM_NAME        "@CPACK_SYSTEM_NAME@"
 #define CONFIG_URL_REPO                 "https://github.com/SpriteOvO/" CONFIG_PROGRAM_NAME
 #define CONFIG_URL_ISSUES               CONFIG_URL_REPO "/issues"
