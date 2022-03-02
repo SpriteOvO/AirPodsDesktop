@@ -63,6 +63,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+set(VCPKG_FEATURE_FLAGS "versions")
+
 ##################################################
 # Build options
 #
@@ -170,8 +172,7 @@ endif()
 
 # cpr
 #
-# Commented out since we use some unreleased changes
-# find_package(cpr CONFIG)
+find_package(cpr 1.7.2 CONFIG)
 if (cpr_FOUND)
     message("Found 'cpr' (${cpr_VERSION}).")
 else()
@@ -182,7 +183,7 @@ else()
     FetchContent_Declare(
         cpr
         GIT_REPOSITORY "https://github.com/whoshuu/cpr.git"
-        GIT_TAG "756348ed71e0d76d3c92f3a68a9a90afeba8610f"
+        GIT_TAG "beb9e98806bb84bcc130a2cebfbcbbc6ce62b335" # v1.7.2
     )
     FetchContent_MakeAvailable(cpr)
     message("Fetch 'cpr' done.")
