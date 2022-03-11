@@ -27,7 +27,11 @@
 namespace Core::Settings {
 
 enum class TrayIconBatteryBehavior : uint32_t { Disable, WhenLowBattery, Always };
+enum class TaskbarStatusBehavior : uint32_t { Disable, Text, Icon };
 enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
+
+// TODO: in [v1.0.0] [kFieldsAbiVersion = 2]
+//        - Rename `tray_icon_battery` to `battery_on_tray_icon`
 
 // clang-format off
 #define SETTINGS_FIELDS(callback)                                                                  \
@@ -47,7 +51,9 @@ enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
         Impl::OnApply(&OnApply_device_address),                                                    \
         Impl::Sensitive{})                                                                         \
     callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable},       \
-        Impl::OnApply(&OnApply_tray_icon_battery))
+        Impl::OnApply(&OnApply_tray_icon_battery))                                                 \
+    callback(TaskbarStatusBehavior, battery_on_taskbar, {TaskbarStatusBehavior::Disable},          \
+        Impl::OnApply(&OnApply_battery_on_taskbar))
 // clang-format on
 
 struct Fields {
@@ -208,6 +214,7 @@ void OnApply_automatic_ear_detection(const Fields &newFields);
 void OnApply_rssi_min(const Fields &newFields);
 void OnApply_device_address(const Fields &newFields);
 void OnApply_tray_icon_battery(const Fields &newFields);
+void OnApply_battery_on_taskbar(const Fields &newFields);
 
 struct MetaFields {
 #define DECLARE_META_FIELD(type, name, dft, ...)                                                   \

@@ -252,6 +252,7 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     _cachedState = state;
     Repaint();
     ApdApp->GetTrayIcon()->UpdateState(state);
+    ApdApp->GetTaskbarStatus()->UpdateState(state);
 }
 
 void MainWindow::Available()
@@ -273,6 +274,7 @@ void MainWindow::Unavailable()
     _cachedState.reset();
     Repaint();
     ApdApp->GetTrayIcon()->Unavailable();
+    ApdApp->GetTaskbarStatus()->Unavailable();
 }
 
 void MainWindow::Disconnect()
@@ -286,6 +288,7 @@ void MainWindow::Disconnect()
     _cachedState.reset();
     Repaint();
     ApdApp->GetTrayIcon()->Disconnect();
+    ApdApp->GetTaskbarStatus()->Disconnect();
 }
 
 void MainWindow::Bind()

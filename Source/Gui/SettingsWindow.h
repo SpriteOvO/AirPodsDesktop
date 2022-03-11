@@ -30,6 +30,8 @@
 
 namespace Gui {
 
+using namespace Core::Settings;
+
 class SettingsWindow : public QDialog
 {
     Q_OBJECT
@@ -48,7 +50,7 @@ private:
 
     void InitCreditsText();
     void RestoreDefaults();
-    void Update(const Core::Settings::Fields &fields, bool trigger);
+    void Update(const Fields &fields, bool trigger);
 
     void showEvent(QShowEvent *event) override;
 
@@ -58,7 +60,8 @@ private:
     void On_pbUnbind_clicked();
 
     // Visual
-    void On_cbDisplayBatteryOnTrayIcon_toggled(Core::Settings::TrayIconBatteryBehavior behavior);
+    void On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior behavior);
+    void On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior behavior);
 
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);

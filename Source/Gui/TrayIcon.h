@@ -42,6 +42,16 @@ public:
         _tray->showMessage(std::forward<ArgsT>(args)...);
     }
 
+    inline QMenu *GetContextMenu()
+    {
+        return _menu;
+    }
+
+    inline QString GetToolTip()
+    {
+        return _tray->toolTip();
+    }
+
     void UpdateState(const Core::AirPods::State &state);
     void Unavailable();
     void Disconnect();

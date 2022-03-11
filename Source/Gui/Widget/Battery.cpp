@@ -147,7 +147,7 @@ void Battery::drawChargingIcon(QPainter &painter)
         path.lineTo(pointStart);
 
         painter.setPen(Qt::NoPen);
-        painter.fillPath(path, QBrush{Qt::black});
+        painter.fillPath(path, QBrush{_chargingIconColor});
     }
     painter.restore();
 }
@@ -221,6 +221,11 @@ QColor Battery::getAlarmColor() const
 QColor Battery::getNormalColor() const
 {
     return _normalColor;
+}
+
+QColor Battery::getChargingIconColor() const
+{
+    return _chargingIconColor;
 }
 
 bool Battery::isCharging() const
@@ -353,6 +358,15 @@ void Battery::setNormalColor(const QColor &value)
         return;
     }
     _normalColor = value;
+    update();
+}
+
+void Battery::setChargingIconColor(const QColor &value)
+{
+    if (_chargingIconColor == value) {
+        return;
+    }
+    _chargingIconColor = value;
     update();
 }
 

@@ -64,7 +64,7 @@ private:
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 {
-    const auto &constMetaFields = Core::Settings::GetConstMetaFields();
+    const auto &constMetaFields = GetConstMetaFields();
 
     _ui.setupUi(this);
 
@@ -96,7 +96,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     }
     _ui.cbLanguages->addItem("...");
 
-    Update(Core::Settings::GetCurrent(), false);
+    Update(GetCurrent(), false);
 
     connect(
         _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults), &QPushButton::clicked, this,
@@ -136,8 +136,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     connect(
         _ui.rbDisplayBatteryOnTrayIconDisable, &QRadioButton::toggled, this, [this](bool checked) {
             if (_trigger) {
-                On_cbDisplayBatteryOnTrayIcon_toggled(
-                    Core::Settings::TrayIconBatteryBehavior::Disable);
+                On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior::Disable);
             }
         });
 
@@ -145,18 +144,35 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
         _ui.rbDisplayBatteryOnTrayIconWhenLowBattery, &QRadioButton::toggled, this,
         [this](bool checked) {
             if (_trigger) {
-                On_cbDisplayBatteryOnTrayIcon_toggled(
-                    Core::Settings::TrayIconBatteryBehavior::WhenLowBattery);
+                On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior::WhenLowBattery);
             }
         });
 
     connect(
         _ui.rbDisplayBatteryOnTrayIconAlways, &QRadioButton::toggled, this, [this](bool checked) {
             if (_trigger) {
-                On_cbDisplayBatteryOnTrayIcon_toggled(
-                    Core::Settings::TrayIconBatteryBehavior::Always);
+                On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior::Always);
             }
         });
+
+    connect(
+        _ui.rbDisplayBatteryOnTaskbarDisable, &QRadioButton::toggled, this, [this](bool checked) {
+            if (_trigger) {
+                On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior::Disable);
+            }
+        });
+
+    connect(_ui.rbDisplayBatteryOnTaskbarText, &QRadioButton::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior::Text);
+        }
+    });
+
+    connect(_ui.rbDisplayBatteryOnTaskbarIcon, &QRadioButton::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior::Icon);
+        }
+    });
 
     connect(_ui.pbUnbind, &QPushButton::clicked, this, [this]() {
         if (_trigger) {
@@ -240,14 +256,12 @@ void SettingsWindow::InitCreditsText()
 
 void SettingsWindow::RestoreDefaults()
 {
-    Core::Settings::Save(Core::Settings::GetDefault());
-    Update(Core::Settings::GetCurrent(), false);
+    Save(GetDefault());
+    Update(GetCurrent(), false);
 }
 
-void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
+void SettingsWindow::Update(const Fields &fields, bool trigger)
 {
-    using Core::Settings::TrayIconBatteryBehavior;
-
     _trigger = trigger;
 
     auto currentLangIndex = ApdApp->GetCurrentLoadedLocaleIndex();
@@ -262,14 +276,24 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
     _ui.hsMaxReceivingRange->setValue(-fields.rssi_min);
 
-    auto [batteryIconDisable, batteryIconWhenLowBattery, batteryIconAlways] = std::make_tuple(
-        fields.tray_icon_battery == TrayIconBatteryBehavior::Disable,
-        fields.tray_icon_battery == TrayIconBatteryBehavior::WhenLowBattery,
-        fields.tray_icon_battery == TrayIconBatteryBehavior::Always);
+    auto [batteryOnTrayIconDisable, batteryOnTrayIconWhenLowBattery, batteryOnTrayIconAlways] =
+        std::make_tuple(
+            fields.tray_icon_battery == TrayIconBatteryBehavior::Disable,
+            fields.tray_icon_battery == TrayIconBatteryBehavior::WhenLowBattery,
+            fields.tray_icon_battery == TrayIconBatteryBehavior::Always);
 
-    _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(batteryIconDisable);
-    _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(batteryIconWhenLowBattery);
-    _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(batteryIconAlways);
+    _ui.rbDisplayBatteryOnTrayIconDisable->setChecked(batteryOnTrayIconDisable);
+    _ui.rbDisplayBatteryOnTrayIconWhenLowBattery->setChecked(batteryOnTrayIconWhenLowBattery);
+    _ui.rbDisplayBatteryOnTrayIconAlways->setChecked(batteryOnTrayIconAlways);
+
+    auto [batteryOnTaskbarDisable, batteryOnTaskbarText, batteryOnTaskbarIcon] = std::make_tuple(
+        fields.battery_on_taskbar == TaskbarStatusBehavior::Disable,
+        fields.battery_on_taskbar == TaskbarStatusBehavior::Text,
+        fields.battery_on_taskbar == TaskbarStatusBehavior::Icon);
+
+    _ui.rbDisplayBatteryOnTaskbarDisable->setChecked(batteryOnTaskbarDisable);
+    _ui.rbDisplayBatteryOnTaskbarText->setChecked(batteryOnTaskbarText);
+    _ui.rbDisplayBatteryOnTaskbarIcon->setChecked(batteryOnTaskbarIcon);
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
@@ -278,7 +302,7 @@ void SettingsWindow::Update(const Core::Settings::Fields &fields, bool trigger)
 
 void SettingsWindow::showEvent(QShowEvent *event)
 {
-    Update(Core::Settings::GetCurrent(), false);
+    Update(GetCurrent(), false);
 }
 
 void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
@@ -289,7 +313,7 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
         const auto &availableLocales = ApdApp->AvailableLocales();
         const auto &locale = availableLocales.at(index);
 
-        Core::Settings::ModifiableAccess()->language_locale = locale.name();
+        ModifiableAccess()->language_locale = locale.name();
     }
     else {
         _ui.cbLanguages->setCurrentIndex(_lastLanguageIndex);
@@ -303,34 +327,38 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
 
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
 {
-    Core::Settings::ModifiableAccess()->auto_run = checked;
+    ModifiableAccess()->auto_run = checked;
 }
 
 void SettingsWindow::On_pbUnbind_clicked()
 {
     _ui.pbUnbind->setDisabled(true);
-    Core::Settings::ModifiableAccess()->device_address = 0;
+    ModifiableAccess()->device_address = 0;
 }
 
-void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(
-    Core::Settings::TrayIconBatteryBehavior behavior)
+void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior behavior)
 {
-    Core::Settings::ModifiableAccess()->tray_icon_battery = behavior;
+    ModifiableAccess()->tray_icon_battery = behavior;
+}
+
+void SettingsWindow::On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior behavior)
+{
+    ModifiableAccess()->battery_on_taskbar = behavior;
 }
 
 void SettingsWindow::On_cbLowAudioLatency_toggled(bool checked)
 {
-    Core::Settings::ModifiableAccess()->low_audio_latency = checked;
+    ModifiableAccess()->low_audio_latency = checked;
 }
 
 void SettingsWindow::On_cbAutoEarDetection_toggled(bool checked)
 {
-    Core::Settings::ModifiableAccess()->automatic_ear_detection = checked;
+    ModifiableAccess()->automatic_ear_detection = checked;
 }
 
 void SettingsWindow::On_hsMaxReceivingRange_valueChanged(int value)
 {
-    Core::Settings::ModifiableAccess()->rssi_min = -value;
+    ModifiableAccess()->rssi_min = -value;
 }
 
 void SettingsWindow::On_pbOpenLogsDirectory_clicked()

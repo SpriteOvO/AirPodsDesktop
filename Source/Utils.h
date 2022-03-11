@@ -95,6 +95,13 @@ inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, cons
     widget->setPalette(palette);
 }
 
+inline QColor InvertColor(const QColor &color)
+{
+    QColor result;
+    result.setRgb(255 - color.red(), 255 - color.green(), 255 - color.blue());
+    return result;
+}
+
 inline void Dispatch(std::function<void()> callback)
 {
     QTimer *timer = new QTimer;

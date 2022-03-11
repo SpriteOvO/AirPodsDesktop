@@ -24,6 +24,7 @@
 #include <QTranslator>
 
 #include "Gui/TrayIcon.h"
+#include "Gui/TaskbarStatus.h"
 #include "Gui/MainWindow.h"
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
@@ -44,6 +45,10 @@ public:
     inline auto &GetTrayIcon()
     {
         return _trayIcon;
+    }
+    inline auto &GetTaskbarStatus()
+    {
+        return _taskbarStatus;
     }
     inline auto &GetMainWindow()
     {
@@ -71,6 +76,7 @@ private:
     QTranslator _translator;
     int _currentLoadedLocaleIndex{0};
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
+    std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;

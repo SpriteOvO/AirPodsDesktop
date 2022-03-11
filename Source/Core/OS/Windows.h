@@ -21,18 +21,23 @@
 #include <iostream>
 
 #include <Windows.h>
+#include <winternl.h>
 #include <tlhelp32.h>
 #include <shellapi.h>
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
 
 #include <QDir>
+#include <QRect>
 #include <QString>
 
 #include "../../Logger.h"
 #include "../../Assert.h"
+#include "../../Error.h"
 
 #pragma comment(lib, "WindowsApp.lib")
+
+#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
 namespace Core::OS::Windows {
 namespace Process {
@@ -139,6 +144,12 @@ FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring>
 
     return result;
 }
+
+inline QRect RectToQRect(const RECT &rect)
+{
+    return QRect{rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top};
+}
+
 } // namespace Window
 
 namespace File {
@@ -258,6 +269,86 @@ private:
     }
 };
 } // namespace Com
+
+namespace System {
+namespace Impl {
+
+inline bool IsVersionOrGreater(
+    uint16_t majorVersion, uint16_t minorVersion, uint16_t servicePackMajor, uint16_t buildVersion)
+{
+    static auto osVersionInfo = [] {
+        do {
+            RTL_OSVERSIONINFOEXW osVersionInfo;
+
+            memset(&osVersionInfo, 0, sizeof(osVersionInfo));
+
+            HMODULE moduleNtdll = GetModuleHandleW(L"ntdll.dll");
+            if (moduleNtdll == nullptr) {
+                LOG(Error, "GetModuleHandleW for 'ntdll.dll' failed");
+                break;
+            }
+
+            using FnRtlGetVersionT = NTSTATUS(NTAPI *)(RTL_OSVERSIONINFOW * pVersionInformation);
+
+            auto fnRtlGetVersion = (FnRtlGetVersionT)GetProcAddress(moduleNtdll, "RtlGetVersion");
+            if (fnRtlGetVersion == nullptr) {
+                LOG(Error, "GetProcAddress for 'RtlGetVersion' failed");
+                break;
+            }
+
+            osVersionInfo.dwOSVersionInfoSize = sizeof(osVersionInfo);
+
+            auto result = fnRtlGetVersion((RTL_OSVERSIONINFOW *)&osVersionInfo);
+            if (result != STATUS_SUCCESS) {
+                LOG(Error, "RtlGetVersion returns '{}'", result);
+                break;
+            }
+
+            return osVersionInfo;
+
+        } while (false);
+
+        FatalError("Failed to initialize OS version info", true);
+    }();
+
+    if (osVersionInfo.dwMajorVersion != 0) {
+        if (osVersionInfo.dwMajorVersion > majorVersion) {
+            return true;
+        }
+        else if (osVersionInfo.dwMajorVersion < majorVersion) {
+            return false;
+        }
+
+        if (osVersionInfo.dwMinorVersion > minorVersion) {
+            return true;
+        }
+        else if (osVersionInfo.dwMinorVersion < minorVersion) {
+            return false;
+        }
+
+        if (osVersionInfo.wServicePackMajor > servicePackMajor) {
+            return true;
+        }
+        else if (osVersionInfo.wServicePackMajor < servicePackMajor) {
+            return false;
+        }
+
+        if (osVersionInfo.dwBuildNumber >= buildVersion) {
+            return true;
+        }
+    }
+
+    return false;
+}
+} // namespace Impl
+
+inline bool Is11OrGreater()
+{
+    // Yes.. The major and minor version of Windows 11 is the same as Windows 10, lol
+    return Impl::IsVersionOrGreater(
+        HIBYTE(_WIN32_WINNT_WIN10), LOBYTE(_WIN32_WINNT_WIN10), 0, 22000);
+}
+} // namespace System
 } // namespace Core::OS::Windows
 
 namespace Helper {
