@@ -1,0 +1,69 @@
+name: Linux Builds
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'Assets/**'
+      - 'Docs/**'
+
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'Assets/**'
+      - 'Docs/**'
+
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: RelWithDebInfo
+  QT_VERSION: 5.15.2
+  QT_MIRROR: https://mirrors.dotsrc.org/qtproject
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Prepare build directory
+        run: mkdir Build
+
+      - name: Print CMake version
+        run: cmake --version
+
+      - name: Install Qt
+        id: install-qt-from-official
+        continue-on-error: true
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: ${{ env.QT_VERSION }}
+
+      - name: Install Qt from mirror
+        if: steps.install-qt-from-official.outcome != 'success'
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: ${{ env.QT_VERSION }}
+          extra: '-b ${{ env.QT_MIRROR }}'
+
+      - name: Install required dependencies
+        run: sudo apt install gcc-11 g++-11 libboost-all-dev
+
+      - name: Generate project and build
+        working-directory: Build
+        env:
+          CC: gcc-11
+          CXX: g++-11
+        run: |
+          mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
+
+          cmake -DAPD_BUILD_GIT_HASH=${{ github.sha }} ../../
+          cmake --build . --config ${{ env.BUILD_TYPE }}
+
+          ls -lhR Binary
