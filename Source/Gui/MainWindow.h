@@ -61,7 +61,9 @@ public:
     void Disconnect();
     void Bind();
     void Unbind();
+#if defined APD_HAS_UPDATE
     void AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo);
+#endif
 
 Q_SIGNALS:
     void UpdateStateSafely(const Core::AirPods::State &state);
@@ -72,7 +74,9 @@ Q_SIGNALS:
     void UnbindSafely();
     void ShowSafely();
     void HideSafely();
+#if defined APD_HAS_UPDATE
     bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+#endif
 
 private:
     constexpr static QSize _screenMargin{50, 100};
@@ -89,9 +93,11 @@ private:
     Widget::Battery *_caseBattery = new Widget::Battery{this};
 
     Core::AirPods::Manager _apdMgr;
+#if defined APD_HAS_UPDATE
     Core::Update::AsyncChecker _updateChecker{[this](auto &&...args) {
         VersionUpdateAvailableSafely(std::forward<decltype(args)>(args)...);
     }};
+#endif
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
     Status _status{Status::Unavailable};
@@ -105,7 +111,9 @@ private:
     void StopAnimation();
     void BindDevice();
     void ControlAutoHideTimer(bool start);
+#if defined APD_HAS_UPDATE
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+#endif
     void Repaint();
 
     void OnAppStateChanged(Qt::ApplicationState state);

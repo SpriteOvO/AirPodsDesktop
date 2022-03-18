@@ -156,7 +156,7 @@ public:
         _isDeprecated = true;
     }
 
-    const OnApply &OnApply() const
+    const OnApply &GetOnApply() const
     {
         return _onApply;
     }

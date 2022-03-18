@@ -14,5 +14,8 @@ CTestTestfile.cmake
 out/
 CMakeSettings.json
 
+# vscode
+.vscode/
+
 # Build
 Build/

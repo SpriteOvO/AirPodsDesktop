@@ -18,7 +18,6 @@
 
 #include "Error.h"
 
-#include <format>
 #include <cstdlib>
 #include <fstream>
 
@@ -60,41 +59,42 @@ void Initialize()
 {
     Error::Impl::WriteStackTraceFile();
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
+#if defined APD_OS_WIN
     // Because QMessageBox does not allow calls from non-GUI threads.
     // So far, there seems to be no better way than using native APIs.
     //
 
-    auto title = std::format("{} fatal error", Config::ProgramName);
+    auto title = std::string{Config::ProgramName} + " fatal error";
 
     if (report) {
-        auto message = std::format(
+        // clang-format off
+        auto message = std::string{} +
             "An error has occurred!\n"
             "Please help us fix this problem.\n"
             "--------------------------------------------------\n"
-            "\n"
-            "{}\n"
+            "\n" +
+            content + "\n"
             "\n"
             "--------------------------------------------------\n"
             "Click \"Yes\" will pop up GitHub issue tracker page.\n"
             "You can submit this information to us there.\n"
-            "Thank you very much.",
-            content);
+            "Thank you very much.";
+        // clang-format on
 
         int button = MessageBoxA(nullptr, message.c_str(), title.c_str(), MB_ICONERROR | MB_YESNO);
 
-#if !defined APD_DEBUG
+    #if !defined APD_DEBUG
         if (button == IDYES) {
             QDesktopServices::openUrl(QUrl{Config::UrlIssues});
         }
-#endif
+    #endif
     }
     else {
         MessageBoxA(nullptr, content.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
     }
+#else
+    Unimplemented();
+#endif
 
 #if defined APD_DEBUG
     Utils::Debug::BreakPoint();

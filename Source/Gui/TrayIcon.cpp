@@ -30,7 +30,9 @@ namespace Gui {
 
 TrayIcon::TrayIcon()
 {
+#if defined APD_HAS_UPDATE
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
+#endif
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
@@ -82,12 +84,14 @@ void TrayIcon::Unbind()
     Repaint();
 }
 
+#if defined APD_HAS_UPDATE
 void TrayIcon::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo)
 {
     _updateReleaseInfo = releaseInfo;
     _actionNewVersion->setVisible(true);
     Repaint();
 }
+#endif
 
 void TrayIcon::ShowMainWindow()
 {
@@ -158,9 +162,11 @@ void TrayIcon::Repaint()
         APD_ASSERT(false);
     }
 
+#if defined APD_HAS_UPDATE
     if (_updateReleaseInfo.has_value()) {
         toolTipContent += '\n' + _actionNewVersion->text();
     }
+#endif
 
     _tray->setToolTip("AirPodsDesktop\n" + toolTipContent.trimmed());
 
@@ -196,8 +202,13 @@ void TrayIcon::Repaint()
 
     auto optIcon = GenerateIcon(
         64, iconText,
+#if defined APD_HAS_UPDATE
         _updateReleaseInfo.has_value() ? std::optional<QColor>{kNewVersionAvailableDot}
-                                       : std::nullopt);
+                                       : std::nullopt
+#else
+        std::nullopt
+#endif
+    );
     if (optIcon.has_value()) {
         _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
     }
@@ -266,7 +277,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
         const auto &font = optFont.value();
         const auto &fontMetrics = QFontMetrics{font};
 
-        const auto textWidth = fontMetrics.width(text);
+        const auto textWidth = fontMetrics.horizontalAdvance(text);
         textHeight = fontMetrics.height();
 
         constexpr auto kMargin = QSizeF{2, 0};
@@ -304,6 +315,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
     return result;
 }
 
+#if defined APD_HAS_UPDATE
 void TrayIcon::OnNewVersionClicked()
 {
     APD_ASSERT(_updateReleaseInfo.has_value());
@@ -316,6 +328,7 @@ void TrayIcon::OnNewVersionClicked()
 
     ApdApp->GetMainWindow()->AskUserUpdate(releaseInfo);
 }
+#endif
 
 void TrayIcon::OnSettingsClicked()
 {

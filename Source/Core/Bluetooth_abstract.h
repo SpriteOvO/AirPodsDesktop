@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <map>
+#include <optional>
 #include <functional>
 
 #include "../Helper.h"

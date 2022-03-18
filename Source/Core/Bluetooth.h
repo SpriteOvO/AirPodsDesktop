@@ -20,6 +20,8 @@
 
 #if defined APD_OS_WIN
     #include "Bluetooth_win.h"
+#else
+    #include "Bluetooth_linux.h"
 #endif
 
 template <>

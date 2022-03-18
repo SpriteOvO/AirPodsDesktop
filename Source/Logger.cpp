@@ -32,7 +32,9 @@
 #include "Application.h"
 #include "Error.h"
 
-#include "Core/OS/Windows.h"
+#if defined APD_OS_WIN
+    #include "Core/OS/Windows.h"
+#endif
 
 namespace Logger {
 
@@ -55,6 +57,7 @@ bool Initialize(bool enableTrace)
     try {
         const auto logFilePath = GetLogFilePath().absolutePath().toStdWString();
 
+#if defined APD_OS_WIN
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(
             "Main", std::initializer_list<spdlog::sink_ptr>{
@@ -63,6 +66,10 @@ bool Initialize(bool enableTrace)
             }
         );
         // clang-format on
+#else
+        Unimplemented();
+        auto logger = std::make_shared<spdlog::logger>("Main");
+#endif
 
         spdlog::register_logger(logger);
         spdlog::set_default_logger(logger);
@@ -76,7 +83,7 @@ bool Initialize(bool enableTrace)
         return true;
     }
     catch (spdlog::spdlog_ex &exception) {
-        FatalError(std::format("spdlog initialize failed.\n\n{}", exception.what()), true);
+        FatalError(std::string{"spdlog initialize failed.\n\n"} + exception.what(), true);
         return false;
     }
 }

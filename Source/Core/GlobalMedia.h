@@ -20,6 +20,8 @@
 
 #if defined APD_OS_WIN
     #include "GlobalMedia_win.h"
+#else
+    #include "GlobalMedia_linux.h"
 #endif
 
 namespace Core::GlobalMedia {

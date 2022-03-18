@@ -33,6 +33,11 @@
 
 namespace Helper {
 
+using namespace std::chrono_literals;
+
+template <class... T>
+constexpr inline bool AlwaysFalse = false;
+
 template <class E>
 [[nodiscard]] constexpr decltype(auto) ToUnderlying(E e) noexcept
 {
@@ -313,8 +318,7 @@ public:
         Stop();
         _destroyFlag = false;
         _interval = std::move(interval);
-        _thread =
-            std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
+        _thread = std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
     }
 
     inline void Stop()

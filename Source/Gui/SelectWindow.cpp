@@ -20,6 +20,8 @@
 
 #include <QPushButton>
 
+#include "../Assert.h"
+
 namespace Gui {
 
 SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidget *parent)

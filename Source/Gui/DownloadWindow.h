@@ -18,6 +18,8 @@
 
 #pragma once
 
+#if defined APD_HAS_UPDATE // clang-format off
+
 #include <thread>
 #include <atomic>
 #include <QDialog>
@@ -25,6 +27,8 @@
 #include "../Core/Update.h"
 #include "../Utils.h"
 #include "ui_DownloadWindow.h"
+
+// clang-format on
 
 namespace Gui {
 
@@ -56,3 +60,5 @@ private:
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
 };
 } // namespace Gui
+
+#endif

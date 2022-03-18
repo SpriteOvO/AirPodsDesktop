@@ -147,6 +147,7 @@ private:
 
 //////////////////////////////////////////////////
 
+#if defined APD_HAS_UPDATE
 enum class NewVersionAction {
     Update,
     Skip,
@@ -187,13 +188,16 @@ NewVersionAction NewVersionMessageBox(
         return NewVersionAction::Later;
     }
 }
+#endif
 
 //////////////////////////////////////////////////
 
 MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
+#if defined APD_HAS_UPDATE
     qRegisterMetaType<Core::Update::ReleaseInfo>("Core::Update::ReleaseInfo");
+#endif
 
     _videoWidget = new VideoWidget{this};
     _closeButton = new CloseButton{this};
@@ -224,8 +228,10 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
     connect(this, &MainWindow::ShowSafely, this, &MainWindow::show);
     connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
+#if defined APD_HAS_UPDATE
     connect(
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
+#endif
 
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
@@ -241,7 +247,10 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutClose->addWidget(_closeButton);
 
     Unavailable();
+
+#if defined APD_HAS_UPDATE
     _updateChecker.Start();
+#endif
 }
 
 void MainWindow::UpdateState(const Core::AirPods::State &state)
@@ -252,7 +261,9 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     _cachedState = state;
     Repaint();
     ApdApp->GetTrayIcon()->UpdateState(state);
+#if defined APD_HAS_TASKBAR_STATUS
     ApdApp->GetTaskbarStatus()->UpdateState(state);
+#endif
 }
 
 void MainWindow::Available()
@@ -274,7 +285,9 @@ void MainWindow::Unavailable()
     _cachedState.reset();
     Repaint();
     ApdApp->GetTrayIcon()->Unavailable();
+#if defined APD_HAS_TASKBAR_STATUS
     ApdApp->GetTaskbarStatus()->Unavailable();
+#endif
 }
 
 void MainWindow::Disconnect()
@@ -288,7 +301,9 @@ void MainWindow::Disconnect()
     _cachedState.reset();
     Repaint();
     ApdApp->GetTrayIcon()->Disconnect();
+#if defined APD_HAS_TASKBAR_STATUS
     ApdApp->GetTaskbarStatus()->Disconnect();
+#endif
 }
 
 void MainWindow::Bind()
@@ -309,6 +324,7 @@ void MainWindow::Unbind()
     ApdApp->GetTrayIcon()->Unbind();
 }
 
+#if defined APD_HAS_UPDATE
 void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
 {
     auto releaseVersion = releaseInfo.version.toString();
@@ -364,6 +380,7 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
         break;
     }
 }
+#endif
 
 void MainWindow::ChangeButtonAction(ButtonAction action)
 {
@@ -378,7 +395,8 @@ void MainWindow::ChangeButtonAction(ButtonAction action)
         break;
 
     default:
-        FatalError(std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(action)), true);
+        FatalError(
+            "Unhandled ButtonAction: '" + std::to_string(Helper::ToUnderlying(action)) + "'", true);
     }
 
     _buttonAction = action;
@@ -503,6 +521,7 @@ void MainWindow::ControlAutoHideTimer(bool start)
     }
 }
 
+#if defined APD_HAS_UPDATE
 void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent)
 {
     LOG(Info, "MainWindow::VersionUpdateAvailable: silent: `{}`", silent);
@@ -514,6 +533,7 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
         ApdApp->GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
     }
 }
+#endif
 
 void MainWindow::Repaint()
 {
@@ -628,7 +648,8 @@ void MainWindow::OnButtonClicked()
 
     default:
         FatalError(
-            std::format("Unhandled ButtonAction: '{}'", Helper::ToUnderlying(_buttonAction)), true);
+            "Unhandled ButtonAction: '" + std::to_string(Helper::ToUnderlying(_buttonAction)) + "'",
+            true);
     }
 }
 

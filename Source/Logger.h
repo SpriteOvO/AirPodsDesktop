@@ -24,6 +24,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
+#include "Helper.h"
+
 namespace Logger {
 
 namespace Details {
@@ -60,7 +62,7 @@ inline void Log(const spdlog::source_loc &srcloc, Args &&...args)
             return spdlog::level::critical;
         }
         else {
-            static_assert(false);
+            static_assert(Helper::AlwaysFalse<Args...>);
         }
     }();
 

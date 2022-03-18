@@ -56,7 +56,9 @@ public:
     void Unavailable();
     void Disconnect();
     void Unbind();
+#if defined APD_HAS_UPDATE
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
+#endif
 
 Q_SIGNALS:
     void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
@@ -73,7 +75,9 @@ private:
     Status _status{Status::Unavailable};
     std::optional<Core::AirPods::State> _airPodsState;
     std::optional<QString> _displayName;
+#if defined APD_HAS_UPDATE
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
+#endif
 
     void ShowMainWindow();
     void Repaint();
@@ -81,7 +85,9 @@ private:
     static std::optional<QImage>
     GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
 
+#if defined APD_HAS_UPDATE
     void OnNewVersionClicked();
+#endif
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);

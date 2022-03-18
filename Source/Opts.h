@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <format>
 #include <optional>
 
 #include <cxxopts.hpp>
@@ -34,7 +33,7 @@ struct LaunchOpts {
     template <class OutStream>
     friend inline OutStream &operator<<(OutStream &outStream, const Opts::LaunchOpts &opts)
     {
-        return outStream << std::format("{{ trace: {} }}", opts.enableTrace);
+        return outStream << "{ trace: " << opts.enableTrace << " }";
     }
 };
 

@@ -19,7 +19,6 @@
 #pragma once
 
 #include <mutex>
-#include <format>
 #include <vector>
 #include <cwctype>
 #include <functional>
@@ -135,7 +134,7 @@ inline void BreakPoint()
 
 namespace Text {
 
-[[nodiscard]] constexpr std::string ToLower(std::string source)
+[[nodiscard]] /* constexpr */ inline std::string ToLower(std::string source)
 {
     std::transform(source.begin(), source.end(), source.begin(), [](unsigned char ch) {
         return static_cast<char>(std::tolower(ch));
@@ -143,13 +142,13 @@ namespace Text {
     return source;
 }
 
-[[nodiscard]] constexpr std::wstring ToLower(std::wstring source)
+[[nodiscard]] /* constexpr */ inline std::wstring ToLower(std::wstring source)
 {
     std::transform(source.begin(), source.end(), source.begin(), &std::towlower);
     return source;
 }
 
-[[nodiscard]] constexpr std::string ToUpper(std::string source)
+[[nodiscard]] /* constexpr */ inline std::string ToUpper(std::string source)
 {
     std::transform(source.begin(), source.end(), source.begin(), [](unsigned char ch) {
         return static_cast<char>(std::toupper(ch));
@@ -157,7 +156,7 @@ namespace Text {
     return source;
 }
 
-[[nodiscard]] constexpr std::wstring ToUpper(std::wstring source)
+[[nodiscard]] /* constexpr */ inline std::wstring ToUpper(std::wstring source)
 {
     std::transform(source.begin(), source.end(), source.begin(), &std::towupper);
     return source;
@@ -183,7 +182,7 @@ inline bool OpenFileLocation(const QDir &directory)
 #if defined APD_OS_WIN
     return Core::OS::Windows::File::OpenFileLocation(directory);
 #else
-    #error "Need to port."
+    Unimplemented();
 #endif
 }
 } // namespace File
@@ -195,20 +194,21 @@ namespace Process {
 //
 inline bool SingleInstance(const QString &instanceName)
 {
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
+#if defined APD_OS_WIN
     HANDLE mutex = CreateMutexW(
         nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
     uint32_t lastError = GetLastError();
 
     if (mutex == nullptr) {
-        FatalError(std::format("Create instance mutex failed.\nErrorCode: {}", lastError), false);
+        FatalError("Create instance mutex failed.\nErrorCode: " + std::to_string(lastError), false);
     }
 
     // No need to close the handle
     //
     return lastError != ERROR_ALREADY_EXISTS;
+#else
+    return true;
+#endif
 }
 
 inline void AttachConsole()
@@ -216,7 +216,7 @@ inline void AttachConsole()
 #if defined APD_OS_WIN
     Core::OS::Windows::Process::AttachConsole();
 #else
-    #error "Need to port."
+    // noop
 #endif
 }
 

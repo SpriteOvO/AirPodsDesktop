@@ -53,7 +53,8 @@ void ApdApplication::InitSettings(Core::Settings::LoadResult loadResult)
         break;
 
     default:
-        FatalError(std::format("Unhandled LoadResult: '{}'", Helper::ToUnderlying(result)), true);
+        FatalError(
+            "Unhandled LoadResult: '" + std::to_string(Helper::ToUnderlying(result)) + "'", true);
     }
 
     Core::Settings::Apply();
@@ -153,7 +154,9 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     InitTranslator();
 
     _trayIcon = std::make_unique<Gui::TrayIcon>();
+#if defined APD_HAS_TASKBAR_STATUS
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
+#endif
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
 

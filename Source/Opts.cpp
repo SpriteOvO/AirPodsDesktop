@@ -18,7 +18,6 @@
 
 #include "Opts.h"
 
-#include <format>
 #include <numeric>
 
 #include <QLocale>
@@ -50,7 +49,8 @@ const LaunchOpts &LaunchOptsManager::Parse(int argc, char *argv[])
             });
 
         parser.add_options()(
-            "print-all-locales", std::format("Print all locales for translators. [{}]", namesStr),
+            "print-all-locales",
+            std::string{"Print all locales for translators. ["} + namesStr + "]",
             value<std::string>()
                 ->default_value(std::string{enum_name(PrintAllLocales::None)})
                 ->implicit_value(std::string{enum_name(PrintAllLocales::LangOnly)}));
@@ -78,7 +78,7 @@ const LaunchOpts &LaunchOptsManager::Parse(int argc, char *argv[])
         return _opts;
     }
     catch (cxxopts::OptionException &exception) {
-        FatalError(std::format("Parse options failed.\n\n{}", exception.what()), false);
+        FatalError(std::string{"Parse options failed.\n\n"} + exception.what(), false);
         std::exit(1);
     }
 }

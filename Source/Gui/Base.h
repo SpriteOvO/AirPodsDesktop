@@ -20,6 +20,8 @@
 
 #include <QString>
 
+#include "../Assert.h"
+
 namespace Gui {
 
 enum class Status { Updating, Available, Unavailable, Disconnected, Bind, Unbind };

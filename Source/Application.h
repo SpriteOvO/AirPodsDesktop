@@ -24,7 +24,9 @@
 #include <QTranslator>
 
 #include "Gui/TrayIcon.h"
-#include "Gui/TaskbarStatus.h"
+#if defined APD_HAS_TASKBAR_STATUS
+    #include "Gui/TaskbarStatus.h"
+#endif
 #include "Gui/MainWindow.h"
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
@@ -46,10 +48,12 @@ public:
     {
         return _trayIcon;
     }
+#if defined APD_OS_WIN
     inline auto &GetTaskbarStatus()
     {
         return _taskbarStatus;
     }
+#endif
     inline auto &GetMainWindow()
     {
         return _mainWindow;
@@ -76,9 +80,10 @@ private:
     QTranslator _translator;
     int _currentLoadedLocaleIndex{0};
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
+#if defined APD_HAS_TASKBAR_STATUS
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
+#endif
     std::unique_ptr<Gui::MainWindow> _mainWindow;
-    std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
 
     void InitSettings(Core::Settings::LoadResult loadResult);

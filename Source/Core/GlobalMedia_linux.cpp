@@ -16,23 +16,23 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#include "Assert.h"
+#include "GlobalMedia_linux.h"
 
-#include "Error.h"
+#include "../Utils.h"
+#include "../Logger.h"
+#include "../Error.h"
 
-namespace Assert {
+namespace Core::GlobalMedia {
 
-void Trigger(const std::string &condition, const std::source_location &srcloc)
+using namespace std::chrono_literals;
+
+void Controller::Play()
 {
-    // clang-format off
-    auto content = std::string{} +
-        "Assertion triggered.\n"
-        "\n"
-        "Condition: " + condition + "\n"
-        "File: " + srcloc.file_name() + "\n"
-        "Line: " + std::to_string(srcloc.line());
-    // clang-format on
-
-    FatalError(content, true);
+    Unimplemented();
 }
-} // namespace Assert
+
+void Controller::Pause()
+{
+    Unimplemented();
+}
+} // namespace Core::GlobalMedia

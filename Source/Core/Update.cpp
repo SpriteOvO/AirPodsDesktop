@@ -122,15 +122,16 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Info, "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
                 fileSize, downloadUrl);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
+#if defined APD_OS_WIN
             // AirPodsDesktop-x.x.x-win32.exe
             //
             if (QFileInfo{fileName}.suffix() != "exe") {
                 LOG(Warn, "ParseSRResponse: Asset suffix is unsupported. Continue.");
                 continue;
             }
+#else
+    #error "Need to port."
+#endif
 
             if (fileName.indexOf(CONFIG_CPACK_SYSTEM_NAME) == -1) {
                 LOG(Warn, "ParseSRResponse: Asset platform is mismatched. Continue.");

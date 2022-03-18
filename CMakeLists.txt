@@ -132,7 +132,9 @@ find_package(Qt5LinguistTools REQUIRED)
 
 # spdlog
 #
-add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+if (WIN32)
+    add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+endif()
 # 
 # TODO: Commented out since I don't how to enable `SPDLOG_WCHAR_FILENAMES` for vcpkg, I have tried
 #       `set(SPDLOG_WCHAR_FILENAMES ON)` and `add_compile_definitions(SPDLOG_WCHAR_FILENAMES)`,
@@ -239,15 +241,28 @@ endif()
 
 # stacktrace
 #
-if (MSVC)
+if (WIN32)
     set(APD_STACKTRACE_COMPONENT stacktrace_windbg)
+else()
+    set(APD_STACKTRACE_COMPONENT stacktrace_basic)
 endif()
 
 find_package(Boost REQUIRED COMPONENTS ${APD_STACKTRACE_COMPONENT})
 
 # pfr
 #
-add_library(Boost::pfr ALIAS Boost::boost)
+if (WIN32)
+    add_library(Boost::pfr ALIAS Boost::boost)
+else()
+    message("Fetching 'pfr'...")
+    FetchContent_Declare(
+        pfr
+        GIT_REPOSITORY "https://github.com/boostorg/pfr.git"
+        GIT_TAG "10848f71aeb014382de1b8cfb9521838dcce9876" # v2.0.3 / boost-1.79.0.beta1
+    )
+    FetchContent_MakeAvailable(pfr)
+    message("Fetch 'pfr' done.")
+endif()
 
 ##################################################
 
@@ -262,14 +277,11 @@ set(
     "Source/Application.cpp"
 
     "Source/Gui/TrayIcon.cpp"
-    "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
-    "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
 
-    "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
     "Source/Core/AppleCP.cpp"
     "Source/Core/Settings.cpp"
@@ -285,11 +297,18 @@ if (WIN32)
 
         APD_OS_WIN
         APD_MSVC
+        APD_HAS_UPDATE
+        APD_HAS_TASKBAR_STATUS
         WIN32_LEAN_AND_MEAN
         NOMINMAX
     )
     set(
         APD_CODE_FILES ${APD_CODE_FILES}
+
+        "Source/Gui/TaskbarStatus.cpp"
+        "Source/Gui/DownloadWindow.cpp"
+
+        "Source/Core/Update.cpp"
 
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
@@ -305,6 +324,18 @@ if (WIN32)
     # Workaround for: "_MSC_VER" is undefined in .rc files
     #
     set_source_files_properties("Source/Resource/Resource.rc" PROPERTIES COMPILE_FLAGS "/d_MSC_VER")
+else()
+    set(
+        APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS}
+
+        APD_OS_LINUX
+    )
+    set(
+        APD_CODE_FILES ${APD_CODE_FILES}
+
+        "Source/Core/Bluetooth_linux.cpp"
+        "Source/Core/GlobalMedia_linux.cpp"
+    )
 endif()
 
 if (APD_BUILD_GIT_HASH)
@@ -386,7 +417,7 @@ target_compile_definitions(
 
 ##################################################
 
-if (MSVC)
+if (WIN32)
     if (APD_QT_DEPLOY)
         add_custom_command(
             TARGET ${PROJECT_NAME}
@@ -414,7 +445,7 @@ if (APD_GENERATE_INSTALLER)
     set(ICON_FILEPATH "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Image/Icon.ico")
     set(SHORTCUT_NAME "AirPods Desktop")
 
-    if (MSVC)
+    if (WIN32)
         set(CPACK_GENERATOR NSIS)
         set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
         set(CPACK_NSIS_URL_INFO_ABOUT ${CMAKE_PROJECT_HOMEPAGE_URL})
@@ -437,19 +468,19 @@ if (APD_GENERATE_INSTALLER)
             CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
             "Delete \\\"$DESKTOP\\\\${SHORTCUT_NAME}.lnk\\\""
         )
-    endif()
 
-    # Prevent CMake from adding "include" and "lib" directories
-    #
-    install(
-        DIRECTORY "${APD_BINARY_OUT_DIR}/"
-        DESTINATION "./"
-        COMPONENT ${PROJECT_NAME}
-        PATTERN "*.ilk" EXCLUDE
-        PATTERN "*.exp" EXCLUDE
-        PATTERN "*.lib" EXCLUDE
-    )
-    set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
+        # Prevent CMake from adding "include" and "lib" directories
+        #
+        install(
+            DIRECTORY "${APD_BINARY_OUT_DIR}/"
+            DESTINATION "./"
+            COMPONENT ${PROJECT_NAME}
+            PATTERN "*.ilk" EXCLUDE
+            PATTERN "*.exp" EXCLUDE
+            PATTERN "*.lib" EXCLUDE
+        )
+        set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
+    endif()
 
     add_custom_command(
         TARGET ${PROJECT_NAME}
@@ -489,6 +520,6 @@ target_link_libraries(
 # Use PDB file name as alternate PDB path, it is used to make stacktrace work
 # See https://github.com/boostorg/stacktrace/issues/55
 #
-if (MSVC)
+if (WIN32)
     apply_pdbaltpath_pdb_for_all_targets()
 endif()

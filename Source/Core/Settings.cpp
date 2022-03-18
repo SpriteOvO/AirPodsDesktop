@@ -51,10 +51,7 @@ void OnApply_auto_run(const Fields &newFields)
 {
     LOG(Info, "OnApply_auto_run: {}", newFields.auto_run);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
+#if defined APD_OS_WIN
     QSettings regAutoRun{
         "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
         QSettings::Registry64Format};
@@ -66,6 +63,9 @@ void OnApply_auto_run(const Fields &newFields)
     else {
         regAutoRun.remove(Config::ProgramName);
     }
+#else
+    Unimplemented();
+#endif
 }
 
 void OnApply_low_audio_latency(const Fields &newFields)
@@ -115,7 +115,9 @@ void OnApply_battery_on_taskbar(const Fields &newFields)
 {
     LOG(Info, "OnApply_battery_on_taskbar: {}", newFields.battery_on_taskbar);
 
+#if defined APD_OS_WIN
     ApdApp->GetTaskbarStatus()->OnSettingsChangedSafely(newFields.battery_on_taskbar);
+#endif
 }
 
 class Manager : public Helper::Singleton<Manager>
@@ -252,7 +254,7 @@ private:
             }
 
             if constexpr (!std::is_enum_v<T>) {
-                _settings.setValue(qstrKeyName, value);
+                _settings.setValue(qstrKeyName, QVariant::fromValue(value));
             }
             else {
                 _settings.setValue(
@@ -282,7 +284,7 @@ private:
         LOG(Info, "ApplyWithoutLock");
 
         pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
-            fieldMeta.OnApply().Invoke(std::cref(_fields));
+            fieldMeta.GetOnApply().Invoke(std::cref(_fields));
         });
     }
 
@@ -293,7 +295,7 @@ private:
         pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
             if (fieldMeta.GetValue(oldFields) != fieldMeta.GetValue(_fields)) {
                 LOG(Info, "Changed field: {}", fieldMeta.GetName());
-                fieldMeta.OnApply().Invoke(std::cref(_fields));
+                fieldMeta.GetOnApply().Invoke(std::cref(_fields));
             }
         });
     }

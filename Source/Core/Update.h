@@ -18,6 +18,8 @@
 
 #pragma once
 
+#if defined APD_HAS_UPDATE // clang-format off
+
 #include <string>
 #include <optional>
 
@@ -25,6 +27,8 @@
 #include <QVersionNumber>
 
 #include "../Helper.h"
+
+// clang-foramt on
 
 namespace Core::Update {
 
@@ -75,3 +79,5 @@ private:
 };
 
 } // namespace Core::Update
+
+#endif
