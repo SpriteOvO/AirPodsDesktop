@@ -8,6 +8,9 @@
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml">
         <img src="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml/badge.svg"/>
     </a>
+    <a href="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/linux.yml">
+        <img src="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/linux.yml/badge.svg"/>
+    </a>
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/releases">
         <img src="https://img.shields.io/github/v/release/SpriteOvO/AirPodsDesktop?include_prereleases"/>
     </a>
