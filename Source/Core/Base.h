@@ -68,6 +68,7 @@ enum class Model : uint32_t {
     AirPods_2,
     AirPods_3,
     AirPods_Pro,
+    AirPods_Max,
     Powerbeats_3,
     Beats_X,
     Beats_Solo3,
@@ -91,6 +92,8 @@ inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model
         return "AirPods 3";
     case Core::AirPods::Model::AirPods_Pro:
         return "AirPods Pro";
+    case Core::AirPods::Model::AirPods_Max:
+        return "AirPods Max";
     case Core::AirPods::Model::Powerbeats_3:
         return "Powerbeats 3";
     case Core::AirPods::Model::Beats_X:
