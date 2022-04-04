@@ -532,15 +532,15 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         return false;
     }
 
-    if (!_deviceConnected) {
-        LOG(Info, "AirPods advertisement received, but device disconnected.");
-        return false;
-    }
-
     Details::Advertisement adv{data};
 
     LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
         Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
+
+    if (!_deviceConnected) {
+        LOG(Info, "AirPods advertisement received, but device disconnected.");
+        return false;
+    }
 
     auto optUpdateEvent = _stateMgr.OnAdvReceived(Details::Advertisement{data});
     if (optUpdateEvent.has_value()) {
