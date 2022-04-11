@@ -60,6 +60,8 @@ Core::AirPods::Model AirPods::GetModel(uint16_t modelId)
         //    return Core::AirPods::Model::Beats_X;
         // case 0x2006:
         //    return Core::AirPods::Model::Beats_Solo3;
+    case 0x2012:
+        return Core::AirPods::Model::Beats_Fit_Pro;
     default:
         return Core::AirPods::Model::Unknown;
     }
