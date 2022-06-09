@@ -410,6 +410,9 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         case Core::AirPods::Model::AirPods_Pro:
             media = "qrc:/Resource/Video/AirPods_Pro.avi";
             break;
+        case Core::AirPods::Model::AirPods_Max:
+            media = "qrc:/Resource/Video/AirPods_Max.avi";
+            break;
         case Core::AirPods::Model::Powerbeats_3:
         case Core::AirPods::Model::Beats_X:
         case Core::AirPods::Model::Beats_Solo3:
