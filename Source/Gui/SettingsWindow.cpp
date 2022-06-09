@@ -28,6 +28,7 @@
 #include <Config.h>
 
 #include "../Application.h"
+#include "../Core/Debug.h"
 
 using namespace std::chrono_literals;
 
@@ -67,6 +68,19 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     const auto &constMetaFields = GetConstMetaFields();
 
     _ui.setupUi(this);
+
+    auto debugTabIndex = _ui.tabWidget->count() - 1;
+    APD_ASSERT(_ui.tabWidget->tabText(debugTabIndex) == "Debug");
+#if !defined APD_DEBUG
+    _ui.tabWidget->setTabVisible(debugTabIndex, false);
+#else
+    connect(
+        _ui.cbAdvOverride, &QCheckBox::toggled, this, &SettingsWindow::On_cbAdvOverride_toggled);
+
+    connect(
+        _ui.teAdvOverride, &QTextEdit::textChanged, this,
+        &SettingsWindow::On_teAdvOverride_textChanged);
+#endif
 
     InitCreditsText();
 
@@ -300,6 +314,32 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     _trigger = true;
 }
 
+void SettingsWindow::UpdateAdvOverride()
+{
+    auto advsStr = _ui.teAdvOverride->toPlainText();
+    auto vAdvsStr = advsStr.split('\n', QString::SkipEmptyParts);
+
+    std::vector<std::vector<uint8_t>> advs;
+
+    for (const auto &advStr : vAdvsStr) {
+
+        auto advBytesStr = advStr.split(' ', QString::SkipEmptyParts);
+
+        std::vector<uint8_t> bytes;
+        for (const auto advByteStr : advBytesStr) {
+            bool success{false};
+            auto byte = advByteStr.toUInt(&success, 16);
+            APD_ASSERT(success);
+            bytes.emplace_back(byte);
+        }
+
+        advs.emplace_back(std::move(bytes));
+    }
+
+    Core::Debug::DebugConfig::GetInstance().UpdateAdvOverride(
+        _ui.cbAdvOverride->isChecked(), std::move(advs));
+}
+
 void SettingsWindow::showEvent(QShowEvent *event)
 {
     Update(GetCurrent(), false);
@@ -364,6 +404,16 @@ void SettingsWindow::On_hsMaxReceivingRange_valueChanged(int value)
 void SettingsWindow::On_pbOpenLogsDirectory_clicked()
 {
     Utils::File::OpenFileLocation(Logger::GetLogFilePath());
+}
+
+void SettingsWindow::On_cbAdvOverride_toggled(bool checked)
+{
+    UpdateAdvOverride();
+}
+
+void SettingsWindow::On_teAdvOverride_textChanged()
+{
+    UpdateAdvOverride();
 }
 
 } // namespace Gui

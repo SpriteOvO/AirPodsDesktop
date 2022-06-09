@@ -19,6 +19,7 @@
 #include "Bluetooth_win.h"
 
 #include "../Logger.h"
+#include "Debug.h"
 #include "OS/Windows.h"
 
 namespace Core::Bluetooth {
@@ -29,6 +30,8 @@ using namespace WinrtFoundation;
 using namespace WinrtBluetooth;
 using namespace WinrtBluetoothAdv;
 using namespace WinrtDevicesEnumeration;
+
+using namespace Core::Debug;
 
 //////////////////////////////////////////////////
 // Device
@@ -339,6 +342,14 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
         const auto &data = manufacturerData.Data();
 
         std::vector<uint8_t> stdData(data.data(), data.data() + data.Length());
+
+#if defined APD_DEBUG
+        auto overrideAdv = DebugConfig::GetInstance().GetOverrideAdv();
+        if (overrideAdv.has_value()) {
+            stdData = std::move(overrideAdv.value());
+            LOG(Trace, "Adv override: {}", Helper::ToString(stdData));
+        }
+#endif
 
         receivedData.manufacturerDataMap.try_emplace(companyId, std::move(stdData));
     }

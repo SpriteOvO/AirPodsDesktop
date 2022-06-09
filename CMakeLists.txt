@@ -269,6 +269,7 @@ set(
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
 
+    "Source/Core/Debug.cpp"
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
     "Source/Core/AppleCP.cpp"

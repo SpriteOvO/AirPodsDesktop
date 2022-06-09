@@ -442,6 +442,32 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="debug">
+      <attribute name="title">
+       <string notr="true">Debug</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox">
+         <property name="title">
+          <string notr="true">Bluetooth Advertisement Override</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="1" column="0">
+           <widget class="QTextEdit" name="teAdvOverride"/>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="cbAdvOverride">
+            <property name="text">
+             <string notr="true">Enabled</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>

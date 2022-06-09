@@ -51,6 +51,7 @@ private:
     void InitCreditsText();
     void RestoreDefaults();
     void Update(const Fields &fields, bool trigger);
+    void UpdateAdvOverride();
 
     void showEvent(QShowEvent *event) override;
 
@@ -70,6 +71,10 @@ private:
 
     // About
     void On_pbOpenLogsDirectory_clicked();
+
+    // Debug
+    void On_cbAdvOverride_toggled(bool checked);
+    void On_teAdvOverride_textChanged();
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
