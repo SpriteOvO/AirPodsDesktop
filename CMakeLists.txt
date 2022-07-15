@@ -334,7 +334,7 @@ qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
 #           https://stackoverflow.com/a/60848939
 #
 
-set(APD_TRANSLATION_LOCALES de_DE ko_KR zh_CN)
+set(APD_TRANSLATION_LOCALES de_DE ja_JP ko_KR zh_CN)
 set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
 set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 
