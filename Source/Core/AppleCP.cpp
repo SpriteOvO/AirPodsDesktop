@@ -50,6 +50,8 @@ Core::AirPods::Model AirPods::GetModel(uint16_t modelId)
         return Core::AirPods::Model::AirPods_3;
     case 0x200E:
         return Core::AirPods::Model::AirPods_Pro;
+    case 0x2014:
+        return Core::AirPods::Model::AirPods_Pro_2;
     case 0x200A:
         return Core::AirPods::Model::AirPods_Max;
         // case 0x2003:
