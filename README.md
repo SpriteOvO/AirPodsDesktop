@@ -55,3 +55,4 @@ See the [Build Instructions](/Docs/Build.md).
 ## 🍺 Credits
 * [OpenPods](https://github.com/adolfintel/OpenPods)
 * [Discontinued Privacy: Personal Data Leaks in Apple Bluetooth-Low-Energy Continuity Protocols](https://hal.inria.fr/hal-02394619/document)
+* [MagicPods](https://magicpods.app/)
