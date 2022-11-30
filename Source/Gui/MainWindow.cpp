@@ -231,7 +231,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
     _mediaPlayer->setMuted(true);
     _mediaPlayer->setVideoOutput(_videoWidget);
-    _videoWidget->setAspectRatioMode(Qt::IgnoreAspectRatio);
     _videoWidget->show();
 
     _ui.layoutAnimation->addWidget(_videoWidget);
@@ -397,31 +396,47 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
     }
     else {
         QString media;
+
+        // It's not possible to set video padding background color or get video resolution just
+        // through Qt, so we hardcode it here
+        QSize videoSize{};
+
         switch (model.value()) {
         case Core::AirPods::Model::AirPods_1:
             media = "qrc:/Resource/Video/AirPods_1.avi";
+            videoSize = QSize{800, 400};
             break;
         case Core::AirPods::Model::AirPods_2:
             media = "qrc:/Resource/Video/AirPods_2.avi";
+            videoSize = QSize{800, 400};
             break;
         case Core::AirPods::Model::AirPods_3:
             media = "qrc:/Resource/Video/AirPods_3.avi";
+            videoSize = QSize{900, 450};
             break;
         case Core::AirPods::Model::AirPods_Pro:
             media = "qrc:/Resource/Video/AirPods_Pro.avi";
+            videoSize = QSize{900, 450};
             break;
         case Core::AirPods::Model::AirPods_Max:
             media = "qrc:/Resource/Video/AirPods_Max.avi";
+            videoSize = QSize{600, 650};
             break;
         case Core::AirPods::Model::Powerbeats_3:
         case Core::AirPods::Model::Beats_X:
         case Core::AirPods::Model::Beats_Solo3:
         default:
             media = "qrc:/Resource/Video/AirPods_1.avi";
+            videoSize = QSize{800, 400};
             break;
         }
 
+        auto aspectRatio = (float)videoSize.width() / (float)videoSize.height();
+        auto widgetWidth = _videoWidget->height() * aspectRatio;
+        _videoWidget->setFixedWidth(widgetWidth);
+
         _mediaPlayer->setMedia(QUrl{media});
+
         PlayAnimation();
     }
 
