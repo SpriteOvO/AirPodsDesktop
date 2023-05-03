@@ -470,7 +470,8 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
     const auto &oldState = updateEvent.oldState;
     auto &newState = updateEvent.newState;
 
-    newState.displayName = _deviceName.isEmpty() ? Helper::ToString(newState.model) : _deviceName;
+    newState.displayName =
+        _deviceName.isEmpty() ? Helper::ToString(newState.model) : _deviceName.remove(" - Find My");
 
     ApdApp->GetMainWindow()->UpdateStateSafely(newState);
 
