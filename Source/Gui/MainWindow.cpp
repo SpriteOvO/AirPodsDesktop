@@ -231,13 +231,16 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
     _mediaPlayer->setMuted(true);
     _mediaPlayer->setVideoOutput(_videoWidget);
-    _videoWidget->show();
 
     _ui.layoutAnimation->addWidget(_videoWidget);
     _ui.layoutPods->addWidget(_leftBattery);
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
+
+    // For getting the correct initial height of `_videoWidget` later
+    _ui.layoutAnimation->activate();
+    _videoWidget->show();
 
     Unavailable();
     _updateChecker.Start();
