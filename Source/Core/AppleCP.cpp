@@ -120,8 +120,7 @@ bool AirPods::IsBothPodsInCase() const
 
 bool AirPods::IsLidOpened() const
 {
-    return lidState == 1 || lidState == 2 || lidState == 3 || lidState == 4 || lidState == 5 ||
-           lidState == 6 || lidState == 7 || lidState == 0;
+    return lid.closed == 0;
 }
 
 bool AirPods::IsCaseCharging() const

@@ -147,8 +147,13 @@ private:
         uint8_t caseCharging : 1; // If it's charging (value != 0)
         uint8_t unk9 : 1;
     } battery;
-    uint8_t lidState; // 1/2/3/4/5/6/7/0 == opened, 9/a/b/c/d/e/f/8 == closed
-    Color color;      // Untested because I don't have a device other than white
+    struct {
+        uint8_t switchCount : 3; // This count increases if the lid opened or closed once, and
+                                 // resets if overflow or no longer broadcasting advertisements
+        uint8_t closed : 1;
+        uint8_t unk10 : 4;
+    } lid;
+    Color color; // Untested because I don't have a device other than white
     uint8_t unk11[1];
     uint8_t unk12[16]; // Hash or encrypted payload
 };
