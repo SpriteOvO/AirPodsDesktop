@@ -41,6 +41,7 @@ public:
 
     int GetTabCount() const;
     int GetTabCurrentIndex() const;
+    int GetTabLastVisibleIndex() const;
     void SetTabIndex(int index);
 
 private:

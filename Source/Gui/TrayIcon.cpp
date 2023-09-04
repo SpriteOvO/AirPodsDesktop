@@ -320,7 +320,7 @@ void TrayIcon::OnNewVersionClicked()
 void TrayIcon::OnSettingsClicked()
 {
     if (!_settingsWindow.isVisible() ||
-        _settingsWindow.GetTabCurrentIndex() == _settingsWindow.GetTabCount() - 1)
+        _settingsWindow.GetTabCurrentIndex() == _settingsWindow.GetTabLastVisibleIndex())
     {
         _settingsWindow.SetTabIndex(0);
     }
@@ -331,7 +331,7 @@ void TrayIcon::OnSettingsClicked()
 
 void TrayIcon::OnAboutClicked()
 {
-    _settingsWindow.SetTabIndex(_settingsWindow.GetTabCount() - 1);
+    _settingsWindow.SetTabIndex(_settingsWindow.GetTabLastVisibleIndex());
     _settingsWindow.show();
     _settingsWindow.raise();
 }

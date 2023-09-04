@@ -211,6 +211,11 @@ int SettingsWindow::GetTabCurrentIndex() const
     return _ui.tabWidget->currentIndex();
 }
 
+int SettingsWindow::GetTabLastVisibleIndex() const
+{
+    return GetTabCount() - 2 /* Skip the Debug tab */;
+}
+
 void SettingsWindow::SetTabIndex(int index)
 {
     _ui.tabWidget->setCurrentIndex(index);
