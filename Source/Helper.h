@@ -33,6 +33,11 @@
 
 namespace Helper {
 
+template <class... T>
+constexpr inline bool AlwaysFalse = false;
+
+//////////////////////////////////////////////////
+
 template <class E>
 [[nodiscard]] constexpr decltype(auto) ToUnderlying(E e) noexcept
 {
