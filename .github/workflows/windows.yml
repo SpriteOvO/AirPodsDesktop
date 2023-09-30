@@ -30,7 +30,7 @@ jobs:
 
     defaults:
       run:
-        shell: cmd
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -45,7 +45,7 @@ jobs:
         if: env.CACHE_DEPS == 'true'
         run: |
           curl -o Build/DepsRef.json https://api.github.com/repos/SpriteOvO/AirPodsDesktop-Deps/git/refs/heads/main
-          type DepsRef.json
+          cat DepsRef.json
 
       - name: Dependencies cache
         id: cache-deps
@@ -60,7 +60,6 @@ jobs:
         working-directory: Build
         run: |
           git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop-Deps.git
-          dir AirPodsDesktop-Deps
 
       - name: Print CMake version
         run: cmake --version
@@ -71,44 +70,42 @@ jobs:
           choco install cmake.install --version ${{ env.FIXED_CMAKE_VERSION }} --installargs 'ADD_CMAKE_TO_PATH=System' --force
           cmake --version
 
-      - name: Clone and bootstrap vcpkg
-        working-directory: Build
-        run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
-
       - name: Generate project and build
         working-directory: Build
         run: |
           mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
 
-          cmake -G "Visual Studio 17 2022" ^
-                -A ${{ env.PLATFORM_NAME }} ^
-                -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^
-                -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
-                -DAPD_GENERATE_INSTALLER=ON ^
-                -DAPD_BUILD_GIT_HASH=${{ github.sha }} ^
+          cmake -G "Visual Studio 17 2022" \
+                -A ${{ env.PLATFORM_NAME }} \
+                -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+                -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019" \
+                -DAPD_GENERATE_INSTALLER=ON \
+                -DAPD_BUILD_GIT_HASH=${{ github.sha }} \
                 ../../
 
-          cmake --build . ^
+          cmake --build . \
                 --config ${{ env.BUILD_TYPE }}
 
-          dir /s Binary
-          dir /s Installer
+      - name: List built files
+        working-directory: Build
+        shell: pwsh
+        run: |
+          tree /F /A Binary
+          tree /F /A Installer
 
       - name: Prepare artifacts
         if: env.UPLOAD_ARTIFACT == 'true'
-        working-directory: Build\${{ env.BUILD_TYPE }}\Installer
+        working-directory: Build/${{ env.BUILD_TYPE }}/Installer
         run: |
-          cd _CPack_Packages\win32\NSIS
-          move AirPodsDesktop-*-win32 AirPodsDesktop-${{ github.sha }}-win32
+          cd _CPack_Packages/win32/NSIS
+          mv AirPodsDesktop-*-win32 AirPodsDesktop-${{ github.sha }}-win32
 
       - name: Upload artifact - Installer
         uses: actions/upload-artifact@v2
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
           name: AirPodsDesktop-${{ github.sha }}-Installer
-          path: Build\${{ env.BUILD_TYPE }}\Installer\AirPodsDesktop-*-win32.exe
+          path: Build/${{ env.BUILD_TYPE }}/Installer/AirPodsDesktop-*-win32.exe
           retention-days: 90
 
       - name: Upload artifact - Portable
@@ -116,5 +113,5 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
           name: AirPodsDesktop-${{ github.sha }}-Portable
-          path: Build\${{ env.BUILD_TYPE }}\Installer\_CPack_Packages\win32\NSIS\AirPodsDesktop-${{ github.sha }}-win32\AirPodsDesktop
+          path: Build/${{ env.BUILD_TYPE }}/Installer/_CPack_Packages/win32/NSIS/AirPodsDesktop-${{ github.sha }}-win32/AirPodsDesktop
           retention-days: 90
