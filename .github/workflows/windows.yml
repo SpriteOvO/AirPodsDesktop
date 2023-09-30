@@ -26,7 +26,7 @@ env:
 
 jobs:
   Build:
-    runs-on: windows-2019
+    runs-on: windows-latest
 
     defaults:
       run:
@@ -82,7 +82,7 @@ jobs:
         run: |
           mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
 
-          cmake -G "Visual Studio 16 2019" ^
+          cmake -G "Visual Studio 17 2022" ^
                 -A ${{ env.PLATFORM_NAME }} ^
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
                 -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^

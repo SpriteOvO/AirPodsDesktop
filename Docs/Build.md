@@ -4,10 +4,8 @@
 ```
 git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop.git
 cd AirPodsDesktop
-mkdir Build
-cd Build
 ```
-The current path will be named ___BuildPath___ in the rest of this document.
+The current path will be named ___RepoPath___ in the rest of this document.
 
 1. Download and install [CMake](https://cmake.org/download/) (>= v3.20) if you didn't have it.
 
@@ -16,7 +14,7 @@ The current path will be named ___BuildPath___ in the rest of this document.
 
 ## Windows
 
-1. Download and install __Visual Studio 2019__ if you didn't have it.
+1. Download and install __Visual Studio 2022__ if you didn't have it.
 
 2. Clone and bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start-windows) if you didn't have it.
 
@@ -25,13 +23,14 @@ Set the installed Qt directory to the `PATH` environment variable, or pass it to
 
 4. Download and install [NSIS](https://sourceforge.net/projects/nsis/files/latest/download). (Optional, not required if you do not generate installer)
 
-5. Open __Powershell__, go to ___BuildPath___.  
+5. Open __Powershell__, go to ___RepoPath___.  
 Modify the following arguments according to your needs and run it.
 
     ```
-    cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo> -DCMAKE_TOOLCHAIN_FILE=path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ../
-    cmake --build . --config <Debug|RelWithDebInfo>
-    ls ./Binary
+    $BUILD_TYPE="Debug" # or "RelWithDebInfo"
+    cmake -B Build -S . -G "Visual Studio 17 2022" -A Win32 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ../
+    cmake --build Build --config $BUILD_TYPE
+    ls ./Build/Binary
     ```
 
     - Note that if you have not just added the Qt directory to the `PATH` environment variable, you need to pass it to the `CMAKE_PREFIX_PATH` option in the first line this way `-DCMAKE_PREFIX_PATH=path\to\Qt\5.15.2\msvc2019`.
