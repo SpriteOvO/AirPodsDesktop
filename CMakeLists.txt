@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
     AirPodsDesktop
-    VERSION 0.4.0 # Don't forget to bump the version in `vcpkg.json` as well
+    VERSION 0.4.1 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
