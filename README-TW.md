@@ -3,7 +3,7 @@
     <br>
     AirPodsDesktop
 </h1>
-<p align="center"> AirPods 桌面使用者體驗增進軟體</p>
+<p align="center">AirPods 桌面使用者體驗增進軟體</p>
 <p align="center">
     <a href="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml">
         <img src="https://github.com/SpriteOvO/AirPodsDesktop/actions/workflows/windows.yml/badge.svg"/>
@@ -21,7 +21,7 @@
         <img src="https://img.shields.io/badge/license-GPLv3-yellow.svg"/>
     </a>
 </p>
-<p align="center">🌎 <a href="/README.md">English</a> | 🌏 繁體中文</a> | 🌏 <a href="/README-CN.md">简体中文</a></p>
+<p align="center">🌎 <a href="/README.md">English</a> | 🌏 <a href="/README-CN.md">简体中文</a> | 🌏 繁體中文</p>
 
 ## 🔍 預覽
 ![Preview Image](/Assets/Preview.gif)

@@ -21,7 +21,7 @@
         <img src="https://img.shields.io/badge/license-GPLv3-yellow.svg"/>
     </a>
 </p>
-<p align="center">🌎 <a href="/README.md">English</a> | 🌏 <a href="/README-TW.md">繁體中文</a> | 🌏 简体中文</p>
+<p align="center">🌎 <a href="/README.md">English</a> | 🌏 简体中文 | 🌏 <a href="/README-TW.md">繁體中文</a></p>
 
 ## 🔍 预览
 ![Preview Image](/Assets/Preview.gif)
