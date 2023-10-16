@@ -425,6 +425,13 @@ if (APD_GENERATE_INSTALLER)
         string(REPLACE "/" "\\\\" ICON_FILEPATH ${ICON_FILEPATH})
         set(CPACK_NSIS_MUI_ICON ${ICON_FILEPATH})
 
+        # Undocumented option and conflicts with `CPACK_COMPONENTS_ALL`
+        #
+        # 10 years old issue: https://cmake.org/Bug/view.php?id=14522
+        #
+        set(CPACK_NSIS_DEFINES)
+        list(APPEND CPACK_NSIS_DEFINES "RequestExecutionLevel highest")
+
         # Create and remove shortcut
         #
         # Workaround for: https://gitlab.kitware.com/cmake/cmake/-/issues/15982
@@ -450,7 +457,6 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
     )
-    set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 
     add_custom_command(
         TARGET ${PROJECT_NAME}
