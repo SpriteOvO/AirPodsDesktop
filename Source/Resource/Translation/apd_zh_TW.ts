@@ -14,8 +14,8 @@ This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
         <translation>您好，歡迎使用 %1！
 
-這似乎是您第一次使用本軟體。
-讓我們一同進行初次設定吧！</translation>
+這似乎是您第一次使用此軟體。
+讓我們一起進行初次設定吧！</translation>
     </message>
     <message>
         <source>Do you want this program to launch when the system starts?
@@ -29,7 +29,7 @@ If you frequently use AirPods with this computer, it is recommended that you cli
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>您想要啟用「低音訊延遲」功能嗎？
+        <translation>您想要啟用「低延遲音訊」功能嗎？
 
 %1</translation>
     </message>
@@ -43,7 +43,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>您可以在系統列中找到我</translation>
+        <translation>您可以在系統匣中找到我</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
@@ -85,7 +85,7 @@ Please download and install the new version manually.</source>
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>嗨！我發現有新版本可用！
+        <translation>嗨！我發現有新版本可以更新！
 
 目前版本：%1
 最新版本：%2%3</translation>
@@ -135,7 +135,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>New version available!</source>
-        <translation>有新版本可用！</translation>
+        <translation>有新版本可更新！</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -182,7 +182,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Enable low audio latency</source>
-        <translation>啟用低音訊延遲</translation>
+        <translation>啟用低延遲音訊</translation>
     </message>
     <message>
         <source>Advanced</source>
@@ -190,7 +190,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Enable debug mode</source>
-        <translation>啟用偵錯模式</translation>
+        <translation>啟用除錯模式</translation>
     </message>
     <message>
         <source>Check for updates</source>
