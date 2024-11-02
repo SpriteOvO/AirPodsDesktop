@@ -59,9 +59,6 @@ inline void Log(const spdlog::source_loc &srcloc, Args &&...args)
         else if constexpr (level == Level::Critical) {
             return spdlog::level::critical;
         }
-        else {
-            static_assert(false);
-        }
     }();
 
     spdlog::default_logger_raw()->log(srcloc, spdlogLevel, std::forward<Args>(args)...);
