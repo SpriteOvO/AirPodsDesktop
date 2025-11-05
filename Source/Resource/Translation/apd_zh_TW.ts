@@ -165,60 +165,138 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>未找到已配對的裝置。
 您需要先在 Windows 藍牙設定中配對您的 AirPods。</translation>
     </message>
+    <message>
+        <source>Update now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for Binding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SelectWindow</name>
+    <message>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <source>Settings</source>
-        <translation>設定</translation>
-    </message>
-    <message>
         <source>General</source>
         <translation>一般</translation>
-    </message>
-    <message>
-        <source>Run at startup</source>
-        <translation>開機時執行</translation>
-    </message>
-    <message>
-        <source>Enable low audio latency</source>
-        <translation>啟用低延遲音訊</translation>
-    </message>
-    <message>
-        <source>Advanced</source>
-        <translation>進階</translation>
-    </message>
-    <message>
-        <source>Enable debug mode</source>
-        <translation>啟用除錯模式</translation>
-    </message>
-    <message>
-        <source>Check for updates</source>
-        <translation>檢查更新</translation>
-    </message>
-    <message>
-        <source>Check Now</source>
-        <translation>立即檢查</translation>
     </message>
     <message>
         <source>About</source>
         <translation>關於</translation>
     </message>
     <message>
-        <source>Version: %1</source>
-        <translation>版本：%1</translation>
+        <source>AirPodsDesktop Settings</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>License: %1</source>
-        <translation>授權：%1</translation>
+        <source>Open logs directory</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Donate</source>
-        <translation>贊助</translation>
+        <source>Bluetooth maximum receiving range</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Donate to the developer</source>
-        <translation>贊助開發者</translation>
+        <source>Unbind AirPods</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Launch when system starts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Visual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display battery on taskbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When low battery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>As text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>As icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display battery on tray icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Features</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatic ear detection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Low audio latency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

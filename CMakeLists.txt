@@ -243,11 +243,26 @@ if (MSVC)
     set(APD_STACKTRACE_COMPONENT stacktrace_windbg)
 endif()
 
-find_package(Boost REQUIRED COMPONENTS ${APD_STACKTRACE_COMPONENT})
+# Find boost-stacktrace using pkg-config or manually
+find_path(BOOST_STACKTRACE_INCLUDE_DIR boost/stacktrace.hpp)
+include_directories(${BOOST_STACKTRACE_INCLUDE_DIR})
 
-# pfr
-#
-add_library(Boost::pfr ALIAS Boost::boost)
+# Find boost-pfr
+find_path(BOOST_PFR_INCLUDE_DIR boost/pfr.hpp)
+include_directories(${BOOST_PFR_INCLUDE_DIR})
+
+# Create interface targets for boost libraries
+if(NOT TARGET Boost::stacktrace_windbg)
+    add_library(Boost::stacktrace_windbg INTERFACE IMPORTED)
+    set_target_properties(Boost::stacktrace_windbg PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${BOOST_STACKTRACE_INCLUDE_DIR}")
+endif()
+
+if(NOT TARGET Boost::pfr)
+    add_library(Boost::pfr INTERFACE IMPORTED)
+    set_target_properties(Boost::pfr PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${BOOST_PFR_INCLUDE_DIR}")
+endif()
 
 ##################################################
 

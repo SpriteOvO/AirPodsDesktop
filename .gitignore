@@ -16,3 +16,5 @@ CMakeSettings.json
 
 # Build
 Build/
+
+build_release.ps1
