@@ -5,31 +5,31 @@
     <name>ApdApplication</name>
     <message>
         <source>Settings format has changed a bit and needs to be reconfigured.</source>
-        <translation>설정이 변경되어 다시 구성해야 합니다.</translation>
+        <translation>설정 형식이 변경되어 재구성이 필요합니다.</translation>
     </message>
     <message>
         <source>Hello, welcome to %1!
 
 This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
-        <translation>안녕하세요, %1!
+        <translation>%1에 오신 것을 환영합니다!
 
-이 프로그램을 처음 사용하시는군요!
-함께 설정해 봅시다.</translation>
+이 프로그램을 처음 사용하시는 것 같습니다.
+함께 설정을 진행해 보겠습니다.</translation>
     </message>
     <message>
         <source>Do you want this program to launch when the system starts?
 
 If you frequently use AirPods with this computer, it is recommended that you click &quot;Yes&quot;.</source>
-        <translation>시작 시 이 프로그램을 실행 하시겠습니까?
+        <translation>시스템 시작 시 이 프로그램을 실행하시겠습니까?
 
-이 컴퓨터에서 AirPods을 자주 사용하는 경우 &quot;예&quot;를 클릭해주세요.</translation>
+이 컴퓨터에서 AirPods을 자주 사용한다면 &quot;예&quot;를 클릭하는 것이 좋습니다.</translation>
     </message>
     <message>
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>&quot;낮은 오디오 지연 시간&quot; 기능을 사용 하시겠습니까?
+        <translation>&quot;오디오 지연 최소화&quot;를 활성화하시겠습니까?
 
 %1</translation>
     </message>
@@ -37,17 +37,17 @@ If you frequently use AirPods with this computer, it is recommended that you cli
         <source>Great! Everything is ready!
 
 Enjoy it all.</source>
-        <translation>좋아요! 모든 준비가 되었습니다.
+        <translation>모든 준비가 완료되었습니다!
 
-모두 즐기세요.</translation>
+이제 마음껏 즐겨보세요.</translation>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>시스템 트레이에서 찾을 수 있습니다</translation>
+        <translation>시스템 트레이에서 확인하실 수 있습니다.</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>배터리 정보를 확인하려면, 아이콘을 클릭하고 &quot;사용자 지정&quot;으로 하거나 &quot;종료&quot;하려면 마우스 우클릭해주세요.</translation>
+        <translation>아이콘을 클릭해 배터리 정보를 확인해 보세요. 설정을 변경하거나 종료하려면 우클릭합니다.</translation>
     </message>
 </context>
 <context>
@@ -62,7 +62,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>다운로드 속도가 지연되거나, 실패하면 경우 다음과 같이 할 수 있습니다:</translation>
+        <translation>다운로드 속도가 느리거나 실패할 경우</translation>
     </message>
 </context>
 <context>
@@ -70,8 +70,8 @@ Enjoy it all.</source>
     <message>
         <source>Oops, an error occurred during the automatic update.
 Please download and install the new version manually.</source>
-        <translation>앗, 자동 업데이트 중에 오류가 발생했습니다.
-새 버전을 수동으로 내려받아 설치해주세요.</translation>
+        <translation>업데이트를 완료할 수 없습니다.
+최신 버전을 직접 다운로드하여 설치할 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -85,17 +85,18 @@ Please download and install the new version manually.</source>
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>새로운 버전을 찾았습니다!
-현재버전 : %1
-최종버전 : %2%3</translation>
+        <translation>새로운 버전을 사용할 수 있습니다.
+
+현재 버전: %1
+최신 버전: %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>AirPods 연결</translation>
+        <translation>AirPods에 연결하기</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
-        <translation>아래에서 AirPod 장치를 선택해주세요.</translation>
+        <translation>아래에서 AirPods를 선택합니다.</translation>
     </message>
 </context>
 <context>
@@ -103,15 +104,15 @@ Latest version: %2%3</source>
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translation type="unfinished"></translation>
+        <translation>Resi-le</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation type="unfinished"></translation>
+        <translation>번역 기여</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation type="unfinished"></translation>
+        <translation>오픈 소스 및 타사 라이브러리 정보</translation>
     </message>
 </context>
 <context>
@@ -126,7 +127,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Case</source>
-        <translation>케이스</translation>
+        <translation>충전 케이스</translation>
     </message>
     <message>
         <source>charging</source>
@@ -134,7 +135,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>New version available!</source>
-        <translation>새 버전을 사용할 수 있습니다!</translation>
+        <translation>새로운 버전을 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -164,44 +165,44 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation>업데이트 무시</translation>
+        <translation>이 버전 건너뛰기</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>버전 보기</translation>
+        <translation>업데이트 내용 보기</translation>
     </message>
     <message>
         <source>Remind me later</source>
-        <translation>나중에 알림</translation>
+        <translation>나중에 하기</translation>
     </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>페어링된 장치를 찾을 수 없습니다.
-윈도우 블루투스 설정에서 AirPods를 페어링 해야합니다.</translation>
+        <translation>페어링된 AirPods이 없습니다.
+Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>짧은 오디오 재생 문제를 해결하지만 배터리 소모를 증가시킬 수 있습니다.</translation>
+        <translation>오디오 재생 문제를 해결합니다. 단, 배터리 소모가 증가할 수 있습니다.</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>AirPods을 빼거나 귀에 넣으면 자동으로 미디어를 일시 중지하거나 다시 시작합니다.</translation>
+        <translation>AirPods을 귀에서 빼거나 착용하면 미디어를 자동으로 일시 정지하거나 재개합니다.</translation>
     </message>
     <message>
         <source>Unavailable</source>
-        <translation>사용할수 없음</translation>
+        <translation>사용할 수 없음</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation>연결끊김</translation>
+        <translation>연결되지 않음</translation>
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>연결중</translation>
+        <translation>연결 대기 중</translation>
     </message>
 </context>
 <context>
@@ -223,11 +224,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Open logs directory</source>
-        <translation>로그파일 열기</translation>
+        <translation>로그 폴더 열기</translation>
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
-        <translation>블루투스 최대 수신 범위</translation>
+        <translation>Bluetooth 최대 수신 거리</translation>
     </message>
     <message>
         <source>Unbind AirPods</source>
@@ -243,7 +244,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Visual</source>
-        <translation>시각적인</translation>
+        <translation>표시</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
@@ -251,7 +252,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Disable</source>
-        <translation>사용안함</translation>
+        <translation>안 함</translation>
     </message>
     <message>
         <source>When low battery</source>
@@ -267,11 +268,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>자동 귀 탐지</translation>
+        <translation>자동으로 착용 감지</translation>
     </message>
     <message>
         <source>Low audio latency</source>
-        <translation>낮은 오디오 지연 시간</translation>
+        <translation>오디오 지연 최소화</translation>
     </message>
     <message>
         <source>About</source>
@@ -287,15 +288,15 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation type="unfinished"></translation>
+        <translation>작업 표시줄에 배터리 상태 표시</translation>
     </message>
     <message>
         <source>As text</source>
-        <translation type="unfinished"></translation>
+        <translation>텍스트</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation type="unfinished"></translation>
+        <translation>아이콘</translation>
     </message>
 </context>
 </TS>
