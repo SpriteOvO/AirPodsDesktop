@@ -255,20 +255,12 @@ namespace DeviceManager {
 
 std::vector<Device> GetDevicesByState(DeviceState state)
 {
-    std::vector<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().GetDevicesByState(state);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().GetDevicesByState(state);
 }
 
 std::optional<Device> FindDevice(uint64_t address)
 {
-    std::optional<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().FindDevice(address);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().FindDevice(address);
 }
 } // namespace DeviceManager
 

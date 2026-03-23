@@ -23,6 +23,7 @@
 #include <thread>
 #include <QVector>
 #include <QMetaObject>
+#include <QCoreApplication>
 
 #include "Bluetooth.h"
 #include "GlobalMedia.h"
@@ -412,11 +413,14 @@ void Manager::OnAutomaticEarDetectionChanged(bool enable)
 
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
-    std::unique_lock<std::mutex> lock{_mutex};
+    auto requestId = ++_bindRequestId;
 
-    _boundDevice.reset();
-    _deviceConnected = false;
-    _stateMgr.Disconnect();
+    {
+        std::unique_lock<std::mutex> lock{_mutex};
+        _boundDevice.reset();
+        _deviceConnected = false;
+        _stateMgr.Disconnect();
+    }
 
     // Unbind device
     //
@@ -429,26 +433,37 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     //
     LOG(Info, "Bind a new device.");
 
-    auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
-    if (!optDevice.has_value()) {
-        LOG(Error, "Find device by address failed.");
-        return;
-    }
+    std::thread{[this, address, requestId]() {
+        auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
+        QMetaObject::invokeMethod(qApp, [this, optDevice = std::move(optDevice), requestId]() mutable {
+            if (_bindRequestId.load() != requestId) {
+                LOG(Info, "Ignore stale bind request.");
+                return;
+            }
 
-    _boundDevice = std::move(optDevice);
+            std::lock_guard<std::mutex> lock{_mutex};
 
-    _deviceName = QString::fromStdString([&] {
-        auto name = _boundDevice->GetName();
-        // See https://github.com/SpriteOvO/AirPodsDesktop/issues/15
-        return name.find("Bluetooth") != std::string::npos ? std::string{} : name;
-    }());
+            if (!optDevice.has_value()) {
+                LOG(Error, "Find device by address failed.");
+                return;
+            }
 
-    _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
-        std::lock_guard<std::mutex> lock{_mutex};
-        OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
-    };
+            _boundDevice = std::move(optDevice);
 
-    OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
+            _deviceName = QString::fromStdString([&] {
+                auto name = _boundDevice->GetName();
+                // See https://github.com/SpriteOvO/AirPodsDesktop/issues/15
+                return name.find("Bluetooth") != std::string::npos ? std::string{} : name;
+            }());
+
+            _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
+                std::lock_guard<std::mutex> lock{_mutex};
+                OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
+            };
+
+            OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
+        });
+    }}.detach();
 }
 
 void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
@@ -596,6 +611,16 @@ std::vector<Bluetooth::Device> GetDevices()
 
     LOG(Info, "AirPods devices count: {} (filtered)", devices.size());
     return devices;
+}
+
+void GetDevicesAsync(std::function<void(std::vector<Core::Bluetooth::Device>)> callback)
+{
+    std::thread{[callback = std::move(callback)]() mutable {
+        auto devices = GetDevices();
+        QMetaObject::invokeMethod(qApp, [callback = std::move(callback), devices = std::move(devices)]() mutable {
+            callback(std::move(devices));
+        });
+    }}.detach();
 }
 
 } // namespace Core::AirPods
