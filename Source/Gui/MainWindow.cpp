@@ -21,6 +21,7 @@
 #include <QScreen>
 #include <QPainter>
 #include <QMessageBox>
+#include <QPointer>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -479,49 +480,54 @@ void MainWindow::BindDevice()
 {
     LOG(Info, "BindDevice");
 
-    const auto devices = Core::AirPods::GetDevices();
-    if (devices.empty()) {
-        QMessageBox::warning(
-            this, Config::ProgramName,
-            QMessageBox::tr("No paired device found.\n"
-                            "You need to pair your AirPods in Windows Bluetooth Settings first."));
-        return;
-    }
-
-    int selectedIndex = 0;
-
-    if (devices.size() > 1) {
-        QStringList deviceNames;
-        for (const auto &device : devices) {
-            auto deviceName = device.GetName();
-
-            LOG(Trace, "Device name: '{}'", deviceName);
-            LOG(Trace, "GetProductId: '{}' GetVendorId: '{}'", device.GetProductId(),
-                device.GetVendorId());
-            deviceNames.append(QString::fromStdString(deviceName));
-        }
-
-        SelectWindow selector{tr("Please select your AirPods device below."), deviceNames, this};
-        if (selector.exec() == -1) {
-            LOG(Warn, "selector.exec() == -1");
+    QPointer<MainWindow> self{this};
+    Core::AirPods::GetDevicesAsync([self](std::vector<Core::Bluetooth::Device> devices) {
+        if (!self) {
             return;
         }
 
-        if (!selector.HasResult()) {
-            LOG(Info, "No result for selector.");
+        if (devices.empty()) {
+            QMessageBox::warning(
+                self, Config::ProgramName,
+                QMessageBox::tr("No paired device found.\n"
+                                "You need to pair your AirPods in Windows Bluetooth Settings first."));
             return;
         }
 
-        selectedIndex = selector.GetSeletedIndex();
-        APD_ASSERT(selectedIndex >= 0 && selectedIndex < devices.size());
-    }
+        int selectedIndex = 0;
 
-    const auto &selectedDevice = devices.at(selectedIndex);
+        if (devices.size() > 1) {
+            QStringList deviceNames;
+            for (const auto &device : devices) {
+                auto deviceName = device.GetName();
 
-    LOG(Info, "Selected device index: '{}', device name: '{}'. Bound to this device.",
-        selectedIndex, selectedDevice.GetName());
+                LOG(Trace, "Device name: '{}'", deviceName);
+                deviceNames.append(QString::fromStdString(deviceName));
+            }
 
-    Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
+            SelectWindow selector{
+                self->tr("Please select your AirPods device below."), deviceNames, self};
+            if (selector.exec() == -1) {
+                LOG(Warn, "selector.exec() == -1");
+                return;
+            }
+
+            if (!selector.HasResult()) {
+                LOG(Info, "No result for selector.");
+                return;
+            }
+
+            selectedIndex = selector.GetSeletedIndex();
+            APD_ASSERT(selectedIndex >= 0 && selectedIndex < devices.size());
+        }
+
+        const auto &selectedDevice = devices.at(selectedIndex);
+
+        LOG(Info, "Selected device index: '{}', device name: '{}'. Bound to this device.",
+            selectedIndex, selectedDevice.GetName());
+
+        Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
+    });
 }
 
 void MainWindow::ControlAutoHideTimer(bool start)

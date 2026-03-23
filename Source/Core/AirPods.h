@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 
 #include "Bluetooth.h"
@@ -163,6 +164,7 @@ private:
     QString _deviceName;
     bool _deviceConnected{false};
     bool _automaticEarDetection{false};
+    std::atomic<uint64_t> _bindRequestId{0};
 
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(Details::StateManager::UpdateEvent updateEvent);
@@ -174,5 +176,6 @@ private:
 };
 
 std::vector<Core::Bluetooth::Device> GetDevices();
+void GetDevicesAsync(std::function<void(std::vector<Core::Bluetooth::Device>)> callback);
 
 } // namespace Core::AirPods
