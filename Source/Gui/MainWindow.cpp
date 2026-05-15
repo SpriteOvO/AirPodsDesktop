@@ -492,10 +492,6 @@ void MainWindow::PlayAnimation()
     _isAnimationPlaying = true;
     _view->show();
 
-    // Try to play the animation. If play() fails with ResourceError (which can
-    // happen on the very first play when the rendering surface is not yet ready),
-    // OnPlayerError will stop() and set _pendingAnimation, then
-    // OnMediaStatusChanged will retry play() once the media is loaded again.
     _pendingAnimation = true;
     TryPlayPendingAnimation();
 }
@@ -712,8 +708,6 @@ void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
 
 void MainWindow::OnPlayerError(QMediaPlayer::Error error)
 {
-    LOG(Error, "QMediaPlayer error: {}", static_cast<int>(error));
-
     // On the very first play(), QGraphicsVideoItem's rendering surface may not
     // be ready yet, causing a ResourceError. We need to stop the player first
     // (to clear the error state), then retry play() via _pendingAnimation.
@@ -724,6 +718,14 @@ void MainWindow::OnPlayerError(QMediaPlayer::Error error)
         _mediaPlayer->stop();
         _isAnimationPlaying = true;
         _pendingAnimation = true;
+
+        // After a ResourceError, the media status becomes InvalidMedia and
+        // stop() alone does not recover it. Re-invoke SetAnimation to reload
+        // the media, which will trigger OnMediaStatusChanged with LoadedMedia
+        // and then TryPlayPendingAnimation will retry play().
+        auto model = _cacheModel;
+        _cacheModel = std::nullopt;
+        SetAnimation(model);
     }
 }
 
