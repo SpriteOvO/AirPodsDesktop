@@ -67,19 +67,6 @@ namespace Qt {
         base_name::changeEvent(event);                                                             \
     }
 
-// for windows
-inline void SetRoundedCorners(QDialog *widget, qreal radius)
-{
-    QBitmap bmp{widget->size()};
-    QPainter painter{&bmp};
-    bmp.clear();
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(::Qt::black);
-    painter.setBrush(::Qt::black);
-    painter.drawRoundedRect(widget->geometry(), radius, radius, ::Qt::AbsoluteSize);
-    widget->setMask(bmp);
-}
-
 // for widgets
 inline void SetRoundedCorners(QWidget *widget, qreal radius)
 {

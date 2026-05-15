@@ -21,7 +21,6 @@
 #include <QScreen>
 #include <QPainter>
 #include <QMessageBox>
-
 #include <Config.h>
 #include "../Helper.h"
 #include "../Error.h"
@@ -128,12 +127,24 @@ protected:
 
 //////////////////////////////////////////////////
 
-class VideoWidget : public QVideoWidget
+class AnimationView : public QGraphicsView
 {
     Q_OBJECT
 
 public:
-    using QVideoWidget::QVideoWidget;
+    AnimationView(QWidget *parent = nullptr) : QGraphicsView{parent}
+    {
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+        setFrameShape(QFrame::NoFrame);
+        setAutoFillBackground(false);
+
+        // Make both the view and its viewport transparent
+        setAttribute(Qt::WA_TranslucentBackground);
+        viewport()->setAttribute(Qt::WA_TranslucentBackground);
+        viewport()->setAutoFillBackground(false);
+    }
 
 Q_SIGNALS:
     void Clicked();
@@ -195,7 +206,12 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
     qRegisterMetaType<Core::Update::ReleaseInfo>("Core::Update::ReleaseInfo");
 
-    _videoWidget = new VideoWidget{this};
+    _videoItem = new QGraphicsVideoItem;
+    _scene = new QGraphicsScene{this};
+    _scene->setBackgroundBrush(Qt::NoBrush);
+    _scene->addItem(_videoItem);
+    _view = new AnimationView{this};
+    _view->setScene(_scene);
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
@@ -212,9 +228,14 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
-    connect(_videoWidget, &VideoWidget::Clicked, this, &MainWindow::OnAnimationClicked);
+    connect(_view, &AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
     connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
+    connect(
+        _mediaPlayer, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this,
+        &MainWindow::OnPlayerError);
+    connect(
+        _mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, &MainWindow::OnMediaStatusChanged);
 
     connect(this, &MainWindow::UpdateStateSafely, this, &MainWindow::UpdateState);
     connect(this, &MainWindow::AvailableSafely, this, &MainWindow::Available);
@@ -230,17 +251,17 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
     _mediaPlayer->setMuted(true);
-    _mediaPlayer->setVideoOutput(_videoWidget);
+    _mediaPlayer->setVideoOutput(_videoItem);
 
-    _ui.layoutAnimation->addWidget(_videoWidget);
+    _ui.layoutAnimation->addWidget(_view);
     _ui.layoutPods->addWidget(_leftBattery);
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
 
-    // For getting the correct initial height of `_videoWidget` later
+    // For getting the correct initial height of `_view` later
     _ui.layoutAnimation->activate();
-    _videoWidget->show();
+    _view->show();
 
     Unavailable();
     _updateChecker.Start();
@@ -447,12 +468,20 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         }
 
         auto aspectRatio = (float)videoSize.width() / (float)videoSize.height();
-        auto widgetWidth = _videoWidget->height() * aspectRatio;
-        _videoWidget->setFixedWidth(widgetWidth);
+        auto viewHeight = _view->height();
+        auto widgetWidth = viewHeight * aspectRatio;
+        _view->setFixedWidth(widgetWidth);
+
+        // Size the video item to fill the view and set the scene rect accordingly
+        _videoItem->setSize(
+            QSizeF{static_cast<qreal>(widgetWidth), static_cast<qreal>(viewHeight)});
+        _scene->setSceneRect(0, 0, static_cast<qreal>(widgetWidth), static_cast<qreal>(viewHeight));
 
         _mediaPlayer->setMedia(QUrl{media});
 
-        PlayAnimation();
+        if (_isVisible) {
+            PlayAnimation();
+        }
     }
 
     _cacheModel = model;
@@ -461,17 +490,24 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 void MainWindow::PlayAnimation()
 {
     _isAnimationPlaying = true;
-    _mediaPlayer->play();
-    _videoWidget->show();
+    _view->show();
+
+    // Try to play the animation. If play() fails with ResourceError (which can
+    // happen on the very first play when the rendering surface is not yet ready),
+    // OnPlayerError will stop() and set _pendingAnimation, then
+    // OnMediaStatusChanged will retry play() once the media is loaded again.
+    _pendingAnimation = true;
+    TryPlayPendingAnimation();
 }
 
 void MainWindow::StopAnimation()
 {
     // The player will go black after stopping
     // I have no idea about this, so let's hide the widget here as a workaround
-    _videoWidget->hide();
+    _view->hide();
 
     _isAnimationPlaying = false;
+    _pendingAnimation = false;
     _mediaPlayer->stop();
 }
 
@@ -483,8 +519,9 @@ void MainWindow::BindDevice()
     if (devices.empty()) {
         QMessageBox::warning(
             this, Config::ProgramName,
-            QMessageBox::tr("No paired device found.\n"
-                            "You need to pair your AirPods in Windows Bluetooth Settings first."));
+            QMessageBox::tr(
+                "No paired device found.\n"
+                "You need to pair your AirPods in Windows Bluetooth Settings first."));
         return;
     }
 
@@ -673,6 +710,45 @@ void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
     }
 }
 
+void MainWindow::OnPlayerError(QMediaPlayer::Error error)
+{
+    LOG(Error, "QMediaPlayer error: {}", static_cast<int>(error));
+
+    // On the very first play(), QGraphicsVideoItem's rendering surface may not
+    // be ready yet, causing a ResourceError. We need to stop the player first
+    // (to clear the error state), then retry play() via _pendingAnimation.
+    // Temporarily clear _isAnimationPlaying to prevent OnPlayerStateChanged
+    // from re-playing during stop(), and restore it after for the retry.
+    if (error == QMediaPlayer::ResourceError && _isAnimationPlaying) {
+        _isAnimationPlaying = false;
+        _mediaPlayer->stop();
+        _isAnimationPlaying = true;
+        _pendingAnimation = true;
+    }
+}
+
+void MainWindow::OnMediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+    TryPlayPendingAnimation();
+}
+
+void MainWindow::TryPlayPendingAnimation()
+{
+    if (!_pendingAnimation || !_isAnimationPlaying) {
+        return;
+    }
+
+    if (_mediaPlayer->mediaStatus() != QMediaPlayer::LoadedMedia &&
+        _mediaPlayer->mediaStatus() != QMediaPlayer::BufferedMedia &&
+        _mediaPlayer->mediaStatus() != QMediaPlayer::StalledMedia)
+    {
+        return;
+    }
+
+    _pendingAnimation = false;
+    _mediaPlayer->play();
+}
+
 void MainWindow::DoHide()
 {
     LOG(Trace, "MainWindow: Hide");
@@ -715,7 +791,12 @@ void MainWindow::showEvent(QShowEvent *event)
     }
     _isVisible = true;
 
-    PlayAnimation();
+    if (_cacheModel.has_value()) {
+        PlayAnimation();
+    }
+    else if (_isAnimationPlaying) {
+        StopAnimation();
+    }
     ControlAutoHideTimer(true);
 
     auto screenSize = ApdApplication::primaryScreen()->size();

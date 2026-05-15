@@ -22,7 +22,9 @@
 
 #include "ui_MainWindow.h"
 
-#include <QVideoWidget>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsVideoItem>
 #include <QMediaPlayer>
 #include <QPropertyAnimation>
 
@@ -35,7 +37,7 @@
 namespace Gui {
 
 class CloseButton;
-class VideoWidget;
+class AnimationView;
 class BatteryInfo;
 
 enum class ButtonAction : uint32_t {
@@ -80,7 +82,9 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
-    VideoWidget *_videoWidget;
+    QGraphicsScene *_scene;
+    AnimationView *_view;
+    QGraphicsVideoItem *_videoItem;
     QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
@@ -98,6 +102,7 @@ private:
     std::optional<Core::AirPods::State> _cachedState;
     bool _isVisible{false};
     bool _isAnimationPlaying{false};
+    bool _pendingAnimation{false};
 
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
@@ -113,6 +118,9 @@ private:
     void OnAnimationClicked();
     void OnButtonClicked();
     void OnPlayerStateChanged(QMediaPlayer::State newState);
+    void OnPlayerError(QMediaPlayer::Error error);
+    void OnMediaStatusChanged(QMediaPlayer::MediaStatus status);
+    void TryPlayPendingAnimation();
 
     void DoHide();
     void showEvent(QShowEvent *event) override;
