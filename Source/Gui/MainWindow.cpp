@@ -204,9 +204,9 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
 
-    Utils::Qt::SetRoundedCorners(this, 30);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAutoFillBackground(false);
     Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
-    Utils::Qt::SetPaletteColor(this, QPalette::Window, Qt::white);
     Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, QColor{94, 94, 94});
 
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
@@ -691,6 +691,19 @@ void MainWindow::DoHide()
     _posAnimation.setStartValue(pos());
     _posAnimation.setEndValue(QPoint{x(), screenSize.height()});
     _posAnimation.start();
+}
+
+void MainWindow::paintEvent(QPaintEvent *event)
+{
+    QPainter painter{this};
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QPainterPath path;
+    path.addRoundedRect(rect(), 30, 30);
+
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(Qt::white);
+    painter.drawPath(path);
 }
 
 void MainWindow::showEvent(QShowEvent *event)

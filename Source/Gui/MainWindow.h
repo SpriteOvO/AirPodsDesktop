@@ -116,6 +116,7 @@ private:
 
     void DoHide();
     void showEvent(QShowEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
