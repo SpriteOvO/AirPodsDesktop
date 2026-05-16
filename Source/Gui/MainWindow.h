@@ -101,8 +101,7 @@ private:
     Status _status{Status::Unavailable};
     std::optional<Core::AirPods::State> _cachedState;
     bool _isVisible{false};
-    bool _isAnimationPlaying{false};
-    bool _pendingAnimation{false};
+    bool _wantAnimationPlaying{false};
 
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
@@ -120,7 +119,7 @@ private:
     void OnPlayerStateChanged(QMediaPlayer::State newState);
     void OnPlayerError(QMediaPlayer::Error error);
     void OnMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    void TryPlayPendingAnimation();
+    void MaybeStartPlayback();
 
     void DoHide();
     void showEvent(QShowEvent *event) override;

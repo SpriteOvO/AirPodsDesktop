@@ -478,10 +478,6 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         _scene->setSceneRect(0, 0, static_cast<qreal>(widgetWidth), static_cast<qreal>(viewHeight));
 
         _mediaPlayer->setMedia(QUrl{media});
-
-        if (_isVisible) {
-            PlayAnimation();
-        }
     }
 
     _cacheModel = model;
@@ -489,11 +485,9 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
 void MainWindow::PlayAnimation()
 {
-    _isAnimationPlaying = true;
+    _wantAnimationPlaying = true;
     _view->show();
-
-    _pendingAnimation = true;
-    TryPlayPendingAnimation();
+    MaybeStartPlayback();
 }
 
 void MainWindow::StopAnimation()
@@ -502,8 +496,7 @@ void MainWindow::StopAnimation()
     // I have no idea about this, so let's hide the widget here as a workaround
     _view->hide();
 
-    _isAnimationPlaying = false;
-    _pendingAnimation = false;
+    _wantAnimationPlaying = false;
     _mediaPlayer->stop();
 }
 
@@ -701,54 +694,44 @@ void MainWindow::OnButtonClicked()
 // for loop play
 void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
 {
-    if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
-        _mediaPlayer->play();
+    if (newState == QMediaPlayer::StoppedState && _wantAnimationPlaying) {
+        if (_mediaPlayer->error() == QMediaPlayer::NoError) {
+            _mediaPlayer->play();
+        }
     }
 }
 
 void MainWindow::OnPlayerError(QMediaPlayer::Error error)
 {
-    // On the very first play(), QGraphicsVideoItem's rendering surface may not
-    // be ready yet, causing a ResourceError. We need to stop the player first
-    // (to clear the error state), then retry play() via _pendingAnimation.
-    // Temporarily clear _isAnimationPlaying to prevent OnPlayerStateChanged
-    // from re-playing during stop(), and restore it after for the retry.
-    if (error == QMediaPlayer::ResourceError && _isAnimationPlaying) {
-        _isAnimationPlaying = false;
+    if (error == QMediaPlayer::ResourceError && _wantAnimationPlaying) {
         _mediaPlayer->stop();
-        _isAnimationPlaying = true;
-        _pendingAnimation = true;
 
-        // After a ResourceError, the media status becomes InvalidMedia and
-        // stop() alone does not recover it. Re-invoke SetAnimation to reload
-        // the media, which will trigger OnMediaStatusChanged with LoadedMedia
-        // and then TryPlayPendingAnimation will retry play().
-        auto model = _cacheModel;
-        _cacheModel = std::nullopt;
-        SetAnimation(model);
+        // Re-load the media to recover from InvalidMedia state.
+        // This triggers mediaStatusChanged → Loading → LoadedMedia → MaybeStartPlayback → play()
+        auto currentMedia = _mediaPlayer->media();
+        _mediaPlayer->setMedia(QMediaContent{});
+        _mediaPlayer->setMedia(currentMedia);
     }
 }
 
 void MainWindow::OnMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
-    TryPlayPendingAnimation();
+    MaybeStartPlayback();
 }
 
-void MainWindow::TryPlayPendingAnimation()
+void MainWindow::MaybeStartPlayback()
 {
-    if (!_pendingAnimation || !_isAnimationPlaying) {
+    if (!_wantAnimationPlaying || !_isVisible) {
         return;
     }
 
-    if (_mediaPlayer->mediaStatus() != QMediaPlayer::LoadedMedia &&
-        _mediaPlayer->mediaStatus() != QMediaPlayer::BufferedMedia &&
-        _mediaPlayer->mediaStatus() != QMediaPlayer::StalledMedia)
+    auto status = _mediaPlayer->mediaStatus();
+    if (status == QMediaPlayer::LoadedMedia ||
+        status == QMediaPlayer::BufferedMedia ||
+        status == QMediaPlayer::StalledMedia)
     {
-        return;
+        _mediaPlayer->play();
     }
-
-    _pendingAnimation = false;
-    _mediaPlayer->play();
 }
 
 void MainWindow::DoHide()
@@ -796,7 +779,7 @@ void MainWindow::showEvent(QShowEvent *event)
     if (_cacheModel.has_value()) {
         PlayAnimation();
     }
-    else if (_isAnimationPlaying) {
+    else if (_wantAnimationPlaying) {
         StopAnimation();
     }
     ControlAutoHideTimer(true);
