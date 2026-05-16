@@ -487,7 +487,7 @@ void MainWindow::PlayAnimation()
 {
     _wantAnimationPlaying = true;
     _view->show();
-    MaybeStartPlayback();
+    TryStartPlayback();
 }
 
 void MainWindow::StopAnimation()
@@ -707,7 +707,7 @@ void MainWindow::OnPlayerError(QMediaPlayer::Error error)
         _mediaPlayer->stop();
 
         // Re-load the media to recover from InvalidMedia state.
-        // This triggers mediaStatusChanged → Loading → LoadedMedia → MaybeStartPlayback → play()
+        // This triggers mediaStatusChanged → Loading → LoadedMedia → TryStartPlayback → play()
         auto currentMedia = _mediaPlayer->media();
         _mediaPlayer->setMedia(QMediaContent{});
         _mediaPlayer->setMedia(currentMedia);
@@ -716,18 +716,17 @@ void MainWindow::OnPlayerError(QMediaPlayer::Error error)
 
 void MainWindow::OnMediaStatusChanged(QMediaPlayer::MediaStatus status)
 {
-    MaybeStartPlayback();
+    TryStartPlayback();
 }
 
-void MainWindow::MaybeStartPlayback()
+void MainWindow::TryStartPlayback()
 {
     if (!_wantAnimationPlaying || !_isVisible) {
         return;
     }
 
     auto status = _mediaPlayer->mediaStatus();
-    if (status == QMediaPlayer::LoadedMedia ||
-        status == QMediaPlayer::BufferedMedia ||
+    if (status == QMediaPlayer::LoadedMedia || status == QMediaPlayer::BufferedMedia ||
         status == QMediaPlayer::StalledMedia)
     {
         _mediaPlayer->play();

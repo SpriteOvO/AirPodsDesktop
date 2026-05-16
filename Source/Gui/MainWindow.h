@@ -119,7 +119,7 @@ private:
     void OnPlayerStateChanged(QMediaPlayer::State newState);
     void OnPlayerError(QMediaPlayer::Error error);
     void OnMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    void MaybeStartPlayback();
+    void TryStartPlayback();
 
     void DoHide();
     void showEvent(QShowEvent *event) override;
