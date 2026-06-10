@@ -430,6 +430,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
             videoSize = QSize{900, 450};
             break;
         case Core::AirPods::Model::AirPods_Max:
+        case Core::AirPods::Model::AirPods_Max_2:
             media = "qrc:/Resource/Video/AirPods_Max.avi";
             videoSize = QSize{600, 650};
             break;
