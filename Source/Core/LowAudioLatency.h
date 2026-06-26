@@ -22,12 +22,13 @@
 #include <chrono>
 
 #include <QTimer>
-#include <QMediaPlayer>
-#include <QMediaPlaylist>
+#include <QAudioOutput>
 
 using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
+
+class SilenceDevice;
 
 class Controller : public QObject
 {
@@ -35,22 +36,24 @@ class Controller : public QObject
 
 public:
     Controller(QObject *parent = nullptr);
+    ~Controller();
 
 Q_SIGNALS:
     void ControlSafely(bool enable);
 
 private:
     constexpr static inline auto kRetryInterval = 30s;
-
-    std::unique_ptr<QMediaPlayer> _mediaPlayer;
-    std::unique_ptr<QMediaPlaylist> _mediaPlaylist;
+    std::unique_ptr<QAudioOutput> _audioOutput;
+    std::unique_ptr<SilenceDevice> _silenceDevice;
     QTimer _initTimer;
     bool _inited{false}, _enabled{false};
 
     bool Initialize();
     void Control(bool enable);
 
-    void OnError(QMediaPlayer::Error error);
+    void Start();
+    void Stop();
+    void OnStateChanged(QAudio::State state);
 };
 
 } // namespace Core::LowAudioLatency

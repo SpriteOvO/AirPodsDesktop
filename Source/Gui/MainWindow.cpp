@@ -452,7 +452,12 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
         _mediaPlayer->setMedia(QUrl{media});
 
-        PlayAnimation();
+        if (_isVisible) {
+            PlayAnimation();
+        }
+        else {
+            StopAnimation();
+        }
     }
 
     _cacheModel = model;

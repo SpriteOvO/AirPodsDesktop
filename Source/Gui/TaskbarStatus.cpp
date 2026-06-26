@@ -217,7 +217,7 @@ bool TaskbarStatus::Enable()
     setAttribute(Qt::WA_TranslucentBackground);
     UpdatePos(info, true);
     _isFirstTimeout = true;
-    _updateTimer.start(kUpdateInterval);
+    _updateTimer.start(kInitialUpdateInterval);
     show();
     return true;
 }
@@ -422,6 +422,7 @@ void TaskbarStatus::OnUpdateTimer()
     // first update may cause some shifting, I guess it's `setParent` causing some weird Qt bugs.
     if (_isFirstTimeout) {
         _isFirstTimeout = false;
+        _updateTimer.setInterval(kIdleUpdateInterval);
     }
 
     if (taskbarResized) {

@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
     AirPodsDesktop
-    VERSION 0.4.1 # Don't forget to bump the version in `vcpkg.json` as well
+    VERSION 0.4.3 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/SpriteOvO/AirPodsDesktop"
@@ -115,6 +115,7 @@ if (MSVC)
                         # Workaround for cppwinrt v2.0.200609.3 in C++20.
                         # For more information, see https://github.com/microsoft/cppwinrt/issues/866
     )
+    add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 endif()
 
 ##################################################
@@ -389,10 +390,19 @@ target_compile_definitions(
 
 if (MSVC)
     if (APD_QT_DEPLOY)
+        find_program(
+            APD_WINDEPLOYQT_EXECUTABLE
+            NAMES windeployqt windeployqt.exe
+            HINTS "${Qt5_DIR}/../../../tools/qt5/bin" "${Qt5_DIR}/../../../bin"
+            NO_DEFAULT_PATH
+            REQUIRED
+        )
+        get_filename_component(APD_QT_TOOLS_DIR "${APD_WINDEPLOYQT_EXECUTABLE}" DIRECTORY)
         add_custom_command(
             TARGET ${PROJECT_NAME}
             POST_BUILD
-            COMMAND "${Qt5_DIR}/../../../bin/windeployqt" "${APD_BINARY_OUT_DIR}/${PROJECT_NAME}.exe"
+            COMMAND "${CMAKE_COMMAND}" -E env "PATH=${APD_QT_TOOLS_DIR};$ENV{PATH}"
+                    "${APD_WINDEPLOYQT_EXECUTABLE}" "${APD_BINARY_OUT_DIR}/${PROJECT_NAME}.exe"
             COMMENT "Deploying Qt..."
         )
     endif()

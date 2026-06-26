@@ -62,6 +62,13 @@ Q_SIGNALS:
     void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
 
 private:
+    struct IconRenderState {
+        std::optional<QString> text;
+        bool showUpdateDot{false};
+
+        bool operator==(const IconRenderState &rhs) const = default;
+    };
+
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
     QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
@@ -74,12 +81,14 @@ private:
     std::optional<Core::AirPods::State> _airPodsState;
     std::optional<QString> _displayName;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
+    std::optional<IconRenderState> _lastIconRenderState;
 
     void ShowMainWindow();
     void Repaint();
 
     static std::optional<QImage>
-    GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
+    GenerateIcon(
+        int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
 
     void OnNewVersionClicked();
     void OnSettingsClicked();

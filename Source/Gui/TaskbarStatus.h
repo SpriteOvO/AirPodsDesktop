@@ -132,7 +132,8 @@ private:
     constexpr static inline auto kFixedWidth{60};  // for horizontal taskbar
     constexpr static inline auto kFixedHeight{40}; // for vertical taskbar
 
-    constexpr static inline auto kUpdateInterval{100ms};
+    constexpr static inline auto kInitialUpdateInterval{100ms};
+    constexpr static inline auto kIdleUpdateInterval{2s};
 
     Ui::TaskbarStatus _ui;
     Helper::Sides<MiniIcon *> _icon = {new MiniIcon{this}, new MiniIcon{this}};

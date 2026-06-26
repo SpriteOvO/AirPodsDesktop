@@ -162,6 +162,12 @@ std::optional<State> StateManager::GetCurrentState() const
     return _cachedState;
 }
 
+void StateManager::ResetLostTimer()
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _lostTimer.Reset();
+}
+
 auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent>
 {
     std::lock_guard<std::mutex> lock{_mutex};
@@ -380,7 +386,21 @@ Manager::Manager()
 
 void Manager::StartScanner()
 {
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        if (!_boundDevice.has_value() || !_deviceConnected) {
+            LOG(Info, "Skip Bluetooth AdvWatcher start because the bound device is disconnected.");
+            return;
+        }
+        if (_scannerWanted) {
+            return;
+        }
+        _scannerWanted = true;
+    }
+
     if (!_adWatcher.Start()) {
+        std::lock_guard<std::mutex> lock{_mutex};
+        _scannerWanted = false;
         LOG(Warn, "Bluetooth AdvWatcher start failed.");
     }
     else {
@@ -390,6 +410,14 @@ void Manager::StartScanner()
 
 void Manager::StopScanner()
 {
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        if (!_scannerWanted) {
+            return;
+        }
+        _scannerWanted = false;
+    }
+
     if (!_adWatcher.Stop()) {
         LOG(Warn, "AsyncScanner::Stop() failed.");
     }
@@ -413,15 +441,20 @@ void Manager::OnAutomaticEarDetectionChanged(bool enable)
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
     std::unique_lock<std::mutex> lock{_mutex};
+    auto scannerAction = ScannerAction::Stop;
 
     _boundDevice.reset();
     _deviceConnected = false;
+    _deviceName.clear();
+    ResetAdvertisementThrottle();
     _stateMgr.Disconnect();
 
     // Unbind device
     //
     if (address == 0) {
         LOG(Info, "Unbind device.");
+        lock.unlock();
+        ApplyScannerAction(scannerAction);
         return;
     }
 
@@ -432,6 +465,8 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
     if (!optDevice.has_value()) {
         LOG(Error, "Find device by address failed.");
+        lock.unlock();
+        ApplyScannerAction(scannerAction);
         return;
     }
 
@@ -444,25 +479,35 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     }());
 
     _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
-        std::lock_guard<std::mutex> lock{_mutex};
-        OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
+        ScannerAction action;
+        {
+            std::lock_guard<std::mutex> lock{_mutex};
+            action = OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
+        }
+        ApplyScannerAction(action);
     };
 
-    OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
+    scannerAction = OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
+    lock.unlock();
+    ApplyScannerAction(scannerAction);
 }
 
-void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
+auto Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state) -> ScannerAction
 {
+    const bool oldDeviceConnected = _deviceConnected;
     bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
-    bool doDisconnect = _deviceConnected && !newDeviceConnected;
+    bool doDisconnect = oldDeviceConnected && !newDeviceConnected;
     _deviceConnected = newDeviceConnected;
+    ResetAdvertisementThrottle();
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
     }
 
-    LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
+    LOG(Info, "The device we bound is updated. current: {}, new: {}", oldDeviceConnected,
         newDeviceConnected);
+
+    return newDeviceConnected ? ScannerAction::Start : ScannerAction::Stop;
 }
 
 void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
@@ -533,17 +578,21 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         return false;
     }
 
-    Details::Advertisement adv{data};
-
-    LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
-        Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
-
     if (!_deviceConnected) {
         LOG(Info, "AirPods advertisement received, but device disconnected.");
         return false;
     }
 
-    auto optUpdateEvent = _stateMgr.OnAdvReceived(Details::Advertisement{data});
+    Details::Advertisement adv{data};
+
+    if (ShouldThrottleAdvertisement(adv)) {
+        return true;
+    }
+
+    LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
+        Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
+
+    auto optUpdateEvent = _stateMgr.OnAdvReceived(std::move(adv));
     if (optUpdateEvent.has_value()) {
         OnStateChanged(std::move(optUpdateEvent.value()));
     }
@@ -560,13 +609,58 @@ void Manager::OnAdvWatcherStateChanged(
         break;
 
     case Core::Bluetooth::AdvertisementWatcher::State::Stopped:
-        ApdApp->GetMainWindow()->UnavailableSafely();
-        LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
+        if (_scannerWanted) {
+            ApdApp->GetMainWindow()->UnavailableSafely();
+            LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
+        }
+        else {
+            LOG(Info, "Bluetooth AdvWatcher stopped intentionally.");
+        }
         break;
 
     default:
         FatalError("Unhandled adv watcher state: '{}'", Helper::ToUnderlying(state));
     }
+}
+
+void Manager::ApplyScannerAction(ScannerAction action)
+{
+    switch (action) {
+    case ScannerAction::None:
+        break;
+    case ScannerAction::Start:
+        StartScanner();
+        break;
+    case ScannerAction::Stop:
+        StopScanner();
+        break;
+    default:
+        APD_ASSERT(false);
+    }
+}
+
+void Manager::ResetAdvertisementThrottle()
+{
+    _lastProcessedAdvAt.left.reset();
+    _lastProcessedAdvAt.right.reset();
+}
+
+bool Manager::ShouldThrottleAdvertisement(const Details::Advertisement &adv)
+{
+    const auto side = adv.GetAdvState().side;
+    auto &lastProcessedAdvAt =
+        side == Side::Left ? _lastProcessedAdvAt.left : _lastProcessedAdvAt.right;
+    const auto now = Clock::now();
+
+    if (lastProcessedAdvAt.has_value() &&
+        lastProcessedAdvAt->first == adv.GetAddress() &&
+        now - lastProcessedAdvAt->second < kAdvertisementThrottleInterval)
+    {
+        return true;
+    }
+
+    lastProcessedAdvAt = ProcessedAdvertisement{adv.GetAddress(), now};
+    return false;
 }
 
 std::vector<Bluetooth::Device> GetDevices()

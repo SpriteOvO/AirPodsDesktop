@@ -193,13 +193,22 @@ void TrayIcon::Repaint()
     } while (false);
 
     static const QColor kNewVersionAvailableDot = Qt::yellow;
+    const IconRenderState nextIconRenderState{
+        .text = iconText,
+        .showUpdateDot = _updateReleaseInfo.has_value(),
+    };
+
+    if (_lastIconRenderState == nextIconRenderState) {
+        return;
+    }
 
     auto optIcon = GenerateIcon(
-        64, iconText,
-        _updateReleaseInfo.has_value() ? std::optional<QColor>{kNewVersionAvailableDot}
-                                       : std::nullopt);
+        64, nextIconRenderState.text,
+        nextIconRenderState.showUpdateDot ? std::optional<QColor>{kNewVersionAvailableDot}
+                                          : std::nullopt);
     if (optIcon.has_value()) {
         _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
+        _lastIconRenderState = nextIconRenderState;
     }
 }
 
