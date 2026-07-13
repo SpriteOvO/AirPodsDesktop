@@ -18,6 +18,10 @@
 
 #include "Application.h"
 
+#if defined APD_OS_WIN
+    #include <ShellScalingApi.h>
+#endif
+
 #include <QMessageBox>
 
 #include <Config.h>
@@ -30,6 +34,22 @@
 
 void ApdApplication::PreConstruction()
 {
+#if defined APD_OS_WIN
+    // Declare per-monitor DPI awareness V2 so Windows does not apply bitmap
+    // scaling on top of Qt's own high-DPI support.  Without this, Qt's
+    // AA_EnableHighDpiScaling and Windows DPI virtualization can stack,
+    // making every widget appear roughly 1.5x too large at 150% scaling.
+    // The V2 context (Win10 1703+) also enables automatic non-client-area
+    // scaling and child-window-DPI messages.
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+#endif
+
+    // Use PassThrough rounding so fractional scale factors (e.g. 150% -> 1.5)
+    // are preserved instead of being rounded up to the next integer (2x).
+    // This must be called before QApplication is constructed.
+    QApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
 }
