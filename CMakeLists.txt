@@ -376,7 +376,7 @@ set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 #           https://stackoverflow.com/a/60848939
 #
 
-set(APD_TRANSLATION_LOCALES bg_BG de_DE fr_FR ja_JP ko_KR pt_BR pt_PT ru_RU tr_TR zh_CN zh_TW)
+set(APD_TRANSLATION_LOCALES bg_BG de_DE fr_FR it_IT ja_JP ko_KR pt_BR pt_PT ru_RU tr_TR uk_UA zh_CN zh_TW)
 set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
 set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 
