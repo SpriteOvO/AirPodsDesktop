@@ -60,6 +60,7 @@ public:
 
 Q_SIGNALS:
     void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
+    void OnLowAudioLatencyChangedSafely(bool enabled);
 
 private:
     struct IconRenderState {
@@ -72,6 +73,7 @@ private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
     QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
+    QAction *_actionLowAudioLatency = new QAction{tr("Low audio latency (may cause hiss)"), this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};
     QAction *_actionAbout = new QAction{tr("About"), this};
     QAction *_actionQuit = new QAction{tr("Quit"), this};
@@ -95,6 +97,7 @@ private:
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value);
+    void OnLowAudioLatencyChanged(bool enabled);
 
 protected:
     SettingsWindow _settingsWindow;

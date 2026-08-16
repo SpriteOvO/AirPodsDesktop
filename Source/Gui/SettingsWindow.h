@@ -38,6 +38,7 @@ class SettingsWindow : public QDialog
 
 public:
     SettingsWindow(QWidget *parent = nullptr);
+    void SetLowAudioLatencyChecked(bool checked);
 
     int GetTabCount() const;
     int GetTabCurrentIndex() const;

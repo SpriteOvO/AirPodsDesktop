@@ -19,8 +19,6 @@
 #pragma once
 
 #include <functional>
-#include <chrono>
-#include <utility>
 
 #include "Bluetooth.h"
 #include "AppleCP.h"
@@ -119,7 +117,6 @@ public:
     std::optional<State> GetCurrentState() const;
 
     std::optional<UpdateEvent> OnAdvReceived(Advertisement adv);
-    void ResetLostTimer();
     void Disconnect();
 
     void OnRssiMinChanged(int16_t rssiMin);
@@ -160,10 +157,6 @@ public:
 
 private:
     enum class ScannerAction { None, Start, Stop };
-    using Clock = std::chrono::steady_clock;
-    using TimePoint = Clock::time_point;
-
-    static constexpr inline auto kAdvertisementThrottleInterval = std::chrono::milliseconds{500};
 
     std::mutex _mutex;
     Bluetooth::AdvertisementWatcher _adWatcher;
@@ -173,8 +166,6 @@ private:
     bool _deviceConnected{false};
     bool _scannerWanted{false};
     bool _automaticEarDetection{false};
-    using ProcessedAdvertisement = std::pair<Details::Advertisement::AddressType, TimePoint>;
-    Helper::Sides<std::optional<ProcessedAdvertisement>> _lastProcessedAdvAt;
 
     ScannerAction OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(Details::StateManager::UpdateEvent updateEvent);
@@ -184,8 +175,6 @@ private:
     void OnAdvWatcherStateChanged(
         Bluetooth::AdvertisementWatcher::State state, const std::optional<std::string> &optError);
     void ApplyScannerAction(ScannerAction action);
-    void ResetAdvertisementThrottle();
-    bool ShouldThrottleAdvertisement(const Details::Advertisement &adv);
 };
 
 std::vector<Core::Bluetooth::Device> GetDevices();

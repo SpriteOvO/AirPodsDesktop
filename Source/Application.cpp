@@ -92,7 +92,7 @@ void ApdApplication::FirstTimeUse()
             tr("Do you want to enable the \"low audio latency\" feature?\n"
                "\n%1")
                 .arg(constMetaFields.low_audio_latency.Description()),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
 
     Core::Settings::Save(std::move(current));
 

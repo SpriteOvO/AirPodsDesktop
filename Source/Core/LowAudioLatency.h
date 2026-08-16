@@ -23,6 +23,7 @@
 
 #include <QTimer>
 #include <QAudioOutput>
+#include <QString>
 
 using namespace std::chrono_literals;
 
@@ -40,19 +41,26 @@ public:
 
 Q_SIGNALS:
     void ControlSafely(bool enable);
+    void SetDeviceConnectedSafely(bool connected);
 
 private:
     constexpr static inline auto kRetryInterval = 30s;
+    constexpr static inline auto kDeviceCheckInterval = 5s;
     std::unique_ptr<QAudioOutput> _audioOutput;
     std::unique_ptr<SilenceDevice> _silenceDevice;
     QTimer _initTimer;
-    bool _inited{false}, _enabled{false};
+    QTimer _deviceCheckTimer;
+    QString _deviceName;
+    bool _inited{false}, _enabled{false}, _deviceConnected{false};
 
     bool Initialize();
+    void ResetAudio();
     void Control(bool enable);
+    void SetDeviceConnected(bool connected);
 
     void Start();
     void Stop();
+    void CheckOutputDevice();
     void OnStateChanged(QAudio::State state);
 };
 

@@ -206,6 +206,14 @@ int SettingsWindow::GetTabCount() const
     return _ui.tabWidget->count();
 }
 
+void SettingsWindow::SetLowAudioLatencyChecked(bool checked)
+{
+    const auto oldTrigger = _trigger;
+    _trigger = false;
+    _ui.cbLowAudioLatency->setChecked(checked);
+    _trigger = oldTrigger;
+}
+
 int SettingsWindow::GetTabCurrentIndex() const
 {
     return _ui.tabWidget->currentIndex();

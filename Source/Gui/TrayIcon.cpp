@@ -31,6 +31,9 @@ namespace Gui {
 TrayIcon::TrayIcon()
 {
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
+    connect(_actionLowAudioLatency, &QAction::triggered, this, [](bool enabled) {
+        Core::Settings::ModifiableAccess()->low_audio_latency = enabled;
+    });
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
@@ -39,11 +42,16 @@ TrayIcon::TrayIcon()
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
+    connect(
+        this, &TrayIcon::OnLowAudioLatencyChangedSafely, this,
+        &TrayIcon::OnLowAudioLatencyChanged);
 
     _actionNewVersion->setVisible(false);
+    _actionLowAudioLatency->setCheckable(true);
 
     _menu->addAction(_actionNewVersion);
     _menu->addSeparator();
+    _menu->addAction(_actionLowAudioLatency);
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -358,6 +366,12 @@ void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior 
 {
     _trayIconBatteryBehavior = value;
     Repaint();
+}
+
+void TrayIcon::OnLowAudioLatencyChanged(bool enabled)
+{
+    _actionLowAudioLatency->setChecked(enabled);
+    _settingsWindow.SetLowAudioLatencyChecked(enabled);
 }
 
 } // namespace Gui

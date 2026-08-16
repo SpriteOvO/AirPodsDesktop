@@ -162,12 +162,6 @@ std::optional<State> StateManager::GetCurrentState() const
     return _cachedState;
 }
 
-void StateManager::ResetLostTimer()
-{
-    std::lock_guard<std::mutex> lock{_mutex};
-    _lostTimer.Reset();
-}
-
 auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent>
 {
     std::lock_guard<std::mutex> lock{_mutex};
@@ -446,8 +440,8 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundDevice.reset();
     _deviceConnected = false;
     _deviceName.clear();
-    ResetAdvertisementThrottle();
     _stateMgr.Disconnect();
+    ApdApp->GetLowAudioLatencyController()->SetDeviceConnectedSafely(false);
 
     // Unbind device
     //
@@ -498,7 +492,7 @@ auto Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state) 
     bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
     bool doDisconnect = oldDeviceConnected && !newDeviceConnected;
     _deviceConnected = newDeviceConnected;
-    ResetAdvertisementThrottle();
+    ApdApp->GetLowAudioLatencyController()->SetDeviceConnectedSafely(newDeviceConnected);
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
@@ -585,10 +579,6 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
 
     Details::Advertisement adv{data};
 
-    if (ShouldThrottleAdvertisement(adv)) {
-        return true;
-    }
-
     LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
         Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
@@ -637,30 +627,6 @@ void Manager::ApplyScannerAction(ScannerAction action)
     default:
         APD_ASSERT(false);
     }
-}
-
-void Manager::ResetAdvertisementThrottle()
-{
-    _lastProcessedAdvAt.left.reset();
-    _lastProcessedAdvAt.right.reset();
-}
-
-bool Manager::ShouldThrottleAdvertisement(const Details::Advertisement &adv)
-{
-    const auto side = adv.GetAdvState().side;
-    auto &lastProcessedAdvAt =
-        side == Side::Left ? _lastProcessedAdvAt.left : _lastProcessedAdvAt.right;
-    const auto now = Clock::now();
-
-    if (lastProcessedAdvAt.has_value() &&
-        lastProcessedAdvAt->first == adv.GetAddress() &&
-        now - lastProcessedAdvAt->second < kAdvertisementThrottleInterval)
-    {
-        return true;
-    }
-
-    lastProcessedAdvAt = ProcessedAdvertisement{adv.GetAddress(), now};
-    return false;
 }
 
 std::vector<Bluetooth::Device> GetDevices()

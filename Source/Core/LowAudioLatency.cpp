@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <vector>
 
 #include <QAudioDeviceInfo>
 #include <QIODevice>
@@ -51,7 +52,25 @@ QAudioFormat CreateSilenceFormat(const QAudioDeviceInfo &device)
 class SilenceDevice final : public QIODevice
 {
 public:
-    explicit SilenceDevice(QObject *parent = nullptr) : QIODevice{parent} {}
+    explicit SilenceDevice(const QAudioFormat &format, QObject *parent = nullptr)
+        : QIODevice{parent}
+    {
+        const auto bytesPerSample = std::max(1, format.sampleSize() / 8);
+        const auto bytesPerFrame = std::max(1, bytesPerSample * format.channelCount());
+        _silentFrame.assign(static_cast<size_t>(bytesPerFrame), 0);
+
+        // Integer PCM is biased around its midpoint when unsigned. A zero-filled unsigned
+        // buffer is full-scale negative DC and can be heard as noise on negotiated formats.
+        if (format.sampleType() == QAudioFormat::UnSignedInt) {
+            _zeroFilled = false;
+            const auto signByte = format.byteOrder() == QAudioFormat::LittleEndian
+                                      ? bytesPerSample - 1
+                                      : 0;
+            for (auto channel = 0; channel < format.channelCount(); ++channel) {
+                _silentFrame[static_cast<size_t>(channel * bytesPerSample + signByte)] = 0x80;
+            }
+        }
+    }
 
     void Start()
     {
@@ -76,7 +95,24 @@ public:
 protected:
     qint64 readData(char *data, qint64 maxSize) override
     {
-        std::memset(data, 0, static_cast<size_t>(std::max<qint64>(0, maxSize)));
+        if (maxSize <= 0) {
+            return 0;
+        }
+
+        if (_zeroFilled) {
+            std::memset(data, 0, static_cast<size_t>(maxSize));
+            return maxSize;
+        }
+
+        auto remaining = static_cast<size_t>(maxSize);
+        auto *output = reinterpret_cast<uint8_t *>(data);
+        while (remaining > 0) {
+            const auto chunk = std::min(remaining, _silentFrame.size() - _frameOffset);
+            std::memcpy(output, _silentFrame.data() + _frameOffset, chunk);
+            output += chunk;
+            remaining -= chunk;
+            _frameOffset = (_frameOffset + chunk) % _silentFrame.size();
+        }
         return maxSize;
     }
 
@@ -87,27 +123,33 @@ protected:
 
 private:
     constexpr static inline qint64 kBufferHint = 4096;
+    std::vector<uint8_t> _silentFrame;
+    size_t _frameOffset{0};
+    bool _zeroFilled{true};
 };
 
 Controller::Controller(QObject *parent) : QObject{parent}
 {
     connect(this, &Controller::ControlSafely, this, &Controller::Control);
+    connect(
+        this, &Controller::SetDeviceConnectedSafely, this, &Controller::SetDeviceConnected);
 
     _initTimer.callOnTimeout([this] {
         if (Initialize()) {
             _initTimer.stop();
-            if (_enabled) {
-                Start();
-            }
+            Start();
+            _deviceCheckTimer.start();
         }
     });
 
-    if (!Initialize()) {
-        _initTimer.start(kRetryInterval);
-    }
+    _deviceCheckTimer.setInterval(kDeviceCheckInterval);
+    _deviceCheckTimer.callOnTimeout([this] { CheckOutputDevice(); });
 }
 
-Controller::~Controller() = default;
+Controller::~Controller()
+{
+    Stop();
+}
 
 bool Controller::Initialize()
 {
@@ -122,8 +164,18 @@ bool Controller::Initialize()
     }
 
     const auto device = QAudioDeviceInfo::defaultOutputDevice();
-    _silenceDevice = std::make_unique<SilenceDevice>();
-    _audioOutput = std::make_unique<QAudioOutput>(device, CreateSilenceFormat(device), this);
+    const auto format = CreateSilenceFormat(device);
+    if (!format.isValid()) {
+        LOG(Warn, "LowAudioLatency: Default output device has no valid PCM format.");
+        return false;
+    }
+
+    _silenceDevice = std::make_unique<SilenceDevice>(format);
+    _audioOutput = std::make_unique<QAudioOutput>(device, format, this);
+    _deviceName = device.deviceName();
+
+    LOG(Info, "LowAudioLatency: Format: {} Hz, {} channel(s), {} bit, sample type {}.",
+        format.sampleRate(), format.channelCount(), format.sampleSize(), format.sampleType());
 
     connect(_audioOutput.get(), &QAudioOutput::stateChanged, this, &Controller::OnStateChanged);
 
@@ -134,6 +186,15 @@ bool Controller::Initialize()
     return true;
 }
 
+void Controller::ResetAudio()
+{
+    Stop();
+    _audioOutput.reset();
+    _silenceDevice.reset();
+    _deviceName.clear();
+    _inited = false;
+}
+
 void Controller::Control(bool enable)
 {
     LOG(Info, "LowAudioLatency::Controller Control: {}, _inited: {}", enable, _inited);
@@ -141,19 +202,55 @@ void Controller::Control(bool enable)
     _enabled = enable;
 
     if (enable) {
-        if (!_inited && !_initTimer.isActive()) {
+        if (!_deviceConnected) {
+            LOG(Info, "LowAudioLatency: Waiting for the bound device to connect.");
+            return;
+        }
+        if (!_inited && !Initialize()) {
             _initTimer.start(kRetryInterval);
+            return;
         }
         Start();
+        _deviceCheckTimer.start();
     }
     else {
-        Stop();
+        _initTimer.stop();
+        _deviceCheckTimer.stop();
+        ResetAudio();
     }
+}
+
+void Controller::SetDeviceConnected(bool connected)
+{
+    if (_deviceConnected == connected) {
+        return;
+    }
+
+    _deviceConnected = connected;
+    if (!_enabled) {
+        return;
+    }
+
+    if (!connected) {
+        LOG(Info, "LowAudioLatency: Bound device disconnected; releasing the audio stream.");
+        _initTimer.stop();
+        _deviceCheckTimer.stop();
+        ResetAudio();
+        return;
+    }
+
+    LOG(Info, "LowAudioLatency: Bound device connected; starting the audio stream.");
+    if (!_inited && !Initialize()) {
+        _initTimer.start(kRetryInterval);
+        return;
+    }
+    Start();
+    _deviceCheckTimer.start();
 }
 
 void Controller::Start()
 {
-    if (!_inited || !_enabled || !_audioOutput || !_silenceDevice) {
+    if (!_inited || !_enabled || !_deviceConnected || !_audioOutput || !_silenceDevice) {
         return;
     }
 
@@ -175,6 +272,27 @@ void Controller::Stop()
     }
 }
 
+void Controller::CheckOutputDevice()
+{
+    if (!_enabled || !_deviceConnected) {
+        return;
+    }
+
+    const auto device = QAudioDeviceInfo::defaultOutputDevice();
+    if (!device.isNull() && device.deviceName() == _deviceName) {
+        return;
+    }
+
+    LOG(Info, "LowAudioLatency: Default output device changed; recreating the silence stream.");
+    ResetAudio();
+    if (!Initialize()) {
+        _deviceCheckTimer.stop();
+        _initTimer.start(kRetryInterval);
+        return;
+    }
+    Start();
+}
+
 void Controller::OnStateChanged(QAudio::State state)
 {
     if (!_enabled) {
@@ -183,11 +301,15 @@ void Controller::OnStateChanged(QAudio::State state)
 
     if (state == QAudio::StoppedState && _audioOutput && _audioOutput->error() != QAudio::NoError) {
         LOG(Warn, "LowAudioLatency::Controller error: {}. Reinit later.", _audioOutput->error());
-        Stop();
-        _audioOutput.reset();
-        _silenceDevice.reset();
-        _inited = false;
-        _initTimer.start(kRetryInterval);
+        // Do not destroy QAudioOutput while it is emitting stateChanged.
+        const auto *failedOutput = _audioOutput.get();
+        QTimer::singleShot(0, this, [this, failedOutput] {
+            if (!_enabled || !_deviceConnected || _audioOutput.get() != failedOutput) {
+                return;
+            }
+            ResetAudio();
+            _initTimer.start(kRetryInterval);
+        });
     }
 }
 

@@ -73,6 +73,7 @@ void OnApply_low_audio_latency(const Fields &newFields)
     LOG(Info, "OnApply_low_audio_latency: {}", newFields.low_audio_latency);
 
     ApdApp->GetLowAudioLatencyController()->ControlSafely(newFields.low_audio_latency);
+    ApdApp->GetTrayIcon()->OnLowAudioLatencyChangedSafely(newFields.low_audio_latency);
 }
 
 void OnApply_automatic_ear_detection(const Fields &newFields)

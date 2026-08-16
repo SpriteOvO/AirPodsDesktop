@@ -149,6 +149,10 @@ Neueste Version: %2%3</translation>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -185,10 +189,6 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Verringert die Latenz bei der Wiedergabe, kann jedoch die Batterienutzung erhöhen.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Beim Entfernen der AirPods wird die Wiedergabe automatisch pausiert.</translation>
     </message>
@@ -203,6 +203,10 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     <message>
         <source>Waiting for Binding</source>
         <translation>Warte auf Verbindung</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
