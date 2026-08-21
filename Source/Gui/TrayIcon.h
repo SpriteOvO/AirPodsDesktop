@@ -23,6 +23,7 @@
 #include <QAction>
 
 #include "../Core/AirPods.h"
+#include "../Core/QuickConnect.h"
 #include "../Core/Update.h"
 #include "Base.h"
 #include "SettingsWindow.h"
@@ -85,6 +86,8 @@ private:
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
+    void OnQuickConnectOutcome(
+        Core::QuickConnect::Outcome outcome, const QString &deviceName);
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value);
 
 protected:

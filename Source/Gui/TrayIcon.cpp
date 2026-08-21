@@ -36,6 +36,9 @@ TrayIcon::TrayIcon()
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
+    connect(
+        ApdApp->GetQuickConnect(), &Core::QuickConnect::Controller::OutcomeChanged, this,
+        &TrayIcon::OnQuickConnectOutcome);
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
@@ -338,11 +341,52 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger ||
-        reason == QSystemTrayIcon::MiddleClick)
-    {
+    if (reason == QSystemTrayIcon::Trigger) {
+        ApdApp->GetQuickConnect()->Request();
+        return;
+    }
+
+    if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::MiddleClick) {
         ShowMainWindow();
     }
+}
+
+void TrayIcon::OnQuickConnectOutcome(
+    Core::QuickConnect::Outcome outcome, const QString &deviceName)
+{
+    QString text;
+    QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information;
+
+    switch (outcome) {
+    case Core::QuickConnect::Outcome::Disabled:
+        text = tr("Quick connection is disabled.");
+        break;
+    case Core::QuickConnect::Outcome::NoDevice:
+        text = tr("Choose a Bluetooth audio device in Settings first.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::AlreadyConnected:
+        text = tr("%1 is already connected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::RequestStarted:
+        text = tr("Connecting to %1…").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::Connected:
+        text = tr("%1 connected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::TimedOut:
+        text = tr("Connection to %1 timed out.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::Failed:
+        text = tr("Windows could not connect to %1.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    default:
+        return;
+    }
+
+    ShowMessage(tr("Quick connect"), text, icon);
 }
 
 void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value)

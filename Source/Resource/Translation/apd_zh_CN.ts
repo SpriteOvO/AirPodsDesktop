@@ -149,6 +149,38 @@ Latest version: %2%3</source>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>快速连接</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>快速连接已禁用。</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>请先在设置中选择蓝牙音频设备。</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 已连接。</translation>
+    </message>
+    <message>
+        <source>Connecting to %1…</source>
+        <translation>正在连接到 %1……</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 已连接。</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>连接 %1 超时。</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows 无法连接到 %1。</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -289,6 +321,14 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Display battery on taskbar</source>
         <translation>在任务栏上显示电池</translation>
+    </message>
+    <message>
+        <source>Tray quick connect</source>
+        <translation>托盘快速连接</translation>
+    </message>
+    <message>
+        <source>Connect selected Bluetooth audio device on left click</source>
+        <translation>左键点击时连接选中的蓝牙音频设备</translation>
     </message>
     <message>
         <source>As text</source>
