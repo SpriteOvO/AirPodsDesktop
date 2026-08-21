@@ -111,6 +111,16 @@ void OnApply_tray_icon_battery(const Fields &newFields)
     ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafely(newFields.tray_icon_battery);
 }
 
+void OnApply_tray_quick_connect_enabled(const Fields &newFields)
+{
+    ApdApp->GetQuickConnect()->SetEnabled(newFields.tray_quick_connect_enabled);
+}
+
+void OnApply_tray_quick_connect_device_id(const Fields &newFields)
+{
+    ApdApp->GetQuickConnect()->SetDeviceId(newFields.tray_quick_connect_device_id);
+}
+
 void OnApply_battery_on_taskbar(const Fields &newFields)
 {
     LOG(Info, "OnApply_battery_on_taskbar: {}", newFields.battery_on_taskbar);

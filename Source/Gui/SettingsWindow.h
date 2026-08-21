@@ -59,6 +59,8 @@ private:
     // General
     void On_cbLanguages_currentIndexChanged(int index);
     void On_cbAutoRun_toggled(bool checked);
+    void On_cbTrayQuickConnectEnabled_toggled(bool checked);
+    void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_pbUnbind_clicked();
 
     // Visual

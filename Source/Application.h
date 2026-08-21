@@ -29,6 +29,10 @@
 #include "Gui/DownloadWindow.h"
 #include "Core/AirPods.h"
 #include "Core/LowAudioLatency.h"
+#include "Core/QuickConnect.h"
+#if defined APD_OS_WIN
+    #include "Core/QuickConnect_win.h"
+#endif
 #include "Opts.h"
 
 class ApdApplication : public SingleApplication
@@ -58,6 +62,10 @@ public:
     {
         return _lowAudioLatencyController;
     }
+    inline auto *GetQuickConnect()
+    {
+        return _quickConnect.get();
+    }
 
     inline auto GetCurrentLoadedLocaleIndex()
     {
@@ -80,6 +88,8 @@ private:
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
+    std::unique_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
+    std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
 
     void InitSettings(Core::Settings::LoadResult loadResult);
     void FirstTimeUse();

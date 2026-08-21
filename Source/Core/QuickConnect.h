@@ -56,6 +56,13 @@ public:
     virtual bool RequestReconnect(const QString &id) = 0;
 };
 
+class NullBackend final : public Backend
+{
+public:
+    std::vector<Device> ListDevices() override { return {}; }
+    bool RequestReconnect(const QString &) override { return false; }
+};
+
 class Controller final : public QObject
 {
     Q_OBJECT
@@ -65,6 +72,7 @@ public:
 
     void SetEnabled(bool enabled);
     void SetDeviceId(QString id);
+    std::vector<Device> Devices();
     Outcome Request();
     Outcome OnEndpointStateChanged(const QString &id, bool connected);
     Outcome ResolveTimedOut();

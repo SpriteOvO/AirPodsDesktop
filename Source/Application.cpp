@@ -152,6 +152,13 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     InitTranslator();
 
+    #if defined APD_OS_WIN
+    _quickConnectBackend = std::make_unique<Core::QuickConnect::WindowsBackend>();
+    #else
+    _quickConnectBackend = std::make_unique<Core::QuickConnect::NullBackend>();
+    #endif
+    _quickConnect = std::make_unique<Core::QuickConnect::Controller>(*_quickConnectBackend);
+
     _trayIcon = std::make_unique<Gui::TrayIcon>();
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();

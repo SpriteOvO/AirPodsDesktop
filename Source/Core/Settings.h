@@ -52,6 +52,10 @@ enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
         Impl::Sensitive{})                                                                         \
     callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable},       \
         Impl::OnApply(&OnApply_tray_icon_battery))                                                 \
+    callback(bool, tray_quick_connect_enabled, {false},                                           \
+        Impl::OnApply(&OnApply_tray_quick_connect_enabled))                                       \
+    callback(QString, tray_quick_connect_device_id, {},                                           \
+        Impl::OnApply(&OnApply_tray_quick_connect_device_id))                                     \
     callback(TaskbarStatusBehavior, battery_on_taskbar, {TaskbarStatusBehavior::Disable},          \
         Impl::OnApply(&OnApply_battery_on_taskbar))
 // clang-format on
@@ -214,6 +218,8 @@ void OnApply_automatic_ear_detection(const Fields &newFields);
 void OnApply_rssi_min(const Fields &newFields);
 void OnApply_device_address(const Fields &newFields);
 void OnApply_tray_icon_battery(const Fields &newFields);
+void OnApply_tray_quick_connect_enabled(const Fields &newFields);
+void OnApply_tray_quick_connect_device_id(const Fields &newFields);
 void OnApply_battery_on_taskbar(const Fields &newFields);
 
 struct MetaFields {

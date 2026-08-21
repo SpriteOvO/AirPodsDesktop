@@ -59,6 +59,11 @@ void Controller::SetDeviceId(QString id)
     _deviceId = std::move(id);
 }
 
+std::vector<Device> Controller::Devices()
+{
+    return _backend.ListDevices();
+}
+
 Outcome Controller::Request()
 {
     if (!_enabled) {

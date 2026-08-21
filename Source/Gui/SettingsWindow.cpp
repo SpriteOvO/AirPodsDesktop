@@ -129,6 +129,20 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
         }
     });
 
+    connect(_ui.cbTrayQuickConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbTrayQuickConnectEnabled_toggled(checked);
+        }
+    });
+
+    connect(
+        _ui.cbTrayQuickConnectDevice,
+        qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+            if (_trigger) {
+                On_cbTrayQuickConnectDevice_currentIndexChanged(index);
+            }
+        });
+
     connect(_ui.cbLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
             On_cbLowAudioLatency_toggled(checked);
@@ -316,6 +330,19 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
+    const auto devices = ApdApp->GetQuickConnect()->Devices();
+    _ui.cbTrayQuickConnectDevice->clear();
+    for (const auto &device : devices) {
+        _ui.cbTrayQuickConnectDevice->addItem(device.name, device.id);
+    }
+    const auto selectedIndex = _ui.cbTrayQuickConnectDevice->findData(
+        fields.tray_quick_connect_device_id);
+    _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
+    const auto hasDevices = _ui.cbTrayQuickConnectDevice->count() > 0;
+    _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
+    _ui.cbTrayQuickConnectEnabled->setEnabled(hasDevices);
+    _ui.cbTrayQuickConnectDevice->setEnabled(hasDevices);
+
     _trigger = true;
 }
 
@@ -373,6 +400,17 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
 {
     ModifiableAccess()->auto_run = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectEnabled_toggled(bool checked)
+{
+    ModifiableAccess()->tray_quick_connect_enabled = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectDevice_currentIndexChanged(int index)
+{
+    const auto id = _ui.cbTrayQuickConnectDevice->itemData(index).toString();
+    ModifiableAccess()->tray_quick_connect_device_id = id;
 }
 
 void SettingsWindow::On_pbUnbind_clicked()
