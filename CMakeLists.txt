@@ -123,7 +123,7 @@ endif()
 
 # Qt
 #
-set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
+set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets Test)
 foreach (QT_COMPONENT ${APD_QT_COMPONENTS})
     set(APD_QT_LIBRARIES ${APD_QT_LIBRARIES} Qt5::${QT_COMPONENT})
 endforeach()
@@ -273,6 +273,7 @@ set(
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
     "Source/Core/AppleCP.cpp"
+    "Source/Core/QuickConnect.cpp"
     "Source/Core/Settings.cpp"
     "Source/Core/LowAudioLatency.cpp"
 )
@@ -492,4 +493,30 @@ target_link_libraries(
 #
 if (MSVC)
     apply_pdbaltpath_pdb_for_all_targets()
+endif()
+
+if (APD_BUILD_TESTS)
+    enable_testing()
+
+    add_executable(
+        QuickConnectTests
+
+        "Tests/QuickConnectTests.cpp"
+        "Source/Core/QuickConnect.cpp"
+    )
+
+    target_link_libraries(
+        QuickConnectTests
+
+        Qt5::Core
+        Qt5::Test
+    )
+
+    target_include_directories(
+        QuickConnectTests PRIVATE
+
+        "${CMAKE_SOURCE_DIR}"
+    )
+
+    add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
 endif()
