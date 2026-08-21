@@ -22,9 +22,13 @@
 #include <vector>
 
 #include <QObject>
+#include <QMetaType>
 #include <QString>
+#include <QTimer>
 
 namespace Core::QuickConnect {
+
+class Controller;
 
 enum class Outcome : uint32_t {
     Disabled,
@@ -47,6 +51,7 @@ class Backend
 public:
     virtual ~Backend() = default;
 
+    virtual void SetController(Controller *controller);
     virtual std::vector<Device> ListDevices() = 0;
     virtual bool RequestReconnect(const QString &id) = 0;
 };
@@ -61,12 +66,24 @@ public:
     void SetEnabled(bool enabled);
     void SetDeviceId(QString id);
     Outcome Request();
+    Outcome OnEndpointStateChanged(const QString &id, bool connected);
+    Outcome ResolveTimedOut();
+
+signals:
+    void OutcomeChanged(Core::QuickConnect::Outcome outcome, QString deviceName);
 
 private:
     Backend &_backend;
     bool _enabled{};
     bool _pending{};
     QString _deviceId;
+    QString _pendingDeviceName;
+    QTimer _resolveTimer;
+
+    Outcome Complete(Outcome outcome);
+    void EmitOutcome(Outcome outcome, const QString &deviceName);
 };
 
 } // namespace Core::QuickConnect
+
+Q_DECLARE_METATYPE(Core::QuickConnect::Outcome)

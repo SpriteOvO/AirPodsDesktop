@@ -295,6 +295,7 @@ if (WIN32)
 
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
+        "Source/Core/QuickConnect_win.cpp"
 
         "Source/Resource/Resource.rc"
     )
@@ -484,6 +485,16 @@ target_link_libraries(
     Boost::pfr
     Boost::${APD_STACKTRACE_COMPONENT}
 )
+
+if (WIN32)
+    target_link_libraries(
+        ${PROJECT_NAME}
+
+        Ole32
+        Uuid
+        Ksuser
+    )
+endif()
 
 ##################################################
 

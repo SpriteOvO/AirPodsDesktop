@@ -22,9 +22,31 @@
 #include <utility>
 
 namespace Core::QuickConnect {
+namespace {
+
+QString NormalizeId(QString id)
+{
+    id = id.trimmed();
+    if (id.startsWith('{') && id.endsWith('}')) {
+        id = id.mid(1, id.size() - 2);
+    }
+    return id.toLower();
+}
+
+} // namespace
+
+void Backend::SetController(Controller *controller)
+{
+    Q_UNUSED(controller)
+}
 
 Controller::Controller(Backend &backend) : QObject{nullptr}, _backend{backend}
 {
+    _backend.SetController(this);
+
+    _resolveTimer.setSingleShot(true);
+    _resolveTimer.setInterval(10'000);
+    QObject::connect(&_resolveTimer, &QTimer::timeout, this, &Controller::ResolveTimedOut);
 }
 
 void Controller::SetEnabled(bool enabled)
@@ -40,10 +62,12 @@ void Controller::SetDeviceId(QString id)
 Outcome Controller::Request()
 {
     if (!_enabled) {
+        EmitOutcome(Outcome::Disabled, {});
         return Outcome::Disabled;
     }
 
     if (_deviceId.isEmpty()) {
+        EmitOutcome(Outcome::NoDevice, {});
         return Outcome::NoDevice;
     }
 
@@ -52,23 +76,69 @@ Outcome Controller::Request()
         devices.begin(), devices.end(),
         [&](const Device &device) { return device.id == _deviceId; });
     if (deviceIter == devices.end()) {
+        EmitOutcome(Outcome::NoDevice, {});
         return Outcome::NoDevice;
     }
 
     if (deviceIter->connected) {
+        EmitOutcome(Outcome::AlreadyConnected, deviceIter->name);
         return Outcome::AlreadyConnected;
     }
 
     if (_pending) {
+        EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
         return Outcome::RequestStarted;
     }
 
     if (!_backend.RequestReconnect(_deviceId)) {
+        EmitOutcome(Outcome::Failed, deviceIter->name);
         return Outcome::Failed;
     }
 
     _pending = true;
+    _pendingDeviceName = deviceIter->name;
+    _resolveTimer.start();
+    EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
     return Outcome::RequestStarted;
+}
+
+Outcome Controller::OnEndpointStateChanged(const QString &id, bool connected)
+{
+    if (!_pending) {
+        return connected ? Outcome::Connected : Outcome::RequestStarted;
+    }
+
+    if (NormalizeId(id) != NormalizeId(_deviceId) || !connected) {
+        return Outcome::RequestStarted;
+    }
+
+    return Complete(Outcome::Connected);
+}
+
+Outcome Controller::ResolveTimedOut()
+{
+    if (!_pending) {
+        return Outcome::TimedOut;
+    }
+
+    return Complete(Outcome::TimedOut);
+}
+
+Outcome Controller::Complete(Outcome outcome)
+{
+    _resolveTimer.stop();
+    _pending = false;
+
+    const auto deviceName = _pendingDeviceName;
+    _pendingDeviceName.clear();
+    EmitOutcome(outcome, deviceName);
+
+    return outcome;
+}
+
+void Controller::EmitOutcome(Outcome outcome, const QString &deviceName)
+{
+    emit OutcomeChanged(outcome, deviceName);
 }
 
 } // namespace Core::QuickConnect
