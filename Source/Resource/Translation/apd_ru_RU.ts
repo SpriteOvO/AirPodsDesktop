@@ -259,8 +259,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Отображение заряда батареи на панели задач</translation>
     </message>
     <message><source>Tray quick connect</source><translation type="unfinished">Tray quick connect</translation></message>
-    <message><source>Click the tray icon to connect</source><translation type="unfinished">Click the tray icon to connect</translation></message>
-    <message><source>Quick connect device</source><translation type="unfinished">Quick connect device</translation></message>
+    <message><source>Connect selected Bluetooth audio device on left click</source><translation type="unfinished">Connect selected Bluetooth audio device on left click</translation></message>
     <message>
         <source>Disable</source>
         <translation>Выключить</translation>

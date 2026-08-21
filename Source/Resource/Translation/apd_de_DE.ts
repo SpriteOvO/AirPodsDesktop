@@ -298,6 +298,8 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
         <source>Display battery on taskbar</source>
         <translation type="unfinished"></translation>
     </message>
+    <message><source>Tray quick connect</source><translation type="unfinished">Tray quick connect</translation></message>
+    <message><source>Connect selected Bluetooth audio device on left click</source><translation type="unfinished">Connect selected Bluetooth audio device on left click</translation></message>
     <message>
         <source>As text</source>
         <translation type="unfinished"></translation>
