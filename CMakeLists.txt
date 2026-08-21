@@ -508,7 +508,7 @@ endif()
 
 if (APD_BUILD_TESTS)
     enable_testing()
-    find_package(Qt5 COMPONENTS Test REQUIRED)
+    find_package(Qt5 COMPONENTS Test Widgets REQUIRED)
 
     add_executable(
         QuickConnectTests
@@ -522,6 +522,7 @@ if (APD_BUILD_TESTS)
 
         Qt5::Core
         Qt5::Test
+        Qt5::Widgets
     )
 
     target_include_directories(

@@ -19,6 +19,7 @@
 #include <QtTest>
 
 #include "Source/Core/QuickConnect.h"
+#include "Source/Gui/TrayActivation.h"
 
 class FakeBackend final : public Core::QuickConnect::Backend
 {
@@ -53,6 +54,7 @@ private slots:
     void pendingRequestIsDeduplicated();
     void endpointActivationCompletesRequest();
     void timeoutCompletesRequestOnce();
+    void trayActivationRoutesOnlySingleClick();
 };
 
 void QuickConnectTests::initTestCase()
@@ -173,6 +175,13 @@ void QuickConnectTests::timeoutCompletesRequestOnce()
     QCOMPARE(spy.at(0).at(1).toString(), QString("AirPods"));
     QCOMPARE(controller.ResolveTimedOut(), Core::QuickConnect::Outcome::TimedOut);
     QCOMPARE(spy.count(), 1);
+}
+
+void QuickConnectTests::trayActivationRoutesOnlySingleClick()
+{
+    QVERIFY(Gui::IsQuickConnectActivation(QSystemTrayIcon::Trigger));
+    QVERIFY(!Gui::IsQuickConnectActivation(QSystemTrayIcon::DoubleClick));
+    QVERIFY(!Gui::IsQuickConnectActivation(QSystemTrayIcon::MiddleClick));
 }
 
 QTEST_APPLESS_MAIN(QuickConnectTests)

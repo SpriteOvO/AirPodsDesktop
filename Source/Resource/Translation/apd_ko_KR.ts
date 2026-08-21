@@ -148,6 +148,14 @@ Latest version: %2%3</source>
         <source>Quit</source>
         <translation>종료</translation>
     </message>
+    <message><source>Quick connect</source><translation type="unfinished">Quick connect</translation></message>
+    <message><source>Quick connection is disabled.</source><translation type="unfinished">Quick connection is disabled.</translation></message>
+    <message><source>Choose a Bluetooth audio device in Settings first.</source><translation type="unfinished">Choose a Bluetooth audio device in Settings first.</translation></message>
+    <message><source>%1 is already connected.</source><translation type="unfinished">%1 is already connected.</translation></message>
+    <message><source>Connecting to %1…</source><translation type="unfinished">Connecting to %1…</translation></message>
+    <message><source>%1 connected.</source><translation type="unfinished">%1 connected.</translation></message>
+    <message><source>Connection to %1 timed out.</source><translation type="unfinished">Connection to %1 timed out.</translation></message>
+    <message><source>Windows could not connect to %1.</source><translation type="unfinished">Windows could not connect to %1.</translation></message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -289,6 +297,9 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Display battery on taskbar</source>
         <translation type="unfinished"></translation>
     </message>
+    <message><source>Tray quick connect</source><translation type="unfinished">Tray quick connect</translation></message>
+    <message><source>Click the tray icon to connect</source><translation type="unfinished">Click the tray icon to connect</translation></message>
+    <message><source>Quick connect device</source><translation type="unfinished">Quick connect device</translation></message>
     <message>
         <source>As text</source>
         <translation type="unfinished"></translation>

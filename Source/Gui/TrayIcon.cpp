@@ -341,7 +341,7 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    if (reason == QSystemTrayIcon::Trigger) {
+    if (IsQuickConnectActivation(reason)) {
         ApdApp->GetQuickConnect()->Request();
         return;
     }

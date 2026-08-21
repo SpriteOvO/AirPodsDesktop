@@ -163,7 +163,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation>%1 已连接。</translation>
+        <translation>%1 已经连接。</translation>
     </message>
     <message>
         <source>Connecting to %1…</source>

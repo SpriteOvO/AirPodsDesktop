@@ -26,6 +26,7 @@
 #include "../Core/QuickConnect.h"
 #include "../Core/Update.h"
 #include "Base.h"
+#include "TrayActivation.h"
 #include "SettingsWindow.h"
 
 namespace Gui {
