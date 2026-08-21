@@ -113,11 +113,13 @@ void OnApply_tray_icon_battery(const Fields &newFields)
 
 void OnApply_tray_quick_connect_enabled(const Fields &newFields)
 {
+    LOG(Info, "OnApply_tray_quick_connect_enabled: {}", newFields.tray_quick_connect_enabled);
     ApdApp->GetQuickConnect()->SetEnabled(newFields.tray_quick_connect_enabled);
 }
 
 void OnApply_tray_quick_connect_device_id(const Fields &newFields)
 {
+    LOG(Info, "OnApply_tray_quick_connect_device_id: {}", newFields.tray_quick_connect_device_id);
     ApdApp->GetQuickConnect()->SetDeviceId(newFields.tray_quick_connect_device_id);
 }
 
