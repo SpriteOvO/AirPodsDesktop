@@ -44,6 +44,7 @@ class QuickConnectTests : public QObject
 
 private slots:
     void disabledRequestDoesNotCallBackend();
+    void emptyDeviceIdReturnsNoDevice();
     void missingDeviceReturnsNoDevice();
     void connectedDeviceReturnsAlreadyConnected();
     void failedReconnectReturnsFailed();
@@ -57,6 +58,16 @@ void QuickConnectTests::disabledRequestDoesNotCallBackend()
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::Disabled);
+    QCOMPARE(backend.reconnectCalls, 0);
+}
+
+void QuickConnectTests::emptyDeviceIdReturnsNoDevice()
+{
+    FakeBackend backend;
+    Core::QuickConnect::Controller controller{backend};
+    controller.SetEnabled(true);
+
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::NoDevice);
     QCOMPARE(backend.reconnectCalls, 0);
 }
 
@@ -86,14 +97,10 @@ void QuickConnectTests::connectedDeviceReturnsAlreadyConnected()
 void QuickConnectTests::failedReconnectReturnsFailed()
 {
     FakeBackend backend;
+    backend.devices = {{"{B}", "AirPods Pro", false}};
     Core::QuickConnect::Controller controller{backend};
     controller.SetEnabled(true);
     controller.SetDeviceId("{B}");
-
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::NoDevice);
-    QCOMPARE(backend.reconnectCalls, 0);
-
-    backend.devices = {{"{B}", "AirPods Pro", false}};
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::Failed);
     QCOMPARE(backend.reconnectCalls, 1);
