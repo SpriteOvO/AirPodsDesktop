@@ -394,7 +394,7 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
     KSPROPERTY property{
         KSPROPSETID_BtAudio,
         KSPROPERTY_ONESHOT_RECONNECT,
-        KSPROPERTY_TYPE_SET,
+        KSPROPERTY_TYPE_GET,
     };
     ULONG returned{};
     result = ksControl->KsProperty(

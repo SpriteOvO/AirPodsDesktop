@@ -5,6 +5,7 @@ set(required_fragments
     "part->GetTopologyObject("
     "connectedTopology->GetDeviceId("
     "connectedDevice->Activate("
+    "KSPROPERTY_TYPE_GET"
 )
 
 foreach(fragment IN LISTS required_fragments)
@@ -17,4 +18,9 @@ endforeach()
 string(FIND "${source}" "connectedConnector->QueryInterface(\n+        ksControl.GetIID()" direct_ks_query)
 if(NOT direct_ks_query EQUAL -1)
     message(FATAL_ERROR "Windows quick connect must activate IKsControl on the connected IMMDevice, not query it from IConnector")
+endif()
+
+string(FIND "${source}" "KSPROPERTY_TYPE_SET" reconnect_set_request)
+if(NOT reconnect_set_request EQUAL -1)
+    message(FATAL_ERROR "KSPROPERTY_ONESHOT_RECONNECT must be requested with KSPROPERTY_TYPE_GET")
 endif()
