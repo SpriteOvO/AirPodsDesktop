@@ -428,6 +428,7 @@ WindowsBackend::~WindowsBackend()
 
 void WindowsBackend::SetController(Controller *controller)
 {
+    std::lock_guard<std::mutex> lock{_mutex};
     _controller = controller;
 }
 
@@ -603,7 +604,11 @@ void WindowsBackend::UnregisterNotifications()
 
 void WindowsBackend::QueueEndpointState(const QString &containerId, bool connected)
 {
-    auto controller = _controller;
+    QPointer<Controller> controller;
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        controller = _controller;
+    }
     if (controller.isNull()) {
         return;
     }

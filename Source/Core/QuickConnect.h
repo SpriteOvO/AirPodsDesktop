@@ -69,8 +69,10 @@ class Controller final : public QObject
 
 public:
     explicit Controller(Backend &backend);
+    ~Controller() override;
 
     void SetEnabled(bool enabled);
+    bool IsEnabled() const;
     void SetDeviceId(QString id);
     std::vector<Device> Devices();
     Outcome Request();
@@ -85,6 +87,7 @@ private:
     bool _enabled{};
     bool _pending{};
     QString _deviceId;
+    QString _pendingDeviceId;
     QString _pendingDeviceName;
     QTimer _resolveTimer;
 

@@ -25,10 +25,20 @@ class FakeBackend final : public Core::QuickConnect::Backend
 {
 public:
     std::vector<Core::QuickConnect::Device> devices{{"{A}", "AirPods", false}};
+    Core::QuickConnect::Controller *controller{};
+    int listCalls{};
     int reconnectCalls{};
+    int setControllerCalls{};
+
+    void SetController(Core::QuickConnect::Controller *value) override
+    {
+        controller = value;
+        ++setControllerCalls;
+    }
 
     std::vector<Core::QuickConnect::Device> ListDevices() override
     {
+        ++listCalls;
         return devices;
     }
 
@@ -52,9 +62,11 @@ private slots:
     void connectedDeviceDoesNotReconnect();
     void failedReconnectReturnsFailed();
     void pendingRequestIsDeduplicated();
+    void pendingRequestKeepsOriginalDevice();
     void endpointActivationCompletesRequest();
     void timeoutCompletesRequestOnce();
-    void trayActivationRoutesOnlySingleClick();
+    void controllerDetachesBackendOnDestruction();
+    void trayActivationPreservesDefaultBehaviorWhenDisabled();
 };
 
 void QuickConnectTests::initTestCase()
@@ -138,7 +150,25 @@ void QuickConnectTests::pendingRequestIsDeduplicated()
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QCOMPARE(backend.listCalls, 1);
     QCOMPARE(backend.reconnectCalls, 1);
+}
+
+void QuickConnectTests::pendingRequestKeepsOriginalDevice()
+{
+    FakeBackend backend;
+    Core::QuickConnect::Controller controller{backend};
+    controller.SetEnabled(true);
+    controller.SetDeviceId("{A}");
+
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    backend.devices[0].connected = true;
+    controller.SetDeviceId("{B}");
+
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QCOMPARE(backend.listCalls, 1);
+    QCOMPARE(backend.reconnectCalls, 1);
+    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
 }
 
 void QuickConnectTests::endpointActivationCompletesRequest()
@@ -177,11 +207,27 @@ void QuickConnectTests::timeoutCompletesRequestOnce()
     QCOMPARE(spy.count(), 1);
 }
 
-void QuickConnectTests::trayActivationRoutesOnlySingleClick()
+void QuickConnectTests::controllerDetachesBackendOnDestruction()
 {
-    QVERIFY(Gui::IsQuickConnectActivation(QSystemTrayIcon::Trigger));
-    QVERIFY(!Gui::IsQuickConnectActivation(QSystemTrayIcon::DoubleClick));
-    QVERIFY(!Gui::IsQuickConnectActivation(QSystemTrayIcon::MiddleClick));
+    FakeBackend backend;
+    {
+        Core::QuickConnect::Controller controller{backend};
+        QCOMPARE(backend.controller, &controller);
+    }
+
+    QVERIFY(backend.controller == nullptr);
+    QCOMPARE(backend.setControllerCalls, 2);
+}
+
+void QuickConnectTests::trayActivationPreservesDefaultBehaviorWhenDisabled()
+{
+    using Action = Gui::TrayActivationAction;
+
+    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Trigger, false), Action::ShowMainWindow);
+    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Trigger, true), Action::QuickConnect);
+    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::DoubleClick, true), Action::ShowMainWindow);
+    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::MiddleClick, true), Action::ShowMainWindow);
+    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Unknown, true), Action::None);
 }
 
 QTEST_APPLESS_MAIN(QuickConnectTests)

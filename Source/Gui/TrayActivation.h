@@ -4,9 +4,19 @@
 
 namespace Gui {
 
-inline bool IsQuickConnectActivation(QSystemTrayIcon::ActivationReason reason)
+enum class TrayActivationAction { None, ShowMainWindow, QuickConnect };
+
+inline TrayActivationAction
+RouteTrayActivation(QSystemTrayIcon::ActivationReason reason, bool quickConnectEnabled)
 {
-    return reason == QSystemTrayIcon::Trigger;
+    if (reason == QSystemTrayIcon::Trigger) {
+        return quickConnectEnabled ? TrayActivationAction::QuickConnect
+                                   : TrayActivationAction::ShowMainWindow;
+    }
+    if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::MiddleClick) {
+        return TrayActivationAction::ShowMainWindow;
+    }
+    return TrayActivationAction::None;
 }
 
 } // namespace Gui

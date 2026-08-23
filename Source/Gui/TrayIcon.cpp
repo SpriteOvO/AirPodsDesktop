@@ -341,12 +341,13 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    if (IsQuickConnectActivation(reason)) {
+    const auto action = RouteTrayActivation(reason, ApdApp->GetQuickConnect()->IsEnabled());
+    if (action == TrayActivationAction::QuickConnect) {
         ApdApp->GetQuickConnect()->Request();
         return;
     }
 
-    if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::MiddleClick) {
+    if (action == TrayActivationAction::ShowMainWindow) {
         ShowMainWindow();
     }
 }

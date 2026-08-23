@@ -338,9 +338,6 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     const auto selectedIndex = _ui.cbTrayQuickConnectDevice->findData(
         fields.tray_quick_connect_device_id);
     _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
-    if (selectedIndex < 0 && !fields.tray_quick_connect_device_id.isEmpty()) {
-        ModifiableAccess()->tray_quick_connect_device_id.clear();
-    }
     const auto hasDevices = _ui.cbTrayQuickConnectDevice->count() > 0;
     _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
     _ui.cbTrayQuickConnectEnabled->setEnabled(hasDevices);

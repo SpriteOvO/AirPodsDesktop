@@ -49,9 +49,19 @@ Controller::Controller(Backend &backend) : QObject{nullptr}, _backend{backend}
     QObject::connect(&_resolveTimer, &QTimer::timeout, this, &Controller::ResolveTimedOut);
 }
 
+Controller::~Controller()
+{
+    _backend.SetController(nullptr);
+}
+
 void Controller::SetEnabled(bool enabled)
 {
     _enabled = enabled;
+}
+
+bool Controller::IsEnabled() const
+{
+    return _enabled;
 }
 
 void Controller::SetDeviceId(QString id)
@@ -66,6 +76,11 @@ std::vector<Device> Controller::Devices()
 
 Outcome Controller::Request()
 {
+    if (_pending) {
+        EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
+        return Outcome::RequestStarted;
+    }
+
     if (!_enabled) {
         EmitOutcome(Outcome::Disabled, {});
         return Outcome::Disabled;
@@ -90,17 +105,13 @@ Outcome Controller::Request()
         return Outcome::AlreadyConnected;
     }
 
-    if (_pending) {
-        EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
-        return Outcome::RequestStarted;
-    }
-
     if (!_backend.RequestReconnect(_deviceId)) {
         EmitOutcome(Outcome::Failed, deviceIter->name);
         return Outcome::Failed;
     }
 
     _pending = true;
+    _pendingDeviceId = _deviceId;
     _pendingDeviceName = deviceIter->name;
     _resolveTimer.start();
     EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
@@ -113,7 +124,7 @@ Outcome Controller::OnEndpointStateChanged(const QString &id, bool connected)
         return connected ? Outcome::Connected : Outcome::RequestStarted;
     }
 
-    if (NormalizeId(id) != NormalizeId(_deviceId) || !connected) {
+    if (NormalizeId(id) != NormalizeId(_pendingDeviceId) || !connected) {
         return Outcome::RequestStarted;
     }
 
@@ -135,6 +146,7 @@ Outcome Controller::Complete(Outcome outcome)
     _pending = false;
 
     const auto deviceName = _pendingDeviceName;
+    _pendingDeviceId.clear();
     _pendingDeviceName.clear();
     EmitOutcome(outcome, deviceName);
 
