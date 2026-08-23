@@ -532,4 +532,14 @@ if (APD_BUILD_TESTS)
     )
 
     add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
+
+    if (WIN32)
+        add_test(
+            NAME QuickConnectWindowsBackendContract
+            COMMAND
+                "${CMAKE_COMMAND}"
+                "-DSOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Core/QuickConnect_win.cpp"
+                -P "${CMAKE_SOURCE_DIR}/Tests/QuickConnectWindowsBackendContract.cmake"
+        )
+    endif()
 endif()

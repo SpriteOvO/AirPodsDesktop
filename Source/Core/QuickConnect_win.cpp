@@ -352,11 +352,42 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         return result;
     }
 
-    OS::Windows::Com::UniquePtr<IKsControl> ksControl;
+    OS::Windows::Com::UniquePtr<IPart> part;
     result = connectedConnector->QueryInterface(
-        ksControl.GetIID(), reinterpret_cast<void **>(ksControl.ReleaseAndAddressOf()));
+        part.GetIID(), reinterpret_cast<void **>(part.ReleaseAndAddressOf()));
     if (FAILED(result)) {
-        LOG(Warn, "Query IKsControl failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
+        LOG(Warn, "Query IPart failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
+        return result;
+    }
+
+    OS::Windows::Com::UniquePtr<IDeviceTopology> connectedTopology;
+    result = part->GetTopologyObject(connectedTopology.ReleaseAndAddressOf());
+    if (FAILED(result)) {
+        LOG(Warn, "Get connected topology failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
+        return result;
+    }
+
+    LPWSTR rawConnectedDeviceId{};
+    result = connectedTopology->GetDeviceId(&rawConnectedDeviceId);
+    if (FAILED(result)) {
+        LOG(Warn, "Get connected device id failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
+        return result;
+    }
+
+    OS::Windows::Com::UniquePtr<IMMDevice> connectedDevice;
+    result = enumerator->GetDevice(rawConnectedDeviceId, connectedDevice.ReleaseAndAddressOf());
+    CoTaskMemFree(rawConnectedDeviceId);
+    if (FAILED(result)) {
+        LOG(Warn, "Get connected device failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
+        return result;
+    }
+
+    OS::Windows::Com::UniquePtr<IKsControl> ksControl;
+    result = connectedDevice->Activate(
+        ksControl.GetIID(), CLSCTX_ALL, nullptr,
+        reinterpret_cast<void **>(ksControl.ReleaseAndAddressOf()));
+    if (FAILED(result)) {
+        LOG(Warn, "Activate IKsControl failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
     }
 
