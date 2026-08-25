@@ -86,12 +86,12 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
 
     auto versionText =
         QString{"<a href=\"%1\">v%2</a>"}
-            .arg("https://github.com/SpriteOvO/AirPodsDesktop/releases/tag/" CONFIG_VERSION_STRING)
+            .arg(Config::UrlCurrentRelease)
             .arg(CONFIG_VERSION_STRING);
 #if defined APD_BUILD_GIT_HASH
     versionText +=
         QString{" (<a href=\"%1\">%2</a>)"}
-            .arg("https://github.com/SpriteOvO/AirPodsDesktop/commit/" APD_BUILD_GIT_HASH)
+            .arg(QString{"%1/commit/%2"}.arg(Config::UrlRepository).arg(APD_BUILD_GIT_HASH))
             .arg(QString{APD_BUILD_GIT_HASH}.left(7));
 #endif
     _ui.lbVersion->setText(versionText);

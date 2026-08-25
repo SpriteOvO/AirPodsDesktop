@@ -4,10 +4,13 @@
 #include <vector>
 
 #include <QtTest>
+#include <QTemporaryFile>
 
+#include <Config.h>
 #include "Source/Core/AirPods.h"
 #include "Source/Core/Settings.h"
 #include "Source/Core/SettingsRepository.h"
+#include "Source/Core/Update.h"
 #include "Source/Gui/MainWindowPresentation.h"
 
 namespace {
@@ -96,6 +99,11 @@ private Q_SLOTS:
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void LoadsSettingsThroughRepository();
     void RejectsNullSettingsRepository();
+    void ParsesUpdateVersions();
+    void ParsesGitHubReleaseMetadata();
+    void RejectsReleaseMetadataFromAnotherRepository();
+    void RejectsUpdateAssetsWithoutDigest();
+    void VerifiesUpdateFileDigest();
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
     void MapsMainWindowAnimationResources();
@@ -236,6 +244,87 @@ void AirPodsDomainTests::RejectsNullSettingsRepository()
     QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
     QVERIFY(Core::Settings::GetCurrent().auto_run);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
+}
+
+void AirPodsDomainTests::ParsesUpdateVersions()
+{
+    QCOMPARE(Core::Update::ToVersionNumber("v0.4.3"), QVersionNumber(0, 4, 3));
+    QCOMPARE(Core::Update::ToVersionNumber("0.4.3"), QVersionNumber(0, 4, 3));
+}
+
+void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
+{
+    const auto metadata = QString{R"json({
+        "tag_name": "v0.4.3",
+        "body": "## Change log\n- Add automatic updates\n\nInstallation notes",
+        "html_url": "%1/tag/v0.4.3",
+        "prerelease": false,
+        "assets": [{
+            "name": "AirPodsDesktop-0.4.3-win32.exe",
+            "size": 123456,
+            "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "browser_download_url": "%1/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
+        }]
+    })json"}.arg(Config::UrlReleases);
+    const auto release =
+        Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
+
+    QVERIFY(release.has_value());
+    QCOMPARE(release->version, QVersionNumber(0, 4, 3));
+    QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.4.3-win32.exe"});
+    QCOMPARE(release->fileSize, size_t{123456});
+    QCOMPARE(release->sha256,
+        QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
+    QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
+    QVERIFY(release->CanAutoUpdate());
+    QVERIFY(!release->isPreRelease);
+}
+
+void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
+{
+    const auto release = Core::Update::Details::ParseSingleReleaseResponse(R"json({
+        "tag_name": "v9.9.9",
+        "body": "Change log\nUntrusted release",
+        "html_url": "https://github.com/AnotherOwner/AirPodsDesktop/releases/tag/v9.9.9",
+        "prerelease": false,
+        "assets": []
+    })json");
+
+    QVERIFY(!release.has_value());
+}
+
+void AirPodsDomainTests::RejectsUpdateAssetsWithoutDigest()
+{
+    const auto metadata = QString{R"json({
+        "tag_name": "v0.4.3",
+        "body": "Change log\nUnsigned asset",
+        "html_url": "%1/tag/v0.4.3",
+        "prerelease": false,
+        "assets": [{
+            "name": "AirPodsDesktop-0.4.3-win32.exe",
+            "size": 123456,
+            "browser_download_url": "%1/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
+        }]
+    })json"}.arg(Config::UrlReleases);
+    const auto release =
+        Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
+
+    QVERIFY(release.has_value());
+    QVERIFY(!release->CanAutoUpdate());
+}
+
+void AirPodsDomainTests::VerifiesUpdateFileDigest()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QCOMPARE(file.write("test"), qint64{4});
+    file.close();
+
+    const QString expected =
+        "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    QVERIFY(Core::Update::Details::VerifyFileSha256(file.fileName(), expected));
+    QVERIFY(!Core::Update::Details::VerifyFileSha256(
+        file.fileName(), "0000000000000000000000000000000000000000000000000000000000000000"));
 }
 
 void AirPodsDomainTests::PresentsMainWindowLifecycleStates()
