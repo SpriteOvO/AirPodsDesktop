@@ -31,5 +31,14 @@ Get-FileHash .\AirPodsDesktop-0.4.3-win32.exe -Algorithm SHA256
 ```
 
 Keep the release as a draft only when manual acceptance testing is required; the automated workflow
-publishes releases immediately. Windows code signing is not enabled until a trusted certificate is
-stored as GitHub Actions secrets and a signing step is added before checksum generation.
+publishes releases immediately.
+
+## Optional Windows Code Signing
+
+Add both repository secrets below to sign tagged installers before checksum generation:
+
+- `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64-encoded PFX certificate.
+- `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password for the PFX certificate.
+
+The workflow publishes an unsigned installer when neither secret exists, but fails when only one is
+configured. The temporary certificate is deleted after `signtool` signs and verifies the installer.

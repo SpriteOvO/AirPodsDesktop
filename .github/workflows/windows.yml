@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -108,6 +108,59 @@ jobs:
           Copy-Item -LiteralPath $installer.FullName -Destination $installerDestination
           Compress-Archive -Path "$portableSource/*" -DestinationPath $portableDestination
 
+      - name: Sign installer when a certificate is configured
+        if: github.ref_type == 'tag'
+        env:
+          SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_BASE64)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_PASSWORD)
+          if (-not $hasCertificate -and -not $hasPassword) {
+            Write-Warning 'Code-signing secrets are not configured; publishing an unsigned installer.'
+            exit 0
+          }
+          if (-not $hasCertificate -or -not $hasPassword) {
+            throw 'Both Windows code-signing secrets must be configured together.'
+          }
+
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'AirPodsDesktop-signing.pfx'
+          try {
+            [IO.File]::WriteAllBytes(
+              $certificatePath,
+              [Convert]::FromBase64String($env:SIGNING_CERTIFICATE_BASE64)
+            )
+            $signTool = Get-ChildItem `
+              "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x86/signtool.exe" |
+              Sort-Object { [version]$_.Directory.Parent.Name } -Descending |
+              Select-Object -First 1
+            if (-not $signTool) {
+              throw 'signtool.exe was not found on the runner.'
+            }
+
+            $installer = Get-ChildItem dist/AirPodsDesktop-*-win32.exe | Select-Object -First 1
+            & $signTool.FullName sign `
+              /fd SHA256 `
+              /td SHA256 `
+              /tr http://timestamp.digicert.com `
+              /f $certificatePath `
+              /p $env:SIGNING_CERTIFICATE_PASSWORD `
+              $installer.FullName
+            if ($LASTEXITCODE -ne 0) {
+              throw "signtool sign failed with exit code $LASTEXITCODE."
+            }
+
+            & $signTool.FullName verify /pa /v $installer.FullName
+            if ($LASTEXITCODE -ne 0) {
+              throw "signtool verify failed with exit code $LASTEXITCODE."
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath $certificatePath -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Generate release checksums
+        run: |
           Get-ChildItem dist -File |
             Where-Object Extension -In '.exe', '.zip' |
             Sort-Object Name |
@@ -117,7 +170,7 @@ jobs:
             } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: AirPodsDesktop-${{ steps.version.outputs.version }}-${{ github.sha }}
           path: dist/*
@@ -133,7 +186,7 @@ jobs:
 
     steps:
       - name: Download release assets
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: AirPodsDesktop-${{ needs.build.outputs.version }}-${{ github.sha }}
           path: dist
