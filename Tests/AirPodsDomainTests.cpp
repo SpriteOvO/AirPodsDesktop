@@ -71,13 +71,13 @@ std::vector<uint8_t> MakePacket(
 
 ReceivedData MakeAdvertisementData(
     uint64_t address, int16_t rssi, Side side, uint8_t leftBattery = 8, uint8_t rightBattery = 7,
-    uint8_t caseBattery = 5)
+    uint8_t caseBattery = 5, uint16_t modelId = 0x2014)
 {
     ReceivedData data;
     data.address = address;
     data.rssi = rssi;
     data.manufacturerDataMap.emplace(
-        Core::AppleCP::VendorId, MakePacket(0x2014, side, leftBattery, rightBattery, caseBattery));
+        Core::AppleCP::VendorId, MakePacket(modelId, side, leftBattery, rightBattery, caseBattery));
     return data;
 }
 
@@ -92,6 +92,7 @@ private Q_SLOTS:
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
+    void RejectsAdvertisementsFromDifferentModels();
     void LoadsSettingsThroughRepository();
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
@@ -167,6 +168,22 @@ void AirPodsDomainTests::MergesAdvertisementsFromBothSides()
     QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
     QCOMPARE(update->newState.pods.right.battery.Value(), 70U);
     QCOMPARE(update->newState.caseBox.battery.Value(), 50U);
+}
+
+void AirPodsDomainTests::RejectsAdvertisementsFromDifferentModels()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+
+    const auto first =
+        manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1111, -45, Side::Left)});
+    QVERIFY(first.has_value());
+    QCOMPARE(first->newState.model, Model::AirPods_Pro_2);
+
+    const auto differentModel = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right, 8, 7, 5, 0x2013)});
+    QVERIFY(!differentModel.has_value());
+    QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_Pro_2);
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()

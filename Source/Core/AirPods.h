@@ -178,6 +178,7 @@ private:
     Details::StateManager _stateMgr;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
+    Model _boundModel{Model::Unknown};
     bool _deviceConnected{false};
     bool _automaticEarDetection{false};
     uint64_t _requestedDeviceAddress{0};

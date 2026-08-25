@@ -117,14 +117,16 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     auto &lastAdv = advState.side == Side::Left ? _adv.left : _adv.right;
     auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
 
+    const auto hasDifferentModel = [&](const auto &cachedAdv) {
+        return cachedAdv.has_value() && cachedAdv->first.GetAdvState().model != advState.model;
+    };
+    if (hasDifferentModel(lastAdv) || hasDifferentModel(lastAnotherAdv)) {
+        LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model does not match cached state");
+        return false;
+    }
+
     if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
         const auto &lastAdvState = lastAdv->first.GetAdvState();
-
-        if (advState.model != lastAdvState.model) {
-            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model new='{}' old='{}'",
-                Helper::ToString(advState.model), Helper::ToString(lastAdvState.model));
-            return false;
-        }
 
         Battery::ValueType leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
         using SignedBatteryValue = std::make_signed_t<Battery::ValueType>;

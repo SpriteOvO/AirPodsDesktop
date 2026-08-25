@@ -96,6 +96,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     _requestedDeviceAddress = address;
     _boundDevice.reset();
+    _boundModel = Model::Unknown;
     _deviceConnected = false;
     _stateMgr.Disconnect();
 
@@ -138,6 +139,7 @@ void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetoot
     }
 
     _boundDevice = std::move(device);
+    _boundModel = AppleCP::AirPods::GetModel(_boundDevice->GetProductId());
 
     _deviceName = QString::fromStdString([&] {
         auto name = _boundDevice->GetName();
@@ -231,6 +233,11 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
 
     if (!_deviceConnected) {
         LOG(Info, "AirPods advertisement received, but device disconnected.");
+        return false;
+    }
+
+    if (_boundModel != Model::Unknown && adv.GetAdvState().model != _boundModel) {
+        LOG(Trace, "Ignore advertisement for a model other than the bound device.");
         return false;
     }
 
