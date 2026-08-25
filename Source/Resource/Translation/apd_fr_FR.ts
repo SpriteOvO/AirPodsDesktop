@@ -12,7 +12,7 @@
 
 This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
-        <translation>Bonjour, bienvenue à %1 !
+        <translation>Bonjour, bienvenue dans %1 !
 
 Il semble que ce soit la première fois que vous utilisez ce programme.
 Configurons quelque chose ensemble.</translation>
@@ -29,7 +29,7 @@ Si vous utilisez fréquemment les AirPods avec cet ordinateur, il est recommand�
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>Voulez-vous activer la fonction &quot;faible latence sonore&quot;?
+        <translation>Voulez-vous activer la fonction « faible latence audio » ?
 
 %1</translation>
     </message>
@@ -37,17 +37,17 @@ Si vous utilisez fréquemment les AirPods avec cet ordinateur, il est recommand�
         <source>Great! Everything is ready!
 
 Enjoy it all.</source>
-        <translation>Super! Tout est prêt!
+        <translation>Super ! Tout est prêt !
 
 Profitez bien de tout ça.</translation>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>Vous pouvez me trouver sur la barre d&apos;état système</translation>
+        <translation>Vous me trouverez dans la zone de notification</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>Appuyez sur l&apos;icône pour afficher les informations sur la batterie, appuyez sur le bouton droit pour personnaliser les paramètres ou quitter.</translation>
+        <translation>Cliquez sur l&apos;icône pour afficher le niveau de batterie. Faites un clic droit pour personnaliser les paramètres ou quitter.</translation>
     </message>
 </context>
 <context>
@@ -62,7 +62,7 @@ Profitez bien de tout ça.</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>Si le téléchargement est lent ou échoue, vous pouvez:</translation>
+        <translation>Si le téléchargement est lent ou échoue, vous pouvez :</translation>
     </message>
 </context>
 <context>
@@ -78,25 +78,25 @@ Nous vous prions de télécharger et d&apos;installer la nouvelle version manuel
     <name>Gui::MainWindow</name>
     <message>
         <source>Change log:</source>
-        <translation>Journal des modifications:</translation>
+        <translation>Journal des modifications :</translation>
     </message>
     <message>
         <source>Hey! I found a new version available!
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>J&apos;ai trouvé une nouvelle version disponible!
+        <translation>Une nouvelle version est disponible !
 
-Version actuelle: %1
-Dernière version: %2%3</translation>
+Version actuelle : %1
+Dernière version : %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>Relier aux AirPods</translation>
+        <translation>Connecter les AirPods</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
-        <translation>Veuillez-vous sélectionner votre appareil AirPods ci-dessous.</translation>
+        <translation>Veuillez sélectionner vos AirPods ci-dessous.</translation>
     </message>
 </context>
 <context>
@@ -108,11 +108,11 @@ Dernière version: %2%3</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation>Contributeurs de la traduction:</translation>
+        <translation>Contributeurs à la traduction :</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation>Bibliothèques tierces:</translation>
+        <translation>Bibliothèques tierces :</translation>
     </message>
 </context>
 <context>
@@ -123,7 +123,7 @@ Dernière version: %2%3</translation>
     </message>
     <message>
         <source>Right</source>
-        <translation>Droit</translation>
+        <translation>Droite</translation>
     </message>
     <message>
         <source>Case</source>
@@ -135,7 +135,7 @@ Dernière version: %2%3</translation>
     </message>
     <message>
         <source>New version available!</source>
-        <translation>La nouvelle version est disponible!</translation>
+        <translation>Une nouvelle version est disponible !</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -143,7 +143,7 @@ Dernière version: %2%3</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>À propos de</translation>
+        <translation>À propos</translation>
     </message>
     <message>
         <source>Quit</source>
@@ -154,26 +154,26 @@ Dernière version: %2%3</translation>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
-        <translation>AirPodsDesktop information</translation>
+        <translation>Informations sur AirPodsDesktop</translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
         <source>Update now</source>
-        <translation>Mise à jour maintenant</translation>
+        <translation>Mettre à jour maintenant</translation>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation>Passer cette version</translation>
+        <translation>Ignorer cette version</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>Voir la version</translation>
+        <translation>Voir les notes de version</translation>
     </message>
     <message>
         <source>Remind me later</source>
-        <translation>Rappelez-moi plus tard</translation>
+        <translation>Me le rappeler plus tard</translation>
     </message>
     <message>
         <source>No paired device found.
@@ -202,7 +202,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>En attente de la reliure</translation>
+        <translation>En attente de connexion</translation>
     </message>
 </context>
 <context>
@@ -216,7 +216,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <name>SettingsWindow</name>
     <message>
         <source>AirPodsDesktop Settings</source>
-        <translation>AirPodsDesktop Paramètres</translation>
+        <translation>Paramètres d&apos;AirPodsDesktop</translation>
     </message>
     <message>
         <source>General</source>
@@ -232,7 +232,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>Déconnecter AirPods</translation>
+        <translation>Dissocier les AirPods</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
@@ -248,7 +248,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation>Afficher la batterie sur la barre des tâches</translation>
+        <translation>Afficher le niveau de batterie dans la barre des tâches</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -264,15 +264,15 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>As text</source>
-        <translation>Comme le texte</translation>
+        <translation>Sous forme de texte</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation>Comme l&apos;icône</translation>
+        <translation>Sous forme d&apos;icône</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
-        <translation>Afficher la batterie sur l&apos;icône du plateau</translation>
+        <translation>Afficher le niveau de batterie sur l&apos;icône de la zone de notification</translation>
     </message>
     <message>
         <source>Features</source>
@@ -280,19 +280,19 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Détection automatique des oreilles</translation>
+        <translation>Détection automatique du port</translation>
     </message>
     <message>
         <source>Low audio latency</source>
-        <translation>Faible latence sonore</translation>
+        <translation>Faible latence audio</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>À propos de</translation>
+        <translation>À propos</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;dépôt&lt;/span&gt;&lt;/a&gt; et sous la licence &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Le &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;dépôt&lt;/span&gt;&lt;/a&gt; est open source et distribué sous licence &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
