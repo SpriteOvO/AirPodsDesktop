@@ -44,12 +44,13 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
     connect(this, &DownloadWindow::UpdateProgressSafely, this, &DownloadWindow::UpdateProgress);
     connect(this, &DownloadWindow::OnFailedSafely, this, &DownloadWindow::OnFailed);
 
-    _downloadThread = std::thread{[this]() { DownloadThread(); }};
+    _downloadThread =
+        std::jthread{[this](std::stop_token stopToken) { DownloadThread(stopToken); }};
 }
 
 DownloadWindow::~DownloadWindow()
 {
-    _destroy = true;
+    _downloadThread.request_stop();
     if (_downloadThread.joinable()) {
         _downloadThread.join();
     }
@@ -77,17 +78,22 @@ void DownloadWindow::OnFailed()
     Utils::Qt::QuitApplicationSafely();
 }
 
-void DownloadWindow::DownloadThread()
+void DownloadWindow::DownloadThread(std::stop_token stopToken)
 {
-    bool successful = Core::Update::DownloadInstall(_info, [this](size_t downloaded, size_t total) {
-        UpdateProgressSafely(downloaded, total);
+    bool successful =
+        Core::Update::DownloadInstall(_info, [this, stopToken](size_t downloaded, size_t total) {
+            if (stopToken.stop_requested()) {
+                LOG(Info, "Download cancelled because the window is closing.");
+                return false;
+            }
 
-        if (_destroy) {
-            LOG(Warn, "DownloadWindow destructor requests destroy.");
-            return false;
-        }
-        return true;
-    });
+            UpdateProgressSafely(downloaded, total);
+            return true;
+        });
+
+    if (stopToken.stop_requested()) {
+        return;
+    }
 
     if (successful) {
         Utils::Qt::QuitApplicationSafely();

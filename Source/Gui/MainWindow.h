@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <atomic>
+#include <thread>
+
 #include <QDialog>
 
 #include "ui_MainWindow.h"
@@ -49,6 +52,7 @@ class MainWindow : public QDialog
 
 public:
     MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -93,12 +97,15 @@ private:
     std::optional<Core::AirPods::State> _cachedState;
     bool _isVisible{false};
     bool _isAnimationPlaying{false};
+    std::atomic<bool> _deviceQueryRunning{false};
+    std::jthread _deviceQueryThread;
 
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
     void BindDevice();
+    void ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices);
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();

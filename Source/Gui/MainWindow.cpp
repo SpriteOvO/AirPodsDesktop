@@ -246,6 +246,14 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _updateChecker.Start();
 }
 
+MainWindow::~MainWindow()
+{
+    _deviceQueryThread.request_stop();
+    if (_deviceQueryThread.joinable()) {
+        _deviceQueryThread.join();
+    }
+}
+
 void MainWindow::UpdateState(const Core::AirPods::State &state)
 {
     LOG(Info, "MainWindow::UpdateState");
@@ -475,7 +483,34 @@ void MainWindow::BindDevice()
 {
     LOG(Info, "BindDevice");
 
-    const auto devices = Core::AirPods::GetDevices();
+    if (_deviceQueryRunning.exchange(true)) {
+        LOG(Info, "Ignore duplicate device query while one is already running.");
+        return;
+    }
+
+    if (_deviceQueryThread.joinable()) {
+        _deviceQueryThread.join();
+    }
+
+    _deviceQueryThread = std::jthread{[this](std::stop_token stopToken) {
+        Core::OS::Windows::Winrt::Initialize();
+        auto devices = Core::AirPods::GetDevices();
+        if (stopToken.stop_requested()) {
+            return;
+        }
+
+        QMetaObject::invokeMethod(
+            this,
+            [this, devices = std::move(devices)]() mutable {
+                _deviceQueryRunning = false;
+                ShowDeviceSelector(std::move(devices));
+            },
+            Qt::QueuedConnection);
+    }};
+}
+
+void MainWindow::ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices)
+{
     if (devices.empty()) {
         QMessageBox::warning(
             this, Config::ProgramName,

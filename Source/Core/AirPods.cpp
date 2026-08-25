@@ -45,6 +45,14 @@ Manager::Manager(QObject *parent) : QObject{parent}
     };
 }
 
+Manager::~Manager()
+{
+    _deviceLookupThread.request_stop();
+    if (_deviceLookupThread.joinable()) {
+        _deviceLookupThread.join();
+    }
+}
+
 void Manager::StartScanner()
 {
     if (!_adWatcher.Start()) {
@@ -79,8 +87,14 @@ void Manager::OnAutomaticEarDetectionChanged(bool enable)
 
 void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 {
-    std::unique_lock<std::mutex> lock{_mutex};
+    _deviceLookupThread.request_stop();
+    if (_deviceLookupThread.joinable()) {
+        _deviceLookupThread.join();
+    }
 
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    _requestedDeviceAddress = address;
     _boundDevice.reset();
     _deviceConnected = false;
     _stateMgr.Disconnect();
@@ -92,13 +106,37 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     LOG(Info, "Bind a new device.");
 
-    auto optDevice = Bluetooth::DeviceManager::FindDevice(address);
-    if (!optDevice.has_value()) {
+    _deviceLookupThread = std::jthread{[this, address](std::stop_token stopToken) {
+        OS::Windows::Winrt::Initialize();
+        auto device = Bluetooth::DeviceManager::FindDevice(address);
+        if (stopToken.stop_requested()) {
+            return;
+        }
+
+        QMetaObject::invokeMethod(
+            this,
+            [this, address, device = std::move(device)]() mutable {
+                CompleteBoundDeviceLookup(address, std::move(device));
+            },
+            Qt::QueuedConnection);
+    }};
+}
+
+void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetooth::Device> device)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    if (address != _requestedDeviceAddress) {
+        LOG(Info, "Ignore a stale bound-device lookup result.");
+        return;
+    }
+
+    if (!device.has_value()) {
         LOG(Error, "Find device by address failed.");
         return;
     }
 
-    _boundDevice = std::move(optDevice);
+    _boundDevice = std::move(device);
 
     _deviceName = QString::fromStdString([&] {
         auto name = _boundDevice->GetName();
@@ -234,9 +272,8 @@ std::vector<Bluetooth::Device> GetDevices()
             [](const auto &device) {
                 const auto vendorId = device.GetVendorId();
                 const auto productId = device.GetProductId();
-                const auto doErase =
-                    vendorId != AppleCP::VendorId ||
-                    AppleCP::AirPods::GetModel(productId) == Model::Unknown;
+                const auto doErase = vendorId != AppleCP::VendorId ||
+                                     AppleCP::AirPods::GetModel(productId) == Model::Unknown;
 
                 LOG(Trace, "Device VendorId: '{}', ProductId: '{}', doErase: {}", vendorId,
                     productId, doErase);

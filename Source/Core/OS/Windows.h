@@ -170,17 +170,30 @@ using Exception = winrt::hresult_error;
 
 inline void Initialize()
 {
-    static std::once_flag onceFlag;
+    struct ApartmentGuard {
+        bool initialized{false};
 
-    std::call_once(onceFlag, []() {
-        try {
-            winrt::init_apartment();
+        ApartmentGuard()
+        {
+            try {
+                winrt::init_apartment();
+                initialized = true;
+            }
+            catch (const Exception &ex) {
+                LOG(Warn, "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
+                    winrt::to_string(ex.message()));
+            }
         }
-        catch (const Exception &ex) {
-            LOG(Warn, "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
-                winrt::to_string(ex.message()));
+
+        ~ApartmentGuard()
+        {
+            if (initialized) {
+                winrt::uninit_apartment();
+            }
         }
-    });
+    };
+
+    thread_local ApartmentGuard apartment;
 }
 } // namespace Winrt
 

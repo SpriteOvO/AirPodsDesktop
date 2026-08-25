@@ -163,6 +163,7 @@ class Manager : public QObject
 
 public:
     explicit Manager(QObject *parent = nullptr);
+    ~Manager();
 
     void StartScanner();
     void StopScanner();
@@ -179,7 +180,10 @@ private:
     QString _deviceName;
     bool _deviceConnected{false};
     bool _automaticEarDetection{false};
+    uint64_t _requestedDeviceAddress{0};
+    std::jthread _deviceLookupThread;
 
+    void CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetooth::Device> device);
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(Details::StateManager::UpdateEvent updateEvent);
     void OnLidOpened(bool opened);
