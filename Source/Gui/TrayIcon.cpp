@@ -19,11 +19,12 @@
 #include "TrayIcon.h"
 
 #include <QFont>
+#include <QApplication>
 #include <QPainter>
 #include <QSvgRenderer>
 
 #include <Config.h>
-#include "../Application.h"
+#include "GuiContext.h"
 #include "MainWindow.h"
 
 namespace Gui {
@@ -50,7 +51,7 @@ TrayIcon::TrayIcon()
     _menu->addAction(_actionQuit);
 
     _tray->setContextMenu(_menu);
-    _tray->setIcon(ApdApplication::windowIcon());
+    _tray->setIcon(qApp->windowIcon());
     _tray->show();
 }
 
@@ -91,7 +92,7 @@ void TrayIcon::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseIn
 
 void TrayIcon::ShowMainWindow()
 {
-    ApdApp->GetMainWindow()->show();
+    GetMainWindow()->show();
 }
 
 void TrayIcon::Repaint()
@@ -256,7 +257,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
         auto textHeight = size * 0.8;
 
         if (!trayIconFonts.contains(textHeight)) {
-            trayIconFonts[textHeight] = adjustFont(ApdApp->font().family(), textHeight);
+            trayIconFonts[textHeight] = adjustFont(qApp->font().family(), textHeight);
         }
 
         const auto &optFont = trayIconFonts[textHeight];
@@ -314,7 +315,7 @@ void TrayIcon::OnNewVersionClicked()
     _updateReleaseInfo.reset();
     Repaint();
 
-    ApdApp->GetMainWindow()->AskUserUpdate(releaseInfo);
+    GetMainWindow()->AskUserUpdate(releaseInfo);
 }
 
 void TrayIcon::OnSettingsClicked()

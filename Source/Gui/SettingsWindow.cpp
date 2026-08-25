@@ -27,7 +27,7 @@
 
 #include <Config.h>
 
-#include "../Application.h"
+#include "GuiContext.h"
 #include "../Core/Debug.h"
 
 using namespace std::chrono_literals;
@@ -105,7 +105,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
 
-    for (const auto &locale : ApdApp->AvailableLocales()) {
+    for (const auto &locale : Utils::AvailableLocales()) {
         _ui.cbLanguages->addItem(locale.nativeLanguageName());
     }
     _ui.cbLanguages->addItem("...");
@@ -283,7 +283,7 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 {
     _trigger = trigger;
 
-    auto currentLangIndex = ApdApp->GetCurrentLoadedLocaleIndex();
+    auto currentLangIndex = GetAppServices()->GetCurrentLoadedLocaleIndex();
     _lastLanguageIndex = currentLangIndex;
     _ui.cbLanguages->setCurrentIndex(currentLangIndex);
 
@@ -355,7 +355,7 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
     if (_ui.cbLanguages->count() != index + 1) {
         _lastLanguageIndex = index;
 
-        const auto &availableLocales = ApdApp->AvailableLocales();
+        const auto &availableLocales = Utils::AvailableLocales();
         const auto &locale = availableLocales.at(index);
 
         ModifiableAccess()->language_locale = locale.name();

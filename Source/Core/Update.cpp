@@ -29,8 +29,9 @@
 #include <nlohmann/json.hpp>
 
 #include <Config.h>
+#include "../Assert.h"
 #include "../Logger.h"
-#include "../Application.h"
+#include "Settings.h"
 
 using json = nlohmann::json;
 
@@ -358,10 +359,6 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         LOG(Warn, "DownloadInstall: Start installer failed.");
         return false;
     }
-
-    // Quit for install new version
-    //
-    ApdApplication::QuitSafely();
 
     return true;
 }

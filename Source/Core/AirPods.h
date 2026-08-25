@@ -18,10 +18,20 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstdint>
 #include <functional>
+#include <limits>
+#include <mutex>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include <QObject>
 
 #include "Bluetooth.h"
 #include "AppleCP.h"
+#include "../Helper.h"
 
 namespace Core::AirPods {
 
@@ -114,6 +124,7 @@ public:
 
     StateManager();
 
+    void SetOnDiscardState(std::function<void()> callback);
     std::optional<State> GetCurrentState() const;
 
     std::optional<UpdateEvent> OnAdvReceived(Advertisement adv);
@@ -127,6 +138,7 @@ private:
 
     mutable std::mutex _mutex;
 
+    std::function<void()> _onDiscardState;
     Helper::Timer _lostTimer;
     Helper::Sides<Helper::Timer> _stateResetTimer;
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
@@ -143,10 +155,12 @@ private:
 };
 } // namespace Details
 
-class Manager
+class Manager : public QObject
 {
+    Q_OBJECT
+
 public:
-    Manager();
+    explicit Manager(QObject *parent = nullptr);
 
     void StartScanner();
     void StopScanner();
@@ -171,6 +185,12 @@ private:
     bool OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
     void OnAdvWatcherStateChanged(
         Bluetooth::AdvertisementWatcher::State state, const std::optional<std::string> &optError);
+
+Q_SIGNALS:
+    void StateUpdated(const Core::AirPods::State &newState);
+    void Disconnected();
+    void LidToggled(bool opened);
+    void ScannerAvailabilityChanged(bool available);
 };
 
 std::vector<Core::Bluetooth::Device> GetDevices();

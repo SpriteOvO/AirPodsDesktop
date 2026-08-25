@@ -21,23 +21,39 @@
 #include <memory>
 #include <SingleApplication>
 
+#include <QLocale>
 #include <QTranslator>
 
-#include "Gui/TrayIcon.h"
-#include "Gui/TaskbarStatus.h"
-#include "Gui/MainWindow.h"
-#include "Gui/DownloadWindow.h"
-#include "Core/AirPods.h"
-#include "Core/LowAudioLatency.h"
+#include "Gui/GuiContext.h"
+#include "Core/Settings.h"
 #include "Opts.h"
 
-class ApdApplication : public SingleApplication
+namespace Core::AirPods {
+class Manager;
+}
+
+namespace Core::LowAudioLatency {
+class Controller;
+}
+
+namespace Gui {
+class DownloadWindow;
+class MainWindow;
+class TaskbarStatus;
+class TrayIcon;
+}
+
+class ApdApplication :
+    public SingleApplication,
+    private Core::Settings::ApplyObserver,
+    public Gui::AppServices
 {
     Q_OBJECT
 
 public:
     static void PreConstruction();
     ApdApplication(int argc, char *argv[]);
+    ~ApdApplication() override;
 
     bool Prepare(int argc, char *argv[]);
     int Run();
@@ -59,12 +75,10 @@ public:
         return _lowAudioLatencyController;
     }
 
-    inline auto GetCurrentLoadedLocaleIndex()
+    int GetCurrentLoadedLocaleIndex() const override
     {
         return _currentLoadedLocaleIndex;
     }
-
-    const QVector<QLocale> &AvailableLocales();
 
     static void QuitSafely();
 
@@ -79,13 +93,24 @@ private:
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
+    std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
 
     void InitSettings(Core::Settings::LoadResult loadResult);
     void FirstTimeUse();
 
+    void ConnectAirPodsManager();
+
     void SetTranslator(const QLocale &locale);
     void InitTranslator();
+
+    void OnLanguageLocaleChanged(const QLocale &locale) override;
+    void OnLowAudioLatencyChanged(bool enable) override;
+    void OnAutomaticEarDetectionChanged(bool enable) override;
+    void OnRssiMinChanged(int16_t rssiMin) override;
+    void OnDeviceAddressChanged(uint64_t address) override;
+    void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior) override;
+    void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior) override;
 };
 
 #define ApdApp (dynamic_cast<ApdApplication *>(QCoreApplication::instance()))

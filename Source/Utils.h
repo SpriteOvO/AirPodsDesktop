@@ -22,98 +22,47 @@
 #include <format>
 #include <vector>
 #include <cwctype>
-#include <functional>
 
 #include <QDir>
-#include <QTimer>
-#include <QWidget>
-#include <QDialog>
-#include <QBitmap>
-#include <QPainter>
-#include <QKeyEvent>
-#include <QApplication>
-#include <QPainterPath>
+#include <QLocale>
 #include <QStandardPaths>
 
 #include "Helper.h"
 #include "Logger.h"
 #include "Error.h"
 
+#include <Config.h>
+
 #if defined APD_OS_WIN
     #include "Core/OS/Windows.h"
 #endif
 
 namespace Utils {
-namespace Qt {
 
-#define UTILS_QT_DISABLE_ESC_QUIT(base_name)                                                       \
-    inline void keyPressEvent(QKeyEvent *event) override                                           \
-    {                                                                                              \
-        /* Prevent users from closing window by pressing ESC */                                    \
-        if (event->key() == Qt::Key_Escape) {                                                      \
-            event->accept();                                                                       \
-        }                                                                                          \
-        else {                                                                                     \
-            base_name::keyPressEvent(event);                                                       \
-        }                                                                                          \
-    }
-
-#define UTILS_QT_REGISTER_LANGUAGECHANGE(base_name, callback)                                      \
-    inline void changeEvent(QEvent *event) override                                                \
-    {                                                                                              \
-        if (event->type() == QEvent::LanguageChange) {                                             \
-            callback();                                                                            \
-        }                                                                                          \
-        base_name::changeEvent(event);                                                             \
-    }
-
-// for windows
-inline void SetRoundedCorners(QDialog *widget, qreal radius)
+inline const QVector<QLocale> &AvailableLocales()
 {
-    QBitmap bmp{widget->size()};
-    QPainter painter{&bmp};
-    bmp.clear();
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(::Qt::black);
-    painter.setBrush(::Qt::black);
-    painter.drawRoundedRect(widget->geometry(), radius, radius, ::Qt::AbsoluteSize);
-    widget->setMask(bmp);
-}
+    static const QVector<QLocale> locales = []() {
+        const auto localeNames =
+            QString{Config::TranslationLocales}.split(QStringLiteral(";"), ::Qt::SkipEmptyParts);
 
-// for widgets
-inline void SetRoundedCorners(QWidget *widget, qreal radius)
-{
-    QPainterPath path;
-    path.addRoundedRect(widget->rect(), radius, radius);
-    widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
-}
+        QVector<QLocale> result = {QLocale{"en"}};
 
-inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, const QColor &color)
-{
-    auto palette = widget->palette();
-    palette.setColor(colorRole, color);
-    widget->setPalette(palette);
-}
+        for (const auto &localName : localeNames) {
+            QLocale locale{localName};
 
-inline QColor InvertColor(const QColor &color)
-{
-    QColor result;
-    result.setRgb(255 - color.red(), 255 - color.green(), 255 - color.blue());
-    return result;
-}
+            if (locale.language() == QLocale::C) {
+                LOG(Warn, "Possibly invalid locale name '{}', ignore", localName);
+                continue;
+            }
 
-inline void Dispatch(std::function<void()> callback)
-{
-    QTimer *timer = new QTimer;
-    timer->moveToThread(qApp->thread());
-    timer->setSingleShot(true);
-    QObject::connect(timer, &QTimer::timeout, [timer, callback = std::move(callback)]() {
-        callback();
-        timer->deleteLater();
-    });
-    QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
+            result.push_back(locale);
+        }
+
+        return result;
+    }();
+
+    return locales;
 }
-} // namespace Qt
 
 namespace Debug {
 

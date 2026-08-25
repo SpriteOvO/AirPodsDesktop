@@ -23,7 +23,7 @@
 #include <QMessageBox>
 
 #include <Config.h>
-#include "../Application.h"
+#include "Utils.h"
 
 using namespace std::chrono_literals;
 
@@ -38,7 +38,7 @@ DownloadWindow::DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent)
 
     connect(_ui.pushButtonDownloadManually, &QPushButton::clicked, this, [this]() {
         _info.OpenUrl();
-        ApdApplication::QuitSafely();
+        Utils::Qt::QuitApplicationSafely();
     });
 
     connect(this, &DownloadWindow::UpdateProgressSafely, this, &DownloadWindow::UpdateProgress);
@@ -74,7 +74,7 @@ void DownloadWindow::OnFailed()
            "Please download and install the new version manually."));
 
     _info.OpenUrl();
-    ApdApplication::QuitSafely();
+    Utils::Qt::QuitApplicationSafely();
 }
 
 void DownloadWindow::DownloadThread()
@@ -89,7 +89,10 @@ void DownloadWindow::DownloadThread()
         return true;
     });
 
-    if (!successful) {
+    if (successful) {
+        Utils::Qt::QuitApplicationSafely();
+    }
+    else {
         OnFailedSafely();
     }
 }

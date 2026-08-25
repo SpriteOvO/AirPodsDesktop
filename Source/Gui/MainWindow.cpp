@@ -25,9 +25,13 @@
 #include <Config.h>
 #include "../Helper.h"
 #include "../Error.h"
-#include "../Application.h"
+#include "GuiContext.h"
 #include "../Core/AppleCP.h"
+#include "../Core/Settings.h"
+#include "DownloadWindow.h"
 #include "SelectWindow.h"
+#include "TaskbarStatus.h"
+#include "TrayIcon.h"
 
 using namespace std::chrono_literals;
 
@@ -253,8 +257,8 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     _status = Status::Updating;
     _cachedState = state;
     Repaint();
-    ApdApp->GetTrayIcon()->UpdateState(state);
-    ApdApp->GetTaskbarStatus()->UpdateState(state);
+    GetTrayIcon()->UpdateState(state);
+    GetTaskbarStatus()->UpdateState(state);
 }
 
 void MainWindow::Available()
@@ -275,8 +279,8 @@ void MainWindow::Unavailable()
     _status = Status::Unavailable;
     _cachedState.reset();
     Repaint();
-    ApdApp->GetTrayIcon()->Unavailable();
-    ApdApp->GetTaskbarStatus()->Unavailable();
+    GetTrayIcon()->Unavailable();
+    GetTaskbarStatus()->Unavailable();
 }
 
 void MainWindow::Disconnect()
@@ -289,8 +293,8 @@ void MainWindow::Disconnect()
     _status = Status::Disconnected;
     _cachedState.reset();
     Repaint();
-    ApdApp->GetTrayIcon()->Disconnect();
-    ApdApp->GetTaskbarStatus()->Disconnect();
+    GetTrayIcon()->Disconnect();
+    GetTaskbarStatus()->Disconnect();
 }
 
 void MainWindow::Bind()
@@ -308,7 +312,7 @@ void MainWindow::Unbind()
     _status = Status::Unbind;
     _cachedState.reset();
     Repaint();
-    ApdApp->GetTrayIcon()->Unbind();
+    GetTrayIcon()->Unbind();
 }
 
 void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
@@ -344,7 +348,7 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
             Gui::DownloadWindow{releaseInfo}.exec();
         }
 
-        ApdApplication::QuitSafely();
+        Utils::Qt::QuitApplicationSafely();
         return;
 
     case Gui::NewVersionAction::Skip:
@@ -547,7 +551,7 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
         AskUserUpdate(releaseInfo);
     }
     else {
-        ApdApp->GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
+        GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
     }
 }
 
@@ -687,7 +691,7 @@ void MainWindow::DoHide()
 
     ControlAutoHideTimer(false);
 
-    auto screenSize = ApdApplication::primaryScreen()->size();
+    auto screenSize = QGuiApplication::primaryScreen()->size();
 
     _posAnimation.stop();
     _posAnimation.setEasingCurve(QEasingCurve::InExpo);
@@ -708,7 +712,7 @@ void MainWindow::showEvent(QShowEvent *event)
     PlayAnimation();
     ControlAutoHideTimer(true);
 
-    auto screenSize = ApdApplication::primaryScreen()->size();
+    auto screenSize = QGuiApplication::primaryScreen()->size();
 
     move(screenSize.width() - size().width() - _screenMargin.width(), screenSize.height());
 

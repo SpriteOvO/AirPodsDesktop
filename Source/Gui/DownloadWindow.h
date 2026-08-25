@@ -23,7 +23,7 @@
 #include <QDialog>
 
 #include "../Core/Update.h"
-#include "../Utils.h"
+#include "Utils.h"
 #include "ui_DownloadWindow.h"
 
 namespace Gui {
