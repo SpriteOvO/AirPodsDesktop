@@ -17,9 +17,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>20</y>
+     <y>39</y>
      <width>282</width>
-     <height>51</height>
+     <height>32</height>
     </rect>
    </property>
    <property name="font">
@@ -104,8 +104,8 @@
   <widget class="QWidget" name="gridLayoutWidget_2">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>20</y>
+     <x>260</x>
+     <y>7</y>
      <width>31</width>
      <height>31</height>
     </rect>

@@ -19,13 +19,11 @@
 #include "Settings.h"
 
 #include <mutex>
-#include <QCoreApplication>
-#include <QDir>
 #include <boost/pfr.hpp>
 #include <magic_enum.hpp>
 
-#include <Config.h>
 #include "../Logger.h"
+#include "SettingsRepository.h"
 
 using namespace boost;
 
@@ -70,31 +68,16 @@ void OnApply_language_locale(const Fields &newFields)
 
     const QLocale locale =
         newFields.language_locale.isEmpty() ? QLocale{} : QLocale{newFields.language_locale};
-    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
-        observer.OnLanguageLocaleChanged(locale);
-    });
+    Impl::NotifyApplyObserver(
+        [&](ApplyObserver &observer) { observer.OnLanguageLocaleChanged(locale); });
 }
 
 void OnApply_auto_run(const Fields &newFields)
 {
     LOG(Info, "OnApply_auto_run: {}", newFields.auto_run);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
-    QSettings regAutoRun{
-        "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
-        QSettings::Registry64Format};
-
-    QString filePath =
-        QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-    if (newFields.auto_run) {
-        regAutoRun.setValue(Config::ProgramName, filePath);
-    }
-    else {
-        regAutoRun.remove(Config::ProgramName);
-    }
+    Impl::NotifyApplyObserver(
+        [&](ApplyObserver &observer) { observer.OnAutoRunChanged(newFields.auto_run); });
 }
 
 void OnApply_low_audio_latency(const Fields &newFields)
@@ -153,7 +136,7 @@ void OnApply_battery_on_taskbar(const Fields &newFields)
 class Manager : public Helper::Singleton<Manager>
 {
 protected:
-    Manager() = default;
+    Manager() : _repository{CreatePersistentRepository()} {}
     friend Helper::Singleton<Manager>;
 
 public:
@@ -166,7 +149,7 @@ public:
                 std::conditional_t<!std::is_enum_v<ValueType>, ValueType, QString>;
 
             QString qstrKeyName = QString::fromStdString(std::string{keyName});
-            if (!_settings.contains(qstrKeyName)) {
+            if (!_repository->Contains(qstrKeyName)) {
                 if (!isSensitive) {
                     LOG(Warn, "The setting key '{}' not found. Current value '{}'.", keyName,
                         value);
@@ -178,9 +161,10 @@ public:
                 return false;
             }
 
-            QVariant var = _settings.value(qstrKeyName);
+            QVariant var = _repository->Read(qstrKeyName);
             if (!var.canConvert<ValueStorageType>() ||
-                !var.convert(qMetaTypeId<ValueStorageType>())) {
+                !var.convert(qMetaTypeId<ValueStorageType>()))
+            {
                 LOG(Warn, "The value of the key '{}' cannot be convert.", keyName);
                 return false;
             }
@@ -263,12 +247,22 @@ public:
         return ModifiableSafeAccessor{_mutex, _fields};
     }
 
+    void SetRepository(std::unique_ptr<Repository> repository)
+    {
+        if (!repository) {
+            return;
+        }
+        std::lock_guard<std::mutex> lock{_mutex};
+        _repository = std::move(repository);
+        _fields = Fields{};
+    }
+
 private:
     MetaFields _fieldsMeta;
 
     std::mutex _mutex;
     Fields _fields;
-    QSettings _settings{QSettings::UserScope, Config::ProgramName, Config::ProgramName};
+    std::unique_ptr<Repository> _repository;
 
     void SaveWithoutLock()
     {
@@ -278,16 +272,16 @@ private:
             QString qstrKeyName = QString::fromStdString(std::string{keyName});
 
             if (isDeprecated) {
-                _settings.remove(qstrKeyName);
+                _repository->Remove(qstrKeyName);
                 LOG(Info, "Remove deprecated key succeeded. Key: '{}'", keyName);
                 return;
             }
 
             if constexpr (!std::is_enum_v<T>) {
-                _settings.setValue(qstrKeyName, value);
+                _repository->Write(qstrKeyName, value);
             }
             else {
-                _settings.setValue(
+                _repository->Write(
                     qstrKeyName, QString::fromStdString(std::string{magic_enum::enum_name(value)}));
             }
 
@@ -378,5 +372,10 @@ ConstSafeAccessor ConstAccess()
 ModifiableSafeAccessor ModifiableAccess()
 {
     return Manager::GetInstance().ModifiableAccess();
+}
+
+void SetRepository(std::unique_ptr<Repository> repository)
+{
+    Manager::GetInstance().SetRepository(std::move(repository));
 }
 } // namespace Core::Settings

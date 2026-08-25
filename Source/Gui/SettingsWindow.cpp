@@ -27,7 +27,6 @@
 
 #include <Config.h>
 
-#include "GuiContext.h"
 #include "../Core/Debug.h"
 
 using namespace std::chrono_literals;
@@ -63,7 +62,8 @@ private:
     }
 };
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
+SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent)
+    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)}
 {
     const auto &constMetaFields = GetConstMetaFields();
 
@@ -283,7 +283,7 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 {
     _trigger = trigger;
 
-    auto currentLangIndex = GetAppServices()->GetCurrentLoadedLocaleIndex();
+    auto currentLangIndex = _getCurrentLocaleIndex();
     _lastLanguageIndex = currentLangIndex;
     _ui.cbLanguages->setCurrentIndex(currentLangIndex);
 

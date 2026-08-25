@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <atomic>
+#include <thread>
+
 #include <QDialog>
 
 #include "ui_MainWindow.h"
@@ -27,6 +30,7 @@
 #include <QPropertyAnimation>
 
 #include "Utils.h"
+#include "MainWindowPresentation.h"
 #include "../Core/AirPods.h"
 #include "../Core/Update.h"
 #include "Base.h"
@@ -38,17 +42,13 @@ class CloseButton;
 class VideoWidget;
 class BatteryInfo;
 
-enum class ButtonAction : uint32_t {
-    NoButton,
-    Bind,
-};
-
 class MainWindow : public QDialog
 {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -68,6 +68,7 @@ Q_SIGNALS:
     void ShowSafely();
     void HideSafely();
     bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+    void SilentUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 private:
     constexpr static QSize _screenMargin{50, 100};
@@ -88,16 +89,18 @@ private:
     }};
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
-    Status _status{Status::Unavailable};
-    std::optional<Core::AirPods::State> _cachedState;
+    MainWindowViewModel _viewModel;
     bool _isVisible{false};
     bool _isAnimationPlaying{false};
+    std::atomic<bool> _deviceQueryRunning{false};
+    std::jthread _deviceQueryThread;
 
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
     void BindDevice();
+    void ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices);
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();

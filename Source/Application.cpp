@@ -30,6 +30,7 @@
 #include "Gui/TaskbarStatus.h"
 #include "Gui/TrayIcon.h"
 #include "Core/AirPods.h"
+#include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/LowAudioLatency.h"
@@ -39,7 +40,6 @@
 ApdApplication::~ApdApplication()
 {
     Core::Settings::SetApplyObserver(nullptr);
-    Gui::ProvideContext(nullptr, nullptr, nullptr, nullptr);
 }
 
 void ApdApplication::PreConstruction()
@@ -166,22 +166,23 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     InitTranslator();
 
-    Gui::ProvideContext(nullptr, nullptr, nullptr, this);
-
-    _trayIcon = std::make_unique<Gui::TrayIcon>();
+    _trayIcon = std::make_unique<Gui::TrayIcon>([this] { return GetCurrentLoadedLocaleIndex(); });
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
+    _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
 
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
 
+    ConnectGuiComponents();
     ConnectAirPodsManager();
 
     Core::Settings::SetApplyObserver(this);
 
-    Gui::ProvideContext(_mainWindow.get(), _trayIcon.get(), _taskbarStatus.get(), this);
     _mainWindow->Unavailable();
+    _trayIcon->Unavailable();
+    _taskbarStatus->Unavailable();
 
     InitSettings(settingsLoadResult);
 
@@ -193,17 +194,41 @@ void ApdApplication::ConnectAirPodsManager()
     auto *manager = _airPodsManager.get();
     auto *mainWindow = _mainWindow.get();
 
-    connect(manager, &Core::AirPods::Manager::StateUpdated, mainWindow,
-        &Gui::MainWindow::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::BoundDeviceUnavailable, this,
+        [] {
+            auto settings = Core::Settings::ModifiableAccess();
+            settings->device_address = 0;
+        },
+        Qt::QueuedConnection);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, mainWindow, &Gui::MainWindow::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, _trayIcon.get(),
+        &Gui::TrayIcon::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::UpdateState);
     connect(
         manager, &Core::AirPods::Manager::Disconnected, mainWindow, &Gui::MainWindow::Disconnect);
-    connect(manager, &Core::AirPods::Manager::ScannerAvailabilityChanged, mainWindow,
-        [mainWindow](bool available) {
+    connect(
+        manager, &Core::AirPods::Manager::Disconnected, _trayIcon.get(),
+        &Gui::TrayIcon::Disconnect);
+    connect(
+        manager, &Core::AirPods::Manager::Disconnected, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::Disconnect);
+    connect(
+        manager, &Core::AirPods::Manager::ScannerAvailabilityChanged, mainWindow,
+        [this, mainWindow](bool available) {
             if (available) {
                 mainWindow->Available();
+                _trayIcon->Disconnect();
+                _taskbarStatus->Disconnect();
             }
             else {
                 mainWindow->Unavailable();
+                _trayIcon->Unavailable();
+                _taskbarStatus->Unavailable();
             }
         });
     connect(manager, &Core::AirPods::Manager::LidToggled, mainWindow, [mainWindow](bool opened) {
@@ -214,6 +239,30 @@ void ApdApplication::ConnectAirPodsManager()
             emit mainWindow->HideSafely();
         }
     });
+}
+
+void ApdApplication::ConnectGuiComponents()
+{
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::ShowMainWindowRequested, _mainWindow.get(),
+        &Gui::MainWindow::show);
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::UserUpdateRequested, _mainWindow.get(),
+        &Gui::MainWindow::AskUserUpdate);
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::ToolTipChanged, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::SetToolTip);
+
+    connect(
+        _taskbarStatus.get(), &Gui::TaskbarStatus::ShowMainWindowRequested, _mainWindow.get(),
+        &Gui::MainWindow::show);
+    connect(
+        _taskbarStatus.get(), &Gui::TaskbarStatus::ShowTrayMenuRequested, _trayIcon.get(),
+        &Gui::TrayIcon::ShowContextMenu);
+
+    connect(
+        _mainWindow.get(), &Gui::MainWindow::SilentUpdateAvailable, _trayIcon.get(),
+        &Gui::TrayIcon::VersionUpdateAvailable);
 }
 
 int ApdApplication::Run()
@@ -283,6 +332,11 @@ void ApdApplication::OnLanguageLocaleChanged(const QLocale &locale)
     emit SetTranslatorSafely(locale);
 }
 
+void ApdApplication::OnAutoRunChanged(bool enable)
+{
+    _autoStartService->SetEnabled(enable);
+}
+
 void ApdApplication::OnLowAudioLatencyChanged(bool enable)
 {
     _lowAudioLatencyController->ControlSafely(enable);
@@ -302,9 +356,12 @@ void ApdApplication::OnDeviceAddressChanged(uint64_t address)
 {
     if (address == 0) {
         emit _mainWindow->UnbindSafely();
+        _trayIcon->Unbind();
     }
     else {
         emit _mainWindow->BindSafely();
+        _trayIcon->Disconnect();
+        _taskbarStatus->Disconnect();
     }
 
     _airPodsManager->OnBoundDeviceAddressChanged(address);

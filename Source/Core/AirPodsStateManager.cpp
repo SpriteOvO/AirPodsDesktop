@@ -51,6 +51,13 @@ StateManager::StateManager()
     });
 }
 
+StateManager::~StateManager()
+{
+    _lostTimer.Stop();
+    _stateResetTimer.left.Stop();
+    _stateResetTimer.right.Stop();
+}
+
 std::optional<State> StateManager::GetCurrentState() const
 {
     std::lock_guard<std::mutex> lock{_mutex};
@@ -110,14 +117,21 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     auto &lastAdv = advState.side == Side::Left ? _adv.left : _adv.right;
     auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
 
-    if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
-        const auto &lastAdvState = lastAdv->first.GetAdvState();
-
-        if (advState.model != lastAdvState.model) {
-            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model new='{}' old='{}'",
-                Helper::ToString(advState.model), Helper::ToString(lastAdvState.model));
+    const auto hasDifferentModel = [&](const auto &cachedAdv) {
+        if (!cachedAdv.has_value()) {
             return false;
         }
+        const auto cachedModel = cachedAdv->first.GetAdvState().model;
+        return cachedModel != Model::Unknown && advState.model != Model::Unknown &&
+               cachedModel != advState.model;
+    };
+    if (hasDifferentModel(lastAdv) || hasDifferentModel(lastAnotherAdv)) {
+        LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model does not match cached state");
+        return false;
+    }
+
+    if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
+        const auto &lastAdvState = lastAdv->first.GetAdvState();
 
         Battery::ValueType leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
         using SignedBatteryValue = std::make_signed_t<Battery::ValueType>;

@@ -124,9 +124,12 @@ public:
     void Unavailable();
     void Disconnect();
     void Unbind();
+    void SetToolTip(const QString &text);
 
 Q_SIGNALS:
     void OnSettingsChangedSafely(TaskbarStatusBehavior value);
+    void ShowMainWindowRequested();
+    void ShowTrayMenuRequested(const QPoint &position);
 
 private:
     constexpr static inline auto kFixedWidth{60};  // for horizontal taskbar

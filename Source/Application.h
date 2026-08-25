@@ -24,7 +24,6 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include "Gui/GuiContext.h"
 #include "Core/Settings.h"
 #include "Opts.h"
 
@@ -36,17 +35,18 @@ namespace Core::LowAudioLatency {
 class Controller;
 }
 
+namespace Core::AutoStart {
+class Service;
+}
+
 namespace Gui {
 class DownloadWindow;
 class MainWindow;
 class TaskbarStatus;
 class TrayIcon;
-}
+} // namespace Gui
 
-class ApdApplication :
-    public SingleApplication,
-    private Core::Settings::ApplyObserver,
-    public Gui::AppServices
+class ApdApplication : public SingleApplication, private Core::Settings::ApplyObserver
 {
     Q_OBJECT
 
@@ -58,24 +58,12 @@ public:
     bool Prepare(int argc, char *argv[]);
     int Run();
 
-    inline auto &GetTrayIcon()
-    {
-        return _trayIcon;
-    }
-    inline auto &GetTaskbarStatus()
-    {
-        return _taskbarStatus;
-    }
-    inline auto &GetMainWindow()
-    {
-        return _mainWindow;
-    }
     inline auto &GetLowAudioLatencyController()
     {
         return _lowAudioLatencyController;
     }
 
-    int GetCurrentLoadedLocaleIndex() const override
+    int GetCurrentLoadedLocaleIndex() const
     {
         return _currentLoadedLocaleIndex;
     }
@@ -95,16 +83,19 @@ private:
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
+    std::unique_ptr<Core::AutoStart::Service> _autoStartService;
 
     void InitSettings(Core::Settings::LoadResult loadResult);
     void FirstTimeUse();
 
     void ConnectAirPodsManager();
+    void ConnectGuiComponents();
 
     void SetTranslator(const QLocale &locale);
     void InitTranslator();
 
     void OnLanguageLocaleChanged(const QLocale &locale) override;
+    void OnAutoRunChanged(bool enable) override;
     void OnLowAudioLatencyChanged(bool enable) override;
     void OnAutomaticEarDetectionChanged(bool enable) override;
     void OnRssiMinChanged(int16_t rssiMin) override;

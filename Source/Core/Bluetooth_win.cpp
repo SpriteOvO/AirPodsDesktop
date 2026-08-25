@@ -146,23 +146,21 @@ const std::optional<DeviceInformation> &Device::GetInfo() const
         return _info;
     }
 
-    std::thread{[this]() {
-        try {
-            // clang-format off
-            _info = DeviceInformation::CreateFromIdAsync(
-                _device->DeviceInformation().Id(),
-                {
-                    kPropertyBluetoothProductId, // uint16
-                    kPropertyBluetoothVendorId,  // uint16
-                    kPropertyAepContainerId,     // hstring
-                }
-            ).get();
-            // clang-format on
-        }
-        catch (const OS::Windows::Winrt::Exception &ex) {
-            LOG(Warn, "DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
-        }
-    }}.join();
+    try {
+        // clang-format off
+        _info = DeviceInformation::CreateFromIdAsync(
+            _device->DeviceInformation().Id(),
+            {
+                kPropertyBluetoothProductId, // uint16
+                kPropertyBluetoothVendorId,  // uint16
+                kPropertyAepContainerId,     // hstring
+            }
+        ).get();
+        // clang-format on
+    }
+    catch (const OS::Windows::Winrt::Exception &ex) {
+        LOG(Warn, "DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
+    }
 
     return _info;
 }
@@ -243,6 +241,7 @@ public:
         auto devices = GetDevicesByState(Bluetooth::DeviceState::Paired);
         for (const auto &device : devices) {
             if (device.GetAddress() == address) {
+                (void)device.GetProductId();
                 return device;
             }
         }
@@ -255,20 +254,12 @@ namespace DeviceManager {
 
 std::vector<Device> GetDevicesByState(DeviceState state)
 {
-    std::vector<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().GetDevicesByState(state);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().GetDevicesByState(state);
 }
 
 std::optional<Device> FindDevice(uint64_t address)
 {
-    std::optional<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().FindDevice(address);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().FindDevice(address);
 }
 } // namespace DeviceManager
 
