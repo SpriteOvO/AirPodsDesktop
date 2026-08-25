@@ -22,9 +22,6 @@
 #include <QApplication>
 #include <QDesktopWidget>
 
-#include "GuiContext.h"
-#include "MainWindow.h"
-#include "TrayIcon.h"
 #include "../Core/OS/Windows.h"
 
 //
@@ -99,7 +96,8 @@ std::optional<TaskBarInfo> GetTaskBarInfo()
 
         rectMSTaskSwWClassForParent = rectMSTaskSwWClass;
         if (MapWindowPoints(
-                HWND_DESKTOP, hReBarWindow32, (POINT *)&rectMSTaskSwWClassForParent, 2) == 0) {
+                HWND_DESKTOP, hReBarWindow32, (POINT *)&rectMSTaskSwWClassForParent, 2) == 0)
+        {
             LOG(Warn, "Failed to get the rect of the parent of window 'MSTaskSwWClass'.");
             break;
         }
@@ -185,6 +183,11 @@ void TaskbarStatus::UpdateState(const Core::AirPods::State &state)
     _status = Status::Updating;
     _airPodsState = state;
     Repaint();
+}
+
+void TaskbarStatus::SetToolTip(const QString &text)
+{
+    setToolTip(text);
 }
 
 void TaskbarStatus::UpdateVisible()
@@ -402,8 +405,6 @@ void TaskbarStatus::Repaint()
         APD_ASSERT(false);
     }
 
-    setToolTip(GetTrayIcon()->GetToolTip());
-
     UpdateVisible();
 }
 
@@ -473,10 +474,10 @@ void TaskbarStatus::mouseReleaseEvent(QMouseEvent *event)
         LOG(Debug, "_drawDebugBorder: {}", _drawDebugBorder);
         repaint();
 #endif
-        GetMainWindow()->show();
+        emit ShowMainWindowRequested();
     }
     else if (button == Qt::RightButton) {
-        GetTrayIcon()->GetContextMenu()->popup(event->globalPos());
+        emit ShowTrayMenuRequested(event->globalPos());
     }
 
     QDialog::mouseReleaseEvent(event);

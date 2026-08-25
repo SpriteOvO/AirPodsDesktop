@@ -68,6 +68,7 @@ Q_SIGNALS:
     void ShowSafely();
     void HideSafely();
     bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
+    void SilentUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 private:
     constexpr static QSize _screenMargin{50, 100};

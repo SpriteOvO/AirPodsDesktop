@@ -24,19 +24,17 @@
 #include <QSvgRenderer>
 
 #include <Config.h>
-#include "GuiContext.h"
-#include "MainWindow.h"
-
 namespace Gui {
 
-TrayIcon::TrayIcon()
+TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
+    : _settingsWindow{std::move(getCurrentLocaleIndex)}
 {
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
-    connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
+    connect(_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::ShowMainWindowRequested);
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
@@ -92,7 +90,12 @@ void TrayIcon::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseIn
 
 void TrayIcon::ShowMainWindow()
 {
-    GetMainWindow()->show();
+    emit ShowMainWindowRequested();
+}
+
+void TrayIcon::ShowContextMenu(const QPoint &position)
+{
+    _menu->popup(position);
 }
 
 void TrayIcon::Repaint()
@@ -163,7 +166,9 @@ void TrayIcon::Repaint()
         toolTipContent += '\n' + _actionNewVersion->text();
     }
 
-    _tray->setToolTip("AirPodsDesktop\n" + toolTipContent.trimmed());
+    const auto toolTip = "AirPodsDesktop\n" + toolTipContent.trimmed();
+    _tray->setToolTip(toolTip);
+    emit ToolTipChanged(toolTip);
 
     // RepaintIcon
 
@@ -315,7 +320,7 @@ void TrayIcon::OnNewVersionClicked()
     _updateReleaseInfo.reset();
     Repaint();
 
-    GetMainWindow()->AskUserUpdate(releaseInfo);
+    emit UserUpdateRequested(releaseInfo);
 }
 
 void TrayIcon::OnSettingsClicked()

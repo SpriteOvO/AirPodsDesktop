@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QAction>
@@ -34,7 +36,7 @@ class TrayIcon : public QWidget
     Q_OBJECT
 
 public:
-    TrayIcon();
+    explicit TrayIcon(std::function<int()> getCurrentLocaleIndex);
 
     template <class... ArgsT>
     inline void ShowMessage(ArgsT &&...args)
@@ -42,24 +44,18 @@ public:
         _tray->showMessage(std::forward<ArgsT>(args)...);
     }
 
-    inline QMenu *GetContextMenu()
-    {
-        return _menu;
-    }
-
-    inline QString GetToolTip()
-    {
-        return _tray->toolTip();
-    }
-
     void UpdateState(const Core::AirPods::State &state);
     void Unavailable();
     void Disconnect();
     void Unbind();
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
+    void ShowContextMenu(const QPoint &position);
 
 Q_SIGNALS:
     void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
+    void ShowMainWindowRequested();
+    void UserUpdateRequested(const Core::Update::ReleaseInfo &releaseInfo);
+    void ToolTipChanged(const QString &text);
 
 private:
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};

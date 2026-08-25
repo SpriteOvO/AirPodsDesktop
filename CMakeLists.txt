@@ -287,7 +287,6 @@ set(
 set(
     APD_GUI_CODE_FILES
 
-    "Source/Gui/GuiContext.cpp"
     "Source/Gui/TrayIcon.cpp"
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"

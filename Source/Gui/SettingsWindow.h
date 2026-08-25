@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QLabel>
 #include <QDialog>
 #include <QSlider>
@@ -37,7 +39,7 @@ class SettingsWindow : public QDialog
     Q_OBJECT
 
 public:
-    SettingsWindow(QWidget *parent = nullptr);
+    explicit SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent = nullptr);
 
     int GetTabCount() const;
     int GetTabCurrentIndex() const;
@@ -48,6 +50,7 @@ private:
     Ui::SettingsWindow _ui;
     bool _trigger{true};
     int _lastLanguageIndex{0};
+    std::function<int()> _getCurrentLocaleIndex;
 
     void InitCreditsText();
     void RestoreDefaults();

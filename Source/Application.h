@@ -24,7 +24,6 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include "Gui/GuiContext.h"
 #include "Core/Settings.h"
 #include "Opts.h"
 
@@ -41,12 +40,9 @@ class DownloadWindow;
 class MainWindow;
 class TaskbarStatus;
 class TrayIcon;
-}
+} // namespace Gui
 
-class ApdApplication :
-    public SingleApplication,
-    private Core::Settings::ApplyObserver,
-    public Gui::AppServices
+class ApdApplication : public SingleApplication, private Core::Settings::ApplyObserver
 {
     Q_OBJECT
 
@@ -58,24 +54,12 @@ public:
     bool Prepare(int argc, char *argv[]);
     int Run();
 
-    inline auto &GetTrayIcon()
-    {
-        return _trayIcon;
-    }
-    inline auto &GetTaskbarStatus()
-    {
-        return _taskbarStatus;
-    }
-    inline auto &GetMainWindow()
-    {
-        return _mainWindow;
-    }
     inline auto &GetLowAudioLatencyController()
     {
         return _lowAudioLatencyController;
     }
 
-    int GetCurrentLoadedLocaleIndex() const override
+    int GetCurrentLoadedLocaleIndex() const
     {
         return _currentLoadedLocaleIndex;
     }
@@ -100,6 +84,7 @@ private:
     void FirstTimeUse();
 
     void ConnectAirPodsManager();
+    void ConnectGuiComponents();
 
     void SetTranslator(const QLocale &locale);
     void InitTranslator();

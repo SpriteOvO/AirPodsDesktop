@@ -25,13 +25,10 @@
 #include <Config.h>
 #include "../Helper.h"
 #include "../Error.h"
-#include "GuiContext.h"
 #include "../Core/AppleCP.h"
 #include "../Core/Settings.h"
 #include "DownloadWindow.h"
 #include "SelectWindow.h"
-#include "TaskbarStatus.h"
-#include "TrayIcon.h"
 
 using namespace std::chrono_literals;
 
@@ -256,8 +253,6 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     _status = Status::Updating;
     _cachedState = state;
     Repaint();
-    GetTrayIcon()->UpdateState(state);
-    GetTaskbarStatus()->UpdateState(state);
 }
 
 void MainWindow::Available()
@@ -278,8 +273,6 @@ void MainWindow::Unavailable()
     _status = Status::Unavailable;
     _cachedState.reset();
     Repaint();
-    GetTrayIcon()->Unavailable();
-    GetTaskbarStatus()->Unavailable();
 }
 
 void MainWindow::Disconnect()
@@ -292,8 +285,6 @@ void MainWindow::Disconnect()
     _status = Status::Disconnected;
     _cachedState.reset();
     Repaint();
-    GetTrayIcon()->Disconnect();
-    GetTaskbarStatus()->Disconnect();
 }
 
 void MainWindow::Bind()
@@ -311,7 +302,6 @@ void MainWindow::Unbind()
     _status = Status::Unbind;
     _cachedState.reset();
     Repaint();
-    GetTrayIcon()->Unbind();
 }
 
 void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
@@ -550,7 +540,7 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
         AskUserUpdate(releaseInfo);
     }
     else {
-        GetTrayIcon()->VersionUpdateAvailable(releaseInfo);
+        emit SilentUpdateAvailable(releaseInfo);
     }
 }
 
