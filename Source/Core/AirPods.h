@@ -124,6 +124,7 @@ public:
     };
 
     StateManager();
+    ~StateManager();
 
     void SetOnDiscardState(std::function<void()> callback);
     std::optional<State> GetCurrentState() const;

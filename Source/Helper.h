@@ -313,8 +313,7 @@ public:
         Stop();
         _destroyFlag = false;
         _interval = std::move(interval);
-        _thread =
-            std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
+        _thread = std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
     }
 
     inline void Stop()
@@ -329,6 +328,7 @@ public:
     inline void Reset()
     {
         _deadline = Clock::now() + _interval.load();
+        _destroyConVar.notify_all();
     }
 
 private:
@@ -352,9 +352,8 @@ private:
 
         while (true) {
             std::unique_lock<std::mutex> lock{_mutex};
-            {
-                _destroyConVar.wait_until(lock, _deadline.load());
-            }
+            _destroyConVar.wait_until(
+                lock, _deadline.load(), [this] { return _destroyFlag.load(); });
             lock.unlock();
 
             if (_destroyFlag) {

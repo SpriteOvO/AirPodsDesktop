@@ -51,6 +51,13 @@ StateManager::StateManager()
     });
 }
 
+StateManager::~StateManager()
+{
+    _lostTimer.Stop();
+    _stateResetTimer.left.Stop();
+    _stateResetTimer.right.Stop();
+}
+
 std::optional<State> StateManager::GetCurrentState() const
 {
     std::lock_guard<std::mutex> lock{_mutex};
