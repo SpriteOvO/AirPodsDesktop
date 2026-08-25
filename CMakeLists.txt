@@ -267,22 +267,37 @@ endif()
 ##################################################
 
 set(
-    APD_CORE_CODE_FILES
+    APD_SUPPORT_CODE_FILES
 
     "Source/Opts.cpp"
     "Source/Logger.cpp"
     "Source/Assert.cpp"
     "Source/Error.cpp"
+)
+
+set(
+    APD_DOMAIN_CODE_FILES
+
+    "Source/Core/AirPodsAdvertisement.cpp"
+    "Source/Core/AirPodsStateManager.cpp"
+    "Source/Core/AppleCP.cpp"
+)
+
+set(
+    APD_CORE_CODE_FILES
 
     "Source/Core/Debug.cpp"
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
-    "Source/Core/AirPodsAdvertisement.cpp"
-    "Source/Core/AirPodsStateManager.cpp"
-    "Source/Core/AppleCP.cpp"
     "Source/Core/Settings.cpp"
     "Source/Core/SettingsRepository.cpp"
     "Source/Core/LowAudioLatency.cpp"
+)
+
+set(
+    APD_PRESENTATION_CODE_FILES
+
+    "Source/Gui/MainWindowPresentation.cpp"
 )
 
 set(
@@ -291,7 +306,6 @@ set(
     "Source/Gui/TrayIcon.cpp"
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
-    "Source/Gui/MainWindowPresentation.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
@@ -379,17 +393,30 @@ qt5_add_translation(
 
 ##################################################
 
+add_library(apd_support STATIC ${APD_SUPPORT_CODE_FILES})
+
+add_library(apd_domain STATIC ${APD_DOMAIN_CODE_FILES})
+
 add_library(apd_core STATIC ${APD_CORE_CODE_FILES})
+
+add_library(apd_presentation STATIC ${APD_PRESENTATION_CODE_FILES})
 
 add_library(apd_gui STATIC ${APD_GUI_CODE_FILES})
 
-set_target_properties(apd_core apd_gui SingleApplication PROPERTIES DEBUG_POSTFIX "d")
-
-target_include_directories(
-    apd_core PUBLIC
-
-    "${PROJECT_BINARY_DIR}/Source"
+set(
+    APD_INTERNAL_TARGETS
+    apd_support
+    apd_domain
+    apd_core
+    apd_presentation
+    apd_gui
 )
+
+set_target_properties(${APD_INTERNAL_TARGETS} SingleApplication PROPERTIES DEBUG_POSTFIX "d")
+
+foreach (APD_TARGET ${APD_INTERNAL_TARGETS})
+    target_include_directories(${APD_TARGET} PUBLIC "${PROJECT_BINARY_DIR}/Source")
+endforeach()
 
 target_include_directories(
     apd_gui PUBLIC
@@ -400,19 +427,41 @@ target_include_directories(
 )
 
 target_link_libraries(
-    apd_core
+    apd_support
 
     PUBLIC
     Qt5::Core
     Qt5::Gui
-    Qt5::Multimedia
     spdlog::spdlog
     cxxopts::cxxopts
+    magic_enum::magic_enum
+    Boost::${APD_STACKTRACE_COMPONENT}
+)
+
+target_link_libraries(
+    apd_domain
+
+    PUBLIC
+    apd_support
+)
+
+target_link_libraries(
+    apd_core
+
+    PUBLIC
+    apd_domain
+    Qt5::Multimedia
     cpr::cpr
     nlohmann_json::nlohmann_json
     magic_enum::magic_enum
     Boost::pfr
-    Boost::${APD_STACKTRACE_COMPONENT}
+)
+
+target_link_libraries(
+    apd_presentation
+
+    PUBLIC
+    apd_domain
 )
 
 target_link_libraries(
@@ -420,6 +469,7 @@ target_link_libraries(
 
     PUBLIC
     apd_core
+    apd_presentation
     Qt5::Widgets
     Qt5::Svg
     Qt5::MultimediaWidgets
@@ -435,9 +485,9 @@ add_executable(
 
 add_dependencies(${PROJECT_NAME} APD_CREATE_UPDATE_TS)
 
-foreach (APD_TARGET apd_core apd_gui ${PROJECT_NAME})
+foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
     set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)
-    if (APD_TARGET STREQUAL "apd_core" OR APD_TARGET STREQUAL "apd_gui")
+    if (APD_TARGET IN_LIST APD_INTERNAL_TARGETS)
         set(APD_HEADER_DEFINITION_VISIBILITY PUBLIC)
     endif()
 
