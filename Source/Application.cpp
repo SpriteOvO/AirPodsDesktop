@@ -195,6 +195,13 @@ void ApdApplication::ConnectAirPodsManager()
     auto *mainWindow = _mainWindow.get();
 
     connect(
+        manager, &Core::AirPods::Manager::BoundDeviceUnavailable, this,
+        [] {
+            auto settings = Core::Settings::ModifiableAccess();
+            settings->device_address = 0;
+        },
+        Qt::QueuedConnection);
+    connect(
         manager, &Core::AirPods::Manager::StateUpdated, mainWindow, &Gui::MainWindow::UpdateState);
     connect(
         manager, &Core::AirPods::Manager::StateUpdated, _trayIcon.get(),

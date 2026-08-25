@@ -132,7 +132,8 @@ void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetoot
     }
 
     if (!device.has_value()) {
-        LOG(Error, "Find device by address failed.");
+        LOG(Warn, "The bound device address is no longer available.");
+        emit BoundDeviceUnavailable();
         return;
     }
 

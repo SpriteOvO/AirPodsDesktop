@@ -194,6 +194,7 @@ private:
 
 Q_SIGNALS:
     void StateUpdated(const Core::AirPods::State &newState);
+    void BoundDeviceUnavailable();
     void Disconnected();
     void LidToggled(bool opened);
     void ScannerAvailabilityChanged(bool available);
