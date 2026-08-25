@@ -29,9 +29,10 @@ namespace Config {
 #define CONFIG_DESCRIPTION              "@PROJECT_DESCRIPTION@"
 #define CONFIG_COPYRIGHT                "Copyright © 2021-2022 SpriteOvO. All rights reserved."
 #define CONFIG_CPACK_SYSTEM_NAME        "@CPACK_SYSTEM_NAME@"
-#define CONFIG_GITHUB_OWNER             "Kashionz"
-#define CONFIG_URL_REPO                 "https://github.com/" CONFIG_GITHUB_OWNER "/" CONFIG_PROGRAM_NAME
-#define CONFIG_API_REPO                 "https://api.github.com/repos/" CONFIG_GITHUB_OWNER "/" CONFIG_PROGRAM_NAME
+#define CONFIG_GITHUB_OWNER             "@APD_GITHUB_OWNER@"
+#define CONFIG_GITHUB_REPOSITORY        "@APD_GITHUB_REPOSITORY@"
+#define CONFIG_URL_REPO                 "https://github.com/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
+#define CONFIG_API_REPO                 "https://api.github.com/repos/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
 #define CONFIG_URL_ISSUES               CONFIG_URL_REPO "/issues"
 #define CONFIG_URL_RELEASES             CONFIG_URL_REPO "/releases"
 #define CONFIG_URL_LICENSE              CONFIG_URL_REPO "/blob/main/LICENSE"

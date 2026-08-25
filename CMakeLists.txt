@@ -18,12 +18,20 @@
 
 cmake_minimum_required(VERSION 3.20)
 
+set(APD_GITHUB_OWNER "SpriteOvO" CACHE STRING "GitHub repository owner used by the updater.")
+set(
+    APD_GITHUB_REPOSITORY
+    "AirPodsDesktop"
+    CACHE STRING
+    "GitHub repository name used by the updater."
+)
+
 project(
     AirPodsDesktop
     VERSION 0.4.3 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
-    HOMEPAGE_URL "https://github.com/Kashionz/AirPodsDesktop"
+    HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
 )
 
 include(FetchContent)

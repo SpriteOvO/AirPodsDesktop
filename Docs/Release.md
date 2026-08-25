@@ -4,6 +4,11 @@ GitHub Actions builds and tests every push to `main` and every pull request. A t
 `v*.*.*` additionally publishes a GitHub Release containing the NSIS installer, a portable ZIP,
 and `SHA256SUMS.txt`.
 
+The updater defaults to `SpriteOvO/AirPodsDesktop`. GitHub Actions overrides the owner and repository
+with the repository running the workflow, so a fork build checks that fork for test releases. For a
+local fork build, pass `-DAPD_GITHUB_OWNER=Kashionz -DAPD_GITHUB_REPOSITORY=AirPodsDesktop` when
+configuring CMake.
+
 ## Prepare a Release
 
 1. Update the same semantic version in `CMakeLists.txt` and `vcpkg.json`.
