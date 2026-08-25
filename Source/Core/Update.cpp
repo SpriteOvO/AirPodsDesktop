@@ -47,7 +47,7 @@ QVersionNumber ToVersionNumber(QString str)
     return QVersionNumber::fromString(str);
 }
 
-namespace Impl {
+namespace Details {
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 {
@@ -59,7 +59,8 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
         auto url = QString::fromStdString(root["html_url"].get<std::string>());
 
         // Check url
-        if (url.indexOf(Config::UrlRepository) != 0) {
+        const auto expectedReleaseUrlPrefix = QString{Config::UrlReleases} + "/";
+        if (!url.startsWith(expectedReleaseUrlPrefix)) {
             LOG(Warn, "ParseSRResponse: 'html_url' invalid. content: {}", url);
             return std::nullopt;
         }
@@ -113,7 +114,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             }
 
             // Check url
-            if (downloadUrl.find(Config::UrlRepository) != 0) {
+            const std::string expectedDownloadUrlPrefix =
+                std::string{Config::UrlReleases} + "/download/";
+            if (downloadUrl.find(expectedDownloadUrlPrefix) != 0) {
                 LOG(Warn,
                     "ParseSRResponse: 'browser_download_url' invalid. Continue. content: '{}'",
                     downloadUrl);
@@ -157,9 +160,12 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text)
 {
     try {
-        auto root = json::parse(text);
-        const auto &release = root.front();
-        auto optInfo = ParseSingleReleaseResponse(release.dump());
+        const auto root = json::parse(text);
+        if (!root.is_array() || root.empty()) {
+            LOG(Warn, "ParseMRResponse: response does not contain any releases.");
+            return std::nullopt;
+        }
+        auto optInfo = ParseSingleReleaseResponse(root.front().dump());
         if (!optInfo.has_value()) {
             LOG(Warn, "One release info parsing failed.");
             return std::nullopt;
@@ -175,7 +181,7 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
 std::optional<ReleaseInfo> FetchLatestStableRelease()
 {
     const cpr::Response response = cpr::Get(
-        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/latest"},
+        cpr::Url{std::string{Config::ApiRepository} + "/releases/latest"},
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
     if (response.status_code != 200) {
@@ -186,14 +192,14 @@ std::optional<ReleaseInfo> FetchLatestStableRelease()
         return std::nullopt;
     }
 
-    return Impl::ParseSingleReleaseResponse(response.text);
+    return Details::ParseSingleReleaseResponse(response.text);
 }
 
 std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
 {
-    const std::string tag = version.toString().toStdString();
+    const std::string tag = "v" + version.toString().toStdString();
     const cpr::Response response = cpr::Get(
-        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/tags/" + tag},
+        cpr::Url{std::string{Config::ApiRepository} + "/releases/tags/" + tag},
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
     if (response.status_code != 200) {
@@ -204,7 +210,7 @@ std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
         return std::nullopt;
     }
 
-    return Impl::ParseSingleReleaseResponse(response.text);
+    return Details::ParseSingleReleaseResponse(response.text);
 }
 
 std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
@@ -212,7 +218,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
     if (includePreRelease) {
 
         const cpr::Response response = cpr::Get(
-            cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases"},
+            cpr::Url{std::string{Config::ApiRepository} + "/releases"},
             cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
         if (response.status_code != 200) {
@@ -222,7 +228,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
                 response.status_code, response.text);
             return {};
         }
-        return Impl::ParseMultipleReleasesResponseFirst(response.text);
+        return Details::ParseMultipleReleasesResponseFirst(response.text);
     }
     else {
         return FetchLatestStableRelease();
@@ -231,7 +237,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
 
 bool IsCurrentPreRelease()
 {
-    const auto optInfo = Impl::FetchReleaseByVersion(GetLocalVersion());
+    const auto optInfo = Details::FetchReleaseByVersion(GetLocalVersion());
     if (!optInfo.has_value()) {
         LOG(Warn, "IsCurrentPreRelease: FetchReleaseByVersion() failed.");
         return false;
@@ -248,7 +254,7 @@ bool NeedToUpdate(const ReleaseInfo &info)
     return info.version.normalized() > GetLocalVersion().normalized();
 }
 
-} // namespace Impl
+} // namespace Details
 
 //////////////////////////////////////////////////
 
@@ -273,17 +279,17 @@ QVersionNumber GetLocalVersion()
 
 std::optional<ReleaseInfo> FetchUpdateRelease()
 {
-    const auto isCurrentPreRelease = Impl::IsCurrentPreRelease();
+    const auto isCurrentPreRelease = Details::IsCurrentPreRelease();
     LOG(Info, "Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
 
-    const auto optInfo = Impl::FetchLatestRelease(isCurrentPreRelease);
+    const auto optInfo = Details::FetchLatestRelease(isCurrentPreRelease);
     if (!optInfo.has_value()) {
         LOG(Warn, "Update: FetchLatestRelease() returned nullopt.");
         return std::nullopt;
     }
 
     const auto &latestInfo = optInfo.value();
-    const auto needToUpdate = Impl::NeedToUpdate(latestInfo);
+    const auto needToUpdate = Details::NeedToUpdate(latestInfo);
 
     LOG(Info, "Update: Latest version: '{}'", latestInfo.version.toString());
     if (!needToUpdate) {
@@ -304,7 +310,7 @@ std::optional<ReleaseInfo> FetchUpdateRelease()
 
 bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
 {
-    APD_ASSERT(Impl::NeedToUpdate(info));
+    APD_ASSERT(Details::NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
         LOG(Warn, "DownloadInstall: Cannot auto update.");

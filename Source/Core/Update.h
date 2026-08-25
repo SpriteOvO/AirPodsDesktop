@@ -45,6 +45,13 @@ struct ReleaseInfo {
     bool isPreRelease{false};
 };
 
+namespace Details {
+
+std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text);
+std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text);
+
+} // namespace Details
+
 QVersionNumber ToVersionNumber(QString str);
 
 QVersionNumber GetLocalVersion();
