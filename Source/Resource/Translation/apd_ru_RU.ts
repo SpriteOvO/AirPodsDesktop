@@ -23,7 +23,7 @@ Let&apos;s configure something together.</source>
 If you frequently use AirPods with this computer, it is recommended that you click &quot;Yes&quot;.</source>
         <translation>Вы хотите, чтобы эта программа запускалась при запуске системы?
 
-Если вы часто используете AirPods на этом компьютере, рекомендуется нажать кнопку &quot;Yes&quot;.</translation>
+Если вы часто используете AirPods с этим компьютером, рекомендуется нажать кнопку «Да».</translation>
     </message>
     <message>
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
@@ -87,8 +87,8 @@ Current version: %1
 Latest version: %2%3</source>
         <translation>Найдена новая версия!
 
-Текущая версия:%1
-Последняя версия:%2%3</translation>
+Текущая версия: %1
+Последняя версия: %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
@@ -104,15 +104,15 @@ Latest version: %2%3</source>
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translation></translation>
+        <translation>|</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation></translation>
+        <translation>Авторы перевода:</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation></translation>
+        <translation>Сторонние библиотеки:</translation>
     </message>
 </context>
 <context>
@@ -186,7 +186,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Это устраняет проблемы с воспроизведением звука, но может увеличить расход батареи наушников.</translation>
+        <translation>Это устраняет проблемы с воспроизведением коротких аудиофрагментов, но может увеличить расход заряда наушников.</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
@@ -280,7 +280,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Автоматическое обнаружение подключения</translation>
+        <translation>Автоматическое определение положения в ухе</translation>
     </message>
     <message>
         <source>Low audio latency</source>
@@ -292,11 +292,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Открытый исходный код доступен в &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;репозитории&lt;/span&gt;&lt;/a&gt; и распространяется по лицензии &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
-        <translation></translation>
+        <translation>Copyright © 2021-2022 SpriteOvO. Все права защищены.</translation>
     </message>
 </context>
 </TS>
