@@ -93,7 +93,9 @@ private Q_SLOTS:
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
+    void AcceptsKnownModelAfterUnknownAdvertisement();
     void LoadsSettingsThroughRepository();
+    void RejectsNullSettingsRepository();
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
     void MapsMainWindowAnimationResources();
@@ -186,6 +188,22 @@ void AirPodsDomainTests::RejectsAdvertisementsFromDifferentModels()
     QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_Pro_2);
 }
 
+void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+
+    const auto unknown = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x1111, -45, Side::Left, 8, 7, 5, 0xffff)});
+    QVERIFY(unknown.has_value());
+    QCOMPARE(unknown->newState.model, Model::Unknown);
+
+    const auto known = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
+    QVERIFY(known.has_value());
+    QCOMPARE(known->newState.model, Model::AirPods_Pro_2);
+}
+
 void AirPodsDomainTests::LoadsSettingsThroughRepository()
 {
     auto repository = std::make_unique<Core::Settings::MemoryRepository>();
@@ -203,6 +221,20 @@ void AirPodsDomainTests::LoadsSettingsThroughRepository()
     QVERIFY(observer.autoRun);
 
     Core::Settings::SetApplyObserver(nullptr);
+    Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
+}
+
+void AirPodsDomainTests::RejectsNullSettingsRepository()
+{
+    auto repository = std::make_unique<Core::Settings::MemoryRepository>();
+    repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
+    repository->Write("auto_run", true);
+    Core::Settings::SetRepository(std::move(repository));
+
+    Core::Settings::SetRepository(nullptr);
+
+    QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
+    QVERIFY(Core::Settings::GetCurrent().auto_run);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
 }
 

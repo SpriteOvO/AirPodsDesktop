@@ -241,6 +241,7 @@ public:
         auto devices = GetDevicesByState(Bluetooth::DeviceState::Paired);
         for (const auto &device : devices) {
             if (device.GetAddress() == address) {
+                (void)device.GetProductId();
                 return device;
             }
         }

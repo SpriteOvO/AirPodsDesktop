@@ -249,6 +249,9 @@ public:
 
     void SetRepository(std::unique_ptr<Repository> repository)
     {
+        if (!repository) {
+            return;
+        }
         std::lock_guard<std::mutex> lock{_mutex};
         _repository = std::move(repository);
         _fields = Fields{};

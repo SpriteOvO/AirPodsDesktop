@@ -118,7 +118,12 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
 
     const auto hasDifferentModel = [&](const auto &cachedAdv) {
-        return cachedAdv.has_value() && cachedAdv->first.GetAdvState().model != advState.model;
+        if (!cachedAdv.has_value()) {
+            return false;
+        }
+        const auto cachedModel = cachedAdv->first.GetAdvState().model;
+        return cachedModel != Model::Unknown && advState.model != Model::Unknown &&
+               cachedModel != advState.model;
     };
     if (hasDifferentModel(lastAdv) || hasDifferentModel(lastAnotherAdv)) {
         LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: model does not match cached state");

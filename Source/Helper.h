@@ -328,7 +328,10 @@ public:
 
     inline void Reset()
     {
-        _deadline = Clock::now() + _interval.load();
+        {
+            std::lock_guard<std::mutex> lock{_mutex};
+            _deadline = Clock::now() + _interval.load();
+        }
         _destroyConVar.notify_all();
     }
 

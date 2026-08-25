@@ -28,7 +28,8 @@ public:
         QSettings registry{
             "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
             QSettings::Registry64Format};
-        const auto executable = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+        const auto executable = QString{"\"%1\""}.arg(
+            QDir::toNativeSeparators(QCoreApplication::applicationFilePath()));
 
         if (enabled) {
             registry.setValue(Config::ProgramName, executable);
