@@ -20,6 +20,8 @@
 
 #include <optional>
 
+#include <QCryptographicHash>
+#include <QFile>
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
@@ -48,6 +50,37 @@ QVersionNumber ToVersionNumber(QString str)
 }
 
 namespace Details {
+
+namespace {
+
+QString ParseSha256Digest(const json &asset)
+{
+    if (!asset.contains("digest") || !asset["digest"].is_string()) {
+        return {};
+    }
+
+    const auto digest = QString::fromStdString(asset["digest"].get<std::string>());
+    constexpr auto prefix = "sha256:";
+    if (!digest.startsWith(prefix, Qt::CaseInsensitive)) {
+        return {};
+    }
+
+    const auto hash = digest.mid(QString{prefix}.size());
+    if (hash.size() != 64) {
+        return {};
+    }
+
+    for (const auto character : hash) {
+        const bool isHex = character.isDigit()
+            || (character.toLower() >= QChar{'a'} && character.toLower() <= QChar{'f'});
+        if (!isHex) {
+            return {};
+        }
+    }
+    return hash.toLower();
+}
+
+} // namespace
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 {
@@ -107,6 +140,7 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             auto fileName = QString::fromStdString(asset["name"].get<std::string>());
             auto fileSize = asset["size"].get<size_t>();
             auto downloadUrl = asset["browser_download_url"].get<std::string>();
+            auto sha256 = ParseSha256Digest(asset);
 
             if (fileName.isEmpty() || fileSize == 0 || downloadUrl.empty()) {
                 LOG(Warn, "ParseSRResponse: Asset json fields value is empty. Continue.");
@@ -144,6 +178,11 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             info.fileName = std::move(fileName);
             info.downloadUrl = std::move(downloadUrl);
             info.fileSize = fileSize;
+            info.sha256 = std::move(sha256);
+
+            if (info.sha256.isEmpty()) {
+                LOG(Warn, "ParseSRResponse: Asset does not contain a valid SHA-256 digest.");
+            }
 
             LOG(Info, "ParseSRResponse: Found matching file.");
             break;
@@ -176,6 +215,29 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
         LOG(Warn, "ParseMRResponse: json parse failed. what: '{}', text: '{}'", ex.what(), text);
         return std::nullopt;
     }
+}
+
+bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256)
+{
+    if (expectedSha256.size() != 64) {
+        return false;
+    }
+
+    QFile file{filePath};
+    if (!file.open(QIODevice::ReadOnly)) {
+        LOG(Warn, "VerifyFileSha256: Unable to open '{}'. error: '{}'", filePath,
+            file.errorString());
+        return false;
+    }
+
+    QCryptographicHash hash{QCryptographicHash::Sha256};
+    if (!hash.addData(&file)) {
+        LOG(Warn, "VerifyFileSha256: Unable to read '{}'.", filePath);
+        return false;
+    }
+
+    const auto actualSha256 = QString::fromLatin1(hash.result().toHex());
+    return actualSha256.compare(expectedSha256, Qt::CaseInsensitive) == 0;
 }
 
 std::optional<ReleaseInfo> FetchLatestStableRelease()
@@ -260,7 +322,7 @@ bool NeedToUpdate(const ReleaseInfo &info)
 
 bool ReleaseInfo::CanAutoUpdate() const
 {
-    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0;
+    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0 && sha256.size() == 64;
 }
 
 void ReleaseInfo::OpenUrl() const
@@ -354,6 +416,12 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
     }
 
     outFile.close();
+
+    if (!Details::VerifyFileSha256(filePath, info.sha256)) {
+        LOG(Warn, "DownloadInstall: Downloaded file SHA-256 mismatch.");
+        return false;
+    }
+
     tempPath.setAutoRemove(false);
 
     // Download succeeded

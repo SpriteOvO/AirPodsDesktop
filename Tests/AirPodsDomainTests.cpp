@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <QtTest>
+#include <QTemporaryFile>
 
 #include "Source/Core/AirPods.h"
 #include "Source/Core/Settings.h"
@@ -100,6 +101,8 @@ private Q_SLOTS:
     void ParsesUpdateVersions();
     void ParsesGitHubReleaseMetadata();
     void RejectsReleaseMetadataFromAnotherRepository();
+    void RejectsUpdateAssetsWithoutDigest();
+    void VerifiesUpdateFileDigest();
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
     void MapsMainWindowAnimationResources();
@@ -258,6 +261,7 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
         "assets": [{
             "name": "AirPodsDesktop-0.4.3-win32.exe",
             "size": 123456,
+            "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             "browser_download_url": "https://github.com/Kashionz/AirPodsDesktop/releases/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
         }]
     })json");
@@ -266,6 +270,8 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
     QCOMPARE(release->version, QVersionNumber(0, 4, 3));
     QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.4.3-win32.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
+    QCOMPARE(release->sha256,
+        QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
     QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
     QVERIFY(release->CanAutoUpdate());
     QVERIFY(!release->isPreRelease);
@@ -282,6 +288,38 @@ void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
     })json");
 
     QVERIFY(!release.has_value());
+}
+
+void AirPodsDomainTests::RejectsUpdateAssetsWithoutDigest()
+{
+    const auto release = Core::Update::Details::ParseSingleReleaseResponse(R"json({
+        "tag_name": "v0.4.3",
+        "body": "Change log\nUnsigned asset",
+        "html_url": "https://github.com/Kashionz/AirPodsDesktop/releases/tag/v0.4.3",
+        "prerelease": false,
+        "assets": [{
+            "name": "AirPodsDesktop-0.4.3-win32.exe",
+            "size": 123456,
+            "browser_download_url": "https://github.com/Kashionz/AirPodsDesktop/releases/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
+        }]
+    })json");
+
+    QVERIFY(release.has_value());
+    QVERIFY(!release->CanAutoUpdate());
+}
+
+void AirPodsDomainTests::VerifiesUpdateFileDigest()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    QCOMPARE(file.write("test"), qint64{4});
+    file.close();
+
+    const QString expected =
+        "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    QVERIFY(Core::Update::Details::VerifyFileSha256(file.fileName(), expected));
+    QVERIFY(!Core::Update::Details::VerifyFileSha256(
+        file.fileName(), "0000000000000000000000000000000000000000000000000000000000000000"));
 }
 
 void AirPodsDomainTests::PresentsMainWindowLifecycleStates()
