@@ -85,7 +85,10 @@ jobs:
         run: cmake --build Build/Release --config $env:BUILD_TYPE --parallel 2
 
       - name: Test
-        run: ctest --test-dir Build/Release -C $env:BUILD_TYPE --output-on-failure
+        run: |
+          $qtBin = "${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019/bin"
+          $env:PATH = "$qtBin;$env:PATH"
+          ctest --test-dir Build/Release -C $env:BUILD_TYPE --output-on-failure
 
       - name: Package release assets
         env:
