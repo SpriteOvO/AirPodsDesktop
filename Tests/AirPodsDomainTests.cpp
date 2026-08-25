@@ -248,30 +248,30 @@ void AirPodsDomainTests::RejectsNullSettingsRepository()
 
 void AirPodsDomainTests::ParsesUpdateVersions()
 {
-    QCOMPARE(Core::Update::ToVersionNumber("v0.4.3"), QVersionNumber(0, 4, 3));
-    QCOMPARE(Core::Update::ToVersionNumber("0.4.3"), QVersionNumber(0, 4, 3));
+    QCOMPARE(Core::Update::ToVersionNumber("v0.5.0"), QVersionNumber(0, 5, 0));
+    QCOMPARE(Core::Update::ToVersionNumber("0.5.0"), QVersionNumber(0, 5, 0));
 }
 
 void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
 {
     const auto metadata = QString{R"json({
-        "tag_name": "v0.4.3",
+        "tag_name": "v0.5.0",
         "body": "## Change log\n- Add automatic updates\n\nInstallation notes",
-        "html_url": "%1/tag/v0.4.3",
+        "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": [{
-            "name": "AirPodsDesktop-0.4.3-win32.exe",
+            "name": "AirPodsDesktop-0.5.0-win32.exe",
             "size": 123456,
             "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-            "browser_download_url": "%1/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
+            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
         }]
     })json"}.arg(Config::UrlReleases);
     const auto release =
         Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
 
     QVERIFY(release.has_value());
-    QCOMPARE(release->version, QVersionNumber(0, 4, 3));
-    QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.4.3-win32.exe"});
+    QCOMPARE(release->version, QVersionNumber(0, 5, 0));
+    QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win32.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
     QCOMPARE(release->sha256,
         QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
@@ -280,9 +280,9 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
     QVERIFY(!release->isPreRelease);
 
     const auto generatedNotes = QString{R"json({
-        "tag_name": "v0.4.3",
+        "tag_name": "v0.5.0",
         "body": "## What's Changed\n* Improve update handling\n\n**Full Changelog**: https://example.invalid/compare",
-        "html_url": "%1/tag/v0.4.3",
+        "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": []
     })json"}.arg(Config::UrlReleases);
@@ -309,14 +309,14 @@ void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
 void AirPodsDomainTests::RejectsUpdateAssetsWithoutDigest()
 {
     const auto metadata = QString{R"json({
-        "tag_name": "v0.4.3",
+        "tag_name": "v0.5.0",
         "body": "Change log\nUnsigned asset",
-        "html_url": "%1/tag/v0.4.3",
+        "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": [{
-            "name": "AirPodsDesktop-0.4.3-win32.exe",
+            "name": "AirPodsDesktop-0.5.0-win32.exe",
             "size": 123456,
-            "browser_download_url": "%1/download/v0.4.3/AirPodsDesktop-0.4.3-win32.exe"
+            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
         }]
     })json"}.arg(Config::UrlReleases);
     const auto release =

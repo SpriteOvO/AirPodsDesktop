@@ -24,8 +24,8 @@ cmake -S . -B Build `
    ```powershell
    git switch main
    git pull --ff-only
-   git tag -a v0.4.3 -m "Release v0.4.3"
-   git push origin v0.4.3
+   git tag -a v0.5.0 -m "Release v0.5.0"
+   git push origin v0.5.0
    ```
 
 The workflow rejects a tag whose version differs from either project file. Do not manually upload
@@ -37,7 +37,7 @@ Confirm that the workflow completed successfully, then download the installer an
 SHA-256 value with `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AirPodsDesktop-0.4.3-win32.exe -Algorithm SHA256
+Get-FileHash .\AirPodsDesktop-0.5.0-win32.exe -Algorithm SHA256
 ```
 
 Keep the release as a draft only when manual acceptance testing is required; the automated workflow
