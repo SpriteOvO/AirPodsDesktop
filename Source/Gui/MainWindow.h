@@ -30,6 +30,7 @@
 #include <QPropertyAnimation>
 
 #include "Utils.h"
+#include "MainWindowPresentation.h"
 #include "../Core/AirPods.h"
 #include "../Core/Update.h"
 #include "Base.h"
@@ -40,11 +41,6 @@ namespace Gui {
 class CloseButton;
 class VideoWidget;
 class BatteryInfo;
-
-enum class ButtonAction : uint32_t {
-    NoButton,
-    Bind,
-};
 
 class MainWindow : public QDialog
 {
@@ -93,8 +89,7 @@ private:
     }};
     std::optional<Core::AirPods::Model> _cacheModel;
     ButtonAction _buttonAction{ButtonAction::NoButton};
-    Status _status{Status::Unavailable};
-    std::optional<Core::AirPods::State> _cachedState;
+    MainWindowViewModel _viewModel;
     bool _isVisible{false};
     bool _isAnimationPlaying{false};
     std::atomic<bool> _deviceQueryRunning{false};

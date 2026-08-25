@@ -2,6 +2,7 @@ add_executable(
     AirPodsDomainTests
 
     AirPodsDomainTests.cpp
+    "${CMAKE_SOURCE_DIR}/Source/Gui/MainWindowPresentation.cpp"
 )
 
 target_link_libraries(

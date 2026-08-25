@@ -8,6 +8,7 @@
 #include "Source/Core/AirPods.h"
 #include "Source/Core/Settings.h"
 #include "Source/Core/SettingsRepository.h"
+#include "Source/Gui/MainWindowPresentation.h"
 
 namespace {
 
@@ -92,6 +93,9 @@ private Q_SLOTS:
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
     void LoadsSettingsThroughRepository();
+    void PresentsMainWindowLifecycleStates();
+    void PresentsMainWindowDeviceState();
+    void MapsMainWindowAnimationResources();
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -183,6 +187,64 @@ void AirPodsDomainTests::LoadsSettingsThroughRepository()
 
     Core::Settings::SetApplyObserver(nullptr);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
+}
+
+void AirPodsDomainTests::PresentsMainWindowLifecycleStates()
+{
+    Gui::MainWindowViewModel viewModel;
+
+    auto presentation = viewModel.Present();
+    QCOMPARE(presentation.title, QString{"Unavailable"});
+    QCOMPARE(presentation.buttonAction, Gui::ButtonAction::NoButton);
+    QVERIFY(!presentation.animationModel.has_value());
+
+    viewModel.Available();
+    QCOMPARE(viewModel.Present().title, QString{"Disconnected"});
+
+    viewModel.Unbind();
+    presentation = viewModel.Present();
+    QCOMPARE(presentation.title, QString{"Waiting for Binding"});
+    QCOMPARE(presentation.buttonAction, Gui::ButtonAction::Bind);
+
+    viewModel.Disconnect();
+    QCOMPARE(viewModel.Present(), presentation);
+
+    viewModel.Bind();
+    QCOMPARE(viewModel.Present().title, QString{"Disconnected"});
+}
+
+void AirPodsDomainTests::PresentsMainWindowDeviceState()
+{
+    Core::AirPods::State state;
+    state.displayName = "Office AirPods";
+    state.model = Core::AirPods::Model::AirPods_Pro_2;
+    state.pods.left.battery = 80;
+    state.pods.left.isCharging = true;
+    state.pods.right.battery = 60;
+
+    Gui::MainWindowViewModel viewModel;
+    viewModel.UpdateState(state);
+    const auto presentation = viewModel.Present();
+
+    QCOMPARE(presentation.title, state.displayName);
+    QCOMPARE(presentation.animationModel, std::optional{state.model});
+    QVERIFY(presentation.leftBattery.visible);
+    QVERIFY(presentation.leftBattery.charging);
+    QCOMPARE(presentation.leftBattery.value, 80U);
+    QVERIFY(presentation.rightBattery.visible);
+    QCOMPARE(presentation.rightBattery.value, 60U);
+    QVERIFY(!presentation.caseBattery.visible);
+}
+
+void AirPodsDomainTests::MapsMainWindowAnimationResources()
+{
+    const auto pro = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_2_USB_C);
+    QCOMPARE(pro.resource, QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
+    QCOMPARE(pro.sourceSize, QSize(900, 450));
+
+    const auto fallback = Gui::GetAnimationPresentation(Core::AirPods::Model::Unknown);
+    QCOMPARE(fallback.resource, QString{"qrc:/Resource/Video/AirPods_1.avi"});
+    QCOMPARE(fallback.sourceSize, QSize(800, 400));
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)

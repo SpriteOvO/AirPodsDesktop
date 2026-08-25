@@ -291,6 +291,7 @@ set(
     "Source/Gui/TrayIcon.cpp"
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
+    "Source/Gui/MainWindowPresentation.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"

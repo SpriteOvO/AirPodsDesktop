@@ -258,8 +258,7 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
 {
     LOG(Info, "MainWindow::UpdateState");
 
-    _status = Status::Updating;
-    _cachedState = state;
+    _viewModel.UpdateState(state);
     Repaint();
 }
 
@@ -267,19 +266,15 @@ void MainWindow::Available()
 {
     LOG(Info, "MainWindow::Available");
 
-    if (_status != Status::Unavailable) {
-        return;
-    }
-    _status = Status::Available;
-    Disconnect();
+    _viewModel.Available();
+    Repaint();
 }
 
 void MainWindow::Unavailable()
 {
     LOG(Info, "MainWindow::Unavailable");
 
-    _status = Status::Unavailable;
-    _cachedState.reset();
+    _viewModel.Unavailable();
     Repaint();
 }
 
@@ -287,11 +282,7 @@ void MainWindow::Disconnect()
 {
     LOG(Info, "MainWindow::Disconnect");
 
-    if (_status == Status::Unbind) {
-        return;
-    }
-    _status = Status::Disconnected;
-    _cachedState.reset();
+    _viewModel.Disconnect();
     Repaint();
 }
 
@@ -299,16 +290,15 @@ void MainWindow::Bind()
 {
     LOG(Info, "MainWindow::Bind");
 
-    _status = Status::Bind;
-    Disconnect();
+    _viewModel.Bind();
+    Repaint();
 }
 
 void MainWindow::Unbind()
 {
     LOG(Info, "MainWindow::Unbind");
 
-    _status = Status::Unbind;
-    _cachedState.reset();
+    _viewModel.Unbind();
     Repaint();
 }
 
@@ -399,62 +389,14 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
         _mediaPlayer->setMedia(QMediaContent{});
     }
     else {
-        QString media;
+        const auto presentation = GetAnimationPresentation(model.value());
 
-        // It's not possible to set video padding background color or get video resolution just
-        // through Qt, so we hardcode it here
-        QSize videoSize{};
-
-        switch (model.value()) {
-        case Core::AirPods::Model::AirPods_1:
-            media = "qrc:/Resource/Video/AirPods_1.avi";
-            videoSize = QSize{800, 400};
-            break;
-        case Core::AirPods::Model::AirPods_2:
-            media = "qrc:/Resource/Video/AirPods_2.avi";
-            videoSize = QSize{800, 400};
-            break;
-        case Core::AirPods::Model::AirPods_3:
-        case Core::AirPods::Model::AirPods_4:
-        case Core::AirPods::Model::AirPods_4_ANC:
-            media = "qrc:/Resource/Video/AirPods_3.avi";
-            videoSize = QSize{900, 450};
-            break;
-        case Core::AirPods::Model::AirPods_Pro:
-            media = "qrc:/Resource/Video/AirPods_Pro.avi";
-            videoSize = QSize{900, 450};
-            break;
-        case Core::AirPods::Model::AirPods_Pro_2:
-        case Core::AirPods::Model::AirPods_Pro_2_USB_C:
-            media = "qrc:/Resource/Video/AirPods_Pro_2.avi";
-            videoSize = QSize{900, 450};
-            break;
-        case Core::AirPods::Model::AirPods_Pro_3:
-            media = "qrc:/Resource/Video/AirPods_Pro_3.avi";
-            videoSize = QSize{900, 450};
-            break;
-        case Core::AirPods::Model::AirPods_Max:
-            media = "qrc:/Resource/Video/AirPods_Max.avi";
-            videoSize = QSize{600, 650};
-            break;
-        case Core::AirPods::Model::Beats_Fit_Pro:
-            media = "qrc:/Resource/Video/Beats_Fit_Pro.avi";
-            videoSize = QSize{900, 450};
-            break;
-        case Core::AirPods::Model::Powerbeats_3:
-        case Core::AirPods::Model::Beats_X:
-        case Core::AirPods::Model::Beats_Solo3:
-        default:
-            media = "qrc:/Resource/Video/AirPods_1.avi";
-            videoSize = QSize{800, 400};
-            break;
-        }
-
-        auto aspectRatio = (float)videoSize.width() / (float)videoSize.height();
+        auto aspectRatio =
+            (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
         auto widgetWidth = _videoWidget->height() * aspectRatio;
         _videoWidget->setFixedWidth(widgetWidth);
 
-        _mediaPlayer->setMedia(QUrl{media});
+        _mediaPlayer->setMedia(QUrl{presentation.resource});
 
         PlayAnimation();
     }
@@ -581,74 +523,25 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
 
 void MainWindow::Repaint()
 {
-    const auto &noState = [this] {
-        SetAnimation(std::nullopt);
-        _leftBattery->hide();
-        _rightBattery->hide();
-        _caseBattery->hide();
+    const auto presentation = _viewModel.Present();
+    _ui.deviceLabel->setText(presentation.title);
+    ChangeButtonAction(presentation.buttonAction);
+    SetAnimation(presentation.animationModel);
+
+    const auto applyBattery = [](Widget::Battery *widget, const BatteryPresentation &battery) {
+        if (!battery.visible) {
+            widget->hide();
+            return;
+        }
+
+        widget->setCharging(battery.charging);
+        widget->setValue(battery.value);
+        widget->show();
     };
 
-    QString title;
-
-    switch (_status) {
-    case Status::Unavailable:
-    case Status::Disconnected:
-    case Status::Unbind:
-        title = DisplayableStatus(_status);
-        noState();
-        break;
-    default:
-        break;
-    }
-
-    _ui.deviceLabel->setText(title);
-
-    if (_status == Status::Unavailable || _status == Status::Disconnected) {
-        ChangeButtonAction(ButtonAction::NoButton);
-    }
-    else if (_status == Status::Unbind) {
-        ChangeButtonAction(ButtonAction::Bind);
-    }
-
-    //////////////////////////////////////////////////
-
-    if (!_cachedState.has_value()) {
-        noState();
-        return;
-    }
-
-    const auto &state = _cachedState.value();
-
-    _ui.deviceLabel->setText(state.displayName);
-
-    SetAnimation(state.model);
-
-    if (!state.pods.left.battery.Available()) {
-        _leftBattery->hide();
-    }
-    else {
-        _leftBattery->setCharging(state.pods.left.isCharging);
-        _leftBattery->setValue(state.pods.left.battery.Value());
-        _leftBattery->show();
-    }
-
-    if (!state.pods.right.battery.Available()) {
-        _rightBattery->hide();
-    }
-    else {
-        _rightBattery->setCharging(state.pods.right.isCharging);
-        _rightBattery->setValue(state.pods.right.battery.Value());
-        _rightBattery->show();
-    }
-
-    if (!state.caseBox.battery.Available()) {
-        _caseBattery->hide();
-    }
-    else {
-        _caseBattery->setCharging(state.caseBox.isCharging);
-        _caseBattery->setValue(state.caseBox.battery.Value());
-        _caseBattery->show();
-    }
+    applyBattery(_leftBattery, presentation.leftBattery);
+    applyBattery(_rightBattery, presentation.rightBattery);
+    applyBattery(_caseBattery, presentation.caseBattery);
 }
 
 void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
