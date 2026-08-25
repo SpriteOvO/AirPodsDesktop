@@ -36,6 +36,8 @@ def parse_args() -> argparse.Namespace:
 def convert(args: argparse.Namespace) -> None:
     if not args.input.is_file():
         raise FileNotFoundError(args.input)
+    if args.output.suffix.lower() != ".avi":
+        raise ValueError("output must use the .avi suffix")
     if not 0 <= args.threshold <= 255:
         raise ValueError("threshold must be between 0 and 255")
     if args.edge_scale <= 0:
@@ -73,6 +75,7 @@ def convert(args: argparse.Namespace) -> None:
         args.ffmpeg, "-v", "error", "-y", "-i", str(args.input),
         "-filter_complex", video_filter, "-map", "[output]", "-an",
         "-c:v", "mpeg4", "-q:v", str(args.quality), "-r", str(SOURCE_FPS),
+        "-f", "avi",
         str(temporary_output),
     ]
     try:
