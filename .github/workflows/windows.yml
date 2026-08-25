@@ -1,121 +1,149 @@
-name: Windows Builds
+name: Windows
 
 on:
   push:
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - 'Assets/**'
-      - 'Docs/**'
-
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - 'Assets/**'
-      - 'Docs/**'
-
+    branches:
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
-  PLATFORM_NAME: Win32
   BUILD_TYPE: RelWithDebInfo
-  UPLOAD_ARTIFACT: true
-  CACHE_DEPS: false
-  FIXED_CMAKE_VERSION: 3.21.4
 
 jobs:
-  Build:
-    runs-on: windows-2019
+  build:
+    runs-on: windows-2022
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     defaults:
       run:
-        shell: cmd
+        shell: pwsh
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Prepare build directory
-        run: mkdir Build
-
-      - name: Generate dependencies cache key
-        if: env.CACHE_DEPS == 'true'
+      - name: Check release version
+        id: version
         run: |
-          curl -o Build/DepsRef.json https://api.github.com/repos/SpriteOvO/AirPodsDesktop-Deps/git/refs/heads/main
-          type DepsRef.json
+          $cmakeContents = Get-Content CMakeLists.txt -Raw
+          $match = [regex]::Match(
+            $cmakeContents,
+            '(?s)project\s*\(\s*AirPodsDesktop\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)'
+          )
+          if (-not $match.Success) {
+            throw 'Unable to read the project version from CMakeLists.txt.'
+          }
 
-      - name: Dependencies cache
-        id: cache-deps
-        if: env.CACHE_DEPS == 'true'
-        uses: actions/cache@v2
-        with:
-          path: Build/AirPodsDesktop-Deps
-          key: ${{ hashFiles('Build/DepsRef.json') }}
+          $version = $match.Groups[1].Value
+          $manifestVersion = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'version-string'
+          if ($version -ne $manifestVersion) {
+            throw "CMake version $version does not match vcpkg version $manifestVersion."
+          }
 
-      - name: Clone dependencies
-        if: env.CACHE_DEPS != 'true' || steps.cache-deps.outputs.cache-hit != 'true'
-        working-directory: Build
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match application version v$version."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Clone Qt dependencies
         run: |
-          git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop-Deps.git
-          dir AirPodsDesktop-Deps
-
-      - name: Print CMake version
-        run: cmake --version
-
-      - name: Use a fixed version of CMake
-        if: env.FIXED_CMAKE_VERSION != ''
-        run: |
-          choco install cmake.install --version ${{ env.FIXED_CMAKE_VERSION }} --installargs 'ADD_CMAKE_TO_PATH=System' --force
-          cmake --version
+          git clone --depth 1 --recursive `
+            https://github.com/SpriteOvO/AirPodsDesktop-Deps.git `
+            Build/AirPodsDesktop-Deps
 
       - name: Clone and bootstrap vcpkg
-        working-directory: Build
         run: |
-          git clone --recursive https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
+          git clone https://github.com/microsoft/vcpkg.git Build/vcpkg
+          & Build/vcpkg/bootstrap-vcpkg.bat -disableMetrics
 
-      - name: Generate project and build
-        working-directory: Build
+      - name: Configure
         run: |
-          mkdir ${{ env.BUILD_TYPE }} && cd ${{ env.BUILD_TYPE }}
+          cmake -S . -B Build/Release `
+            -G 'Visual Studio 17 2022' `
+            -A Win32 `
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/Build/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 `
+            -DAPD_BUILD_TESTS=ON `
+            -DAPD_GENERATE_INSTALLER=ON `
+            -DAPD_BUILD_GIT_HASH=${{ github.sha }}
 
-          cmake -G "Visual Studio 16 2019" ^
-                -A ${{ env.PLATFORM_NAME }} ^
-                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ^
-                -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ^
-                -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 ^
-                -DAPD_GENERATE_INSTALLER=ON ^
-                -DAPD_BUILD_GIT_HASH=${{ github.sha }} ^
-                ../../
+      - name: Build
+        run: cmake --build Build/Release --config $env:BUILD_TYPE --parallel 2
 
-          cmake --build . ^
-                --config ${{ env.BUILD_TYPE }}
+      - name: Test
+        run: ctest --test-dir Build/Release -C $env:BUILD_TYPE --output-on-failure
 
-          dir /s Binary
-          dir /s Installer
-
-      - name: Prepare artifacts
-        if: env.UPLOAD_ARTIFACT == 'true'
-        working-directory: Build\${{ env.BUILD_TYPE }}\Installer
+      - name: Package release assets
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          cd _CPack_Packages\win32\NSIS
-          move AirPodsDesktop-*-win32 AirPodsDesktop-${{ github.sha }}-win32
+          $installer = Get-ChildItem `
+            Build/Release/Installer/AirPodsDesktop-*-win32.exe |
+            Select-Object -First 1
+          if (-not $installer) {
+            throw 'The NSIS installer was not generated.'
+          }
 
-      - name: Upload artifact - Installer
-        uses: actions/upload-artifact@v2
-        if: env.UPLOAD_ARTIFACT == 'true'
+          $portableSource =
+            "Build/Release/Installer/_CPack_Packages/win32/NSIS/AirPodsDesktop-$env:VERSION-win32/AirPodsDesktop"
+          if (-not (Test-Path -LiteralPath $portableSource)) {
+            throw "Portable package directory not found: $portableSource"
+          }
+
+          New-Item -ItemType Directory -Path dist | Out-Null
+          $installerDestination = "dist/AirPodsDesktop-$env:VERSION-win32.exe"
+          $portableDestination = "dist/AirPodsDesktop-$env:VERSION-win32-portable.zip"
+          Copy-Item -LiteralPath $installer.FullName -Destination $installerDestination
+          Compress-Archive -Path "$portableSource/*" -DestinationPath $portableDestination
+
+          Get-ChildItem dist -File |
+            Where-Object Extension -In '.exe', '.zip' |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash  $($_.Name)"
+            } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: AirPodsDesktop-${{ github.sha }}-Installer
-          path: Build\${{ env.BUILD_TYPE }}\Installer\AirPodsDesktop-*-win32.exe
-          retention-days: 90
+          name: AirPodsDesktop-${{ steps.version.outputs.version }}-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Upload artifact - Portable
-        uses: actions/upload-artifact@v2
-        if: env.UPLOAD_ARTIFACT == 'true'
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v4
         with:
-          name: AirPodsDesktop-${{ github.sha }}-Portable
-          path: Build\${{ env.BUILD_TYPE }}\Installer\_CPack_Packages\win32\NSIS\AirPodsDesktop-${{ github.sha }}-win32\AirPodsDesktop
-          retention-days: 90
+          name: AirPodsDesktop-${{ needs.build.outputs.version }}-${{ github.sha }}
+          path: dist
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}" dist/*
+          --repo "${{ github.repository }}"
+          --verify-tag
+          --generate-notes
+          --title "AirPodsDesktop ${{ github.ref_name }}"
