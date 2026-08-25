@@ -278,6 +278,19 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
     QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
     QVERIFY(release->CanAutoUpdate());
     QVERIFY(!release->isPreRelease);
+
+    const auto generatedNotes = QString{R"json({
+        "tag_name": "v0.4.3",
+        "body": "## What's Changed\n* Improve update handling\n\n**Full Changelog**: https://example.invalid/compare",
+        "html_url": "%1/tag/v0.4.3",
+        "prerelease": false,
+        "assets": []
+    })json"}.arg(Config::UrlReleases);
+    const auto generatedRelease =
+        Core::Update::Details::ParseSingleReleaseResponse(generatedNotes.toStdString());
+
+    QVERIFY(generatedRelease.has_value());
+    QCOMPARE(generatedRelease->changeLog, QString{"* Improve update handling"});
 }
 
 void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()

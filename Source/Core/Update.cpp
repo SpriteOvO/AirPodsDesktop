@@ -22,6 +22,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
@@ -52,6 +53,28 @@ QVersionNumber ToVersionNumber(QString str)
 namespace Details {
 
 namespace {
+
+QString ParseChangeLog(const QString &body)
+{
+    static const QRegularExpression heading{
+        R"((?im)^#{1,6}[ \t]+(?:change[ \t]*log|what's[ \t]+changed)[ \t]*$)"};
+
+    const auto headingMatch = heading.match(body);
+    if (!headingMatch.hasMatch()) {
+        return {};
+    }
+
+    auto changeLog = body.mid(headingMatch.capturedEnd()).trimmed();
+    int endPosition = changeLog.indexOf("\r\n\r\n");
+    if (endPosition == -1) {
+        endPosition = changeLog.indexOf("\n\n");
+    }
+
+    if (endPosition != -1) {
+        changeLog = changeLog.left(endPosition);
+    }
+    return changeLog.trimmed();
+}
 
 QString ParseSha256Digest(const json &asset)
 {
@@ -104,27 +127,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Warn, "ParseSRResponse: 'body' is empty.");
         }
         else {
-            // Find change log
-
-            int clBeginPos = body.indexOf("Change log", 0, Qt::CaseInsensitive);
-            if (clBeginPos == -1) {
-                clBeginPos = body.indexOf("ChangeLog", 0, Qt::CaseInsensitive);
-            }
-
-            if (clBeginPos == -1) {
+            changeLog = ParseChangeLog(body);
+            if (changeLog.isEmpty()) {
                 LOG(Warn, "ParseSRResponse: Find change log block failed. body: {}", body);
-            }
-            else {
-                changeLog = body.right(body.length() - clBeginPos).trimmed();
-                changeLog = changeLog.right(changeLog.length() - changeLog.indexOf('\n')).trimmed();
-
-                // Find end of ChangeLog
-                int clEndPos = changeLog.indexOf("\r\n\r\n");
-                if (clEndPos == -1) {
-                    clEndPos = changeLog.indexOf("\n\n");
-                }
-
-                changeLog = changeLog.left(clEndPos);
             }
         }
 
