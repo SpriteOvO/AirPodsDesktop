@@ -22,8 +22,10 @@
 #include <QApplication>
 #include <QDesktopWidget>
 
+#include "GuiContext.h"
+#include "MainWindow.h"
+#include "TrayIcon.h"
 #include "../Core/OS/Windows.h"
-#include "../Application.h"
 
 //
 // Windows 10
@@ -400,7 +402,7 @@ void TaskbarStatus::Repaint()
         APD_ASSERT(false);
     }
 
-    setToolTip(ApdApp->GetTrayIcon()->GetToolTip());
+    setToolTip(GetTrayIcon()->GetToolTip());
 
     UpdateVisible();
 }
@@ -471,10 +473,10 @@ void TaskbarStatus::mouseReleaseEvent(QMouseEvent *event)
         LOG(Debug, "_drawDebugBorder: {}", _drawDebugBorder);
         repaint();
 #endif
-        ApdApp->GetMainWindow()->show();
+        GetMainWindow()->show();
     }
     else if (button == Qt::RightButton) {
-        ApdApp->GetTrayIcon()->GetContextMenu()->popup(event->globalPos());
+        GetTrayIcon()->GetContextMenu()->popup(event->globalPos());
     }
 
     QDialog::mouseReleaseEvent(event);

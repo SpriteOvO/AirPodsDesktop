@@ -26,7 +26,7 @@
 
 #include "../Core/AirPods.h"
 #include "../Core/Settings.h"
-#include "../Utils.h"
+#include "Utils.h"
 #include "Base.h"
 #include "Widget/Battery.h"
 

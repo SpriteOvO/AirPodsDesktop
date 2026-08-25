@@ -18,33 +18,36 @@
 
 #pragma once
 
-#include <QDialog>
+#include <QLocale>
 #include <QVector>
-#include <QString>
 
-#include "ui_SelectWindow.h"
-
-#include "Utils.h"
+class QString;
 
 namespace Gui {
 
-class SelectWindow : public QDialog
+class MainWindow;
+class TrayIcon;
+class TaskbarStatus;
+
+//
+// Services that belong to the application layer but are queried by GUI
+// components. Implemented by ApdApplication.
+//
+class AppServices
 {
-    Q_OBJECT
-
 public:
-    SelectWindow(const QString &title, const QStringList &items, QWidget *parent = nullptr);
+    virtual ~AppServices() = default;
 
-    bool HasResult() const;
-    int GetSeletedIndex() const;
-
-private:
-    Ui::SelectWindow _ui;
-    QDialogButtonBox::StandardButton _clickedButton = QDialogButtonBox::NoButton;
-
-    void OnButtonClicked(QDialogButtonBox::StandardButton button);
-
-    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
-    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
+    virtual int GetCurrentLoadedLocaleIndex() const = 0;
 };
+
+void ProvideContext(
+    MainWindow *mainWindow, TrayIcon *trayIcon, TaskbarStatus *taskbarStatus,
+    AppServices *services);
+
+MainWindow *GetMainWindow();
+TrayIcon *GetTrayIcon();
+TaskbarStatus *GetTaskbarStatus();
+AppServices *GetAppServices();
+
 } // namespace Gui

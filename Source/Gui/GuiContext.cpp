@@ -16,35 +16,51 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#pragma once
+#include "GuiContext.h"
 
-#include <QDialog>
-#include <QVector>
-#include <QString>
-
-#include "ui_SelectWindow.h"
-
-#include "Utils.h"
+#include "MainWindow.h"
+#include "TaskbarStatus.h"
+#include "TrayIcon.h"
 
 namespace Gui {
 
-class SelectWindow : public QDialog
+namespace {
+
+MainWindow *_mainWindow = nullptr;
+TrayIcon *_trayIcon = nullptr;
+TaskbarStatus *_taskbarStatus = nullptr;
+AppServices *_services = nullptr;
+
+} // namespace
+
+void ProvideContext(
+    MainWindow *mainWindow, TrayIcon *trayIcon, TaskbarStatus *taskbarStatus,
+    AppServices *services)
 {
-    Q_OBJECT
+    _mainWindow = mainWindow;
+    _trayIcon = trayIcon;
+    _taskbarStatus = taskbarStatus;
+    _services = services;
+}
 
-public:
-    SelectWindow(const QString &title, const QStringList &items, QWidget *parent = nullptr);
+MainWindow *GetMainWindow()
+{
+    return _mainWindow;
+}
 
-    bool HasResult() const;
-    int GetSeletedIndex() const;
+TrayIcon *GetTrayIcon()
+{
+    return _trayIcon;
+}
 
-private:
-    Ui::SelectWindow _ui;
-    QDialogButtonBox::StandardButton _clickedButton = QDialogButtonBox::NoButton;
+TaskbarStatus *GetTaskbarStatus()
+{
+    return _taskbarStatus;
+}
 
-    void OnButtonClicked(QDialogButtonBox::StandardButton button);
+AppServices *GetAppServices()
+{
+    return _services;
+}
 
-    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
-    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
-};
 } // namespace Gui

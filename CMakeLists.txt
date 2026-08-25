@@ -124,9 +124,6 @@ endif()
 # Qt
 #
 set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
-foreach (QT_COMPONENT ${APD_QT_COMPONENTS})
-    set(APD_QT_LIBRARIES ${APD_QT_LIBRARIES} Qt5::${QT_COMPONENT})
-endforeach()
 find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 find_package(Qt5LinguistTools REQUIRED)
 
@@ -267,15 +264,27 @@ endif()
 ##################################################
 
 set(
-    APD_CODE_FILES
+    APD_CORE_CODE_FILES
 
-    "Source/Main.cpp"
     "Source/Opts.cpp"
     "Source/Logger.cpp"
     "Source/Assert.cpp"
     "Source/Error.cpp"
-    "Source/Application.cpp"
 
+    "Source/Core/Debug.cpp"
+    "Source/Core/Update.cpp"
+    "Source/Core/AirPods.cpp"
+    "Source/Core/AirPodsAdvertisement.cpp"
+    "Source/Core/AirPodsStateManager.cpp"
+    "Source/Core/AppleCP.cpp"
+    "Source/Core/Settings.cpp"
+    "Source/Core/LowAudioLatency.cpp"
+)
+
+set(
+    APD_GUI_CODE_FILES
+
+    "Source/Gui/GuiContext.cpp"
     "Source/Gui/TrayIcon.cpp"
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
@@ -283,38 +292,24 @@ set(
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
+)
 
-    "Source/Core/Debug.cpp"
-    "Source/Core/Update.cpp"
-    "Source/Core/AirPods.cpp"
-    "Source/Core/AppleCP.cpp"
-    "Source/Core/Settings.cpp"
-    "Source/Core/LowAudioLatency.cpp"
+set(APD_APP_CODE_FILES
+    "Source/Main.cpp"
+    "Source/Application.cpp"
 )
 
 set(ADD_EXECUTABLE_ARG)
-set(APD_COMPILE_DEFINITIONS)
 
 if (WIN32)
-    set(
-        APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS}
-
-        APD_OS_WIN
-        APD_MSVC
-        WIN32_LEAN_AND_MEAN
-        NOMINMAX
-    )
-    set(
-        APD_CODE_FILES ${APD_CODE_FILES}
-
+    list(APPEND APD_CORE_CODE_FILES
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
-
+    )
+    list(APPEND APD_APP_CODE_FILES
         "Source/Resource/Resource.rc"
     )
-    if (APD_ENABLE_CONSOLE)
-        set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_ENABLE_CONSOLE)
-    else()
+    if (NOT APD_ENABLE_CONSOLE)
         set(ADD_EXECUTABLE_ARG WIN32)
     endif()
 
@@ -323,17 +318,13 @@ if (WIN32)
     set_source_files_properties("Source/Resource/Resource.rc" PROPERTIES COMPILE_FLAGS "/d_MSC_VER")
 endif()
 
-if (APD_BUILD_GIT_HASH)
-    set(APD_COMPILE_DEFINITIONS ${APD_COMPILE_DEFINITIONS} APD_BUILD_GIT_HASH="${APD_BUILD_GIT_HASH}")
-endif()
-
 ##################################################
 # Qt configurations
 #
 
 # Resource
 
-qt5_add_resources(APD_CODE_FILES "Source/Resource/Resource.qrc")
+set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 
 #
 # Translation
@@ -383,22 +374,96 @@ qt5_add_translation(
 
 ##################################################
 
+add_library(apd_core STATIC ${APD_CORE_CODE_FILES})
+
+add_library(apd_gui STATIC ${APD_GUI_CODE_FILES})
+
+set_target_properties(apd_core apd_gui SingleApplication PROPERTIES DEBUG_POSTFIX "d")
+
+target_include_directories(
+    apd_core PUBLIC
+
+    "${PROJECT_BINARY_DIR}/Source"
+)
+
+target_include_directories(
+    apd_gui PUBLIC
+
+    "${PROJECT_BINARY_DIR}/Source"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/apd_gui_autogen/include_$<CONFIG>>"
+)
+
+target_link_libraries(
+    apd_core
+
+    PUBLIC
+    Qt5::Core
+    Qt5::Gui
+    Qt5::Multimedia
+    spdlog::spdlog
+    cxxopts::cxxopts
+    cpr::cpr
+    nlohmann_json::nlohmann_json
+    magic_enum::magic_enum
+    Boost::pfr
+    Boost::${APD_STACKTRACE_COMPONENT}
+)
+
+target_link_libraries(
+    apd_gui
+
+    PUBLIC
+    apd_core
+    Qt5::Widgets
+    Qt5::Svg
+    Qt5::MultimediaWidgets
+)
+
 add_executable(
     ${PROJECT_NAME} ${ADD_EXECUTABLE_ARG}
 
-    ${APD_CODE_FILES}
+    ${APD_APP_CODE_FILES}
+    ${APD_QRC_FILE}
     ${APD_QM_FILES}
 )
 
 add_dependencies(${PROJECT_NAME} APD_CREATE_UPDATE_TS)
 
-target_compile_definitions(
-    ${PROJECT_NAME} PRIVATE
+foreach (APD_TARGET apd_core apd_gui ${PROJECT_NAME})
+    set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)
+    if (APD_TARGET STREQUAL "apd_core" OR APD_TARGET STREQUAL "apd_gui")
+        set(APD_HEADER_DEFINITION_VISIBILITY PUBLIC)
+    endif()
 
-    $<$<CONFIG:Debug>:APD_DEBUG>
-    SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
-    ${APD_COMPILE_DEFINITIONS}
-)
+    target_compile_definitions(
+        ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY}
+
+        $<$<CONFIG:Debug>:APD_DEBUG>
+    )
+    target_compile_definitions(${APD_TARGET} PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+
+    if (WIN32)
+        target_compile_definitions(
+            ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY}
+            APD_OS_WIN
+            WIN32_LEAN_AND_MEAN
+            NOMINMAX
+        )
+    endif()
+    if (MSVC)
+        target_compile_definitions(${APD_TARGET} PRIVATE APD_MSVC)
+    endif()
+    if (APD_ENABLE_CONSOLE)
+        target_compile_definitions(
+            ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY} APD_ENABLE_CONSOLE
+        )
+    endif()
+    if (APD_BUILD_GIT_HASH)
+        target_compile_definitions(${APD_TARGET} PRIVATE APD_BUILD_GIT_HASH="${APD_BUILD_GIT_HASH}")
+    endif()
+endforeach()
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_BINARY_DIR}/Source")
 
 ##################################################
 
@@ -481,22 +546,15 @@ include(CPack) # We always need variable "CPACK_SYSTEM_NAME"
 #
 
 configure_file("Source/Config.h.in" "Source/Config.h")
-target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/Source")
 
 ##################################################
 
 target_link_libraries(
     ${PROJECT_NAME}
-    
-    ${APD_QT_LIBRARIES}
-    spdlog::spdlog
-    cxxopts::cxxopts
-    cpr::cpr
-    nlohmann_json::nlohmann_json
+
+    PRIVATE
+    apd_gui
     SingleApplication::SingleApplication
-    magic_enum::magic_enum
-    Boost::pfr
-    Boost::${APD_STACKTRACE_COMPONENT}
 )
 
 ##################################################

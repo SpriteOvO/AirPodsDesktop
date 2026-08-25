@@ -19,19 +19,28 @@
 #include "Settings.h"
 
 #include <mutex>
+#include <QCoreApplication>
 #include <QDir>
 #include <boost/pfr.hpp>
 #include <magic_enum.hpp>
 
 #include <Config.h>
 #include "../Logger.h"
-#include "../Application.h"
-#include "GlobalMedia.h"
-#include "LowAudioLatency.h"
 
 using namespace boost;
 
 namespace Core::Settings {
+
+namespace {
+
+ApplyObserver *_applyObserver = nullptr;
+
+} // namespace
+
+void SetApplyObserver(ApplyObserver *observer)
+{
+    _applyObserver = observer;
+}
 
 template <class T>
 std::string_view LogSensitiveData(const T &value)
@@ -39,12 +48,31 @@ std::string_view LogSensitiveData(const T &value)
     return value != std::decay_t<T>{} ? "** MAYBE HAVE VALUE **" : "** MAYBE NO VALUE **";
 }
 
+namespace Impl {
+
+ApplyObserver *GetApplyObserver()
+{
+    return _applyObserver;
+}
+
+void NotifyApplyObserver(auto &&invoke)
+{
+    if (auto *observer = GetApplyObserver(); observer) {
+        invoke(*observer);
+    }
+}
+
+} // namespace Impl
+
 void OnApply_language_locale(const Fields &newFields)
 {
     LOG(Info, "OnApply_language_locale: {}", newFields.language_locale);
 
-    ApdApp->SetTranslatorSafely(
-        newFields.language_locale.isEmpty() ? QLocale{} : QLocale{newFields.language_locale});
+    const QLocale locale =
+        newFields.language_locale.isEmpty() ? QLocale{} : QLocale{newFields.language_locale};
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnLanguageLocaleChanged(locale);
+    });
 }
 
 void OnApply_auto_run(const Fields &newFields)
@@ -59,7 +87,8 @@ void OnApply_auto_run(const Fields &newFields)
         "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
         QSettings::Registry64Format};
 
-    QString filePath = QDir::toNativeSeparators(ApdApplication::applicationFilePath());
+    QString filePath =
+        QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
     if (newFields.auto_run) {
         regAutoRun.setValue(Config::ProgramName, filePath);
     }
@@ -72,50 +101,53 @@ void OnApply_low_audio_latency(const Fields &newFields)
 {
     LOG(Info, "OnApply_low_audio_latency: {}", newFields.low_audio_latency);
 
-    ApdApp->GetLowAudioLatencyController()->ControlSafely(newFields.low_audio_latency);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnLowAudioLatencyChanged(newFields.low_audio_latency);
+    });
 }
 
 void OnApply_automatic_ear_detection(const Fields &newFields)
 {
     LOG(Info, "OnApply_automatic_ear_detection: {}", newFields.automatic_ear_detection);
 
-    ApdApp->GetMainWindow()->GetApdMgr().OnAutomaticEarDetectionChanged(
-        newFields.automatic_ear_detection);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnAutomaticEarDetectionChanged(newFields.automatic_ear_detection);
+    });
 }
 
 void OnApply_rssi_min(const Fields &newFields)
 {
     LOG(Info, "OnApply_rssi_min: {}", newFields.rssi_min);
 
-    ApdApp->GetMainWindow()->GetApdMgr().OnRssiMinChanged(newFields.rssi_min);
+    Impl::NotifyApplyObserver(
+        [&](ApplyObserver &observer) { observer.OnRssiMinChanged(newFields.rssi_min); });
 }
 
 void OnApply_device_address(const Fields &newFields)
 {
     LOG(Info, "OnApply_device_address: {}", LogSensitiveData(newFields.device_address));
 
-    if (newFields.device_address == 0) {
-        ApdApp->GetMainWindow()->UnbindSafely();
-    }
-    else {
-        ApdApp->GetMainWindow()->BindSafely();
-    }
-
-    ApdApp->GetMainWindow()->GetApdMgr().OnBoundDeviceAddressChanged(newFields.device_address);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnDeviceAddressChanged(newFields.device_address);
+    });
 }
 
 void OnApply_tray_icon_battery(const Fields &newFields)
 {
     LOG(Info, "OnApply_tray_icon_battery: {}", newFields.tray_icon_battery);
 
-    ApdApp->GetTrayIcon()->OnTrayIconBatteryChangedSafely(newFields.tray_icon_battery);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnTrayIconBatteryChanged(newFields.tray_icon_battery);
+    });
 }
 
 void OnApply_battery_on_taskbar(const Fields &newFields)
 {
     LOG(Info, "OnApply_battery_on_taskbar: {}", newFields.battery_on_taskbar);
 
-    ApdApp->GetTaskbarStatus()->OnSettingsChangedSafely(newFields.battery_on_taskbar);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnTaskbarBatteryChanged(newFields.battery_on_taskbar);
+    });
 }
 
 class Manager : public Helper::Singleton<Manager>

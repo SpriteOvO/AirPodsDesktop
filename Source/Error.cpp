@@ -22,8 +22,8 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <QMessageBox>
 #include <QDesktopServices>
+#include <QUrl>
 
 #include <boost/stacktrace.hpp>
 

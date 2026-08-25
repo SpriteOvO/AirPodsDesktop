@@ -24,7 +24,7 @@
 #include <QCheckBox>
 
 #include "../Core/Settings.h"
-#include "../Utils.h"
+#include "Utils.h"
 
 #include "ui_SettingsWindow.h"
 
