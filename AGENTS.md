@@ -26,7 +26,7 @@ Follow `.clang-format`: four-space indentation, no tabs, 100-column limit, and c
 
 ## Testing Guidelines
 
-First-party Qt Test coverage lives in `Tests/` and is enabled with `-DAPD_BUILD_TESTS=ON`. Build the selected configuration, then run `ctest --test-dir Build -C RelWithDebInfo --output-on-failure`. Every change must at least compile in Win32 `RelWithDebInfo`; manually exercise affected Bluetooth, tray, media, settings, or translation flows. Name new test files after the unit or feature under test, such as `AirPodsStateManagerTest.cpp`.
+First-party Qt Test coverage lives in `Tests/`. Configure with `-DAPD_BUILD_TESTS=ON`, build the selected configuration, then run `ctest --test-dir Build -C RelWithDebInfo --output-on-failure`. Every change must at least compile in Win32 `RelWithDebInfo`; manually exercise affected Bluetooth, tray, media, settings, or translation flows. Name new test files after the unit or feature under test, such as `AirPodsStateManagerTest.cpp`.
 
 ## Commit & Pull Request Guidelines
 
