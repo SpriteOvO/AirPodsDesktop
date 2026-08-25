@@ -69,7 +69,7 @@ set(VCPKG_FEATURE_FLAGS "versions")
 # Build options
 #
 
-set(APD_BUILD_TESTS OFF CACHE BOOL "Build tests.")
+set(APD_BUILD_TESTS OFF CACHE BOOL "Build first-party tests.")
 set(APD_ENABLE_CONSOLE OFF CACHE BOOL "Enable console.")
 set(APD_GENERATE_INSTALLER OFF CACHE BOOL "Generate installer after build.")
 set(APD_QT_DEPLOY ON CACHE BOOL "Run Qt deployment tool after build")
@@ -126,6 +126,9 @@ endif()
 set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
 find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 find_package(Qt5LinguistTools REQUIRED)
+if (APD_BUILD_TESTS)
+    find_package(Qt5 COMPONENTS Test REQUIRED)
+endif()
 
 # spdlog
 #
@@ -173,7 +176,7 @@ find_package(cpr 1.7.2 CONFIG)
 if (cpr_FOUND)
     message("Found 'cpr' (${cpr_VERSION}).")
 else()
-    set(CPR_BUILD_TESTS ${APD_BUILD_TESTS})
+    set(CPR_BUILD_TESTS OFF)
     set(CPR_BUILD_TESTS_SSL OFF)
     set(CURL_ZLIB OFF CACHE STRING "" FORCE)
     message("Fetching 'cpr'...")
@@ -390,6 +393,7 @@ target_include_directories(
     apd_gui PUBLIC
 
     "${PROJECT_BINARY_DIR}/Source"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/apd_gui_autogen/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/apd_gui_autogen/include_$<CONFIG>>"
 )
 
@@ -556,6 +560,15 @@ target_link_libraries(
     apd_gui
     SingleApplication::SingleApplication
 )
+
+##################################################
+# Tests
+#
+
+if (APD_BUILD_TESTS)
+    include(CTest)
+    add_subdirectory(Tests)
+endif()
 
 ##################################################
 
