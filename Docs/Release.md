@@ -6,8 +6,13 @@ and `SHA256SUMS.txt`.
 
 The updater defaults to `SpriteOvO/AirPodsDesktop`. GitHub Actions overrides the owner and repository
 with the repository running the workflow, so a fork build checks that fork for test releases. For a
-local fork build, pass `-DAPD_GITHUB_OWNER=Kashionz -DAPD_GITHUB_REPOSITORY=AirPodsDesktop` when
-configuring CMake.
+local fork build, replace the placeholders with that fork's values when configuring CMake:
+
+```powershell
+cmake -S . -B Build `
+  -DAPD_GITHUB_OWNER=YOUR_GITHUB_OWNER `
+  -DAPD_GITHUB_REPOSITORY=YOUR_REPOSITORY
+```
 
 ## Prepare a Release
 
