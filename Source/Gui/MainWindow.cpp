@@ -246,7 +246,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutAnimation->activate();
     _videoWidget->show();
 
-    Unavailable();
     _updateChecker.Start();
 }
 

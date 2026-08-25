@@ -430,21 +430,33 @@ add_executable(
 add_dependencies(${PROJECT_NAME} APD_CREATE_UPDATE_TS)
 
 foreach (APD_TARGET apd_core apd_gui ${PROJECT_NAME})
+    set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)
+    if (APD_TARGET STREQUAL "apd_core" OR APD_TARGET STREQUAL "apd_gui")
+        set(APD_HEADER_DEFINITION_VISIBILITY PUBLIC)
+    endif()
+
     target_compile_definitions(
-        ${APD_TARGET} PRIVATE
+        ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY}
 
         $<$<CONFIG:Debug>:APD_DEBUG>
-        SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
     )
+    target_compile_definitions(${APD_TARGET} PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
     if (WIN32)
-        target_compile_definitions(${APD_TARGET} PRIVATE APD_OS_WIN WIN32_LEAN_AND_MEAN NOMINMAX)
+        target_compile_definitions(
+            ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY}
+            APD_OS_WIN
+            WIN32_LEAN_AND_MEAN
+            NOMINMAX
+        )
     endif()
     if (MSVC)
         target_compile_definitions(${APD_TARGET} PRIVATE APD_MSVC)
     endif()
     if (APD_ENABLE_CONSOLE)
-        target_compile_definitions(${APD_TARGET} PRIVATE APD_ENABLE_CONSOLE)
+        target_compile_definitions(
+            ${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY} APD_ENABLE_CONSOLE
+        )
     endif()
     if (APD_BUILD_GIT_HASH)
         target_compile_definitions(${APD_TARGET} PRIVATE APD_BUILD_GIT_HASH="${APD_BUILD_GIT_HASH}")

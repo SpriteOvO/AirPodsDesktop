@@ -74,7 +74,7 @@ int16_t Advertisement::GetRssi() const
     return _data.rssi;
 }
 
-const auto &Advertisement::GetTimestamp() const
+const Advertisement::TimestampType &Advertisement::GetTimestamp() const
 {
     return _data.timestamp;
 }

@@ -166,6 +166,8 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     InitTranslator();
 
+    Gui::ProvideContext(nullptr, nullptr, nullptr, this);
+
     _trayIcon = std::make_unique<Gui::TrayIcon>();
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
@@ -179,6 +181,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     Core::Settings::SetApplyObserver(this);
 
     Gui::ProvideContext(_mainWindow.get(), _trayIcon.get(), _taskbarStatus.get(), this);
+    _mainWindow->Unavailable();
 
     InitSettings(settingsLoadResult);
 

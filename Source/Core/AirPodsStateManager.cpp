@@ -30,8 +30,14 @@ namespace Core::AirPods::Details {
 StateManager::StateManager()
 {
     _lostTimer.Start(10s, [this] {
-        std::lock_guard<std::mutex> lock{_mutex};
-        DoLost();
+        std::function<void()> onDiscardState;
+        {
+            std::lock_guard<std::mutex> lock{_mutex};
+            onDiscardState = DoLost();
+        }
+        if (onDiscardState) {
+            onDiscardState();
+        }
     });
 
     _stateResetTimer.left.Start(10s, [this] {
@@ -66,9 +72,15 @@ auto StateManager::OnAdvReceived(Advertisement adv) -> std::optional<UpdateEvent
 
 void StateManager::Disconnect()
 {
-    std::lock_guard<std::mutex> lock{_mutex};
-    LOG(Info, "StateManager: Disconnect.");
-    ResetAll();
+    std::function<void()> onDiscardState;
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        LOG(Info, "StateManager: Disconnect.");
+        onDiscardState = ResetAll();
+    }
+    if (onDiscardState) {
+        onDiscardState();
+    }
 }
 
 void StateManager::OnRssiMinChanged(int16_t rssiMin)
@@ -214,23 +226,22 @@ auto StateManager::UpdateState() -> std::optional<UpdateEvent>
     return UpdateEvent{.oldState = std::move(oldState), .newState = _cachedState.value()};
 }
 
-void StateManager::ResetAll()
+std::function<void()> StateManager::ResetAll()
 {
-    if (_cachedState.has_value() && _onDiscardState) {
-        _onDiscardState();
-    }
+    auto onDiscardState = _cachedState.has_value() ? _onDiscardState : nullptr;
 
     _adv.left.reset();
     _adv.right.reset();
     _cachedState.reset();
+    return onDiscardState;
 }
 
-void StateManager::DoLost()
+std::function<void()> StateManager::DoLost()
 {
     if (_cachedState.has_value()) {
         LOG(Info, "StateManager: Device is lost.");
     }
-    ResetAll();
+    return ResetAll();
 }
 
 void StateManager::DoStateReset(Side side)

@@ -87,6 +87,7 @@ class Advertisement
 {
 public:
     using AddressType = decltype(Bluetooth::AdvertisementWatcher::ReceivedData::address);
+    using TimestampType = decltype(Bluetooth::AdvertisementWatcher::ReceivedData::timestamp);
 
     struct AdvState : AirPods::State {
         Side side;
@@ -97,7 +98,7 @@ public:
     Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData &data);
 
     int16_t GetRssi() const;
-    const auto &GetTimestamp() const;
+    const TimestampType &GetTimestamp() const;
     AddressType GetAddress() const;
     std::vector<uint8_t> GetDesensitizedData() const;
     const AdvState &GetAdvState() const;
@@ -148,9 +149,9 @@ private:
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
     void UpdateAdv(Advertisement adv);
     std::optional<UpdateEvent> UpdateState();
-    void ResetAll();
+    std::function<void()> ResetAll();
 
-    void DoLost();
+    std::function<void()> DoLost();
     void DoStateReset(Side side);
 };
 } // namespace Details

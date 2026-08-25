@@ -30,7 +30,9 @@ namespace Core::AirPods {
 
 Manager::Manager(QObject *parent) : QObject{parent}
 {
-    _stateMgr.SetOnDiscardState([this] { emit Disconnected(); });
+    _stateMgr.SetOnDiscardState([this] {
+        QMetaObject::invokeMethod(this, [this] { emit Disconnected(); }, Qt::QueuedConnection);
+    });
 
     _adWatcher.CbReceived() += [this](auto &&...args) {
         std::lock_guard<std::mutex> lock{_mutex};
