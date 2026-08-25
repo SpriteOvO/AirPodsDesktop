@@ -35,6 +35,10 @@ namespace Core::LowAudioLatency {
 class Controller;
 }
 
+namespace Core::AutoStart {
+class Service;
+}
+
 namespace Gui {
 class DownloadWindow;
 class MainWindow;
@@ -79,6 +83,7 @@ private:
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
+    std::unique_ptr<Core::AutoStart::Service> _autoStartService;
 
     void InitSettings(Core::Settings::LoadResult loadResult);
     void FirstTimeUse();
@@ -90,6 +95,7 @@ private:
     void InitTranslator();
 
     void OnLanguageLocaleChanged(const QLocale &locale) override;
+    void OnAutoRunChanged(bool enable) override;
     void OnLowAudioLatencyChanged(bool enable) override;
     void OnAutomaticEarDetectionChanged(bool enable) override;
     void OnRssiMinChanged(int16_t rssiMin) override;

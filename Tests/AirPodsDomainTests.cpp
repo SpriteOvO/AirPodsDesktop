@@ -6,6 +6,8 @@
 #include <QtTest>
 
 #include "Source/Core/AirPods.h"
+#include "Source/Core/Settings.h"
+#include "Source/Core/SettingsRepository.h"
 
 namespace {
 
@@ -14,6 +16,26 @@ using Core::AirPods::Side;
 using Core::AirPods::Details::Advertisement;
 using Core::AirPods::Details::StateManager;
 using ReceivedData = Core::Bluetooth::AdvertisementWatcher::ReceivedData;
+
+class RecordingSettingsObserver final : public Core::Settings::ApplyObserver
+{
+public:
+    void OnLanguageLocaleChanged(const QLocale &) override {}
+    void OnAutoRunChanged(bool enable) override
+    {
+        autoRun = enable;
+        ++autoRunChanges;
+    }
+    void OnLowAudioLatencyChanged(bool) override {}
+    void OnAutomaticEarDetectionChanged(bool) override {}
+    void OnRssiMinChanged(int16_t) override {}
+    void OnDeviceAddressChanged(uint64_t) override {}
+    void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior) override {}
+    void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior) override {}
+
+    bool autoRun{false};
+    int autoRunChanges{0};
+};
 
 std::vector<uint8_t> MakePacket(
     uint16_t modelId, Side side, uint8_t leftBattery, uint8_t rightBattery, uint8_t caseBattery,
@@ -69,6 +91,7 @@ private Q_SLOTS:
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
+    void LoadsSettingsThroughRepository();
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -140,6 +163,26 @@ void AirPodsDomainTests::MergesAdvertisementsFromBothSides()
     QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
     QCOMPARE(update->newState.pods.right.battery.Value(), 70U);
     QCOMPARE(update->newState.caseBox.battery.Value(), 50U);
+}
+
+void AirPodsDomainTests::LoadsSettingsThroughRepository()
+{
+    auto repository = std::make_unique<Core::Settings::MemoryRepository>();
+    repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
+    repository->Write("auto_run", true);
+    Core::Settings::SetRepository(std::move(repository));
+
+    QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
+    QVERIFY(Core::Settings::GetCurrent().auto_run);
+
+    RecordingSettingsObserver observer;
+    Core::Settings::SetApplyObserver(&observer);
+    Core::Settings::Apply();
+    QCOMPARE(observer.autoRunChanges, 1);
+    QVERIFY(observer.autoRun);
+
+    Core::Settings::SetApplyObserver(nullptr);
+    Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)

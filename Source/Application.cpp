@@ -30,6 +30,7 @@
 #include "Gui/TaskbarStatus.h"
 #include "Gui/TrayIcon.h"
 #include "Core/AirPods.h"
+#include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/LowAudioLatency.h"
@@ -169,6 +170,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
+    _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
 
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
@@ -321,6 +323,11 @@ void ApdApplication::QuitSafely()
 void ApdApplication::OnLanguageLocaleChanged(const QLocale &locale)
 {
     emit SetTranslatorSafely(locale);
+}
+
+void ApdApplication::OnAutoRunChanged(bool enable)
+{
+    _autoStartService->SetEnabled(enable);
 }
 
 void ApdApplication::OnLowAudioLatencyChanged(bool enable)

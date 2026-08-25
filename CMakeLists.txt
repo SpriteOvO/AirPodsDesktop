@@ -281,6 +281,7 @@ set(
     "Source/Core/AirPodsStateManager.cpp"
     "Source/Core/AppleCP.cpp"
     "Source/Core/Settings.cpp"
+    "Source/Core/SettingsRepository.cpp"
     "Source/Core/LowAudioLatency.cpp"
 )
 
@@ -305,6 +306,7 @@ set(ADD_EXECUTABLE_ARG)
 
 if (WIN32)
     list(APPEND APD_CORE_CODE_FILES
+        "Source/Core/AutoStart_win.cpp"
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
     )
