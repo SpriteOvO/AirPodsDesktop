@@ -174,7 +174,6 @@ public:
 
 private:
     std::mutex _mutex;
-    Bluetooth::AdvertisementWatcher _adWatcher;
     Details::StateManager _stateMgr;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
@@ -183,6 +182,10 @@ private:
     bool _automaticEarDetection{false};
     uint64_t _requestedDeviceAddress{0};
     std::jthread _deviceLookupThread;
+
+    // Declared last so that it is destroyed first: its destructor stops the watcher and waits
+    // for in-flight callbacks, which reach `_stateMgr` and `_mutex` above.
+    Bluetooth::AdvertisementWatcher _adWatcher;
 
     void CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetooth::Device> device);
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);

@@ -47,6 +47,8 @@ Manager::Manager(QObject *parent) : QObject{parent}
 
 Manager::~Manager()
 {
+    StopScanner();
+
     _deviceLookupThread.request_stop();
     if (_deviceLookupThread.joinable()) {
         _deviceLookupThread.join();
