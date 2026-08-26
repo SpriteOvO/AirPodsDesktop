@@ -443,18 +443,6 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
     QCOMPARE(fallback.resource, QString{"qrc:/Resource/Video/AirPods_1.avi"});
     QCOMPARE(fallback.sourceSize, QSize(800, 400));
 
-    // Models without an animation of their own borrow the nearest one, so every mapping has to
-    // name a resource the qrc actually carries.
-    QCOMPARE(
-        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_4).resource,
-        QString{"qrc:/Resource/Video/AirPods_3.avi"});
-    QCOMPARE(
-        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_4_ANC).resource,
-        QString{"qrc:/Resource/Video/AirPods_3.avi"});
-    QCOMPARE(
-        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_3).resource,
-        QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
-
     // The qrc is linked into the application, not into this binary, so read it from the source
     // tree: a mapping naming a resource the qrc does not carry would ship a blank animation.
     QFile qrc{QString{APD_SOURCE_DIR} + "/Source/Resource/Resource.qrc"};

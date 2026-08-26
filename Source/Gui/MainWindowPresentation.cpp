@@ -108,19 +108,19 @@ AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model)
         return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}};
     case Model::AirPods_2:
         return {"qrc:/Resource/Video/AirPods_2.avi", {800, 400}};
-    // AirPods 4, AirPods 4 (ANC) and AirPods Pro 3 reuse the nearest existing animation. The
-    // dedicated ones were derived from Apple's SharingDeviceAssets catalog and are not
-    // redistributed with this project.
     case Model::AirPods_3:
-    case Model::AirPods_4:
-    case Model::AirPods_4_ANC:
         return {"qrc:/Resource/Video/AirPods_3.avi", {900, 450}};
+    case Model::AirPods_4:
+        return {"qrc:/Resource/Video/AirPods_4.avi", {900, 450}};
+    case Model::AirPods_4_ANC:
+        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}};
     case Model::AirPods_Pro:
         return {"qrc:/Resource/Video/AirPods_Pro.avi", {900, 450}};
     case Model::AirPods_Pro_2:
     case Model::AirPods_Pro_2_USB_C:
-    case Model::AirPods_Pro_3:
         return {"qrc:/Resource/Video/AirPods_Pro_2.avi", {900, 450}};
+    case Model::AirPods_Pro_3:
+        return {"qrc:/Resource/Video/AirPods_Pro_3.avi", {900, 450}};
     case Model::AirPods_Max:
         return {"qrc:/Resource/Video/AirPods_Max.avi", {600, 650}};
     case Model::Beats_Fit_Pro:
