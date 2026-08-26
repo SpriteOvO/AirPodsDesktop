@@ -207,8 +207,8 @@ void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
     QVERIFY(unknown.has_value());
     QCOMPARE(unknown->newState.model, Model::Unknown);
 
-    const auto known = manager.OnAdvReceived(
-        Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
+    const auto known =
+        manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
     QVERIFY(known.has_value());
     QCOMPARE(known->newState.model, Model::AirPods_Pro_2);
 }
@@ -266,15 +266,16 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
             "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
         }]
-    })json"}.arg(Config::UrlReleases);
-    const auto release =
-        Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
+    })json"}
+                              .arg(Config::UrlReleases);
+    const auto release = Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
 
     QVERIFY(release.has_value());
     QCOMPARE(release->version, QVersionNumber(0, 5, 0));
     QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win32.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
-    QCOMPARE(release->sha256,
+    QCOMPARE(
+        release->sha256,
         QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
     QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
     QVERIFY(release->CanAutoUpdate());
@@ -286,7 +287,8 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
         "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": []
-    })json"}.arg(Config::UrlReleases);
+    })json"}
+                                    .arg(Config::UrlReleases);
     const auto generatedRelease =
         Core::Update::Details::ParseSingleReleaseResponse(generatedNotes.toStdString());
 
@@ -319,9 +321,9 @@ void AirPodsDomainTests::RejectsUpdateAssetsWithoutDigest()
             "size": 123456,
             "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
         }]
-    })json"}.arg(Config::UrlReleases);
-    const auto release =
-        Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
+    })json"}
+                              .arg(Config::UrlReleases);
+    const auto release = Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
 
     QVERIFY(release.has_value());
     QVERIFY(!release->CanAutoUpdate());
@@ -334,8 +336,7 @@ void AirPodsDomainTests::VerifiesUpdateFileDigest()
     QCOMPARE(file.write("test"), qint64{4});
     file.close();
 
-    const QString expected =
-        "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    const QString expected = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
     QVERIFY(Core::Update::Details::VerifyFileSha256(file.fileName(), expected));
     QVERIFY(!Core::Update::Details::VerifyFileSha256(
         file.fileName(), "0000000000000000000000000000000000000000000000000000000000000000"));
