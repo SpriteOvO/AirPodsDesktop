@@ -56,8 +56,12 @@ namespace {
 
 QString ParseChangeLog(const QString &body)
 {
+    // Two things this has to tolerate, both present in real release bodies:
+    //   - decoration between the hashes and the words, e.g. "## :scroll: Change log"
+    //   - CRLF, since bodies authored in the GitHub web UI use it and `$` asserts only
+    //     before the `\n`, so an unconsumed `\r` would fail the match
     static const QRegularExpression heading{
-        R"((?im)^#{1,6}[ \t]+(?:change[ \t]*log|what's[ \t]+changed)[ \t]*$)"};
+        R"((?im)^#{1,6}[ \t]+.*?(?:change[ \t]*log|what's[ \t]+changed)[ \t\r]*$)"};
 
     const auto headingMatch = heading.match(body);
     if (!headingMatch.hasMatch()) {

@@ -294,6 +294,22 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
 
     QVERIFY(generatedRelease.has_value());
     QCOMPARE(generatedRelease->changeLog, QString{"* Improve update handling"});
+
+    // Shaped after the real 0.4.2 release body: CRLF line endings and an emoji shortcode
+    // between the hashes and the words.
+    const auto decorated = QString{R"json({
+        "tag_name": "0.4.2",
+        "body": "Beta notice\r\n\r\n## :scroll: Change log\r\n1. Supported AirPods 4\r\n\r\nSorry",
+        "html_url": "%1/tag/0.4.2",
+        "prerelease": false,
+        "assets": []
+    })json"}
+                               .arg(Config::UrlReleases);
+    const auto decoratedRelease =
+        Core::Update::Details::ParseSingleReleaseResponse(decorated.toStdString());
+
+    QVERIFY(decoratedRelease.has_value());
+    QCOMPARE(decoratedRelease->changeLog, QString{"1. Supported AirPods 4"});
 }
 
 void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
