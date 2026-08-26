@@ -367,7 +367,17 @@ void ApdApplication::OnDeviceAddressChanged(uint64_t address)
         _taskbarStatus->Disconnect();
     }
 
-    _airPodsManager->OnBoundDeviceAddressChanged(address);
+    // Queued rather than direct: this observer runs from `~ModifiableSafeAccessor`, which still
+    // holds the settings mutex until it finishes. `OnBoundDeviceAddressChanged` joins the device
+    // lookup thread, and `request_stop()` cannot interrupt the WinRT enumeration it is blocked
+    // on, so calling it here would hold the settings mutex for the length of that enumeration
+    // and stall every other thread touching settings.
+    QMetaObject::invokeMethod(
+        _airPodsManager.get(),
+        [manager = _airPodsManager.get(), address] {
+            manager->OnBoundDeviceAddressChanged(address);
+        },
+        Qt::QueuedConnection);
 }
 
 void ApdApplication::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior)
