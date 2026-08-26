@@ -41,9 +41,18 @@ struct ReleaseInfo {
     QString fileName;
     std::string downloadUrl;
     size_t fileSize{0};
+    QString sha256;
     QString changeLog;
     bool isPreRelease{false};
 };
+
+namespace Details {
+
+std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text);
+std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text);
+bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256);
+
+} // namespace Details
 
 QVersionNumber ToVersionNumber(QString str);
 

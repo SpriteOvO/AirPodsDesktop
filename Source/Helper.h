@@ -251,13 +251,12 @@ public:
         Stop();
         _interval = std::move(interval);
         _callback = std::move(callback);
-        _destroyFlag = false;
-        _thread = std::thread{[this] { Thread(); }};
+        _thread = std::jthread{[this](std::stop_token stopToken) { Thread(stopToken); }};
     }
 
     inline void Stop()
     {
-        _destroyFlag = true;
+        _thread.request_stop();
         Notify();
         if (_thread.joinable()) {
             _thread.join();
@@ -272,19 +271,19 @@ public:
 private:
     std::chrono::milliseconds _interval{};
     FnCallback _callback;
-    std::thread _thread;
+    std::jthread _thread;
     std::mutex _mutex;
     std::condition_variable _destroyConVar;
-    std::atomic<bool> _destroyFlag{false};
 
-    void Thread()
+    void Thread(std::stop_token stopToken)
     {
-        while (!_destroyFlag) {
+        while (!stopToken.stop_requested()) {
             if (!_callback()) {
                 break;
             }
             std::unique_lock<std::mutex> lock{_mutex};
-            _destroyConVar.wait_for(lock, _interval);
+            _destroyConVar.wait_for(
+                lock, _interval, [&stopToken] { return stopToken.stop_requested(); });
         }
     }
 };
@@ -311,15 +310,16 @@ public:
     Start(std::chrono::milliseconds interval, FnTrigger callback, bool immediatelyOnce = false)
     {
         Stop();
-        _destroyFlag = false;
         _interval = std::move(interval);
-        _thread =
-            std::thread{&Timer::Thread, this, std::move(callback), immediatelyOnce};
+        _thread = std::jthread{
+            [this, callback = std::move(callback), immediatelyOnce](std::stop_token stopToken) {
+                Thread(stopToken, callback, immediatelyOnce);
+            }};
     }
 
     inline void Stop()
     {
-        _destroyFlag = true;
+        _thread.request_stop();
         _destroyConVar.notify_all();
         if (_thread.joinable()) {
             _thread.join();
@@ -328,21 +328,24 @@ public:
 
     inline void Reset()
     {
-        _deadline = Clock::now() + _interval.load();
+        {
+            std::lock_guard<std::mutex> lock{_mutex};
+            _deadline = Clock::now() + _interval.load();
+        }
+        _destroyConVar.notify_all();
     }
 
 private:
     using Clock = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
 
-    std::atomic<bool> _destroyFlag{false};
     std::mutex _mutex;
     std::condition_variable _destroyConVar;
     std::atomic<std::chrono::milliseconds> _interval;
     std::atomic<TimePoint> _deadline;
-    std::thread _thread;
+    std::jthread _thread;
 
-    inline void Thread(FnTrigger callback, bool immediatelyOnce)
+    inline void Thread(std::stop_token stopToken, const FnTrigger &callback, bool immediatelyOnce)
     {
         if (immediatelyOnce) {
             callback();
@@ -352,12 +355,11 @@ private:
 
         while (true) {
             std::unique_lock<std::mutex> lock{_mutex};
-            {
-                _destroyConVar.wait_until(lock, _deadline.load());
-            }
+            _destroyConVar.wait_until(
+                lock, _deadline.load(), [&stopToken] { return stopToken.stop_requested(); });
             lock.unlock();
 
-            if (_destroyFlag) {
+            if (stopToken.stop_requested()) {
                 break;
             }
             if (_deadline.load() > Clock::now()) {

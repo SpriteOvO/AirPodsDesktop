@@ -1,0 +1,59 @@
+# Release Process
+
+GitHub Actions builds and tests every push to `main` and every pull request. A tag matching
+`v*.*.*` additionally publishes a GitHub Release containing the NSIS installer, a portable ZIP,
+and `SHA256SUMS.txt`.
+
+The updater defaults to `SpriteOvO/AirPodsDesktop`. GitHub Actions overrides the owner and repository
+with the repository running the workflow, so a fork build checks that fork for test releases. For a
+local fork build, replace the placeholders with that fork's values when configuring CMake:
+
+```powershell
+cmake -S . -B Build `
+  -DAPD_GITHUB_OWNER=YOUR_GITHUB_OWNER `
+  -DAPD_GITHUB_REPOSITORY=YOUR_REPOSITORY
+```
+
+`APD_RELEASE_TAG_PREFIX` (default `v`) states whether that repository's release tags carry a `v`.
+It only affects the version link in the Settings window; the updater's release lookup tries both
+forms, so a repository whose history mixes them still resolves. Releases before v0.5.0 are tagged
+without the prefix, and the workflow's tag check accepts either.
+
+## Prepare a Release
+
+1. Update the same semantic version in `CMakeLists.txt` and `vcpkg.json`.
+2. Build and test Win32 `RelWithDebInfo` locally.
+3. Merge the version change into `main`.
+4. Create and push a matching annotated tag:
+
+   ```powershell
+   git switch main
+   git pull --ff-only
+   git tag -a v0.5.0 -m "Release v0.5.0"
+   git push origin v0.5.0
+   ```
+
+The workflow rejects a tag whose version differs from either project file. Do not manually upload
+or rename the installer: the updater selects an `.exe` asset containing `win32` in its name.
+
+## Verify a Release
+
+Confirm that the workflow completed successfully, then download the installer and compare its
+SHA-256 value with `SHA256SUMS.txt`:
+
+```powershell
+Get-FileHash .\AirPodsDesktop-0.5.0-win32.exe -Algorithm SHA256
+```
+
+Keep the release as a draft only when manual acceptance testing is required; the automated workflow
+publishes releases immediately.
+
+## Optional Windows Code Signing
+
+Add both repository secrets below to sign tagged installers before checksum generation:
+
+- `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64-encoded PFX certificate.
+- `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password for the PFX certificate.
+
+The workflow publishes an unsigned installer when neither secret exists, but fails when only one is
+configured. The temporary certificate is deleted after `signtool` signs and verifies the installer.

@@ -18,17 +18,41 @@
 
 #pragma once
 
+#include <memory>
 #include <mutex>
 
-#include <QSettings>
+#include <QLocale>
 
 #include "../Helper.h"
 
 namespace Core::Settings {
 
+class Repository;
+
 enum class TrayIconBatteryBehavior : uint32_t { Disable, WhenLowBattery, Always };
 enum class TaskbarStatusBehavior : uint32_t { Disable, Text, Icon };
 enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
+
+// Receives settings side effects so that this module doesn't need to know
+// about GUI or other application services.
+//
+class ApplyObserver
+{
+public:
+    virtual ~ApplyObserver() = default;
+
+    virtual void OnLanguageLocaleChanged(const QLocale &locale) = 0;
+    virtual void OnAutoRunChanged(bool enable) = 0;
+    virtual void OnLowAudioLatencyChanged(bool enable) = 0;
+    virtual void OnAutomaticEarDetectionChanged(bool enable) = 0;
+    virtual void OnRssiMinChanged(int16_t rssiMin) = 0;
+    virtual void OnDeviceAddressChanged(uint64_t address) = 0;
+    virtual void OnTrayIconBatteryChanged(TrayIconBatteryBehavior behavior) = 0;
+    virtual void OnTaskbarBatteryChanged(TaskbarStatusBehavior behavior) = 0;
+};
+
+void SetApplyObserver(ApplyObserver *observer);
+void SetRepository(std::unique_ptr<Repository> repository);
 
 // TODO: in [v1.0.0] [kFieldsAbiVersion = 2]
 //        - Rename `tray_icon_battery` to `battery_on_tray_icon`

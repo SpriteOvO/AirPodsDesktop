@@ -18,8 +18,12 @@
 
 #include "Update.h"
 
+#include <array>
 #include <optional>
 
+#include <QCryptographicHash>
+#include <QFile>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
@@ -29,8 +33,9 @@
 #include <nlohmann/json.hpp>
 
 #include <Config.h>
+#include "../Assert.h"
 #include "../Logger.h"
-#include "../Application.h"
+#include "Settings.h"
 
 using json = nlohmann::json;
 
@@ -46,7 +51,64 @@ QVersionNumber ToVersionNumber(QString str)
     return QVersionNumber::fromString(str);
 }
 
-namespace Impl {
+namespace Details {
+
+namespace {
+
+QString ParseChangeLog(const QString &body)
+{
+    // Two things this has to tolerate, both present in real release bodies:
+    //   - decoration between the hashes and the words, e.g. "## :scroll: Change log"
+    //   - CRLF, since bodies authored in the GitHub web UI use it and `$` asserts only
+    //     before the `\n`, so an unconsumed `\r` would fail the match
+    static const QRegularExpression heading{
+        R"((?im)^#{1,6}[ \t]+.*?(?:change[ \t]*log|what's[ \t]+changed)[ \t\r]*$)"};
+
+    const auto headingMatch = heading.match(body);
+    if (!headingMatch.hasMatch()) {
+        return {};
+    }
+
+    auto changeLog = body.mid(headingMatch.capturedEnd()).trimmed();
+    int endPosition = changeLog.indexOf("\r\n\r\n");
+    if (endPosition == -1) {
+        endPosition = changeLog.indexOf("\n\n");
+    }
+
+    if (endPosition != -1) {
+        changeLog = changeLog.left(endPosition);
+    }
+    return changeLog.trimmed();
+}
+
+QString ParseSha256Digest(const json &asset)
+{
+    if (!asset.contains("digest") || !asset["digest"].is_string()) {
+        return {};
+    }
+
+    const auto digest = QString::fromStdString(asset["digest"].get<std::string>());
+    constexpr auto prefix = "sha256:";
+    if (!digest.startsWith(prefix, Qt::CaseInsensitive)) {
+        return {};
+    }
+
+    const auto hash = digest.mid(QString{prefix}.size());
+    if (hash.size() != 64) {
+        return {};
+    }
+
+    for (const auto character : hash) {
+        const bool isHex = character.isDigit()
+            || (character.toLower() >= QChar{'a'} && character.toLower() <= QChar{'f'});
+        if (!isHex) {
+            return {};
+        }
+    }
+    return hash.toLower();
+}
+
+} // namespace
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 {
@@ -58,7 +120,8 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
         auto url = QString::fromStdString(root["html_url"].get<std::string>());
 
         // Check url
-        if (url.indexOf(Config::UrlRepository) != 0) {
+        const auto expectedReleaseUrlPrefix = QString{Config::UrlReleases} + "/";
+        if (!url.startsWith(expectedReleaseUrlPrefix)) {
             LOG(Warn, "ParseSRResponse: 'html_url' invalid. content: {}", url);
             return std::nullopt;
         }
@@ -69,27 +132,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Warn, "ParseSRResponse: 'body' is empty.");
         }
         else {
-            // Find change log
-
-            int clBeginPos = body.indexOf("Change log", 0, Qt::CaseInsensitive);
-            if (clBeginPos == -1) {
-                clBeginPos = body.indexOf("ChangeLog", 0, Qt::CaseInsensitive);
-            }
-
-            if (clBeginPos == -1) {
+            changeLog = ParseChangeLog(body);
+            if (changeLog.isEmpty()) {
                 LOG(Warn, "ParseSRResponse: Find change log block failed. body: {}", body);
-            }
-            else {
-                changeLog = body.right(body.length() - clBeginPos).trimmed();
-                changeLog = changeLog.right(changeLog.length() - changeLog.indexOf('\n')).trimmed();
-
-                // Find end of ChangeLog
-                int clEndPos = changeLog.indexOf("\r\n\r\n");
-                if (clEndPos == -1) {
-                    clEndPos = changeLog.indexOf("\n\n");
-                }
-
-                changeLog = changeLog.left(clEndPos);
             }
         }
 
@@ -105,6 +150,7 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             auto fileName = QString::fromStdString(asset["name"].get<std::string>());
             auto fileSize = asset["size"].get<size_t>();
             auto downloadUrl = asset["browser_download_url"].get<std::string>();
+            auto sha256 = ParseSha256Digest(asset);
 
             if (fileName.isEmpty() || fileSize == 0 || downloadUrl.empty()) {
                 LOG(Warn, "ParseSRResponse: Asset json fields value is empty. Continue.");
@@ -112,7 +158,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             }
 
             // Check url
-            if (downloadUrl.find(Config::UrlRepository) != 0) {
+            const std::string expectedDownloadUrlPrefix =
+                std::string{Config::UrlReleases} + "/download/";
+            if (downloadUrl.find(expectedDownloadUrlPrefix) != 0) {
                 LOG(Warn,
                     "ParseSRResponse: 'browser_download_url' invalid. Continue. content: '{}'",
                     downloadUrl);
@@ -140,6 +188,11 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             info.fileName = std::move(fileName);
             info.downloadUrl = std::move(downloadUrl);
             info.fileSize = fileSize;
+            info.sha256 = std::move(sha256);
+
+            if (info.sha256.isEmpty()) {
+                LOG(Warn, "ParseSRResponse: Asset does not contain a valid SHA-256 digest.");
+            }
 
             LOG(Info, "ParseSRResponse: Found matching file.");
             break;
@@ -156,9 +209,12 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text)
 {
     try {
-        auto root = json::parse(text);
-        const auto &release = root.front();
-        auto optInfo = ParseSingleReleaseResponse(release.dump());
+        const auto root = json::parse(text);
+        if (!root.is_array() || root.empty()) {
+            LOG(Warn, "ParseMRResponse: response does not contain any releases.");
+            return std::nullopt;
+        }
+        auto optInfo = ParseSingleReleaseResponse(root.front().dump());
         if (!optInfo.has_value()) {
             LOG(Warn, "One release info parsing failed.");
             return std::nullopt;
@@ -171,10 +227,33 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
     }
 }
 
+bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256)
+{
+    if (expectedSha256.size() != 64) {
+        return false;
+    }
+
+    QFile file{filePath};
+    if (!file.open(QIODevice::ReadOnly)) {
+        LOG(Warn, "VerifyFileSha256: Unable to open '{}'. error: '{}'", filePath,
+            file.errorString());
+        return false;
+    }
+
+    QCryptographicHash hash{QCryptographicHash::Sha256};
+    if (!hash.addData(&file)) {
+        LOG(Warn, "VerifyFileSha256: Unable to read '{}'.", filePath);
+        return false;
+    }
+
+    const auto actualSha256 = QString::fromLatin1(hash.result().toHex());
+    return actualSha256.compare(expectedSha256, Qt::CaseInsensitive) == 0;
+}
+
 std::optional<ReleaseInfo> FetchLatestStableRelease()
 {
     const cpr::Response response = cpr::Get(
-        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/latest"},
+        cpr::Url{std::string{Config::ApiRepository} + "/releases/latest"},
         cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
     if (response.status_code != 200) {
@@ -185,25 +264,31 @@ std::optional<ReleaseInfo> FetchLatestStableRelease()
         return std::nullopt;
     }
 
-    return Impl::ParseSingleReleaseResponse(response.text);
+    return Details::ParseSingleReleaseResponse(response.text);
 }
 
 std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
 {
-    const std::string tag = version.toString().toStdString();
-    const cpr::Response response = cpr::Get(
-        cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases/tags/" + tag},
-        cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+    // Repositories differ on whether release tags carry a `v` prefix, and one repository can
+    // hold both forms across its history, so try each rather than assuming a convention.
+    const std::string plain = version.toString().toStdString();
+    const std::array<std::string, 2> tags{"v" + plain, plain};
 
-    if (response.status_code != 200) {
-        LOG(Warn,
-            "FetchReleaseByVersion: GitHub REST API response status code isn't 200. "
-            "code: {} text: '{}'",
-            response.status_code, response.text);
-        return std::nullopt;
+    for (const auto &tag : tags) {
+        const cpr::Response response = cpr::Get(
+            cpr::Url{std::string{Config::ApiRepository} + "/releases/tags/" + tag},
+            cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+
+        if (response.status_code == 200) {
+            return Details::ParseSingleReleaseResponse(response.text);
+        }
+
+        LOG(Info, "FetchReleaseByVersion: no release for tag '{}'. code: {}", tag,
+            response.status_code);
     }
 
-    return Impl::ParseSingleReleaseResponse(response.text);
+    LOG(Warn, "FetchReleaseByVersion: no release found for version '{}'.", plain);
+    return std::nullopt;
 }
 
 std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
@@ -211,7 +296,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
     if (includePreRelease) {
 
         const cpr::Response response = cpr::Get(
-            cpr::Url{"https://api.github.com/repos/SpriteOvO/AirPodsDesktop/releases"},
+            cpr::Url{std::string{Config::ApiRepository} + "/releases"},
             cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
 
         if (response.status_code != 200) {
@@ -221,7 +306,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
                 response.status_code, response.text);
             return {};
         }
-        return Impl::ParseMultipleReleasesResponseFirst(response.text);
+        return Details::ParseMultipleReleasesResponseFirst(response.text);
     }
     else {
         return FetchLatestStableRelease();
@@ -230,7 +315,7 @@ std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)
 
 bool IsCurrentPreRelease()
 {
-    const auto optInfo = Impl::FetchReleaseByVersion(GetLocalVersion());
+    const auto optInfo = Details::FetchReleaseByVersion(GetLocalVersion());
     if (!optInfo.has_value()) {
         LOG(Warn, "IsCurrentPreRelease: FetchReleaseByVersion() failed.");
         return false;
@@ -247,13 +332,13 @@ bool NeedToUpdate(const ReleaseInfo &info)
     return info.version.normalized() > GetLocalVersion().normalized();
 }
 
-} // namespace Impl
+} // namespace Details
 
 //////////////////////////////////////////////////
 
 bool ReleaseInfo::CanAutoUpdate() const
 {
-    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0;
+    return !fileName.isEmpty() && !downloadUrl.empty() && fileSize != 0 && sha256.size() == 64;
 }
 
 void ReleaseInfo::OpenUrl() const
@@ -272,17 +357,17 @@ QVersionNumber GetLocalVersion()
 
 std::optional<ReleaseInfo> FetchUpdateRelease()
 {
-    const auto isCurrentPreRelease = Impl::IsCurrentPreRelease();
+    const auto isCurrentPreRelease = Details::IsCurrentPreRelease();
     LOG(Info, "Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
 
-    const auto optInfo = Impl::FetchLatestRelease(isCurrentPreRelease);
+    const auto optInfo = Details::FetchLatestRelease(isCurrentPreRelease);
     if (!optInfo.has_value()) {
         LOG(Warn, "Update: FetchLatestRelease() returned nullopt.");
         return std::nullopt;
     }
 
     const auto &latestInfo = optInfo.value();
-    const auto needToUpdate = Impl::NeedToUpdate(latestInfo);
+    const auto needToUpdate = Details::NeedToUpdate(latestInfo);
 
     LOG(Info, "Update: Latest version: '{}'", latestInfo.version.toString());
     if (!needToUpdate) {
@@ -303,7 +388,7 @@ std::optional<ReleaseInfo> FetchUpdateRelease()
 
 bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
 {
-    APD_ASSERT(Impl::NeedToUpdate(info));
+    APD_ASSERT(Details::NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
         LOG(Warn, "DownloadInstall: Cannot auto update.");
@@ -347,6 +432,12 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
     }
 
     outFile.close();
+
+    if (!Details::VerifyFileSha256(filePath, info.sha256)) {
+        LOG(Warn, "DownloadInstall: Downloaded file SHA-256 mismatch.");
+        return false;
+    }
+
     tempPath.setAutoRemove(false);
 
     // Download succeeded
@@ -358,10 +449,6 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         LOG(Warn, "DownloadInstall: Start installer failed.");
         return false;
     }
-
-    // Quit for install new version
-    //
-    ApdApplication::QuitSafely();
 
     return true;
 }

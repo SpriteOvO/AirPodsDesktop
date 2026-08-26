@@ -21,7 +21,6 @@
 #include <QAudioDeviceInfo>
 
 #include "../Logger.h"
-#include "../Application.h"
 
 namespace Core::LowAudioLatency {
 

@@ -26,7 +26,7 @@
 
 #include "../Core/AirPods.h"
 #include "../Core/Settings.h"
-#include "../Utils.h"
+#include "Utils.h"
 #include "Base.h"
 #include "Widget/Battery.h"
 
@@ -124,9 +124,12 @@ public:
     void Unavailable();
     void Disconnect();
     void Unbind();
+    void SetToolTip(const QString &text);
 
 Q_SIGNALS:
     void OnSettingsChangedSafely(TaskbarStatusBehavior value);
+    void ShowMainWindowRequested();
+    void ShowTrayMenuRequested(const QPoint &position);
 
 private:
     constexpr static inline auto kFixedWidth{60};  // for horizontal taskbar
