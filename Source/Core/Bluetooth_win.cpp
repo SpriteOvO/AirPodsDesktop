@@ -18,6 +18,8 @@
 
 #include "Bluetooth_win.h"
 
+#include <thread>
+
 #include "../Logger.h"
 #include "Debug.h"
 #include "OS/Windows.h"
@@ -146,21 +148,30 @@ const std::optional<DeviceInformation> &Device::GetInfo() const
         return _info;
     }
 
-    try {
-        // clang-format off
-        _info = DeviceInformation::CreateFromIdAsync(
-            _device->DeviceInformation().Id(),
-            {
-                kPropertyBluetoothProductId, // uint16
-                kPropertyBluetoothVendorId,  // uint16
-                kPropertyAepContainerId,     // hstring
-            }
-        ).get();
-        // clang-format on
-    }
-    catch (const OS::Windows::Winrt::Exception &ex) {
-        LOG(Warn, "DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
-    }
+    // The blocking `get()` runs on a dedicated thread rather than the caller's. `GetProductId()`
+    // and `GetVendorId()` are reached from the GUI thread - `CompleteBoundDeviceLookup` arrives
+    // there by queued connection, and `MainWindow::ShowDeviceSelector` runs there outright - and
+    // QApplication puts that thread in an STA, where blocking on a WinRT async asserts in debug
+    // and can deadlock in release because the completion has to marshal back into the blocked
+    // apartment.
+    std::thread{[this]() {
+        OS::Windows::Winrt::Initialize();
+        try {
+            // clang-format off
+            _info = DeviceInformation::CreateFromIdAsync(
+                _device->DeviceInformation().Id(),
+                {
+                    kPropertyBluetoothProductId, // uint16
+                    kPropertyBluetoothVendorId,  // uint16
+                    kPropertyAepContainerId,     // hstring
+                }
+            ).get();
+            // clang-format on
+        }
+        catch (const OS::Windows::Winrt::Exception &ex) {
+            LOG(Warn, "DeviceInformation::CreateFromIdAsync() failed. {}", Helper::ToString(ex));
+        }
+    }}.join();
 
     return _info;
 }
