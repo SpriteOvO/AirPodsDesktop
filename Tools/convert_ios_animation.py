@@ -11,12 +11,15 @@ and reverses the black-matte composition onto white.
 from __future__ import annotations
 
 import argparse
+import math
 import subprocess
 import sys
 from pathlib import Path
 
 
-OUTPUT_SIZE = "900x450"
+OUTPUT_WIDTH = 900
+OUTPUT_HEIGHT = 450
+OUTPUT_SIZE = f"{OUTPUT_WIDTH}x{OUTPUT_HEIGHT}"
 SOURCE_SIZE = "1050x1086"
 SOURCE_FPS = 60
 
@@ -30,6 +33,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edge-scale", type=float, default=1.4)
     parser.add_argument("--gamma", type=float, default=1.2)
     parser.add_argument("--quality", type=int, default=1)
+    parser.add_argument("--content-scale", type=float, default=1.17)
+    parser.add_argument("--left-offset-x", type=int, default=17)
+    parser.add_argument("--right-offset-x", type=int, default=24)
     return parser.parse_args()
 
 
@@ -46,11 +52,25 @@ def convert(args: argparse.Namespace) -> None:
         raise ValueError("gamma must be greater than zero")
     if not 1 <= args.quality <= 31:
         raise ValueError("quality must be between 1 and 31")
+    if not 1 <= args.content_scale <= 2:
+        raise ValueError("content-scale must be between 1 and 2")
+    if not -OUTPUT_WIDTH // 2 < args.left_offset_x < OUTPUT_WIDTH // 2:
+        raise ValueError("left-offset-x must stay within one half of the output width")
+    if not -OUTPUT_WIDTH // 2 < args.right_offset_x < OUTPUT_WIDTH // 2:
+        raise ValueError("right-offset-x must stay within one half of the output width")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary_output = args.output.with_name(f"{args.output.stem}.tmp{args.output.suffix}")
 
+    half_width = OUTPUT_WIDTH // 2
+    scaled_width = math.ceil(OUTPUT_WIDTH * args.content_scale / 2) * 2
+    scaled_height = math.ceil(OUTPUT_HEIGHT * args.content_scale / 2) * 2
+    crop_x = (scaled_width - OUTPUT_WIDTH) // 2
+    crop_y = (scaled_height - OUTPUT_HEIGHT) // 2
+    right_x = half_width + args.right_offset_x
+
     video_filter = (
+        f"color=c=white:s={OUTPUT_SIZE}:r={SOURCE_FPS},format=rgb24[canvas];"
         "[0:v]split=3[original_source][shape_source][luma_source];"
         "[original_source]format=rgb24[original];"
         "[shape_source]format=gray,"
@@ -67,7 +87,14 @@ def convert(args: argparse.Namespace) -> None:
         "[original][white_matte]blend=all_mode=addition,format=rgb24,"
         "crop=1050:525:0:260,"
         f"scale={OUTPUT_SIZE}:flags=lanczos,"
-        f"eq=gamma={args.gamma},"
+        f"eq=gamma={args.gamma}[aligned];"
+        f"[aligned]scale={scaled_width}:{scaled_height}:flags=lanczos,"
+        f"crop={OUTPUT_WIDTH}:{OUTPUT_HEIGHT}:{crop_x}:{crop_y}[scaled];"
+        "[scaled]split=2[left_source][right_source];"
+        f"[left_source]crop={half_width}:{OUTPUT_HEIGHT}:0:0[left];"
+        f"[right_source]crop={half_width}:{OUTPUT_HEIGHT}:{half_width}:0[right];"
+        f"[canvas][left]overlay=x={args.left_offset_x}:y=0:shortest=1[with_left];"
+        f"[with_left][right]overlay=x={right_x}:y=0:shortest=1,"
         "colorspace=all=bt709:range=tv:format=yuv420p[output]"
     )
 

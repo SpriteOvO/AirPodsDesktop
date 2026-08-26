@@ -11,7 +11,8 @@ asset identifiers are:
 The original `ProxCard_loop-charged.mov` files are HEVC videos premultiplied
 against a black background. Run `Tools/convert_ios_animation.py` to reconstruct
 the antialiased edge alpha, reverse the black matte onto white, and convert the
-result to the AVI format used by this project.
+result to the AVI format used by this project. The converter also normalizes the
+product scale and left/right anchor positions to match the existing animations.
 
 Apple's catalog is available at:
 
