@@ -106,6 +106,7 @@ private Q_SLOTS:
     void VerifiesUpdateFileDigest();
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
+    void PresentsMainWindowCaseBattery();
     void MapsMainWindowAnimationResources();
 };
 
@@ -385,6 +386,34 @@ void AirPodsDomainTests::PresentsMainWindowDeviceState()
     QVERIFY(presentation.rightBattery.visible);
     QCOMPARE(presentation.rightBattery.value, 60U);
     QVERIFY(!presentation.caseBattery.visible);
+}
+
+void AirPodsDomainTests::PresentsMainWindowCaseBattery()
+{
+    // Mirrors `PresentsMainWindowDeviceState`, which reports the pods but not the case.
+    // Reporting only the case pins each slot to its own source.
+    Core::AirPods::State state;
+    state.displayName = "Office AirPods";
+    state.model = Core::AirPods::Model::AirPods_4_ANC;
+    state.caseBox.battery = 40;
+    state.caseBox.isCharging = true;
+
+    Gui::MainWindowViewModel viewModel;
+    viewModel.UpdateState(state);
+    auto presentation = viewModel.Present();
+
+    QVERIFY(presentation.caseBattery.visible);
+    QVERIFY(presentation.caseBattery.charging);
+    QCOMPARE(presentation.caseBattery.value, 40U);
+    QVERIFY(!presentation.leftBattery.visible);
+    QVERIFY(!presentation.rightBattery.visible);
+
+    state.caseBox.isCharging = false;
+    viewModel.UpdateState(state);
+    presentation = viewModel.Present();
+
+    QVERIFY(presentation.caseBattery.visible);
+    QVERIFY(!presentation.caseBattery.charging);
 }
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
