@@ -25,6 +25,12 @@ set(
     CACHE STRING
     "GitHub repository name used by the updater."
 )
+set(
+    APD_RELEASE_TAG_PREFIX
+    "v"
+    CACHE STRING
+    "Prefix the release tags of the configured repository use (\"v\" for v1.2.3, empty for 1.2.3)."
+)
 
 project(
     AirPodsDesktop

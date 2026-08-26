@@ -18,6 +18,7 @@
 
 #include "Update.h"
 
+#include <array>
 #include <optional>
 
 #include <QCryptographicHash>
@@ -268,20 +269,26 @@ std::optional<ReleaseInfo> FetchLatestStableRelease()
 
 std::optional<ReleaseInfo> FetchReleaseByVersion(const QVersionNumber &version)
 {
-    const std::string tag = "v" + version.toString().toStdString();
-    const cpr::Response response = cpr::Get(
-        cpr::Url{std::string{Config::ApiRepository} + "/releases/tags/" + tag},
-        cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+    // Repositories differ on whether release tags carry a `v` prefix, and one repository can
+    // hold both forms across its history, so try each rather than assuming a convention.
+    const std::string plain = version.toString().toStdString();
+    const std::array<std::string, 2> tags{"v" + plain, plain};
 
-    if (response.status_code != 200) {
-        LOG(Warn,
-            "FetchReleaseByVersion: GitHub REST API response status code isn't 200. "
-            "code: {} text: '{}'",
-            response.status_code, response.text);
-        return std::nullopt;
+    for (const auto &tag : tags) {
+        const cpr::Response response = cpr::Get(
+            cpr::Url{std::string{Config::ApiRepository} + "/releases/tags/" + tag},
+            cpr::Header{{"Accept", "application/vnd.github.v3+json"}});
+
+        if (response.status_code == 200) {
+            return Details::ParseSingleReleaseResponse(response.text);
+        }
+
+        LOG(Info, "FetchReleaseByVersion: no release for tag '{}'. code: {}", tag,
+            response.status_code);
     }
 
-    return Details::ParseSingleReleaseResponse(response.text);
+    LOG(Warn, "FetchReleaseByVersion: no release found for version '{}'.", plain);
+    return std::nullopt;
 }
 
 std::optional<ReleaseInfo> FetchLatestRelease(bool includePreRelease)

@@ -36,7 +36,8 @@ namespace Config {
 #define CONFIG_URL_ISSUES               CONFIG_URL_REPO "/issues"
 #define CONFIG_URL_RELEASES             CONFIG_URL_REPO "/releases"
 #define CONFIG_URL_LICENSE              CONFIG_URL_REPO "/blob/main/LICENSE"
-#define CONFIG_URL_CURRENT_RELEASE      CONFIG_URL_RELEASES "/tag/v" CONFIG_VERSION_STRING
+#define CONFIG_RELEASE_TAG_PREFIX       "@APD_RELEASE_TAG_PREFIX@"
+#define CONFIG_URL_CURRENT_RELEASE      CONFIG_URL_RELEASES "/tag/" CONFIG_RELEASE_TAG_PREFIX CONFIG_VERSION_STRING
 
 constexpr inline auto ProgramName = CONFIG_PROGRAM_NAME;
 constexpr inline auto UrlRepository = CONFIG_URL_REPO;

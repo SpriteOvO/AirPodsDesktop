@@ -14,6 +14,11 @@ cmake -S . -B Build `
   -DAPD_GITHUB_REPOSITORY=YOUR_REPOSITORY
 ```
 
+`APD_RELEASE_TAG_PREFIX` (default `v`) states whether that repository's release tags carry a `v`.
+It only affects the version link in the Settings window; the updater's release lookup tries both
+forms, so a repository whose history mixes them still resolves. Releases before v0.5.0 are tagged
+without the prefix, and the workflow's tag check accepts either.
+
 ## Prepare a Release
 
 1. Update the same semantic version in `CMakeLists.txt` and `vcpkg.json`.

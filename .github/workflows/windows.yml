@@ -51,8 +51,10 @@ jobs:
             throw "CMake version $version does not match vcpkg version $manifestVersion."
           }
 
-          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") {
-            throw "Tag $env:GITHUB_REF_NAME does not match application version v$version."
+          # Accept both tag conventions: releases before v0.5.0 are tagged without the `v`.
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and
+              $env:GITHUB_REF_NAME -ne "v$version" -and $env:GITHUB_REF_NAME -ne $version) {
+            throw "Tag $env:GITHUB_REF_NAME matches neither v$version nor $version."
           }
 
           "version=$version" >> $env:GITHUB_OUTPUT
