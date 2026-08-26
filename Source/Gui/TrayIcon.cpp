@@ -69,6 +69,12 @@ void TrayIcon::Unavailable()
 
 void TrayIcon::Disconnect()
 {
+    // No device is bound yet, so "Waiting for Binding" outranks "Disconnected". The scanner
+    // reports itself available on every (re)start, and that must not overwrite this state.
+    if (_status == Status::Unbind) {
+        return;
+    }
+
     _status = Status::Disconnected;
     _airPodsState.reset();
     Repaint();
