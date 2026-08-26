@@ -18,7 +18,10 @@
 
 #pragma once
 
+#include <QObject>
 #include <QString>
+
+#include "../Assert.h"
 
 namespace Gui {
 

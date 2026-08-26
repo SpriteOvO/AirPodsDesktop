@@ -24,7 +24,7 @@
 
 #include "ui_SelectWindow.h"
 
-#include "../Utils.h"
+#include "Utils.h"
 
 namespace Gui {
 

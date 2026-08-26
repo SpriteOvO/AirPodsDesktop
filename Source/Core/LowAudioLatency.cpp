@@ -63,9 +63,8 @@ public:
         // buffer is full-scale negative DC and can be heard as noise on negotiated formats.
         if (format.sampleType() == QAudioFormat::UnSignedInt) {
             _zeroFilled = false;
-            const auto signByte = format.byteOrder() == QAudioFormat::LittleEndian
-                                      ? bytesPerSample - 1
-                                      : 0;
+            const auto signByte =
+                format.byteOrder() == QAudioFormat::LittleEndian ? bytesPerSample - 1 : 0;
             for (auto channel = 0; channel < format.channelCount(); ++channel) {
                 _silentFrame[static_cast<size_t>(channel * bytesPerSample + signByte)] = 0x80;
             }
@@ -131,8 +130,7 @@ private:
 Controller::Controller(QObject *parent) : QObject{parent}
 {
     connect(this, &Controller::ControlSafely, this, &Controller::Control);
-    connect(
-        this, &Controller::SetDeviceConnectedSafely, this, &Controller::SetDeviceConnected);
+    connect(this, &Controller::SetDeviceConnectedSafely, this, &Controller::SetDeviceConnected);
 
     _initTimer.callOnTimeout([this] {
         if (Initialize()) {
@@ -254,7 +252,8 @@ void Controller::Start()
         return;
     }
 
-    if (_audioOutput->state() == QAudio::ActiveState || _audioOutput->state() == QAudio::IdleState) {
+    if (_audioOutput->state() == QAudio::ActiveState || _audioOutput->state() == QAudio::IdleState)
+    {
         return;
     }
 

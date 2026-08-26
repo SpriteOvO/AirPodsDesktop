@@ -104,7 +104,7 @@ Latest version: %2%3</source>
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translation></translation>
+        <translation>|</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
@@ -166,20 +166,20 @@ Latest version: %2%3</source>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>没有找到配对的设备。
+        <translation>未找到已配对的设备。
 您需要先在 Windows 蓝牙设置中配对您的 AirPods。</translation>
     </message>
     <message>
         <source>Update now</source>
-        <translation>现在更新</translation>
+        <translation>立即更新</translation>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation>跳过这个版本</translation>
+        <translation>跳过此版本</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>查看发布</translation>
+        <translation>查看发行说明</translation>
     </message>
     <message>
         <source>Remind me later</source>
@@ -190,7 +190,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <name>QObject</name>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>当您的 AirPods 被取下或放入耳朵时自动暂停或恢复媒体。</translation>
+        <translation>当您取下或戴上 AirPods 时，自动暂停或恢复媒体播放。</translation>
     </message>
     <message>
         <source>Unavailable</source>
@@ -244,11 +244,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Visual</source>
-        <translation>视觉</translation>
+        <translation>外观</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
-        <translation>在托盘图标上显示电池</translation>
+        <translation>在系统托盘图标上显示电量</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -256,11 +256,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>When low battery</source>
-        <translation>当低电量时</translation>
+        <translation>电量不足时</translation>
     </message>
     <message>
         <source>Always</source>
-        <translation>总是</translation>
+        <translation>始终</translation>
     </message>
     <message>
         <source>Features</source>
@@ -268,7 +268,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>自动人耳检测</translation>
+        <translation>自动入耳检测</translation>
     </message>
     <message>
         <source>Low audio latency</source>
@@ -280,7 +280,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;开源 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;仓库&lt;/span&gt;&lt;/a&gt; 根据 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt; 许可。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;本项目为开源软件，请参阅&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;代码仓库&lt;/span&gt;&lt;/a&gt;，并依据 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt; 许可证发布。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Language</source>
@@ -292,15 +292,15 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation>在任务栏上显示电池</translation>
+        <translation>在任务栏上显示电量</translation>
     </message>
     <message>
         <source>As text</source>
-        <translation>以文本</translation>
+        <translation>以文本显示</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation>以图标</translation>
+        <translation>以图标显示</translation>
     </message>
 </context>
 </TS>

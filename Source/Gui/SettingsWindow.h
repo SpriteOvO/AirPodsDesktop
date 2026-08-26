@@ -18,13 +18,15 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QLabel>
 #include <QDialog>
 #include <QSlider>
 #include <QCheckBox>
 
 #include "../Core/Settings.h"
-#include "../Utils.h"
+#include "Utils.h"
 
 #include "ui_SettingsWindow.h"
 
@@ -37,7 +39,7 @@ class SettingsWindow : public QDialog
     Q_OBJECT
 
 public:
-    SettingsWindow(QWidget *parent = nullptr);
+    explicit SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent = nullptr);
     void SetLowAudioLatencyChecked(bool checked);
 
     int GetTabCount() const;
@@ -49,6 +51,7 @@ private:
     Ui::SettingsWindow _ui;
     bool _trigger{true};
     int _lastLanguageIndex{0};
+    std::function<int()> _getCurrentLocaleIndex;
 
     void InitCreditsText();
     void RestoreDefaults();

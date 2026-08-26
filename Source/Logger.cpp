@@ -18,9 +18,7 @@
 
 #include "Logger.h"
 
-#include <QUrl>
 #include <QDir>
-#include <QMessageBox>
 #include <spdlog/sinks/sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -29,7 +27,6 @@
 #include <Config.h>
 #include "Helper.h"
 #include "Utils.h"
-#include "Application.h"
 #include "Error.h"
 
 #include "Core/OS/Windows.h"

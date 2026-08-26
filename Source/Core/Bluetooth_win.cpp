@@ -18,6 +18,8 @@
 
 #include "Bluetooth_win.h"
 
+#include <thread>
+
 #include "../Logger.h"
 #include "AppleCP.h"
 #include "Debug.h"
@@ -147,7 +149,14 @@ const std::optional<DeviceInformation> &Device::GetInfo() const
         return _info;
     }
 
+    // The blocking `get()` runs on a dedicated thread rather than the caller's. `GetProductId()`
+    // and `GetVendorId()` are reached from the GUI thread - `CompleteBoundDeviceLookup` arrives
+    // there by queued connection, and `MainWindow::ShowDeviceSelector` runs there outright - and
+    // QApplication puts that thread in an STA, where blocking on a WinRT async asserts in debug
+    // and can deadlock in release because the completion has to marshal back into the blocked
+    // apartment.
     std::thread{[this]() {
+        OS::Windows::Winrt::Initialize();
         try {
             // clang-format off
             _info = DeviceInformation::CreateFromIdAsync(
@@ -244,6 +253,7 @@ public:
         auto devices = GetDevicesByState(Bluetooth::DeviceState::Paired);
         for (const auto &device : devices) {
             if (device.GetAddress() == address) {
+                (void)device.GetProductId();
                 return device;
             }
         }
@@ -256,20 +266,12 @@ namespace DeviceManager {
 
 std::vector<Device> GetDevicesByState(DeviceState state)
 {
-    std::vector<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().GetDevicesByState(state);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().GetDevicesByState(state);
 }
 
 std::optional<Device> FindDevice(uint64_t address)
 {
-    std::optional<Device> result;
-    std::thread{[&]() {
-        result = Details::DeviceManager::GetInstance().FindDevice(address);
-    }}.join();
-    return result;
+    return Details::DeviceManager::GetInstance().FindDevice(address);
 }
 } // namespace DeviceManager
 
@@ -340,21 +342,22 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
     for (uint32_t i = 0; i < manufacturerDataArray.Size(); ++i) {
         const auto &manufacturerData = manufacturerDataArray.GetAt(i);
         const auto companyId = manufacturerData.CompanyId();
-        if (companyId != AppleCP::VendorId) {
-            continue;
-        }
-
-        const auto &data = manufacturerData.Data();
 
 #if defined APD_DEBUG
         auto overrideAdv = DebugConfig::GetInstance().GetOverrideAdv();
         if (overrideAdv.has_value()) {
             LOG(Trace, "Adv override: {}", Helper::ToString(overrideAdv.value()));
             receivedData.manufacturerDataMap.insert_or_assign(
-                companyId, std::move(overrideAdv.value()));
-            continue;
+                AppleCP::VendorId, std::move(overrideAdv.value()));
+            break;
         }
 #endif
+
+        if (companyId != AppleCP::VendorId) {
+            continue;
+        }
+
+        const auto &data = manufacturerData.Data();
 
         receivedData.manufacturerDataMap.try_emplace(
             companyId, data.data(), data.data() + data.Length());

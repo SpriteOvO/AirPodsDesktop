@@ -170,17 +170,29 @@ using Exception = winrt::hresult_error;
 
 inline void Initialize()
 {
-    static std::once_flag onceFlag;
+    // Every thread that touches WinRT needs an apartment, so this initializes per thread.
+    //
+    // It deliberately never calls `winrt::uninit_apartment()`. Worker threads hand WinRT
+    // objects (`Bluetooth::Device`) to the GUI thread and then exit; the GUI thread's own
+    // `Initialize()` runs after the QApplication constructor and usually fails with
+    // RPC_E_CHANGED_MODE, so it holds no MTA reference of its own. Uninitializing on worker
+    // exit could therefore tear down the MTA that owns the proxies the GUI thread is still
+    // using, leaving them disconnected. Holding the apartment until the process exits costs
+    // one reference per thread and keeps those proxies valid.
+    struct ApartmentGuard {
+        ApartmentGuard()
+        {
+            try {
+                winrt::init_apartment();
+            }
+            catch (const Exception &ex) {
+                LOG(Warn, "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
+                    winrt::to_string(ex.message()));
+            }
+        }
+    };
 
-    std::call_once(onceFlag, []() {
-        try {
-            winrt::init_apartment();
-        }
-        catch (const Exception &ex) {
-            LOG(Warn, "Winrt initialize failed. Code: {:#x}, Message: {}", ex.code(),
-                winrt::to_string(ex.message()));
-        }
-    });
+    thread_local ApartmentGuard apartment;
 }
 } // namespace Winrt
 
