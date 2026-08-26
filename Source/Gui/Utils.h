@@ -28,6 +28,11 @@
 #include <QPainterPath>
 #include <QTimer>
 #include <QWidget>
+#include <QtMath>
+
+#ifdef Q_OS_WIN
+    #include <qt_windows.h>
+#endif
 
 #include "../Utils.h"
 
@@ -55,13 +60,32 @@ namespace Utils::Qt {
 
 inline void SetRoundedCorners(QDialog *widget, qreal radius)
 {
+#ifdef Q_OS_WIN
+    const auto windowHandle = reinterpret_cast<HWND>(widget->winId());
+    RECT windowRect{};
+    if (GetWindowRect(windowHandle, &windowRect)) {
+        const auto width = windowRect.right - windowRect.left;
+        const auto height = windowRect.bottom - windowRect.top;
+        const auto physicalRadius = qRound(radius * widget->devicePixelRatioF());
+        const auto diameter = physicalRadius * 2;
+        const auto region = CreateRoundRectRgn(0, 0, width + 1, height + 1, diameter, diameter);
+        if (region != nullptr) {
+            if (SetWindowRgn(windowHandle, region, TRUE) != 0) {
+                return;
+            }
+            DeleteObject(region);
+        }
+    }
+#endif
+
     QBitmap bmp{widget->size()};
+    bmp.fill(::Qt::color0);
+
     QPainter painter{&bmp};
-    bmp.clear();
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(::Qt::black);
-    painter.setBrush(::Qt::black);
-    painter.drawRoundedRect(widget->geometry(), radius, radius, ::Qt::AbsoluteSize);
+    painter.setPen(::Qt::NoPen);
+    painter.setBrush(::Qt::color1);
+    painter.drawRoundedRect(QRectF{widget->rect()}, radius, radius, ::Qt::AbsoluteSize);
     widget->setMask(bmp);
 }
 

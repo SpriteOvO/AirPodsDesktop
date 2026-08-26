@@ -18,6 +18,7 @@
 
 #include "Application.h"
 
+#include <QGuiApplication>
 #include <QMessageBox>
 
 #include <Config.h>
@@ -46,6 +47,8 @@ void ApdApplication::PreConstruction()
 {
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 }
 
 void ApdApplication::InitSettings(Core::Settings::LoadResult loadResult)

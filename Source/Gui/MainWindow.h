@@ -71,7 +71,11 @@ Q_SIGNALS:
     void SilentUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
 
 private:
-    constexpr static QSize _screenMargin{50, 100};
+    constexpr static QSize _windowSize{320, 300};
+    constexpr static QSize _screenMargin{24, 24};
+    constexpr static qreal _windowCornerRadius = 32.0;
+    constexpr static int _deviceLabelMaximumPointSize = 18;
+    constexpr static int _deviceLabelMinimumPointSize = 12;
 
     Ui::MainWindow _ui;
 
@@ -104,6 +108,7 @@ private:
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();
+    void FitDeviceLabelFont();
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();

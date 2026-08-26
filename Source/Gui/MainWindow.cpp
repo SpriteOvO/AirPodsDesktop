@@ -19,6 +19,8 @@
 #include "MainWindow.h"
 
 #include <QScreen>
+#include <QCursor>
+#include <QFontMetrics>
 #include <QPainter>
 #include <QMessageBox>
 
@@ -201,11 +203,11 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 
     _ui.setupUi(this);
 
-    setFixedSize(300, 300);
+    setFixedSize(_windowSize);
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
 
-    Utils::Qt::SetRoundedCorners(this, 30);
+    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
     Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
     Utils::Qt::SetPaletteColor(this, QPalette::Window, Qt::white);
     Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, QColor{94, 94, 94});
@@ -525,6 +527,7 @@ void MainWindow::Repaint()
 {
     const auto presentation = _viewModel.Present();
     _ui.deviceLabel->setText(presentation.title);
+    FitDeviceLabelFont();
     ChangeButtonAction(presentation.buttonAction);
     SetAnimation(presentation.animationModel);
 
@@ -542,6 +545,21 @@ void MainWindow::Repaint()
     applyBattery(_leftBattery, presentation.leftBattery);
     applyBattery(_rightBattery, presentation.rightBattery);
     applyBattery(_caseBattery, presentation.caseBattery);
+}
+
+void MainWindow::FitDeviceLabelFont()
+{
+    auto font = _ui.deviceLabel->font();
+    font.setPointSize(_deviceLabelMaximumPointSize);
+
+    const auto availableWidth = _ui.deviceLabel->contentsRect().width();
+    while (font.pointSize() > _deviceLabelMinimumPointSize &&
+           QFontMetrics{font}.horizontalAdvance(_ui.deviceLabel->text()) > availableWidth)
+    {
+        font.setPointSize(font.pointSize() - 1);
+    }
+
+    _ui.deviceLabel->setFont(font);
 }
 
 void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
@@ -608,17 +626,19 @@ void MainWindow::DoHide()
 
     ControlAutoHideTimer(false);
 
-    auto screenSize = QGuiApplication::primaryScreen()->size();
+    const auto screenGeometry = screen()->geometry();
 
     _posAnimation.stop();
     _posAnimation.setEasingCurve(QEasingCurve::InExpo);
     _posAnimation.setStartValue(pos());
-    _posAnimation.setEndValue(QPoint{x(), screenSize.height()});
+    _posAnimation.setEndValue(QPoint{x(), screenGeometry.bottom() + 1});
     _posAnimation.start();
 }
 
 void MainWindow::showEvent(QShowEvent *event)
 {
+    QDialog::showEvent(event);
+
     LOG(Trace, "MainWindow: Show");
 
     if (_isVisible) {
@@ -629,15 +649,23 @@ void MainWindow::showEvent(QShowEvent *event)
     PlayAnimation();
     ControlAutoHideTimer(true);
 
-    auto screenSize = QGuiApplication::primaryScreen()->size();
+    auto targetScreen = QGuiApplication::screenAt(QCursor::pos());
+    if (targetScreen == nullptr) {
+        targetScreen = screen();
+    }
 
-    move(screenSize.width() - size().width() - _screenMargin.width(), screenSize.height());
+    const auto availableGeometry = targetScreen->availableGeometry();
+    const auto screenGeometry = targetScreen->geometry();
+    const auto targetX = availableGeometry.right() - width() + 1 - _screenMargin.width();
+    const auto targetY = availableGeometry.bottom() - height() + 1 - _screenMargin.height();
+
+    move(targetX, screenGeometry.bottom() + 1);
+    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
 
     _posAnimation.stop();
     _posAnimation.setEasingCurve(QEasingCurve::OutExpo);
     _posAnimation.setStartValue(pos());
-    _posAnimation.setEndValue(
-        QPoint{x(), screenSize.height() - size().height() - _screenMargin.height()});
+    _posAnimation.setEndValue(QPoint{targetX, targetY});
     _posAnimation.start();
 }
 } // namespace Gui

@@ -334,6 +334,7 @@ if (WIN32)
         "Source/Core/GlobalMedia_win.cpp"
     )
     list(APPEND APD_APP_CODE_FILES
+        "Source/Resource/Application.manifest"
         "Source/Resource/Resource.rc"
     )
     if (NOT APD_ENABLE_CONSOLE)
