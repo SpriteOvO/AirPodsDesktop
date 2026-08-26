@@ -442,6 +442,36 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
     const auto fallback = Gui::GetAnimationPresentation(Core::AirPods::Model::Unknown);
     QCOMPARE(fallback.resource, QString{"qrc:/Resource/Video/AirPods_1.avi"});
     QCOMPARE(fallback.sourceSize, QSize(800, 400));
+
+    // Models without an animation of their own borrow the nearest one, so every mapping has to
+    // name a resource the qrc actually carries.
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_4).resource,
+        QString{"qrc:/Resource/Video/AirPods_3.avi"});
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_4_ANC).resource,
+        QString{"qrc:/Resource/Video/AirPods_3.avi"});
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_3).resource,
+        QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
+
+    // The qrc is linked into the application, not into this binary, so read it from the source
+    // tree: a mapping naming a resource the qrc does not carry would ship a blank animation.
+    QFile qrc{QString{APD_SOURCE_DIR} + "/Source/Resource/Resource.qrc"};
+    QVERIFY(qrc.open(QIODevice::ReadOnly | QIODevice::Text));
+    const auto qrcContents = QString::fromUtf8(qrc.readAll());
+
+    for (uint32_t i = 0; i < static_cast<uint32_t>(Core::AirPods::Model::_Max); ++i) {
+        const auto resource =
+            Gui::GetAnimationPresentation(static_cast<Core::AirPods::Model>(i)).resource;
+        const auto entry = QString{resource}.replace("qrc:/Resource/", "");
+        QVERIFY2(
+            qrcContents.contains("<file>" + entry + "</file>"),
+            qPrintable(QString{"animation not listed in Resource.qrc: %1"}.arg(resource)));
+        QVERIFY2(
+            QFile::exists(QString{APD_SOURCE_DIR} + "/Source/Resource/" + entry),
+            qPrintable(QString{"animation file missing: %1"}.arg(entry)));
+    }
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)
