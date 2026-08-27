@@ -600,6 +600,7 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.ilk" EXCLUDE
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
+        PATTERN "AirPodsDomainTests*" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 
