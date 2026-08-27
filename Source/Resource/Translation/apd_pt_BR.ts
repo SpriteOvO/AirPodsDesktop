@@ -47,7 +47,7 @@ Aproveite.</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>Clique no ícone para ver informações de bateria; clique com o botão direito para personalizar configurações ou sair.</translation>
+        <translation>Clique no ícone para ver informações sobre a bateria; clique com o botão direito para personalizar configurações ou sair.</translation>
     </message>
 </context>
 <context>
@@ -58,7 +58,7 @@ Aproveite.</translation>
     </message>
     <message>
         <source>Download Manually</source>
-        <translation>Baixar Manualmente</translation>
+        <translation>Baixar manualmente</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
@@ -92,7 +92,7 @@ Versão atual: %1
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>Vincular ao AirPods</translation>
+        <translation>Vincular aos AirPods</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
@@ -108,7 +108,7 @@ Versão atual: %1
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation>Contribuidores da Tradução:</translation>
+        <translation>Colaboradores da tradução:</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
@@ -186,7 +186,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Corrige problemas de reprodução de áudio curta, mas pode aumentar o consumo de bateria.</translation>
+        <translation>Corrige problemas na reprodução de áudios curtos, mas pode aumentar o consumo da bateria.</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
@@ -202,7 +202,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>Aguardando Vinculação</translation>
+        <translation>Aguardando vinculação</translation>
     </message>
 </context>
 <context>
@@ -228,11 +228,11 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
-        <translation>Alcance máximo de recepção Bluetooth</translation>
+        <translation>Alcance máximo de recepção do Bluetooth</translation>
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>Desvincular AirPods</translation>
+        <translation>Desvincular os AirPods</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
@@ -292,7 +292,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Código aberto no &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repositório&lt;/span&gt;&lt;/a&gt;, licenciado sob &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Código-fonte aberto disponível no &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repositório&lt;/span&gt;&lt;/a&gt; e licenciado sob a &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
