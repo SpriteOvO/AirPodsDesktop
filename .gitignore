@@ -16,3 +16,8 @@ CMakeSettings.json
 
 # Build
 Build/
+
+# Local notes for converted video assets
+Source/Resource/Video/README.md
+
+build_release.ps1

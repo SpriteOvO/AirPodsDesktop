@@ -19,23 +19,22 @@
 #include "TrayIcon.h"
 
 #include <QFont>
+#include <QApplication>
 #include <QPainter>
 #include <QSvgRenderer>
 
 #include <Config.h>
-#include "../Application.h"
-#include "MainWindow.h"
-
 namespace Gui {
 
-TrayIcon::TrayIcon()
+TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
+    : _settingsWindow{std::move(getCurrentLocaleIndex)}
 {
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
-    connect(_tray, &QSystemTrayIcon::messageClicked, this, [this]() { ShowMainWindow(); });
+    connect(_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::ShowMainWindowRequested);
     connect(
         ApdApp->GetQuickConnect(), &Core::QuickConnect::Controller::OutcomeChanged, this,
         &TrayIcon::OnQuickConnectOutcome);
@@ -53,7 +52,7 @@ TrayIcon::TrayIcon()
     _menu->addAction(_actionQuit);
 
     _tray->setContextMenu(_menu);
-    _tray->setIcon(ApdApplication::windowIcon());
+    _tray->setIcon(qApp->windowIcon());
     _tray->show();
 }
 
@@ -73,6 +72,12 @@ void TrayIcon::Unavailable()
 
 void TrayIcon::Disconnect()
 {
+    // No device is bound yet, so "Waiting for Binding" outranks "Disconnected". The scanner
+    // reports itself available on every (re)start, and that must not overwrite this state.
+    if (_status == Status::Unbind) {
+        return;
+    }
+
     _status = Status::Disconnected;
     _airPodsState.reset();
     Repaint();
@@ -94,7 +99,12 @@ void TrayIcon::VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseIn
 
 void TrayIcon::ShowMainWindow()
 {
-    ApdApp->GetMainWindow()->show();
+    emit ShowMainWindowRequested();
+}
+
+void TrayIcon::ShowContextMenu(const QPoint &position)
+{
+    _menu->popup(position);
 }
 
 void TrayIcon::Repaint()
@@ -165,7 +175,9 @@ void TrayIcon::Repaint()
         toolTipContent += '\n' + _actionNewVersion->text();
     }
 
-    _tray->setToolTip("AirPodsDesktop\n" + toolTipContent.trimmed());
+    const auto toolTip = "AirPodsDesktop\n" + toolTipContent.trimmed();
+    _tray->setToolTip(toolTip);
+    emit ToolTipChanged(toolTip);
 
     // RepaintIcon
 
@@ -259,7 +271,7 @@ std::optional<QImage> TrayIcon::GenerateIcon(
         auto textHeight = size * 0.8;
 
         if (!trayIconFonts.contains(textHeight)) {
-            trayIconFonts[textHeight] = adjustFont(ApdApp->font().family(), textHeight);
+            trayIconFonts[textHeight] = adjustFont(qApp->font().family(), textHeight);
         }
 
         const auto &optFont = trayIconFonts[textHeight];
@@ -317,7 +329,7 @@ void TrayIcon::OnNewVersionClicked()
     _updateReleaseInfo.reset();
     Repaint();
 
-    ApdApp->GetMainWindow()->AskUserUpdate(releaseInfo);
+    emit UserUpdateRequested(releaseInfo);
 }
 
 void TrayIcon::OnSettingsClicked()

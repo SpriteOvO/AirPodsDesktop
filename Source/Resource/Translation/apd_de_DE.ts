@@ -47,7 +47,7 @@ Genieße es.</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>Klicke auf das Icon um Batterieinformationen anzuzeigen, klicke rechts für Einstellungen oder zum Beenden.</translation>
+        <translation>Klicke auf das Symbol, um Akkuinformationen anzuzeigen. Mit einem Rechtsklick kannst du die Einstellungen anpassen oder das Programm beenden.</translation>
     </message>
 </context>
 <context>
@@ -62,7 +62,7 @@ Genieße es.</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>Sollte der Download langsam sein oder fehlschagen, kannst du:</translation>
+        <translation>Wenn der Download langsam ist oder fehlschlägt, kannst du:</translation>
     </message>
 </context>
 <context>
@@ -108,11 +108,11 @@ Neueste Version: %2%3</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mitwirkende an der Übersetzung:</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliotheken von Drittanbietern:</translation>
     </message>
 </context>
 <context>
@@ -127,7 +127,7 @@ Neueste Version: %2%3</translation>
     </message>
     <message>
         <source>Case</source>
-        <translation>Case</translation>
+        <translation>Ladecase</translation>
     </message>
     <message>
         <source>charging</source>
@@ -162,7 +162,7 @@ Neueste Version: %2%3</translation>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
-        <translation>AirPodsDesktop Informationen</translation>
+        <translation>Informationen zu AirPodsDesktop</translation>
     </message>
 </context>
 <context>
@@ -194,11 +194,11 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Verringert die Latenz bei der Wiedergabe, kann jedoch die Batterienutzung erhöhen.</translation>
+        <translation>Behebt Probleme bei der Wiedergabe kurzer Audioclips, kann jedoch den Akkuverbrauch erhöhen.</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>Beim Entfernen der AirPods wird die Wiedergabe automatisch pausiert.</translation>
+        <translation>Hält Medien automatisch an oder setzt die Wiedergabe fort, wenn du deine AirPods aus den Ohren nimmst oder einsetzt.</translation>
     </message>
     <message>
         <source>Unavailable</source>
@@ -224,7 +224,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     <name>SettingsWindow</name>
     <message>
         <source>AirPodsDesktop Settings</source>
-        <translation>AirPodsDesktop Einstellungen</translation>
+        <translation>AirPodsDesktop-Einstellungen</translation>
     </message>
     <message>
         <source>General</source>
@@ -236,7 +236,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
-        <translation>Maximale Bluetooth Reichweite</translation>
+        <translation>Maximale Bluetooth-Reichweite</translation>
     </message>
     <message>
         <source>Unbind AirPods</source>
@@ -272,11 +272,11 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Features</source>
-        <translation>Features</translation>
+        <translation>Funktionen</translation>
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Automatische Ohr-Erkennung</translation>
+        <translation>Automatische Trageerkennung</translation>
     </message>
     <message>
         <source>Low audio latency</source>
@@ -288,7 +288,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open-source-&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Repository&lt;/span&gt;&lt;/a&gt; und lizensiert unter &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Das Open-Source-&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Repository&lt;/span&gt;&lt;/a&gt; ist unter der &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt; lizenziert.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
@@ -296,17 +296,17 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Akkustand in der Taskleiste anzeigen</translation>
     </message>
     <message><source>Tray quick connect</source><translation type="unfinished">Tray quick connect</translation></message>
     <message><source>Connect selected Bluetooth audio device on left click</source><translation type="unfinished">Connect selected Bluetooth audio device on left click</translation></message>
     <message>
         <source>As text</source>
-        <translation type="unfinished"></translation>
+        <translation>Als Text</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Als Symbol</translation>
     </message>
 </context>
 </TS>

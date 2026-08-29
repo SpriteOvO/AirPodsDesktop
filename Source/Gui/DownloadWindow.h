@@ -19,11 +19,10 @@
 #pragma once
 
 #include <thread>
-#include <atomic>
 #include <QDialog>
 
 #include "../Core/Update.h"
-#include "../Utils.h"
+#include "Utils.h"
 #include "ui_DownloadWindow.h"
 
 namespace Gui {
@@ -44,13 +43,12 @@ private:
     Ui::DownloadWindow _ui;
 
     Core::Update::ReleaseInfo _info;
-    std::atomic<bool> _destroy{false};
-    std::thread _downloadThread;
+    std::jthread _downloadThread;
 
     void UpdateProgress(int downloaded, int total);
     void OnFailed();
 
-    void DownloadThread();
+    void DownloadThread(std::stop_token stopToken);
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });

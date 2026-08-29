@@ -29,14 +29,19 @@ namespace Config {
 #define CONFIG_DESCRIPTION              "@PROJECT_DESCRIPTION@"
 #define CONFIG_COPYRIGHT                "Copyright © 2021-2022 SpriteOvO. All rights reserved."
 #define CONFIG_CPACK_SYSTEM_NAME        "@CPACK_SYSTEM_NAME@"
-#define CONFIG_URL_REPO                 "https://github.com/SpriteOvO/" CONFIG_PROGRAM_NAME
+#define CONFIG_GITHUB_OWNER             "@APD_GITHUB_OWNER@"
+#define CONFIG_GITHUB_REPOSITORY        "@APD_GITHUB_REPOSITORY@"
+#define CONFIG_URL_REPO                 "https://github.com/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
+#define CONFIG_API_REPO                 "https://api.github.com/repos/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
 #define CONFIG_URL_ISSUES               CONFIG_URL_REPO "/issues"
 #define CONFIG_URL_RELEASES             CONFIG_URL_REPO "/releases"
 #define CONFIG_URL_LICENSE              CONFIG_URL_REPO "/blob/main/LICENSE"
-#define CONFIG_URL_CURRENT_RELEASE      CONFIG_URL_RELEASES "/tag/" CONFIG_VERSION_STRING
+#define CONFIG_RELEASE_TAG_PREFIX       "@APD_RELEASE_TAG_PREFIX@"
+#define CONFIG_URL_CURRENT_RELEASE      CONFIG_URL_RELEASES "/tag/" CONFIG_RELEASE_TAG_PREFIX CONFIG_VERSION_STRING
 
 constexpr inline auto ProgramName = CONFIG_PROGRAM_NAME;
 constexpr inline auto UrlRepository = CONFIG_URL_REPO;
+constexpr inline auto ApiRepository = CONFIG_API_REPO;
 constexpr inline auto UrlIssues = CONFIG_URL_ISSUES;
 constexpr inline auto UrlReleases = CONFIG_URL_RELEASES;
 constexpr inline auto UrlLicense = CONFIG_URL_LICENSE;

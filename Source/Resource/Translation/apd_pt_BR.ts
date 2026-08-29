@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh_CN">
+<TS version="2.1" language="pt_BR">
 <context>
     <name>ApdApplication</name>
     <message>
         <source>Settings format has changed a bit and needs to be reconfigured.</source>
-        <translation>设置格式发生了一些变化，需要重新配置。</translation>
+        <translation>O formato das configurações mudou um pouco e precisa ser reconfigurado.</translation>
     </message>
     <message>
         <source>Hello, welcome to %1!
 
 This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
-        <translation>您好，欢迎使用 %1！
+        <translation>Olá, bem-vindo ao %1!
 
-这似乎是您第一次使用本程序。
-让我们一起来配置一些东西吧。</translation>
+Parece que é a primeira vez que você usa este programa.
+Vamos configurar algumas coisas juntos.</translation>
     </message>
     <message>
         <source>Do you want this program to launch when the system starts?
 
 If you frequently use AirPods with this computer, it is recommended that you click &quot;Yes&quot;.</source>
-        <translation>您想让这个程序在开机时启动吗？
+        <translation>Deseja que este programa inicie com o sistema?
 
-如果您经常与这台电脑一起使用 AirPods，建议点击“是”。</translation>
+Se você usa AirPods frequentemente com este computador, é recomendado clicar em &quot;Sim&quot;.</translation>
     </message>
     <message>
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>您想要开启“低音频延迟”功能吗？
+        <translation>Deseja ativar o recurso &quot;baixa latência de áudio&quot;?
 
 %1</translation>
     </message>
@@ -37,32 +37,32 @@ If you frequently use AirPods with this computer, it is recommended that you cli
         <source>Great! Everything is ready!
 
 Enjoy it all.</source>
-        <translation>很好！一切准备就绪！
+        <translation>Ótimo! Tudo está pronto!
 
-尽情享受吧。</translation>
+Aproveite.</translation>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>您可以在系统托盘找到我</translation>
+        <translation>Você pode me encontrar na bandeja do sistema</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>点击图标以查看电池信息，右键以自定义设置或退出。</translation>
+        <translation>Clique no ícone para ver informações sobre a bateria; clique com o botão direito para personalizar configurações ou sair.</translation>
     </message>
 </context>
 <context>
     <name>DownloadWindow</name>
     <message>
         <source>Download new version</source>
-        <translation>下载新版本</translation>
+        <translation>Baixar nova versão</translation>
     </message>
     <message>
         <source>Download Manually</source>
-        <translation>手动下载</translation>
+        <translation>Baixar manualmente</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>如果下载缓慢或失败，您可以：</translation>
+        <translation>Se o download estiver lento ou falhar, você pode:</translation>
     </message>
 </context>
 <context>
@@ -70,33 +70,33 @@ Enjoy it all.</source>
     <message>
         <source>Oops, an error occurred during the automatic update.
 Please download and install the new version manually.</source>
-        <translation>哎呀，在自动更新时发生了一个错误。
-请手动下载安装新版本。</translation>
+        <translation>Ops, ocorreu um erro durante a atualização automática.
+Por favor, baixe e instale a nova versão manualmente.</translation>
     </message>
 </context>
 <context>
     <name>Gui::MainWindow</name>
     <message>
         <source>Change log:</source>
-        <translation>变更日志：</translation>
+        <translation>Notas de versão:</translation>
     </message>
     <message>
         <source>Hey! I found a new version available!
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>嗨！我发现了一个可用的新版本！
+        <translation>Uma nova versão está disponível!
 
-当前版本：%1
-最新版本：%2%3</translation>
+Versão atual: %1
+Última versão: %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>绑定到 AirPods</translation>
+        <translation>Vincular aos AirPods</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
-        <translation>请在下方选择您的 AirPods 设备。</translation>
+        <translation>Selecione seu dispositivo AirPods abaixo.</translation>
     </message>
 </context>
 <context>
@@ -104,239 +104,239 @@ Latest version: %2%3</source>
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translation>|</translation>
+        <translation>Alex Martins|</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation>翻译贡献者：</translation>
+        <translation>Colaboradores da tradução:</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation>第三方库：</translation>
+        <translation>Bibliotecas de Terceiros:</translation>
     </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
     <message>
         <source>Left</source>
-        <translation>左</translation>
+        <translation>Esquerdo</translation>
     </message>
     <message>
         <source>Right</source>
-        <translation>右</translation>
+        <translation>Direito</translation>
     </message>
     <message>
         <source>Case</source>
-        <translation>电池仓</translation>
+        <translation>Estojo</translation>
     </message>
     <message>
         <source>charging</source>
-        <translation>充电中</translation>
+        <translation>carregando</translation>
     </message>
     <message>
         <source>New version available!</source>
-        <translation>新版本可用！</translation>
+        <translation>Nova versão disponível!</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>设置</translation>
+        <translation>Configurações</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>关于</translation>
+        <translation>Sobre</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>退出</translation>
+        <translation>Sair</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation>快速连接</translation>
+        <translation>Conexão rápida</translation>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation>快速连接已禁用。</translation>
+        <translation>A conexão rápida está desativada.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation>请先在设置中选择蓝牙音频设备。</translation>
+        <translation>Primeiro, escolha um dispositivo de áudio Bluetooth nas Configurações.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation>%1 已经连接。</translation>
+        <translation>%1 já está conectado.</translation>
     </message>
     <message>
         <source>Connecting to %1…</source>
-        <translation>正在连接到 %1……</translation>
+        <translation>Conectando a %1…</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation>%1 已连接。</translation>
+        <translation>%1 conectado.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation>连接 %1 超时。</translation>
+        <translation>A conexão com %1 expirou.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation>Windows 无法连接到 %1。</translation>
+        <translation>O Windows não conseguiu conectar a %1.</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
-        <translation>AirPodsDesktop 信息</translation>
+        <translation>Informações do AirPodsDesktop</translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>未找到已配对的设备。
-您需要先在 Windows 蓝牙设置中配对您的 AirPods。</translation>
-    </message>
-    <message>
         <source>Update now</source>
-        <translation>立即更新</translation>
+        <translation>Atualizar agora</translation>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation>跳过此版本</translation>
+        <translation>Ignorar esta versão</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>查看发行说明</translation>
+        <translation>Ver versão</translation>
     </message>
     <message>
         <source>Remind me later</source>
-        <translation>稍后提醒我</translation>
+        <translation>Lembrar mais tarde</translation>
+    </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in Windows Bluetooth Settings first.</source>
+        <translation>Nenhum dispositivo emparelhado encontrado.
+Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Windows primeiro.</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>修复短音频的播放问题，但可能会增加电池消耗。</translation>
+        <translation>Corrige problemas na reprodução de áudios curtos, mas pode aumentar o consumo da bateria.</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>当您取下或戴上 AirPods 时，自动暂停或恢复媒体播放。</translation>
+        <translation>Pausa ou retoma a mídia automaticamente quando você remove ou coloca os AirPods nos ouvidos.</translation>
     </message>
     <message>
         <source>Unavailable</source>
-        <translation>不可用</translation>
+        <translation>Indisponível</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation>连接已断开</translation>
+        <translation>Desconectado</translation>
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>等待绑定</translation>
+        <translation>Aguardando vinculação</translation>
     </message>
 </context>
 <context>
     <name>SelectWindow</name>
     <message>
         <source>Select</source>
-        <translation>选择</translation>
+        <translation>Selecionar</translation>
     </message>
 </context>
 <context>
     <name>SettingsWindow</name>
     <message>
         <source>AirPodsDesktop Settings</source>
-        <translation>AirPodsDesktop 设置</translation>
+        <translation>Configurações do AirPodsDesktop</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>通用</translation>
-    </message>
-    <message>
-        <source>Launch when system starts</source>
-        <translation>开机时启动</translation>
-    </message>
-    <message>
-        <source>Bluetooth maximum receiving range</source>
-        <translation>蓝牙最大接收范围</translation>
-    </message>
-    <message>
-        <source>Unbind AirPods</source>
-        <translation>解绑 AirPods</translation>
+        <translation>Geral</translation>
     </message>
     <message>
         <source>Open logs directory</source>
-        <translation>打开日志目录</translation>
+        <translation>Abrir diretório de logs</translation>
     </message>
     <message>
-        <source>Visual</source>
-        <translation>外观</translation>
+        <source>Bluetooth maximum receiving range</source>
+        <translation>Alcance máximo de recepção do Bluetooth</translation>
     </message>
     <message>
-        <source>Display battery on tray icon</source>
-        <translation>在系统托盘图标上显示电量</translation>
+        <source>Unbind AirPods</source>
+        <translation>Desvincular os AirPods</translation>
     </message>
     <message>
-        <source>Disable</source>
-        <translation>禁用</translation>
-    </message>
-    <message>
-        <source>When low battery</source>
-        <translation>电量不足时</translation>
-    </message>
-    <message>
-        <source>Always</source>
-        <translation>始终</translation>
-    </message>
-    <message>
-        <source>Features</source>
-        <translation>功能</translation>
-    </message>
-    <message>
-        <source>Automatic ear detection</source>
-        <translation>自动入耳检测</translation>
-    </message>
-    <message>
-        <source>Low audio latency</source>
-        <translation>低音频延迟</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translation>关于</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;本项目为开源软件，请参阅&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;代码仓库&lt;/span&gt;&lt;/a&gt;，并依据 &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt; 许可证发布。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>Launch when system starts</source>
+        <translation>Iniciar com o sistema</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>语言</translation>
+        <translation>Idioma</translation>
     </message>
     <message>
-        <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
-        <translation>版权所有 © 2021-2022 SpriteOvO. 保留所有权利。</translation>
+        <source>Visual</source>
+        <translation>Visual</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation>在任务栏上显示电量</translation>
+        <translation>Exibir bateria na barra de tarefas</translation>
     </message>
     <message>
-        <source>Tray quick connect</source>
-        <translation>托盘快速连接</translation>
+        <source>Disable</source>
+        <translation>Desativar</translation>
     </message>
     <message>
-        <source>Connect selected Bluetooth audio device on left click</source>
-        <translation>左键点击时连接选中的蓝牙音频设备</translation>
+        <source>When low battery</source>
+        <translation>Quando a bateria estiver baixa</translation>
+    </message>
+    <message>
+        <source>Always</source>
+        <translation>Sempre</translation>
     </message>
     <message>
         <source>As text</source>
-        <translation>以文本显示</translation>
+        <translation>Como texto</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation>以图标显示</translation>
+        <translation>Como ícone</translation>
+    </message>
+    <message>
+        <source>Display battery on tray icon</source>
+        <translation>Exibir bateria no ícone da bandeja</translation>
+    </message>
+    <message>
+        <source>Features</source>
+        <translation>Recursos</translation>
+    </message>
+    <message>
+        <source>Automatic ear detection</source>
+        <translation>Detecção automática de uso</translation>
+    </message>
+    <message>
+        <source>Low audio latency</source>
+        <translation>Baixa latência de áudio</translation>
+    </message>
+    <message>
+        <source>About</source>
+        <translation>Sobre</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Código-fonte aberto disponível no &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repositório&lt;/span&gt;&lt;/a&gt; e licenciado sob a &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
+        <translation>Copyright © 2021-2022 SpriteOvO. Todos os direitos reservados.</translation>
+    </message>
+    <message>
+        <source>Tray quick connect</source>
+        <translation>Conexão rápida pela bandeja</translation>
+    </message>
+    <message>
+        <source>Connect selected Bluetooth audio device on left click</source>
+        <translation>Conectar o dispositivo de áudio Bluetooth selecionado com um clique esquerdo</translation>
     </message>
 </context>
 </TS>

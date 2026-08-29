@@ -58,7 +58,7 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>Download Manually</source>
-        <translation>自分でダウンロード</translation>
+        <translation>手動でダウンロード</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
@@ -92,7 +92,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>AirPodsに結びつける</translation>
+        <translation>AirPodsに接続</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
@@ -108,11 +108,11 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation type="unfinished"></translation>
+        <translation>翻訳協力者：</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation type="unfinished"></translation>
+        <translation>サードパーティ製ライブラリ：</translation>
     </message>
 </context>
 <context>
@@ -194,7 +194,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <name>QObject</name>
     <message>
         <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>音声の遅延を改善しますが、電池消費が増加する場合があります。</translation>
+        <translation>短い音声が正常に再生されない問題を改善しますが、バッテリー消費量が増える場合があります。</translation>
     </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
@@ -210,7 +210,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>結びつけられるのを待っています</translation>
+        <translation>接続待機中</translation>
     </message>
 </context>
 <context>
@@ -240,7 +240,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>AirPodsとの結びつけを解除する</translation>
+        <translation>AirPodsとの接続を解除</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
@@ -288,25 +288,25 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;オープンソース&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;リポジトリ&lt;/span&gt;&lt;/a&gt;で、&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;の下にライセンスされています。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ソースコードは&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;オープンソースリポジトリ&lt;/span&gt;&lt;/a&gt;で公開され、&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;の下でライセンスされています。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
-        <translation>Copyright © 2021-2022 SpriteOvO. All rights reserved.</translation>
+        <translation>Copyright © 2021-2022 SpriteOvO. 無断転載を禁じます。</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation type="unfinished">タスクバーに電池残量を表示</translation>
+        <translation>タスクバーにバッテリー残量を表示</translation>
     </message>
     <message><source>Tray quick connect</source><translation type="unfinished">Tray quick connect</translation></message>
     <message><source>Connect selected Bluetooth audio device on left click</source><translation type="unfinished">Connect selected Bluetooth audio device on left click</translation></message>
     <message>
         <source>As text</source>
-        <translation type="unfinished">文字で表示</translation>
+        <translation>テキストで表示</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation type="unfinished">アイコンで表示</translation>
+        <translation>アイコンで表示</translation>
     </message>
 </context>
 </TS>

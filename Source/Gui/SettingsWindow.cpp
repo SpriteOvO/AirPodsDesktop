@@ -27,7 +27,6 @@
 
 #include <Config.h>
 
-#include "../Application.h"
 #include "../Core/Debug.h"
 
 using namespace std::chrono_literals;
@@ -63,7 +62,8 @@ private:
     }
 };
 
-SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
+SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent)
+    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)}
 {
     const auto &constMetaFields = GetConstMetaFields();
 
@@ -86,12 +86,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
 
     auto versionText =
         QString{"<a href=\"%1\">v%2</a>"}
-            .arg("https://github.com/SpriteOvO/AirPodsDesktop/releases/tag/" CONFIG_VERSION_STRING)
+            .arg(Config::UrlCurrentRelease)
             .arg(CONFIG_VERSION_STRING);
 #if defined APD_BUILD_GIT_HASH
     versionText +=
         QString{" (<a href=\"%1\">%2</a>)"}
-            .arg("https://github.com/SpriteOvO/AirPodsDesktop/commit/" APD_BUILD_GIT_HASH)
+            .arg(QString{"%1/commit/%2"}.arg(Config::UrlRepository).arg(APD_BUILD_GIT_HASH))
             .arg(QString{APD_BUILD_GIT_HASH}.left(7));
 #endif
     _ui.lbVersion->setText(versionText);
@@ -105,7 +105,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QDialog{parent}
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
 
-    for (const auto &locale : ApdApp->AvailableLocales()) {
+    for (const auto &locale : Utils::AvailableLocales()) {
         _ui.cbLanguages->addItem(locale.nativeLanguageName());
     }
     _ui.cbLanguages->addItem("...");
@@ -297,7 +297,7 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 {
     _trigger = trigger;
 
-    auto currentLangIndex = ApdApp->GetCurrentLoadedLocaleIndex();
+    auto currentLangIndex = _getCurrentLocaleIndex();
     _lastLanguageIndex = currentLangIndex;
     _ui.cbLanguages->setCurrentIndex(currentLangIndex);
 
@@ -382,7 +382,7 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
     if (_ui.cbLanguages->count() != index + 1) {
         _lastLanguageIndex = index;
 
-        const auto &availableLocales = ApdApp->AvailableLocales();
+        const auto &availableLocales = Utils::AvailableLocales();
         const auto &locale = availableLocales.at(index);
 
         ModifiableAccess()->language_locale = locale.name();

@@ -18,20 +18,41 @@
 
 #include "Application.h"
 
+#include <QGuiApplication>
 #include <QMessageBox>
 
 #include <Config.h>
 #include "Logger.h"
 #include "Error.h"
+#include "Utils.h"
+#include "Gui/Utils.h"
+#include "Gui/DownloadWindow.h"
+#include "Gui/MainWindow.h"
+#include "Gui/TaskbarStatus.h"
+#include "Gui/TrayIcon.h"
+#include "Core/AirPods.h"
+#include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
+#include "Core/LowAudioLatency.h"
+#include "Core/QuickConnect.h"
+#if defined APD_OS_WIN
+    #include "Core/QuickConnect_win.h"
+#endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
+
+ApdApplication::~ApdApplication()
+{
+    Core::Settings::SetApplyObserver(nullptr);
+}
 
 void ApdApplication::PreConstruction()
 {
     setAttribute(Qt::AA_DisableWindowContextHelpButton);
     setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 }
 
 void ApdApplication::InitSettings(Core::Settings::LoadResult loadResult)
@@ -152,51 +173,116 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     InitTranslator();
 
-    #if defined APD_OS_WIN
+#if defined APD_OS_WIN
     _quickConnectBackend = std::make_unique<Core::QuickConnect::WindowsBackend>();
-    #else
+#else
     _quickConnectBackend = std::make_unique<Core::QuickConnect::NullBackend>();
-    #endif
+#endif
     _quickConnect = std::make_unique<Core::QuickConnect::Controller>(*_quickConnectBackend);
 
-    _trayIcon = std::make_unique<Gui::TrayIcon>();
+    _trayIcon = std::make_unique<Gui::TrayIcon>([this] { return GetCurrentLoadedLocaleIndex(); });
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
+    _autoStartService = Core::AutoStart::CreateAutoStartService();
+    _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
+
+    qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
+
+    ConnectGuiComponents();
+    ConnectAirPodsManager();
+
+    Core::Settings::SetApplyObserver(this);
+
+    _mainWindow->Unavailable();
+    _trayIcon->Unavailable();
+    _taskbarStatus->Unavailable();
 
     InitSettings(settingsLoadResult);
 
     return true;
 }
 
-int ApdApplication::Run()
+void ApdApplication::ConnectAirPodsManager()
 {
-    _mainWindow->GetApdMgr().StartScanner();
-    return exec();
+    auto *manager = _airPodsManager.get();
+    auto *mainWindow = _mainWindow.get();
+
+    connect(
+        manager, &Core::AirPods::Manager::BoundDeviceUnavailable, this,
+        [] {
+            auto settings = Core::Settings::ModifiableAccess();
+            settings->device_address = 0;
+        },
+        Qt::QueuedConnection);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, mainWindow, &Gui::MainWindow::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, _trayIcon.get(),
+        &Gui::TrayIcon::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::StateUpdated, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::UpdateState);
+    connect(
+        manager, &Core::AirPods::Manager::Disconnected, mainWindow, &Gui::MainWindow::Disconnect);
+    connect(
+        manager, &Core::AirPods::Manager::Disconnected, _trayIcon.get(),
+        &Gui::TrayIcon::Disconnect);
+    connect(
+        manager, &Core::AirPods::Manager::Disconnected, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::Disconnect);
+    connect(
+        manager, &Core::AirPods::Manager::ScannerAvailabilityChanged, mainWindow,
+        [this, mainWindow](bool available) {
+            if (available) {
+                mainWindow->Available();
+                _trayIcon->Disconnect();
+                _taskbarStatus->Disconnect();
+            }
+            else {
+                mainWindow->Unavailable();
+                _trayIcon->Unavailable();
+                _taskbarStatus->Unavailable();
+            }
+        });
+    connect(manager, &Core::AirPods::Manager::LidToggled, mainWindow, [mainWindow](bool opened) {
+        if (opened) {
+            emit mainWindow->ShowSafely();
+        }
+        else {
+            emit mainWindow->HideSafely();
+        }
+    });
 }
 
-const QVector<QLocale> &ApdApplication::AvailableLocales()
+void ApdApplication::ConnectGuiComponents()
 {
-    static QVector<QLocale> locales = []() {
-        const auto localeNames = QString{Config::TranslationLocales}.split(';', Qt::SkipEmptyParts);
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::ShowMainWindowRequested, _mainWindow.get(),
+        &Gui::MainWindow::show);
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::UserUpdateRequested, _mainWindow.get(),
+        &Gui::MainWindow::AskUserUpdate);
+    connect(
+        _trayIcon.get(), &Gui::TrayIcon::ToolTipChanged, _taskbarStatus.get(),
+        &Gui::TaskbarStatus::SetToolTip);
 
-        QVector<QLocale> result = {QLocale{"en"}};
+    connect(
+        _taskbarStatus.get(), &Gui::TaskbarStatus::ShowMainWindowRequested, _mainWindow.get(),
+        &Gui::MainWindow::show);
+    connect(
+        _taskbarStatus.get(), &Gui::TaskbarStatus::ShowTrayMenuRequested, _trayIcon.get(),
+        &Gui::TrayIcon::ShowContextMenu);
 
-        for (const auto &localName : localeNames) {
-            QLocale locale{localName};
+    connect(
+        _mainWindow.get(), &Gui::MainWindow::SilentUpdateAvailable, _trayIcon.get(),
+        &Gui::TrayIcon::VersionUpdateAvailable);
+}
 
-            if (locale.language() == QLocale::C) {
-                LOG(Warn, "Possibly invalid locale name '{}', ignore", localName);
-                continue;
-            }
-
-            result.push_back(locale);
-        }
-
-        return result;
-    }();
-
-    return locales;
+int ApdApplication::Run()
+{
+    _airPodsManager->StartScanner();
+    return exec();
 }
 
 void ApdApplication::SetTranslator(const QLocale &locale)
@@ -210,7 +296,7 @@ void ApdApplication::SetTranslator(const QLocale &locale)
         return;
     }
 
-    const auto &availableLocales = ApdApplication::AvailableLocales();
+    const auto &availableLocales = Utils::AvailableLocales();
 
     int index = -1;
     for (int i = 0; i < availableLocales.size(); ++i) {
@@ -252,5 +338,75 @@ void ApdApplication::InitTranslator()
 
 void ApdApplication::QuitSafely()
 {
-    QMetaObject::invokeMethod(qApp, &QApplication::quit, Qt::QueuedConnection);
+    Utils::Qt::QuitApplicationSafely();
+}
+
+void ApdApplication::OnLanguageLocaleChanged(const QLocale &locale)
+{
+    emit SetTranslatorSafely(locale);
+}
+
+void ApdApplication::OnAutoRunChanged(bool enable)
+{
+    _autoStartService->SetEnabled(enable);
+}
+
+void ApdApplication::OnLowAudioLatencyChanged(bool enable)
+{
+    _lowAudioLatencyController->ControlSafely(enable);
+}
+
+void ApdApplication::OnAutomaticEarDetectionChanged(bool enable)
+{
+    _airPodsManager->OnAutomaticEarDetectionChanged(enable);
+}
+
+void ApdApplication::OnRssiMinChanged(int16_t rssiMin)
+{
+    _airPodsManager->OnRssiMinChanged(rssiMin);
+}
+
+void ApdApplication::OnDeviceAddressChanged(uint64_t address)
+{
+    if (address == 0) {
+        emit _mainWindow->UnbindSafely();
+        _trayIcon->Unbind();
+    }
+    else {
+        emit _mainWindow->BindSafely();
+        _trayIcon->Disconnect();
+        _taskbarStatus->Disconnect();
+    }
+
+    // Queued rather than direct: this observer runs from `~ModifiableSafeAccessor`, which still
+    // holds the settings mutex until it finishes. `OnBoundDeviceAddressChanged` joins the device
+    // lookup thread, and `request_stop()` cannot interrupt the WinRT enumeration it is blocked
+    // on, so calling it here would hold the settings mutex for the length of that enumeration
+    // and stall every other thread touching settings.
+    QMetaObject::invokeMethod(
+        _airPodsManager.get(),
+        [manager = _airPodsManager.get(), address] {
+            manager->OnBoundDeviceAddressChanged(address);
+        },
+        Qt::QueuedConnection);
+}
+
+void ApdApplication::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior)
+{
+    emit _trayIcon->OnTrayIconBatteryChangedSafely(behavior);
+}
+
+void ApdApplication::OnTrayQuickConnectEnabledChanged(bool enable)
+{
+    _quickConnect->SetEnabled(enable);
+}
+
+void ApdApplication::OnTrayQuickConnectDeviceChanged(const QString &deviceId)
+{
+    _quickConnect->SetDeviceId(deviceId);
+}
+
+void ApdApplication::OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior)
+{
+    emit _taskbarStatus->OnSettingsChangedSafely(behavior);
 }
