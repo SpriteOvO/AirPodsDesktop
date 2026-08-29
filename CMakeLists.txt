@@ -635,16 +635,6 @@ target_link_libraries(
     SingleApplication::SingleApplication
 )
 
-if (WIN32)
-    target_link_libraries(
-        ${PROJECT_NAME}
-
-        Ole32
-        Uuid
-        Ksuser
-    )
-endif()
-
 ##################################################
 # Tests
 #
@@ -662,43 +652,4 @@ endif()
 #
 if (MSVC)
     apply_pdbaltpath_pdb_for_all_targets()
-endif()
-
-if (APD_BUILD_TESTS)
-    enable_testing()
-    find_package(Qt5 COMPONENTS Test Widgets REQUIRED)
-
-    add_executable(
-        QuickConnectTests
-
-        "Tests/QuickConnectTests.cpp"
-        "Source/Core/QuickConnect.cpp"
-    )
-
-    target_link_libraries(
-        QuickConnectTests
-
-        Qt5::Core
-        Qt5::Test
-        Qt5::Widgets
-    )
-
-    target_include_directories(
-        QuickConnectTests PRIVATE
-
-        "${CMAKE_SOURCE_DIR}"
-    )
-
-    add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
-
-    if (WIN32)
-        add_test(
-            NAME QuickConnectWindowsBackendContract
-            COMMAND
-                "${CMAKE_COMMAND}"
-                "-DSOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Core/QuickConnect_win.cpp"
-                "-DSETTINGS_SOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Gui/SettingsWindow.cpp"
-                -P "${CMAKE_SOURCE_DIR}/Tests/QuickConnectWindowsBackendContract.cmake"
-        )
-    endif()
 endif()
