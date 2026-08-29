@@ -18,6 +18,9 @@
 
 #include <QtTest>
 
+#include <chrono>
+#include <future>
+
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/TrayActivation.h"
 
@@ -49,6 +52,27 @@ public:
     }
 };
 
+class BlockingBackend final : public Core::QuickConnect::Backend
+{
+private:
+    std::promise<void> releasePromise;
+
+public:
+    std::promise<void> entered;
+    std::shared_future<void> release{releasePromise.get_future()};
+
+    std::vector<Core::QuickConnect::Device> ListDevices() override
+    {
+        entered.set_value();
+        release.wait();
+        return {{"{A}", "AirPods", false}};
+    }
+
+    bool RequestReconnect(const QString &) override { return false; }
+
+    void Unblock() { releasePromise.set_value(); }
+};
+
 class QuickConnectTests : public QObject
 {
     Q_OBJECT
@@ -67,6 +91,8 @@ private slots:
     void timeoutCompletesRequestOnce();
     void controllerDetachesBackendOnDestruction();
     void trayActivationPreservesDefaultBehaviorWhenDisabled();
+    void trayDoubleClickCancelsPendingQuickConnect();
+    void deviceRefreshDoesNotBlockTheGuiThread();
 };
 
 void QuickConnectTests::initTestCase()
@@ -228,6 +254,36 @@ void QuickConnectTests::trayActivationPreservesDefaultBehaviorWhenDisabled()
     QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::DoubleClick, true), Action::ShowMainWindow);
     QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::MiddleClick, true), Action::ShowMainWindow);
     QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Unknown, true), Action::None);
+}
+
+void QuickConnectTests::trayDoubleClickCancelsPendingQuickConnect()
+{
+    using Action = Gui::TrayActivationAction;
+
+    Gui::TrayActivationState state;
+    QCOMPARE(state.OnActivation(QSystemTrayIcon::Trigger, true), Action::None);
+    QCOMPARE(state.OnActivation(QSystemTrayIcon::DoubleClick, true), Action::ShowMainWindow);
+    QCOMPARE(state.OnSingleClickTimeout(), Action::None);
+
+    QCOMPARE(state.OnActivation(QSystemTrayIcon::Trigger, true), Action::None);
+    QCOMPARE(state.OnSingleClickTimeout(), Action::QuickConnect);
+}
+
+void QuickConnectTests::deviceRefreshDoesNotBlockTheGuiThread()
+{
+    using namespace std::chrono_literals;
+
+    BlockingBackend backend;
+    Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::DevicesChanged};
+
+    controller.RefreshDevices();
+    QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+    QCOMPARE(spy.count(), 0);
+
+    backend.Unblock();
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(controller.Devices().size(), std::size_t{1});
 }
 
 QTEST_APPLESS_MAIN(QuickConnectTests)
