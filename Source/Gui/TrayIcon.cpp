@@ -26,8 +26,11 @@
 #include <Config.h>
 namespace Gui {
 
-TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
-    : _settingsWindow{std::move(getCurrentLocaleIndex)}
+TrayIcon::TrayIcon(
+    std::function<int()> getCurrentLocaleIndex,
+    Core::QuickConnect::Controller &quickConnect)
+    : _quickConnect{quickConnect},
+      _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
@@ -36,7 +39,7 @@ TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::ShowMainWindowRequested);
     connect(
-        ApdApp->GetQuickConnect(), &Core::QuickConnect::Controller::OutcomeChanged, this,
+        &_quickConnect, &Core::QuickConnect::Controller::OutcomeChanged, this,
         &TrayIcon::OnQuickConnectOutcome);
 
     connect(
@@ -353,9 +356,9 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    const auto action = RouteTrayActivation(reason, ApdApp->GetQuickConnect()->IsEnabled());
+    const auto action = RouteTrayActivation(reason, _quickConnect.IsEnabled());
     if (action == TrayActivationAction::QuickConnect) {
-        ApdApp->GetQuickConnect()->Request();
+        _quickConnect.Request();
         return;
     }
 

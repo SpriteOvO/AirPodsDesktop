@@ -180,7 +180,8 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 #endif
     _quickConnect = std::make_unique<Core::QuickConnect::Controller>(*_quickConnectBackend);
 
-    _trayIcon = std::make_unique<Gui::TrayIcon>([this] { return GetCurrentLoadedLocaleIndex(); });
+    _trayIcon = std::make_unique<Gui::TrayIcon>(
+        [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();

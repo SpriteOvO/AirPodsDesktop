@@ -62,8 +62,13 @@ private:
     }
 };
 
-SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent)
-    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)}
+SettingsWindow::SettingsWindow(
+    std::function<int()> getCurrentLocaleIndex,
+    Core::QuickConnect::Controller &quickConnect,
+    QWidget *parent)
+    : QDialog{parent},
+      _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)},
+      _quickConnect{quickConnect}
 {
     const auto &constMetaFields = GetConstMetaFields();
 
@@ -330,7 +335,7 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
-    const auto devices = ApdApp->GetQuickConnect()->Devices();
+    const auto devices = _quickConnect.Devices();
     _ui.cbTrayQuickConnectDevice->clear();
     for (const auto &device : devices) {
         _ui.cbTrayQuickConnectDevice->addItem(device.name, device.id);

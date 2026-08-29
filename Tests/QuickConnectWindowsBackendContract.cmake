@@ -30,3 +30,11 @@ string(FIND "${settings_source}" "tray_quick_connect_device_id.clear()" destruct
 if(NOT destructive_selection_clear EQUAL -1)
     message(FATAL_ERROR "Refreshing Settings must not clear a saved quick-connect device after transient enumeration failure")
 endif()
+
+foreach(gui_source_file IN ITEMS "${TRAY_SOURCE_FILE}" "${SETTINGS_WINDOW_SOURCE_FILE}")
+    file(READ "${gui_source_file}" gui_source)
+    string(FIND "${gui_source}" "ApdApp" application_singleton_access)
+    if(NOT application_singleton_access EQUAL -1)
+        message(FATAL_ERROR "GUI library code must receive quick-connect dependencies explicitly: ${gui_source_file}")
+    endif()
+endforeach()

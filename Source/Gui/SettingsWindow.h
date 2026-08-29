@@ -25,6 +25,7 @@
 #include <QSlider>
 #include <QCheckBox>
 
+#include "../Core/QuickConnect.h"
 #include "../Core/Settings.h"
 #include "Utils.h"
 
@@ -39,7 +40,10 @@ class SettingsWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent = nullptr);
+    explicit SettingsWindow(
+        std::function<int()> getCurrentLocaleIndex,
+        Core::QuickConnect::Controller &quickConnect,
+        QWidget *parent = nullptr);
 
     int GetTabCount() const;
     int GetTabCurrentIndex() const;
@@ -51,6 +55,7 @@ private:
     bool _trigger{true};
     int _lastLanguageIndex{0};
     std::function<int()> _getCurrentLocaleIndex;
+    Core::QuickConnect::Controller &_quickConnect;
 
     void InitCreditsText();
     void RestoreDefaults();

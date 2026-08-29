@@ -44,6 +44,8 @@ if (WIN32)
             "${CMAKE_COMMAND}"
             "-DSOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Core/QuickConnect_win.cpp"
             "-DSETTINGS_SOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Gui/SettingsWindow.cpp"
+            "-DTRAY_SOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Gui/TrayIcon.cpp"
+            "-DSETTINGS_WINDOW_SOURCE_FILE=${CMAKE_SOURCE_DIR}/Source/Gui/SettingsWindow.cpp"
             -P "${CMAKE_SOURCE_DIR}/Tests/QuickConnectWindowsBackendContract.cmake"
     )
 endif()
