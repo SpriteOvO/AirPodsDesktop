@@ -18,7 +18,9 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
+#include <thread>
 #include <vector>
 
 #include <QObject>
@@ -75,11 +77,13 @@ public:
     bool IsEnabled() const;
     void SetDeviceId(QString id);
     std::vector<Device> Devices();
+    void RefreshDevices();
     Outcome Request();
     Outcome OnEndpointStateChanged(const QString &id, bool connected);
     Outcome ResolveTimedOut();
 
 signals:
+    void DevicesChanged();
     void OutcomeChanged(Core::QuickConnect::Outcome outcome, QString deviceName);
 
 private:
@@ -89,6 +93,13 @@ private:
     QString _deviceId;
     QString _pendingDeviceId;
     QString _pendingDeviceName;
+    QString _requestingDeviceId;
+    bool _connectedDuringRequest{};
+    std::vector<Device> _devices;
+    std::atomic<bool> _deviceRefreshRunning{};
+    std::atomic<bool> _requestRunning{};
+    std::jthread _deviceRefreshThread;
+    std::jthread _requestThread;
     QTimer _resolveTimer;
 
     Outcome Complete(Outcome outcome);

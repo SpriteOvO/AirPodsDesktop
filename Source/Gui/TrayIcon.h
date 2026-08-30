@@ -21,6 +21,7 @@
 #include <functional>
 
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <QMenu>
 #include <QAction>
 
@@ -75,9 +76,12 @@ private:
     std::optional<QString> _displayName;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
     Core::QuickConnect::Controller &_quickConnect;
+    TrayActivationState _trayActivationState;
+    QTimer _singleClickTimer{this};
 
     void ShowMainWindow();
     void Repaint();
+    void ExecuteTrayActivation(TrayActivationAction action);
 
     static std::optional<QImage>
     GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);

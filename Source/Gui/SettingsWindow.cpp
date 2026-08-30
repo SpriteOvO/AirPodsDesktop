@@ -115,6 +115,10 @@ SettingsWindow::SettingsWindow(
     }
     _ui.cbLanguages->addItem("...");
 
+    connect(
+        &_quickConnect, &Core::QuickConnect::Controller::DevicesChanged, this,
+        [this] { UpdateQuickConnectDevices(GetCurrent()); });
+
     Update(GetCurrent(), false);
 
     connect(
@@ -335,6 +339,17 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
+    UpdateQuickConnectDevices(fields);
+    _quickConnect.RefreshDevices();
+
+    _trigger = true;
+}
+
+void SettingsWindow::UpdateQuickConnectDevices(const Fields &fields)
+{
+    const auto previousTrigger = _trigger;
+    _trigger = false;
+
     const auto devices = _quickConnect.Devices();
     _ui.cbTrayQuickConnectDevice->clear();
     for (const auto &device : devices) {
@@ -345,10 +360,10 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
     const auto hasDevices = _ui.cbTrayQuickConnectDevice->count() > 0;
     _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
-    _ui.cbTrayQuickConnectEnabled->setEnabled(hasDevices);
+    _ui.cbTrayQuickConnectEnabled->setEnabled(true);
     _ui.cbTrayQuickConnectDevice->setEnabled(hasDevices);
 
-    _trigger = true;
+    _trigger = previousTrigger;
 }
 
 void SettingsWindow::UpdateAdvOverride()

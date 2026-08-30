@@ -60,6 +60,7 @@ private:
     void InitCreditsText();
     void RestoreDefaults();
     void Update(const Fields &fields, bool trigger);
+    void UpdateQuickConnectDevices(const Fields &fields);
     void UpdateAdvOverride();
 
     void showEvent(QShowEvent *event) override;

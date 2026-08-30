@@ -19,6 +19,7 @@
 #include <QtTest>
 
 #include <chrono>
+#include <atomic>
 #include <future>
 
 #include "Source/Core/QuickConnect.h"
@@ -29,9 +30,9 @@ class FakeBackend final : public Core::QuickConnect::Backend
 public:
     std::vector<Core::QuickConnect::Device> devices{{"{A}", "AirPods", false}};
     Core::QuickConnect::Controller *controller{};
-    int listCalls{};
-    int reconnectCalls{};
-    int setControllerCalls{};
+    std::atomic<int> listCalls{};
+    std::atomic<int> reconnectCalls{};
+    std::atomic<int> setControllerCalls{};
 
     void SetController(Core::QuickConnect::Controller *value) override
     {
@@ -93,6 +94,7 @@ private slots:
     void trayActivationPreservesDefaultBehaviorWhenDisabled();
     void trayDoubleClickCancelsPendingQuickConnect();
     void deviceRefreshDoesNotBlockTheGuiThread();
+    void reconnectRequestDoesNotBlockTheGuiThread();
 };
 
 void QuickConnectTests::initTestCase()
@@ -107,7 +109,7 @@ void QuickConnectTests::disabledRequestDoesNotCallBackend()
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::Disabled);
-    QCOMPARE(backend.reconnectCalls, 0);
+    QCOMPARE(backend.reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::emptyDeviceIdReturnsNoDevice()
@@ -117,18 +119,21 @@ void QuickConnectTests::emptyDeviceIdReturnsNoDevice()
     controller.SetEnabled(true);
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::NoDevice);
-    QCOMPARE(backend.reconnectCalls, 0);
+    QCOMPARE(backend.reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::missingDeviceReturnsNoDevice()
 {
     FakeBackend backend;
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{Missing}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::NoDevice);
-    QCOMPARE(backend.reconnectCalls, 0);
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::NoDevice);
+    QCOMPARE(backend.reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::connectedDeviceReturnsAlreadyConnected()
@@ -136,11 +141,16 @@ void QuickConnectTests::connectedDeviceReturnsAlreadyConnected()
     FakeBackend backend;
     backend.devices = {{"{A}", "AirPods", true}};
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::AlreadyConnected);
-    QCOMPARE(backend.reconnectCalls, 0);
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(
+        spy.at(0).at(0).value<Core::QuickConnect::Outcome>(),
+        Core::QuickConnect::Outcome::AlreadyConnected);
+    QCOMPARE(backend.reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::connectedDeviceDoesNotReconnect()
@@ -148,11 +158,16 @@ void QuickConnectTests::connectedDeviceDoesNotReconnect()
     FakeBackend backend;
     backend.devices[0].connected = true;
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::AlreadyConnected);
-    QCOMPARE(backend.reconnectCalls, 0);
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(
+        spy.at(0).at(0).value<Core::QuickConnect::Outcome>(),
+        Core::QuickConnect::Outcome::AlreadyConnected);
+    QCOMPARE(backend.reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::failedReconnectReturnsFailed()
@@ -160,40 +175,49 @@ void QuickConnectTests::failedReconnectReturnsFailed()
     FakeBackend backend;
     backend.devices = {{"{B}", "AirPods Pro", false}};
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{B}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::Failed);
-    QCOMPARE(backend.reconnectCalls, 1);
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Failed);
+    QCOMPARE(backend.reconnectCalls.load(), 1);
 }
 
 void QuickConnectTests::pendingRequestIsDeduplicated()
 {
     FakeBackend backend;
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QCOMPARE(backend.listCalls, 1);
-    QCOMPARE(backend.reconnectCalls, 1);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QCOMPARE(spy.count(), 2);
+    QCOMPARE(backend.listCalls.load(), 1);
+    QCOMPARE(backend.reconnectCalls.load(), 1);
 }
 
 void QuickConnectTests::pendingRequestKeepsOriginalDevice()
 {
     FakeBackend backend;
     Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
     backend.devices[0].connected = true;
     controller.SetDeviceId("{B}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QCOMPARE(backend.listCalls, 1);
-    QCOMPARE(backend.reconnectCalls, 1);
+    QCOMPARE(backend.listCalls.load(), 1);
+    QCOMPARE(backend.reconnectCalls.load(), 1);
     QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
 }
 
@@ -206,6 +230,7 @@ void QuickConnectTests::endpointActivationCompletesRequest()
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
     spy.clear();
     QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
     QCOMPARE(spy.count(), 1);
@@ -224,6 +249,7 @@ void QuickConnectTests::timeoutCompletesRequestOnce()
     controller.SetDeviceId("{A}");
 
     QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
     spy.clear();
     QCOMPARE(controller.ResolveTimedOut(), Core::QuickConnect::Outcome::TimedOut);
     QCOMPARE(spy.count(), 1);
@@ -242,7 +268,7 @@ void QuickConnectTests::controllerDetachesBackendOnDestruction()
     }
 
     QVERIFY(backend.controller == nullptr);
-    QCOMPARE(backend.setControllerCalls, 2);
+    QCOMPARE(backend.setControllerCalls.load(), 2);
 }
 
 void QuickConnectTests::trayActivationPreservesDefaultBehaviorWhenDisabled()
@@ -284,6 +310,25 @@ void QuickConnectTests::deviceRefreshDoesNotBlockTheGuiThread()
     backend.Unblock();
     QVERIFY(spy.wait(1'000));
     QCOMPARE(controller.Devices().size(), std::size_t{1});
+}
+
+void QuickConnectTests::reconnectRequestDoesNotBlockTheGuiThread()
+{
+    using namespace std::chrono_literals;
+
+    BlockingBackend backend;
+    Core::QuickConnect::Controller controller{backend};
+    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    controller.SetEnabled(true);
+    controller.SetDeviceId("{A}");
+
+    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
+    QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+    QCOMPARE(spy.count(), 0);
+
+    backend.Unblock();
+    QVERIFY(spy.wait(1'000));
+    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Failed);
 }
 
 QTEST_APPLESS_MAIN(QuickConnectTests)

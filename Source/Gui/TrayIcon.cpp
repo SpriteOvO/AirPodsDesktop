@@ -32,6 +32,12 @@ TrayIcon::TrayIcon(
     : _quickConnect{quickConnect},
       _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
+    _singleClickTimer.setSingleShot(true);
+    _singleClickTimer.setInterval(QApplication::doubleClickInterval());
+    connect(&_singleClickTimer, &QTimer::timeout, this, [this] {
+        ExecuteTrayActivation(_trayActivationState.OnSingleClickTimeout());
+    });
+
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
@@ -356,7 +362,19 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    const auto action = RouteTrayActivation(reason, _quickConnect.IsEnabled());
+    const auto action = _trayActivationState.OnActivation(reason, _quickConnect.IsEnabled());
+    if (reason == QSystemTrayIcon::Trigger && _quickConnect.IsEnabled()) {
+        _singleClickTimer.start();
+    }
+    else if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::MiddleClick) {
+        _singleClickTimer.stop();
+    }
+
+    ExecuteTrayActivation(action);
+}
+
+void TrayIcon::ExecuteTrayActivation(TrayActivationAction action)
+{
     if (action == TrayActivationAction::QuickConnect) {
         _quickConnect.Request();
         return;

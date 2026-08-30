@@ -604,11 +604,8 @@ void WindowsBackend::UnregisterNotifications()
 
 void WindowsBackend::QueueEndpointState(const QString &containerId, bool connected)
 {
-    QPointer<Controller> controller;
-    {
-        std::lock_guard<std::mutex> lock{_mutex};
-        controller = _controller;
-    }
+    std::lock_guard<std::mutex> lock{_mutex};
+    const QPointer<Controller> controller = _controller;
     if (controller.isNull()) {
         return;
     }

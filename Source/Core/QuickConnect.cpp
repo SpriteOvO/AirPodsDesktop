@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <utility>
 
+#include <QMetaObject>
+
 namespace Core::QuickConnect {
 namespace {
 
@@ -51,6 +53,14 @@ Controller::Controller(Backend &backend) : QObject{nullptr}, _backend{backend}
 
 Controller::~Controller()
 {
+    _deviceRefreshThread.request_stop();
+    _requestThread.request_stop();
+    if (_deviceRefreshThread.joinable()) {
+        _deviceRefreshThread.join();
+    }
+    if (_requestThread.joinable()) {
+        _requestThread.join();
+    }
     _backend.SetController(nullptr);
 }
 
@@ -71,13 +81,44 @@ void Controller::SetDeviceId(QString id)
 
 std::vector<Device> Controller::Devices()
 {
-    return _backend.ListDevices();
+    return _devices;
+}
+
+void Controller::RefreshDevices()
+{
+    if (_deviceRefreshRunning.exchange(true)) {
+        return;
+    }
+
+    if (_deviceRefreshThread.joinable()) {
+        _deviceRefreshThread.join();
+    }
+
+    _deviceRefreshThread = std::jthread{[this](std::stop_token stopToken) {
+        auto devices = _backend.ListDevices();
+        if (stopToken.stop_requested()) {
+            return;
+        }
+
+        QMetaObject::invokeMethod(
+            this,
+            [this, devices = std::move(devices)]() mutable {
+                _devices = std::move(devices);
+                _deviceRefreshRunning = false;
+                emit DevicesChanged();
+            },
+            Qt::QueuedConnection);
+    }};
 }
 
 Outcome Controller::Request()
 {
     if (_pending) {
         EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
+        return Outcome::RequestStarted;
+    }
+
+    if (_requestRunning) {
         return Outcome::RequestStarted;
     }
 
@@ -91,35 +132,75 @@ Outcome Controller::Request()
         return Outcome::NoDevice;
     }
 
-    const auto devices = _backend.ListDevices();
-    const auto deviceIter = std::find_if(
-        devices.begin(), devices.end(),
-        [&](const Device &device) { return device.id == _deviceId; });
-    if (deviceIter == devices.end()) {
-        EmitOutcome(Outcome::NoDevice, {});
-        return Outcome::NoDevice;
+    _requestRunning = true;
+    _requestingDeviceId = _deviceId;
+    _connectedDuringRequest = false;
+
+    if (_requestThread.joinable()) {
+        _requestThread.join();
     }
 
-    if (deviceIter->connected) {
-        EmitOutcome(Outcome::AlreadyConnected, deviceIter->name);
-        return Outcome::AlreadyConnected;
-    }
+    const auto requestedDeviceId = _deviceId;
+    _requestThread = std::jthread{[this, requestedDeviceId](std::stop_token stopToken) {
+        const auto devices = _backend.ListDevices();
+        const auto deviceIter = std::find_if(
+            devices.begin(), devices.end(),
+            [&](const Device &device) { return device.id == requestedDeviceId; });
 
-    if (!_backend.RequestReconnect(_deviceId)) {
-        EmitOutcome(Outcome::Failed, deviceIter->name);
-        return Outcome::Failed;
-    }
+        auto outcome = Outcome::NoDevice;
+        QString deviceName;
+        if (deviceIter != devices.end()) {
+            deviceName = deviceIter->name;
+            if (deviceIter->connected) {
+                outcome = Outcome::AlreadyConnected;
+            }
+            else {
+                outcome = _backend.RequestReconnect(requestedDeviceId) ? Outcome::RequestStarted
+                                                                      : Outcome::Failed;
+            }
+        }
 
-    _pending = true;
-    _pendingDeviceId = _deviceId;
-    _pendingDeviceName = deviceIter->name;
-    _resolveTimer.start();
-    EmitOutcome(Outcome::RequestStarted, _pendingDeviceName);
+        if (stopToken.stop_requested()) {
+            return;
+        }
+
+        QMetaObject::invokeMethod(
+            this,
+            [this, requestedDeviceId, deviceName = std::move(deviceName), outcome]() mutable {
+                _requestRunning = false;
+                _requestingDeviceId.clear();
+
+                if (outcome == Outcome::RequestStarted) {
+                    if (_connectedDuringRequest) {
+                        _connectedDuringRequest = false;
+                        EmitOutcome(Outcome::Connected, deviceName);
+                        return;
+                    }
+
+                    _pending = true;
+                    _pendingDeviceId = requestedDeviceId;
+                    _pendingDeviceName = deviceName;
+                    _resolveTimer.start();
+                }
+
+                _connectedDuringRequest = false;
+                EmitOutcome(outcome, deviceName);
+            },
+            Qt::QueuedConnection);
+    }};
+
     return Outcome::RequestStarted;
 }
 
 Outcome Controller::OnEndpointStateChanged(const QString &id, bool connected)
 {
+    if (_requestRunning && connected &&
+        NormalizeId(id) == NormalizeId(_requestingDeviceId))
+    {
+        _connectedDuringRequest = true;
+        return Outcome::RequestStarted;
+    }
+
     if (!_pending) {
         return connected ? Outcome::Connected : Outcome::RequestStarted;
     }
