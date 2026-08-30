@@ -272,7 +272,15 @@ std::map<QString, Device> EnumeratePairedBluetoothDevices(std::stop_token stopTo
 
         const auto operation = WinrtDevices::DeviceInformation::FindAllAsync(
             WinrtBluetooth::BluetoothDevice::GetDeviceSelectorFromPairingState(true), properties);
-        std::stop_callback cancelOperation{stopToken, [operation]() mutable { operation.Cancel(); }};
+        std::stop_callback cancelOperation{
+            stopToken,
+            [operation]() mutable noexcept {
+                try {
+                    operation.Cancel();
+                }
+                catch (...) {
+                }
+            }};
         const auto collection = operation.get();
 
         for (uint32_t i = 0; i < collection.Size(); ++i) {

@@ -7,6 +7,7 @@ set(required_fragments
     "connectedDevice->Activate("
     "KSPROPERTY_TYPE_GET"
     "operation.Cancel()"
+    "mutable noexcept"
     "stopToken.stop_requested()"
 )
 
