@@ -41,8 +41,8 @@ public:
     ~WindowsBackend() override;
 
     void SetController(Controller *controller) override;
-    std::vector<Device> ListDevices() override;
-    bool RequestReconnect(const QString &id) override;
+    std::vector<Device> ListDevices(std::stop_token stopToken) override;
+    bool RequestReconnect(const QString &id, std::stop_token stopToken) override;
 
     ULONG STDMETHODCALLTYPE AddRef() override;
     ULONG STDMETHODCALLTYPE Release() override;

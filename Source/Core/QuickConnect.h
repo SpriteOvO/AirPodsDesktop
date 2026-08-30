@@ -54,15 +54,15 @@ public:
     virtual ~Backend() = default;
 
     virtual void SetController(Controller *controller);
-    virtual std::vector<Device> ListDevices() = 0;
-    virtual bool RequestReconnect(const QString &id) = 0;
+    virtual std::vector<Device> ListDevices(std::stop_token stopToken) = 0;
+    virtual bool RequestReconnect(const QString &id, std::stop_token stopToken) = 0;
 };
 
 class NullBackend final : public Backend
 {
 public:
-    std::vector<Device> ListDevices() override { return {}; }
-    bool RequestReconnect(const QString &) override { return false; }
+    std::vector<Device> ListDevices(std::stop_token) override { return {}; }
+    bool RequestReconnect(const QString &, std::stop_token) override { return false; }
 };
 
 class Controller final : public QObject

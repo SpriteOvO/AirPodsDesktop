@@ -21,6 +21,7 @@
 #include <chrono>
 #include <atomic>
 #include <future>
+#include <mutex>
 
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/TrayActivation.h"
@@ -40,13 +41,13 @@ public:
         ++setControllerCalls;
     }
 
-    std::vector<Core::QuickConnect::Device> ListDevices() override
+    std::vector<Core::QuickConnect::Device> ListDevices(std::stop_token) override
     {
         ++listCalls;
         return devices;
     }
 
-    bool RequestReconnect(const QString &id) override
+    bool RequestReconnect(const QString &id, std::stop_token) override
     {
         ++reconnectCalls;
         return id == "{A}";
@@ -62,16 +63,30 @@ public:
     std::promise<void> entered;
     std::shared_future<void> release{releasePromise.get_future()};
 
-    std::vector<Core::QuickConnect::Device> ListDevices() override
+    std::vector<Core::QuickConnect::Device> ListDevices(std::stop_token stopToken) override
     {
+        std::stop_callback cancel{stopToken, [this] { Unblock(); }};
         entered.set_value();
         release.wait();
         return {{"{A}", "AirPods", false}};
     }
 
-    bool RequestReconnect(const QString &) override { return false; }
+    bool RequestReconnect(const QString &, std::stop_token) override { return false; }
 
-    void Unblock() { releasePromise.set_value(); }
+    void Unblock() { std::call_once(releaseOnce, [this] { releasePromise.set_value(); }); }
+
+private:
+    std::once_flag releaseOnce;
+};
+
+class BackendUnblockGuard final
+{
+public:
+    explicit BackendUnblockGuard(BlockingBackend &backend) : _backend{backend} {}
+    ~BackendUnblockGuard() { _backend.Unblock(); }
+
+private:
+    BlockingBackend &_backend;
 };
 
 class QuickConnectTests : public QObject
@@ -95,6 +110,7 @@ private slots:
     void trayDoubleClickCancelsPendingQuickConnect();
     void deviceRefreshDoesNotBlockTheGuiThread();
     void reconnectRequestDoesNotBlockTheGuiThread();
+    void controllerDestructionCancelsInFlightRefresh();
 };
 
 void QuickConnectTests::initTestCase()
@@ -301,6 +317,7 @@ void QuickConnectTests::deviceRefreshDoesNotBlockTheGuiThread()
 
     BlockingBackend backend;
     Core::QuickConnect::Controller controller{backend};
+    BackendUnblockGuard unblockGuard{backend};
     QSignalSpy spy{&controller, &Core::QuickConnect::Controller::DevicesChanged};
 
     controller.RefreshDevices();
@@ -318,6 +335,7 @@ void QuickConnectTests::reconnectRequestDoesNotBlockTheGuiThread()
 
     BlockingBackend backend;
     Core::QuickConnect::Controller controller{backend};
+    BackendUnblockGuard unblockGuard{backend};
     QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
@@ -331,6 +349,18 @@ void QuickConnectTests::reconnectRequestDoesNotBlockTheGuiThread()
     QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Failed);
 }
 
-QTEST_APPLESS_MAIN(QuickConnectTests)
+void QuickConnectTests::controllerDestructionCancelsInFlightRefresh()
+{
+    using namespace std::chrono_literals;
+
+    BlockingBackend backend;
+    {
+        Core::QuickConnect::Controller controller{backend};
+        controller.RefreshDevices();
+        QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+    }
+}
+
+QTEST_GUILESS_MAIN(QuickConnectTests)
 
 #include "QuickConnectTests.moc"

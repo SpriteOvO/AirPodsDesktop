@@ -6,6 +6,8 @@ set(required_fragments
     "connectedTopology->GetDeviceId("
     "connectedDevice->Activate("
     "KSPROPERTY_TYPE_GET"
+    "operation.Cancel()"
+    "stopToken.stop_requested()"
 )
 
 foreach(fragment IN LISTS required_fragments)

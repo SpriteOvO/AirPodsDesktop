@@ -188,11 +188,15 @@ std::optional<QString> GetEndpointContainerId(IMMDevice &endpoint)
     return containerId;
 }
 
-std::vector<EndpointInfo> EnumerateAudioEndpoints()
+std::vector<EndpointInfo> EnumerateAudioEndpoints(std::stop_token stopToken)
 {
     ScopedComApartment apartment;
 
     std::vector<EndpointInfo> endpoints;
+    if (stopToken.stop_requested()) {
+        return endpoints;
+    }
+
     auto enumerator = CreateDeviceEnumerator();
     if (!enumerator) {
         return endpoints;
@@ -215,6 +219,10 @@ std::vector<EndpointInfo> EnumerateAudioEndpoints()
 
     endpoints.reserve(count);
     for (UINT i = 0; i < count; ++i) {
+        if (stopToken.stop_requested()) {
+            break;
+        }
+
         OS::Windows::Com::UniquePtr<IMMDevice> endpoint;
         result = collection->Item(i, endpoint.ReleaseAndAddressOf());
         if (FAILED(result)) {
@@ -249,7 +257,7 @@ std::vector<EndpointInfo> EnumerateAudioEndpoints()
     return endpoints;
 }
 
-std::map<QString, Device> EnumeratePairedBluetoothDevices()
+std::map<QString, Device> EnumeratePairedBluetoothDevices(std::stop_token stopToken)
 {
     OS::Windows::Winrt::Initialize();
 
@@ -262,12 +270,16 @@ std::map<QString, Device> EnumeratePairedBluetoothDevices()
         auto properties = winrt::single_threaded_vector<winrt::hstring>();
         properties.Append(kPropertyAepContainerId);
 
-        const auto collection = WinrtDevices::DeviceInformation::FindAllAsync(
-                                    WinrtBluetooth::BluetoothDevice::GetDeviceSelectorFromPairingState(true),
-                                    properties)
-                                    .get();
+        const auto operation = WinrtDevices::DeviceInformation::FindAllAsync(
+            WinrtBluetooth::BluetoothDevice::GetDeviceSelectorFromPairingState(true), properties);
+        std::stop_callback cancelOperation{stopToken, [operation]() mutable { operation.Cancel(); }};
+        const auto collection = operation.get();
 
         for (uint32_t i = 0; i < collection.Size(); ++i) {
+            if (stopToken.stop_requested()) {
+                break;
+            }
+
             const auto info = collection.GetAt(i);
             const auto rawContainerId =
                 ContainerIdFromInspectable(info.Properties().TryLookup(kPropertyAepContainerId));
@@ -286,7 +298,9 @@ std::map<QString, Device> EnumeratePairedBluetoothDevices()
         }
     }
     catch (const OS::Windows::Winrt::Exception &ex) {
-        LOG(Warn, "Bluetooth paired device enumeration failed. {}", Helper::ToString(ex));
+        if (!stopToken.stop_requested()) {
+            LOG(Warn, "Bluetooth paired device enumeration failed. {}", Helper::ToString(ex));
+        }
     }
 
     return devices;
@@ -312,9 +326,13 @@ std::optional<QString> GetEndpointContainerIdById(const QString &endpointId)
     return GetEndpointContainerId(*endpoint.operator->());
 }
 
-HRESULT RequestEndpointReconnect(const QString &endpointId)
+HRESULT RequestEndpointReconnect(const QString &endpointId, std::stop_token stopToken)
 {
     ScopedComApartment apartment;
+
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     auto enumerator = CreateDeviceEnumerator();
     if (!enumerator) {
@@ -328,6 +346,9 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         LOG(Warn, "Get endpoint for reconnect failed. HRESULT: {:#x}", result);
         return result;
     }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     OS::Windows::Com::UniquePtr<IDeviceTopology> topology;
     result = endpoint->Activate(
@@ -337,6 +358,9 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         LOG(Warn, "Activate IDeviceTopology failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
     }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     OS::Windows::Com::UniquePtr<IConnector> connector;
     result = topology->GetConnector(0, connector.ReleaseAndAddressOf());
@@ -344,12 +368,18 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         LOG(Warn, "IDeviceTopology::GetConnector failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
     }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     OS::Windows::Com::UniquePtr<IConnector> connectedConnector;
     result = connector->GetConnectedTo(connectedConnector.ReleaseAndAddressOf());
     if (FAILED(result)) {
         LOG(Warn, "IConnector::GetConnectedTo failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
+    }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
     }
 
     OS::Windows::Com::UniquePtr<IPart> part;
@@ -359,12 +389,18 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         LOG(Warn, "Query IPart failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
     }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     OS::Windows::Com::UniquePtr<IDeviceTopology> connectedTopology;
     result = part->GetTopologyObject(connectedTopology.ReleaseAndAddressOf());
     if (FAILED(result)) {
         LOG(Warn, "Get connected topology failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
+    }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
     }
 
     LPWSTR rawConnectedDeviceId{};
@@ -381,6 +417,9 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
         LOG(Warn, "Get connected device failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
     }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+    }
 
     OS::Windows::Com::UniquePtr<IKsControl> ksControl;
     result = connectedDevice->Activate(
@@ -389,6 +428,9 @@ HRESULT RequestEndpointReconnect(const QString &endpointId)
     if (FAILED(result)) {
         LOG(Warn, "Activate IKsControl failed. Endpoint: {}, HRESULT: {:#x}", endpointId, result);
         return result;
+    }
+    if (stopToken.stop_requested()) {
+        return HRESULT_FROM_WIN32(ERROR_CANCELLED);
     }
 
     KSPROPERTY property{
@@ -432,10 +474,13 @@ void WindowsBackend::SetController(Controller *controller)
     _controller = controller;
 }
 
-std::vector<Device> WindowsBackend::ListDevices()
+std::vector<Device> WindowsBackend::ListDevices(std::stop_token stopToken)
 {
-    auto pairedDevices = EnumeratePairedBluetoothDevices();
-    const auto endpoints = EnumerateAudioEndpoints();
+    auto pairedDevices = EnumeratePairedBluetoothDevices(stopToken);
+    if (stopToken.stop_requested()) {
+        return {};
+    }
+    const auto endpoints = EnumerateAudioEndpoints(stopToken);
 
     std::set<QString> endpointContainerKeys;
     std::set<QString> activeEndpointContainerKeys;
@@ -464,8 +509,12 @@ std::vector<Device> WindowsBackend::ListDevices()
     return devices;
 }
 
-bool WindowsBackend::RequestReconnect(const QString &id)
+bool WindowsBackend::RequestReconnect(const QString &id, std::stop_token stopToken)
 {
+    if (stopToken.stop_requested()) {
+        return false;
+    }
+
     const auto selectedContainerKey = NormalizeContainerId(id);
     if (selectedContainerKey.isEmpty()) {
         return false;
@@ -477,20 +526,26 @@ bool WindowsBackend::RequestReconnect(const QString &id)
     }
 
     bool accepted = false;
-    const auto endpoints = EnumerateAudioEndpoints();
+    const auto endpoints = EnumerateAudioEndpoints(stopToken);
     for (const auto &endpoint : endpoints) {
+        if (stopToken.stop_requested()) {
+            break;
+        }
+
         if (NormalizeContainerId(endpoint.containerId) != selectedContainerKey) {
             continue;
         }
 
-        const HRESULT result = RequestEndpointReconnect(endpoint.id);
+        const HRESULT result = RequestEndpointReconnect(endpoint.id, stopToken);
         accepted = accepted || result == S_OK;
     }
 
     if (!accepted) {
         std::lock_guard<std::mutex> lock{_mutex};
         _observedContainerKey.clear();
-        LOG(Warn, "No endpoint accepted BtAudio reconnect request. Container: {}", id);
+        if (!stopToken.stop_requested()) {
+            LOG(Warn, "No endpoint accepted BtAudio reconnect request. Container: {}", id);
+        }
     }
     return accepted;
 }

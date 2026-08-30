@@ -95,7 +95,7 @@ void Controller::RefreshDevices()
     }
 
     _deviceRefreshThread = std::jthread{[this](std::stop_token stopToken) {
-        auto devices = _backend.ListDevices();
+        auto devices = _backend.ListDevices(stopToken);
         if (stopToken.stop_requested()) {
             return;
         }
@@ -142,7 +142,7 @@ Outcome Controller::Request()
 
     const auto requestedDeviceId = _deviceId;
     _requestThread = std::jthread{[this, requestedDeviceId](std::stop_token stopToken) {
-        const auto devices = _backend.ListDevices();
+        const auto devices = _backend.ListDevices(stopToken);
         const auto deviceIter = std::find_if(
             devices.begin(), devices.end(),
             [&](const Device &device) { return device.id == requestedDeviceId; });
@@ -155,8 +155,9 @@ Outcome Controller::Request()
                 outcome = Outcome::AlreadyConnected;
             }
             else {
-                outcome = _backend.RequestReconnect(requestedDeviceId) ? Outcome::RequestStarted
-                                                                      : Outcome::Failed;
+                outcome = _backend.RequestReconnect(requestedDeviceId, stopToken)
+                              ? Outcome::RequestStarted
+                              : Outcome::Failed;
             }
         }
 
