@@ -606,7 +606,10 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.ilk" EXCLUDE
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
-        PATTERN "AirPodsDomainTests*" EXCLUDE
+        # Release CI configures with APD_BUILD_TESTS=ON, so every test executable lands here.
+        # Match them by suffix rather than by name, so a new test target cannot ship by accident.
+        PATTERN "*Tests.exe" EXCLUDE
+        PATTERN "*Tests.pdb" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 

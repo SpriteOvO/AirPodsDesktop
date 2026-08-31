@@ -114,6 +114,10 @@ Latest version: %2%3</source>
         <source>Third-Party Libraries:</source>
         <translation>第三方库：</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>已保存的设备（当前不可用）</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -152,6 +156,42 @@ Latest version: %2%3</source>
     <message>
         <source>Low audio latency (may cause hiss)</source>
         <translation>低音频延迟（可能产生嘶嘶声）</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>快速连接已禁用。</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>请先在设置中选择蓝牙音频设备。</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>选定的设备当前不可用，请打开电源或将其移入接收范围内。</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 已经连接。</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>正在连接 %1…</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 已连接。</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>连接 %1 超时。</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows 无法连接 %1。</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>快速连接</translation>
     </message>
 </context>
 <context>
@@ -207,6 +247,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
         <translation>在 AirPods 连接期间保持音频设备唤醒，使短促提示音能够立即播放。这可能会产生可听见的嘶嘶声，并增加电池消耗。</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>单击系统托盘图标会连接选定的设备，而不是打开主窗口；双击仍会打开主窗口。</translation>
     </message>
 </context>
 <context>
@@ -301,6 +345,18 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>As icon</source>
         <translation>以图标显示</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>单击系统托盘图标时连接选定的设备</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>设备</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>单击系统托盘图标时要连接的已配对蓝牙音频设备。</translation>
     </message>
 </context>
 </TS>

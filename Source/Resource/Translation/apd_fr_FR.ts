@@ -114,6 +114,10 @@ Dernière version : %2%3</translation>
         <source>Third-Party Libraries:</source>
         <translation>Bibliothèques tierces :</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -152,6 +156,42 @@ Dernière version : %2%3</translation>
     <message>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Faible latence audio (peut provoquer un souffle)</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -207,6 +247,10 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <message>
         <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
         <translation>Maintient le périphérique audio actif pendant que vos AirPods sont connectés afin que les sons courts démarrent immédiatement. Cela peut produire un souffle audible et augmenter la consommation de la batterie.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -301,6 +345,18 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
         <translation>Copyright © 2021-2022 SpriteOvO. Tous droits réservés.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

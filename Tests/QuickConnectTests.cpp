@@ -18,30 +18,43 @@
 
 #include <QtTest>
 
-#include <chrono>
 #include <atomic>
+#include <chrono>
 #include <future>
+#include <memory>
 #include <mutex>
 
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/TrayActivation.h"
 
+using namespace std::chrono_literals;
+
+namespace {
+
+using Core::QuickConnect::Controller;
+using Core::QuickConnect::Device;
+using Core::QuickConnect::Outcome;
+
+// Short enough to keep the suite fast, long enough that a queued completion always lands first.
+constexpr auto kTestResolveTimeout = 250ms;
+
 class FakeBackend final : public Core::QuickConnect::Backend
 {
 public:
-    std::vector<Core::QuickConnect::Device> devices{{"{A}", "AirPods", false}};
-    Core::QuickConnect::Controller *controller{};
+    std::vector<Device> devices{{"{A}", "AirPods", false}};
+    Controller *controller{};
     std::atomic<int> listCalls{};
     std::atomic<int> reconnectCalls{};
     std::atomic<int> setControllerCalls{};
+    std::atomic<int> stopObservingCalls{};
 
-    void SetController(Core::QuickConnect::Controller *value) override
+    void SetController(Controller *value) override
     {
         controller = value;
         ++setControllerCalls;
     }
 
-    std::vector<Core::QuickConnect::Device> ListDevices(std::stop_token) override
+    std::vector<Device> ListDevices(std::stop_token) override
     {
         ++listCalls;
         return devices;
@@ -52,42 +65,60 @@ public:
         ++reconnectCalls;
         return id == "{A}";
     }
+
+    void StopObserving() override
+    {
+        ++stopObservingCalls;
+    }
 };
 
+// Blocks inside ListDevices until released, so a test can prove the GUI thread was never in there.
 class BlockingBackend final : public Core::QuickConnect::Backend
 {
-private:
-    std::promise<void> releasePromise;
-
 public:
     std::promise<void> entered;
-    std::shared_future<void> release{releasePromise.get_future()};
 
-    std::vector<Core::QuickConnect::Device> ListDevices(std::stop_token stopToken) override
+    std::vector<Device> ListDevices(std::stop_token stopToken) override
     {
         std::stop_callback cancel{stopToken, [this] { Unblock(); }};
         entered.set_value();
-        release.wait();
+        _release.wait();
         return {{"{A}", "AirPods", false}};
     }
 
-    bool RequestReconnect(const QString &, std::stop_token) override { return false; }
+    bool RequestReconnect(const QString &, std::stop_token) override
+    {
+        return false;
+    }
 
-    void Unblock() { std::call_once(releaseOnce, [this] { releasePromise.set_value(); }); }
+    void Unblock()
+    {
+        std::call_once(_releaseOnce, [this] { _releasePromise.set_value(); });
+    }
 
 private:
-    std::once_flag releaseOnce;
+    std::promise<void> _releasePromise;
+    std::shared_future<void> _release{_releasePromise.get_future()};
+    std::once_flag _releaseOnce;
 };
 
 class BackendUnblockGuard final
 {
 public:
-    explicit BackendUnblockGuard(BlockingBackend &backend) : _backend{backend} {}
-    ~BackendUnblockGuard() { _backend.Unblock(); }
+    explicit BackendUnblockGuard(std::shared_ptr<BlockingBackend> backend)
+        : _backend{std::move(backend)}
+    {
+    }
+    ~BackendUnblockGuard()
+    {
+        _backend->Unblock();
+    }
 
 private:
-    BlockingBackend &_backend;
+    std::shared_ptr<BlockingBackend> _backend;
 };
+
+} // namespace
 
 class QuickConnectTests : public QObject
 {
@@ -95,270 +126,342 @@ class QuickConnectTests : public QObject
 
 private slots:
     void initTestCase();
+
+    // Controller
     void disabledRequestDoesNotCallBackend();
     void emptyDeviceIdReturnsNoDevice();
-    void missingDeviceReturnsNoDevice();
+    void configuredButMissingDeviceReportsUnavailable();
     void connectedDeviceReturnsAlreadyConnected();
-    void connectedDeviceDoesNotReconnect();
     void failedReconnectReturnsFailed();
-    void pendingRequestIsDeduplicated();
+    void repeatedClicksAlwaysReportProgress();
     void pendingRequestKeepsOriginalDevice();
     void endpointActivationCompletesRequest();
-    void timeoutCompletesRequestOnce();
+    void resolveTimerFiresOnItsOwn();
+    void completionStopsBackendObservation();
     void controllerDetachesBackendOnDestruction();
-    void trayActivationPreservesDefaultBehaviorWhenDisabled();
-    void trayDoubleClickCancelsPendingQuickConnect();
+
+    // Threading
     void deviceRefreshDoesNotBlockTheGuiThread();
     void reconnectRequestDoesNotBlockTheGuiThread();
     void controllerDestructionCancelsInFlightRefresh();
+
+    // Tray activation
+    void singleClickOpensMainWindowWhenQuickConnectIsDisabled();
+    void singleClickWaitsOutTheDoubleClickInterval();
+    void doubleClickCancelsPendingQuickConnect();
+    void contextMenuCancelsPendingQuickConnect();
+    void unknownActivationDoesNothing();
 };
 
 void QuickConnectTests::initTestCase()
 {
-    qRegisterMetaType<Core::QuickConnect::Outcome>();
+    qRegisterMetaType<Outcome>();
 }
+
+//////////////////////////////////////////////////
+// Controller
+//
 
 void QuickConnectTests::disabledRequestDoesNotCallBackend()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::Disabled);
-    QCOMPARE(backend.reconnectCalls.load(), 0);
+    QCOMPARE(controller.Request(), Outcome::Disabled);
+    QCOMPARE(backend->reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::emptyDeviceIdReturnsNoDevice()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
     controller.SetEnabled(true);
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::NoDevice);
-    QCOMPARE(backend.reconnectCalls.load(), 0);
+    QCOMPARE(controller.Request(), Outcome::NoDevice);
+    QCOMPARE(backend->reconnectCalls.load(), 0);
 }
 
-void QuickConnectTests::missingDeviceReturnsNoDevice()
+// "Nothing configured" and "the configured device is not around" are different problems and the
+// tray says different things about them.
+void QuickConnectTests::configuredButMissingDeviceReportsUnavailable()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{Missing}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QVERIFY(spy.wait(1'000));
-    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::NoDevice);
-    QCOMPARE(backend.reconnectCalls.load(), 0);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QVERIFY(spy.wait(2'000));
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::DeviceUnavailable);
+    QCOMPARE(backend->reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::connectedDeviceReturnsAlreadyConnected()
 {
-    FakeBackend backend;
-    backend.devices = {{"{A}", "AirPods", true}};
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    backend->devices = {{"{A}", "AirPods", true}};
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QVERIFY(spy.wait(1'000));
-    QCOMPARE(
-        spy.at(0).at(0).value<Core::QuickConnect::Outcome>(),
-        Core::QuickConnect::Outcome::AlreadyConnected);
-    QCOMPARE(backend.reconnectCalls.load(), 0);
-}
-
-void QuickConnectTests::connectedDeviceDoesNotReconnect()
-{
-    FakeBackend backend;
-    backend.devices[0].connected = true;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
-    controller.SetEnabled(true);
-    controller.SetDeviceId("{A}");
-
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QVERIFY(spy.wait(1'000));
-    QCOMPARE(
-        spy.at(0).at(0).value<Core::QuickConnect::Outcome>(),
-        Core::QuickConnect::Outcome::AlreadyConnected);
-    QCOMPARE(backend.reconnectCalls.load(), 0);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QVERIFY(spy.wait(2'000));
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::AlreadyConnected);
+    QCOMPARE(backend->reconnectCalls.load(), 0);
 }
 
 void QuickConnectTests::failedReconnectReturnsFailed()
 {
-    FakeBackend backend;
-    backend.devices = {{"{B}", "AirPods Pro", false}};
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    backend->devices = {{"{B}", "AirPods Pro", false}};
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{B}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QVERIFY(spy.wait(1'000));
-    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Failed);
-    QCOMPARE(backend.reconnectCalls.load(), 1);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QVERIFY(spy.wait(2'000));
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::Failed);
+    QCOMPARE(backend->reconnectCalls.load(), 1);
 }
 
-void QuickConnectTests::pendingRequestIsDeduplicated()
+// An impatient user clicking again must always get an answer, and must never start a second
+// reconnect - whichever internal phase the first one happens to be in.
+void QuickConnectTests::repeatedClicksAlwaysReportProgress()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QCOMPARE(spy.count(), 2);
-    QCOMPARE(backend.listCalls.load(), 1);
-    QCOMPARE(backend.reconnectCalls.load(), 1);
+    // First click starts the worker; the second lands while it is still running.
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QCOMPARE(spy.count(), 1);
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::RequestStarted);
+
+    // Wait for the worker's completion, then click again while the resolve timer is pending.
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 2, 2'000);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QCOMPARE(spy.count(), 3);
+
+    QCOMPARE(backend->listCalls.load(), 1);
+    QCOMPARE(backend->reconnectCalls.load(), 1);
 }
 
 void QuickConnectTests::pendingRequestKeepsOriginalDevice()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
-    backend.devices[0].connected = true;
-    controller.SetDeviceId("{B}");
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2'000);
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QCOMPARE(backend.listCalls.load(), 1);
-    QCOMPARE(backend.reconnectCalls.load(), 1);
-    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
+    // Changing the selection mid-flight must not retarget the request already in progress.
+    controller.SetDeviceId("{B}");
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QCOMPARE(backend->listCalls.load(), 1);
+    QCOMPARE(backend->reconnectCalls.load(), 1);
+    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Outcome::Connected);
 }
 
 void QuickConnectTests::endpointActivationCompletesRequest()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2'000);
     spy.clear();
-    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
+
+    // Windows reports the container id in canonical `{GUID}` form; matching is case-insensitive.
+    QCOMPARE(controller.OnEndpointStateChanged("a", true), Outcome::Connected);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Connected);
-    QCOMPARE(spy.at(0).at(1).toString(), QString("AirPods"));
-    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Core::QuickConnect::Outcome::Connected);
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::Connected);
+    QCOMPARE(spy.at(0).at(1).toString(), QString{"AirPods"});
+
+    // A repeat notification for an already-completed request changes nothing.
+    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Outcome::Connected);
     QCOMPARE(spy.count(), 1);
 }
 
-void QuickConnectTests::timeoutCompletesRequestOnce()
+// Drives the real QTimer the constructor wires up, rather than calling the slot by hand.
+void QuickConnectTests::resolveTimerFiresOnItsOwn()
 {
-    FakeBackend backend;
-    Core::QuickConnect::Controller controller{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 1'000);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2'000);
     spy.clear();
-    QCOMPARE(controller.ResolveTimedOut(), Core::QuickConnect::Outcome::TimedOut);
+
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 5'000);
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::TimedOut);
+    QCOMPARE(spy.at(0).at(1).toString(), QString{"AirPods"});
+
+    // The timer is single-shot; nothing else arrives.
+    QCOMPARE(controller.ResolveTimedOut(), Outcome::TimedOut);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::TimedOut);
-    QCOMPARE(spy.at(0).at(1).toString(), QString("AirPods"));
-    QCOMPARE(controller.ResolveTimedOut(), Core::QuickConnect::Outcome::TimedOut);
-    QCOMPARE(spy.count(), 1);
+}
+
+// Leaving the backend observing after a request resolves is what made it keep doing expensive work
+// for every audio device on the machine.
+void QuickConnectTests::completionStopsBackendObservation()
+{
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
+    controller.SetEnabled(true);
+    controller.SetDeviceId("{A}");
+
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2'000);
+    QCOMPARE(backend->stopObservingCalls.load(), 0);
+
+    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Outcome::Connected);
+    QCOMPARE(backend->stopObservingCalls.load(), 1);
 }
 
 void QuickConnectTests::controllerDetachesBackendOnDestruction()
 {
-    FakeBackend backend;
+    auto backend = std::make_shared<FakeBackend>();
     {
-        Core::QuickConnect::Controller controller{backend};
-        QCOMPARE(backend.controller, &controller);
+        Controller controller{backend, kTestResolveTimeout};
+        QCOMPARE(backend->controller, &controller);
     }
 
-    QVERIFY(backend.controller == nullptr);
-    QCOMPARE(backend.setControllerCalls.load(), 2);
+    QVERIFY(backend->controller == nullptr);
+    QCOMPARE(backend->setControllerCalls.load(), 2);
 }
 
-void QuickConnectTests::trayActivationPreservesDefaultBehaviorWhenDisabled()
-{
-    using Action = Gui::TrayActivationAction;
-
-    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Trigger, false), Action::ShowMainWindow);
-    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Trigger, true), Action::QuickConnect);
-    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::DoubleClick, true), Action::ShowMainWindow);
-    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::MiddleClick, true), Action::ShowMainWindow);
-    QCOMPARE(Gui::RouteTrayActivation(QSystemTrayIcon::Unknown, true), Action::None);
-}
-
-void QuickConnectTests::trayDoubleClickCancelsPendingQuickConnect()
-{
-    using Action = Gui::TrayActivationAction;
-
-    Gui::TrayActivationState state;
-    QCOMPARE(state.OnActivation(QSystemTrayIcon::Trigger, true), Action::None);
-    QCOMPARE(state.OnActivation(QSystemTrayIcon::DoubleClick, true), Action::ShowMainWindow);
-    QCOMPARE(state.OnSingleClickTimeout(), Action::None);
-
-    QCOMPARE(state.OnActivation(QSystemTrayIcon::Trigger, true), Action::None);
-    QCOMPARE(state.OnSingleClickTimeout(), Action::QuickConnect);
-}
+//////////////////////////////////////////////////
+// Threading
+//
 
 void QuickConnectTests::deviceRefreshDoesNotBlockTheGuiThread()
 {
-    using namespace std::chrono_literals;
-
-    BlockingBackend backend;
-    Core::QuickConnect::Controller controller{backend};
+    auto backend = std::make_shared<BlockingBackend>();
+    Controller controller{backend, kTestResolveTimeout};
     BackendUnblockGuard unblockGuard{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::DevicesChanged};
+    QSignalSpy spy{&controller, &Controller::DevicesChanged};
 
     controller.RefreshDevices();
-    QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+    QVERIFY(backend->entered.get_future().wait_for(2s) == std::future_status::ready);
     QCOMPARE(spy.count(), 0);
 
-    backend.Unblock();
-    QVERIFY(spy.wait(1'000));
+    backend->Unblock();
+    QVERIFY(spy.wait(2'000));
     QCOMPARE(controller.Devices().size(), std::size_t{1});
 }
 
 void QuickConnectTests::reconnectRequestDoesNotBlockTheGuiThread()
 {
-    using namespace std::chrono_literals;
-
-    BlockingBackend backend;
-    Core::QuickConnect::Controller controller{backend};
+    auto backend = std::make_shared<BlockingBackend>();
+    Controller controller{backend, kTestResolveTimeout};
     BackendUnblockGuard unblockGuard{backend};
-    QSignalSpy spy{&controller, &Core::QuickConnect::Controller::OutcomeChanged};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
     controller.SetEnabled(true);
     controller.SetDeviceId("{A}");
 
-    QCOMPARE(controller.Request(), Core::QuickConnect::Outcome::RequestStarted);
-    QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+    QCOMPARE(controller.Request(), Outcome::RequestStarted);
+    QVERIFY(backend->entered.get_future().wait_for(2s) == std::future_status::ready);
     QCOMPARE(spy.count(), 0);
 
-    backend.Unblock();
-    QVERIFY(spy.wait(1'000));
-    QCOMPARE(spy.at(0).at(0).value<Core::QuickConnect::Outcome>(), Core::QuickConnect::Outcome::Failed);
+    backend->Unblock();
+    QVERIFY(spy.wait(2'000));
+    QCOMPARE(spy.at(0).at(0).value<Outcome>(), Outcome::Failed);
 }
 
+// Quitting while a refresh is in flight must not hang, and must not touch the dead Controller.
 void QuickConnectTests::controllerDestructionCancelsInFlightRefresh()
 {
-    using namespace std::chrono_literals;
-
-    BlockingBackend backend;
+    auto backend = std::make_shared<BlockingBackend>();
     {
-        Core::QuickConnect::Controller controller{backend};
+        Controller controller{backend, kTestResolveTimeout};
         controller.RefreshDevices();
-        QVERIFY(backend.entered.get_future().wait_for(1s) == std::future_status::ready);
+        QVERIFY(backend->entered.get_future().wait_for(2s) == std::future_status::ready);
     }
+
+    QCoreApplication::processEvents();
+}
+
+//////////////////////////////////////////////////
+// Tray activation
+//
+// These exercise the same TrayActivationState that TrayIcon drives, including the timer decision,
+// so the assertions describe what a user actually gets.
+//
+
+void QuickConnectTests::singleClickOpensMainWindowWhenQuickConnectIsDisabled()
+{
+    Gui::TrayActivationState state;
+
+    const auto result = state.OnActivation(QSystemTrayIcon::Trigger, false);
+    QCOMPARE(result.action, Gui::TrayActivationAction::ShowMainWindow);
+    QCOMPARE(result.timer, Gui::SingleClickTimer::Stop);
+    QCOMPARE(state.OnSingleClickTimeout(), Gui::TrayActivationAction::None);
+}
+
+void QuickConnectTests::singleClickWaitsOutTheDoubleClickInterval()
+{
+    Gui::TrayActivationState state;
+
+    const auto result = state.OnActivation(QSystemTrayIcon::Trigger, true);
+    QCOMPARE(result.action, Gui::TrayActivationAction::None);
+    QCOMPARE(result.timer, Gui::SingleClickTimer::Start);
+    QCOMPARE(state.OnSingleClickTimeout(), Gui::TrayActivationAction::QuickConnect);
+
+    // Only the first timeout counts.
+    QCOMPARE(state.OnSingleClickTimeout(), Gui::TrayActivationAction::None);
+}
+
+void QuickConnectTests::doubleClickCancelsPendingQuickConnect()
+{
+    Gui::TrayActivationState state;
+
+    QCOMPARE(
+        state.OnActivation(QSystemTrayIcon::Trigger, true).action, Gui::TrayActivationAction::None);
+
+    const auto result = state.OnActivation(QSystemTrayIcon::DoubleClick, true);
+    QCOMPARE(result.action, Gui::TrayActivationAction::ShowMainWindow);
+    QCOMPARE(result.timer, Gui::SingleClickTimer::Stop);
+    QCOMPARE(state.OnSingleClickTimeout(), Gui::TrayActivationAction::None);
+}
+
+// Opening the context menu must not leave a connect request to fire behind it.
+void QuickConnectTests::contextMenuCancelsPendingQuickConnect()
+{
+    Gui::TrayActivationState state;
+
+    QCOMPARE(
+        state.OnActivation(QSystemTrayIcon::Trigger, true).timer, Gui::SingleClickTimer::Start);
+
+    const auto result = state.OnActivation(QSystemTrayIcon::Context, true);
+    QCOMPARE(result.action, Gui::TrayActivationAction::None);
+    QCOMPARE(result.timer, Gui::SingleClickTimer::Stop);
+    QCOMPARE(state.OnSingleClickTimeout(), Gui::TrayActivationAction::None);
+}
+
+void QuickConnectTests::unknownActivationDoesNothing()
+{
+    Gui::TrayActivationState state;
+
+    const auto result = state.OnActivation(QSystemTrayIcon::Unknown, true);
+    QCOMPARE(result.action, Gui::TrayActivationAction::None);
+    QCOMPARE(result.timer, Gui::SingleClickTimer::Unchanged);
 }
 
 QTEST_GUILESS_MAIN(QuickConnectTests)
