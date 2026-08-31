@@ -57,7 +57,21 @@ Manager::~Manager()
 
 void Manager::StartScanner()
 {
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        if (!_boundDevice.has_value() || !_deviceConnected) {
+            LOG(Info, "Skip Bluetooth AdvWatcher start because the bound device is disconnected.");
+            return;
+        }
+        if (_scannerWanted) {
+            return;
+        }
+        _scannerWanted = true;
+    }
+
     if (!_adWatcher.Start()) {
+        std::lock_guard<std::mutex> lock{_mutex};
+        _scannerWanted = false;
         LOG(Warn, "Bluetooth AdvWatcher start failed.");
     }
     else {
@@ -67,6 +81,14 @@ void Manager::StartScanner()
 
 void Manager::StopScanner()
 {
+    {
+        std::lock_guard<std::mutex> lock{_mutex};
+        if (!_scannerWanted) {
+            return;
+        }
+        _scannerWanted = false;
+    }
+
     if (!_adWatcher.Stop()) {
         LOG(Warn, "AsyncScanner::Stop() failed.");
     }
@@ -101,6 +123,8 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundModel = Model::Unknown;
     _deviceConnected = false;
     _stateMgr.Disconnect();
+    emit DeviceConnectionChanged(false);
+    QMetaObject::invokeMethod(this, [this] { StopScanner(); }, Qt::QueuedConnection);
 
     if (address == 0) {
         LOG(Info, "Unbind device.");
@@ -158,15 +182,29 @@ void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetoot
 
 void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 {
+    const bool oldDeviceConnected = _deviceConnected;
     bool newDeviceConnected = state == Bluetooth::DeviceState::Connected;
-    bool doDisconnect = _deviceConnected && !newDeviceConnected;
+    bool doDisconnect = oldDeviceConnected && !newDeviceConnected;
     _deviceConnected = newDeviceConnected;
+    emit DeviceConnectionChanged(newDeviceConnected);
+
+    QMetaObject::invokeMethod(
+        this,
+        [this, newDeviceConnected] {
+            if (newDeviceConnected) {
+                StartScanner();
+            }
+            else {
+                StopScanner();
+            }
+        },
+        Qt::QueuedConnection);
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
     }
 
-    LOG(Info, "The device we bound is updated. current: {}, new: {}", _deviceConnected,
+    LOG(Info, "The device we bound is updated. current: {}, new: {}", oldDeviceConnected,
         newDeviceConnected);
 }
 
@@ -230,9 +268,6 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
 
     Details::Advertisement adv{data};
 
-    LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
-        Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
-
     if (!_deviceConnected) {
         LOG(Info, "AirPods advertisement received, but device disconnected.");
         return false;
@@ -242,6 +277,9 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         LOG(Trace, "Ignore advertisement for a model other than the bound device.");
         return false;
     }
+
+    LOG(Trace, "AirPods advertisement received. Data: {}, Address Hash: {}, RSSI: {}",
+        Helper::ToString(adv.GetDesensitizedData()), Helper::Hash(data.address), data.rssi);
 
     auto optUpdateEvent = _stateMgr.OnAdvReceived(std::move(adv));
     if (optUpdateEvent.has_value()) {
@@ -260,8 +298,13 @@ void Manager::OnAdvWatcherStateChanged(
         break;
 
     case Bluetooth::AdvertisementWatcher::State::Stopped:
-        emit ScannerAvailabilityChanged(false);
-        LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
+        if (_scannerWanted) {
+            emit ScannerAvailabilityChanged(false);
+            LOG(Warn, "Bluetooth AdvWatcher stopped. Error: '{}'.", optError.value_or("nullopt"));
+        }
+        else {
+            LOG(Info, "Bluetooth AdvWatcher stopped intentionally.");
+        }
         break;
 
     default:

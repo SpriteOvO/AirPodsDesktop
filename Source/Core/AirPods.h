@@ -179,6 +179,7 @@ private:
     QString _deviceName;
     Model _boundModel{Model::Unknown};
     bool _deviceConnected{false};
+    bool _scannerWanted{false};
     bool _automaticEarDetection{false};
     uint64_t _requestedDeviceAddress{0};
     std::jthread _deviceLookupThread;
@@ -202,6 +203,7 @@ Q_SIGNALS:
     void Disconnected();
     void LidToggled(bool opened);
     void ScannerAvailabilityChanged(bool available);
+    void DeviceConnectionChanged(bool connected);
 };
 
 std::vector<Core::Bluetooth::Device> GetDevices();

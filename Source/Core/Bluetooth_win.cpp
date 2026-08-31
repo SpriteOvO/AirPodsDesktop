@@ -21,6 +21,7 @@
 #include <thread>
 
 #include "../Logger.h"
+#include "AppleCP.h"
 #include "Debug.h"
 #include "OS/Windows.h"
 
@@ -341,19 +342,29 @@ void AdvertisementWatcher::OnReceived(const BluetoothLEAdvertisementReceivedEven
     for (uint32_t i = 0; i < manufacturerDataArray.Size(); ++i) {
         const auto &manufacturerData = manufacturerDataArray.GetAt(i);
         const auto companyId = manufacturerData.CompanyId();
-        const auto &data = manufacturerData.Data();
-
-        std::vector<uint8_t> stdData(data.data(), data.data() + data.Length());
 
 #if defined APD_DEBUG
         auto overrideAdv = DebugConfig::GetInstance().GetOverrideAdv();
         if (overrideAdv.has_value()) {
-            stdData = std::move(overrideAdv.value());
-            LOG(Trace, "Adv override: {}", Helper::ToString(stdData));
+            LOG(Trace, "Adv override: {}", Helper::ToString(overrideAdv.value()));
+            receivedData.manufacturerDataMap.insert_or_assign(
+                AppleCP::VendorId, std::move(overrideAdv.value()));
+            break;
         }
 #endif
 
-        receivedData.manufacturerDataMap.try_emplace(companyId, std::move(stdData));
+        if (companyId != AppleCP::VendorId) {
+            continue;
+        }
+
+        const auto &data = manufacturerData.Data();
+
+        receivedData.manufacturerDataMap.try_emplace(
+            companyId, data.data(), data.data() + data.Length());
+    }
+
+    if (receivedData.manufacturerDataMap.empty()) {
+        return;
     }
 
     std::lock_guard<std::mutex> lock{_mutex};
