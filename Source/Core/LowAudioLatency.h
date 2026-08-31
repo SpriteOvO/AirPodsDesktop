@@ -18,16 +18,31 @@
 
 #pragma once
 
-#include <memory>
 #include <chrono>
+#include <cstdint>
+#include <memory>
+#include <vector>
 
+#include <QAudioFormat>
+#include <QAudioOutput>
+#include <QList>
+#include <QString>
 #include <QTimer>
-#include <QMediaPlayer>
-#include <QMediaPlaylist>
 
 using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
+
+namespace Details {
+
+std::vector<QAudioFormat> BuildSilenceFormatCandidates(
+    const QList<int> &sampleSizes, const QList<QAudioFormat::SampleType> &sampleTypes,
+    const QList<QAudioFormat::Endian> &byteOrders);
+std::vector<uint8_t> CreateSilentFrame(const QAudioFormat &format);
+
+} // namespace Details
+
+class SilenceDevice;
 
 class Controller : public QObject
 {
@@ -35,22 +50,32 @@ class Controller : public QObject
 
 public:
     Controller(QObject *parent = nullptr);
+    ~Controller();
 
 Q_SIGNALS:
     void ControlSafely(bool enable);
+    void SetDeviceConnectedSafely(bool connected);
 
 private:
     constexpr static inline auto kRetryInterval = 30s;
-
-    std::unique_ptr<QMediaPlayer> _mediaPlayer;
-    std::unique_ptr<QMediaPlaylist> _mediaPlaylist;
+    constexpr static inline auto kDeviceCheckInterval = 5s;
+    std::unique_ptr<QAudioOutput> _audioOutput;
+    std::unique_ptr<SilenceDevice> _silenceDevice;
     QTimer _initTimer;
-    bool _inited{false}, _enabled{false};
+    QTimer _deviceCheckTimer;
+    QString _deviceName;
+    bool _inited{false}, _enabled{false}, _deviceConnected{false};
 
     bool Initialize();
+    bool StartWhenReady();
+    void ResetAudio();
     void Control(bool enable);
+    void SetDeviceConnected(bool connected);
 
-    void OnError(QMediaPlayer::Error error);
+    void Start();
+    void Stop();
+    void CheckOutputDevice();
+    void OnStateChanged(QAudio::State state);
 };
 
 } // namespace Core::LowAudioLatency
