@@ -40,6 +40,7 @@ class SettingsWindow : public QDialog
 
 public:
     explicit SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent = nullptr);
+    void SetLowAudioLatencyChecked(bool checked);
 
     int GetTabCount() const;
     int GetTabCurrentIndex() const;

@@ -30,6 +30,9 @@ TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
     : _settingsWindow{std::move(getCurrentLocaleIndex)}
 {
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
+    connect(_actionLowAudioLatency, &QAction::triggered, this, [](bool enabled) {
+        Core::Settings::ModifiableAccess()->low_audio_latency = enabled;
+    });
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
@@ -38,11 +41,15 @@ TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
+    connect(
+        this, &TrayIcon::OnLowAudioLatencyChangedSafely, this, &TrayIcon::OnLowAudioLatencyChanged);
 
     _actionNewVersion->setVisible(false);
+    _actionLowAudioLatency->setCheckable(true);
 
     _menu->addAction(_actionNewVersion);
     _menu->addSeparator();
+    _menu->addAction(_actionLowAudioLatency);
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -205,13 +212,22 @@ void TrayIcon::Repaint()
     } while (false);
 
     static const QColor kNewVersionAvailableDot = Qt::yellow;
+    const IconRenderState nextIconRenderState{
+        .text = iconText,
+        .showUpdateDot = _updateReleaseInfo.has_value(),
+    };
+
+    if (_lastIconRenderState == nextIconRenderState) {
+        return;
+    }
 
     auto optIcon = GenerateIcon(
-        64, iconText,
-        _updateReleaseInfo.has_value() ? std::optional<QColor>{kNewVersionAvailableDot}
-                                       : std::nullopt);
+        64, nextIconRenderState.text,
+        nextIconRenderState.showUpdateDot ? std::optional<QColor>{kNewVersionAvailableDot}
+                                          : std::nullopt);
     if (optIcon.has_value()) {
         _tray->setIcon(QIcon{QPixmap::fromImage(optIcon.value())});
+        _lastIconRenderState = nextIconRenderState;
     }
 }
 
@@ -361,6 +377,12 @@ void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior 
 {
     _trayIconBatteryBehavior = value;
     Repaint();
+}
+
+void TrayIcon::OnLowAudioLatencyChanged(bool enabled)
+{
+    _actionLowAudioLatency->setChecked(enabled);
+    _settingsWindow.SetLowAudioLatencyChecked(enabled);
 }
 
 } // namespace Gui

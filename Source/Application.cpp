@@ -109,7 +109,7 @@ void ApdApplication::FirstTimeUse()
             tr("Do you want to enable the \"low audio latency\" feature?\n"
                "\n%1")
                 .arg(constMetaFields.low_audio_latency.Description()),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes;
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
 
     Core::Settings::Save(std::move(current));
 
@@ -234,6 +234,9 @@ void ApdApplication::ConnectAirPodsManager()
                 _taskbarStatus->Unavailable();
             }
         });
+    connect(
+        manager, &Core::AirPods::Manager::DeviceConnectionChanged, _lowAudioLatencyController.get(),
+        &Core::LowAudioLatency::Controller::SetDeviceConnectedSafely);
     connect(manager, &Core::AirPods::Manager::LidToggled, mainWindow, [mainWindow](bool opened) {
         if (opened) {
             emit mainWindow->ShowSafely();
@@ -343,6 +346,7 @@ void ApdApplication::OnAutoRunChanged(bool enable)
 void ApdApplication::OnLowAudioLatencyChanged(bool enable)
 {
     _lowAudioLatencyController->ControlSafely(enable);
+    _trayIcon->OnLowAudioLatencyChangedSafely(enable);
 }
 
 void ApdApplication::OnAutomaticEarDetectionChanged(bool enable)

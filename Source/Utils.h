@@ -122,7 +122,7 @@ inline QDir GetWorkspace()
 
     QDir result{std::move(location)};
     if (!result.exists()) {
-        result.mkdir(".");
+        result.mkpath(".");
     }
     return result;
 }
