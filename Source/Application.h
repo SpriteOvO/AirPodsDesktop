@@ -39,6 +39,11 @@ namespace Core::AutoStart {
 class Service;
 }
 
+namespace Core::QuickConnect {
+class Backend;
+class Controller;
+} // namespace Core::QuickConnect
+
 namespace Gui {
 class DownloadWindow;
 class MainWindow;
@@ -77,6 +82,11 @@ private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
     QTranslator _translator;
     int _currentLoadedLocaleIndex{0};
+    // Declared before the GUI members: `Gui::TrayIcon` and the `Gui::SettingsWindow` it owns hold a
+    // reference to the controller, so the controller has to outlive them, and members are destroyed
+    // in reverse declaration order.
+    std::shared_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
+    std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
@@ -101,6 +111,8 @@ private:
     void OnRssiMinChanged(int16_t rssiMin) override;
     void OnDeviceAddressChanged(uint64_t address) override;
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior) override;
+    void OnTrayQuickConnectEnabledChanged(bool enable) override;
+    void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override;
     void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior) override;
 };
 

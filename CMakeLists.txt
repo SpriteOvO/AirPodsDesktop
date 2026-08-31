@@ -303,6 +303,7 @@ set(
     "Source/Core/Debug.cpp"
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
+    "Source/Core/QuickConnect.cpp"
     "Source/Core/Settings.cpp"
     "Source/Core/SettingsRepository.cpp"
     "Source/Core/LowAudioLatency.cpp"
@@ -338,6 +339,7 @@ if (WIN32)
         "Source/Core/AutoStart_win.cpp"
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
+        "Source/Core/QuickConnect_win.cpp"
     )
     list(APPEND APD_APP_CODE_FILES
         "Source/Resource/Application.manifest"
@@ -472,6 +474,10 @@ target_link_libraries(
     Boost::pfr
 )
 
+if (WIN32)
+    target_link_libraries(apd_core PRIVATE Ole32 Uuid Ksuser)
+endif()
+
 target_link_libraries(
     apd_presentation
 
@@ -600,7 +606,10 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.ilk" EXCLUDE
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
-        PATTERN "AirPodsDomainTests*" EXCLUDE
+        # Release CI configures with APD_BUILD_TESTS=ON, so every test executable lands here.
+        # Match them by suffix rather than by name, so a new test target cannot ship by accident.
+        PATTERN "*Tests.exe" EXCLUDE
+        PATTERN "*Tests.pdb" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 

@@ -124,6 +124,25 @@ void OnApply_tray_icon_battery(const Fields &newFields)
     });
 }
 
+void OnApply_tray_quick_connect_enabled(const Fields &newFields)
+{
+    LOG(Info, "OnApply_tray_quick_connect_enabled: {}", newFields.tray_quick_connect_enabled);
+
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnTrayQuickConnectEnabledChanged(newFields.tray_quick_connect_enabled);
+    });
+}
+
+void OnApply_tray_quick_connect_device_id(const Fields &newFields)
+{
+    LOG(Info, "OnApply_tray_quick_connect_device_id: {}",
+        LogSensitiveData(newFields.tray_quick_connect_device_id));
+
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnTrayQuickConnectDeviceChanged(newFields.tray_quick_connect_device_id);
+    });
+}
+
 void OnApply_battery_on_taskbar(const Fields &newFields)
 {
     LOG(Info, "OnApply_battery_on_taskbar: {}", newFields.battery_on_taskbar);

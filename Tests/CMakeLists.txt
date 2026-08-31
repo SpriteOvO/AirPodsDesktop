@@ -21,3 +21,18 @@ target_compile_definitions(
 )
 
 add_test(NAME AirPodsDomainTests COMMAND AirPodsDomainTests)
+
+add_executable(QuickConnectTests QuickConnectTests.cpp)
+
+target_link_libraries(
+    QuickConnectTests
+
+    PRIVATE
+    apd_core
+    Qt5::Test
+    Qt5::Widgets
+)
+
+target_include_directories(QuickConnectTests PRIVATE "${CMAKE_SOURCE_DIR}")
+
+add_test(NAME QuickConnectTests COMMAND QuickConnectTests)

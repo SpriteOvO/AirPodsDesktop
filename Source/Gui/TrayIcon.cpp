@@ -26,9 +26,15 @@
 #include <Config.h>
 namespace Gui {
 
-TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
-    : _settingsWindow{std::move(getCurrentLocaleIndex)}
+TrayIcon::TrayIcon(
+    std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect)
+    : _quickConnect{quickConnect}, _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
+    _singleClickTimer.setSingleShot(true);
+    connect(&_singleClickTimer, &QTimer::timeout, this, [this] {
+        ExecuteTrayActivation(_trayActivationState.OnSingleClickTimeout());
+    });
+
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionLowAudioLatency, &QAction::triggered, this, [](bool enabled) {
         Core::Settings::ModifiableAccess()->low_audio_latency = enabled;
@@ -38,6 +44,9 @@ TrayIcon::TrayIcon(std::function<int()> getCurrentLocaleIndex)
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::ShowMainWindowRequested);
+    connect(
+        &_quickConnect, &Core::QuickConnect::Controller::OutcomeChanged, this,
+        &TrayIcon::OnQuickConnectOutcome);
 
     connect(
         this, &TrayIcon::OnTrayIconBatteryChangedSafely, this, &TrayIcon::OnTrayIconBatteryChanged);
@@ -366,11 +375,74 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger ||
-        reason == QSystemTrayIcon::MiddleClick)
-    {
+    const auto result = _trayActivationState.OnActivation(reason, _quickConnect.IsEnabled());
+
+    switch (result.timer) {
+    case SingleClickTimer::Start:
+        // Read the interval each time; the user can change it in Windows while we are running.
+        _singleClickTimer.start(QApplication::doubleClickInterval());
+        break;
+    case SingleClickTimer::Stop:
+        _singleClickTimer.stop();
+        break;
+    case SingleClickTimer::Unchanged:
+        break;
+    }
+
+    ExecuteTrayActivation(result.action);
+}
+
+void TrayIcon::ExecuteTrayActivation(TrayActivationAction action)
+{
+    if (action == TrayActivationAction::QuickConnect) {
+        _quickConnect.Request();
+        return;
+    }
+
+    if (action == TrayActivationAction::ShowMainWindow) {
         ShowMainWindow();
     }
+}
+
+void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const QString &deviceName)
+{
+    QString text;
+    QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information;
+
+    switch (outcome) {
+    case Core::QuickConnect::Outcome::Disabled:
+        text = tr("Quick connection is disabled.");
+        break;
+    case Core::QuickConnect::Outcome::NoDevice:
+        text = tr("Choose a Bluetooth audio device in Settings first.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::DeviceUnavailable:
+        text = tr("The selected device is not available. Turn it on or bring it into range.");
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::AlreadyConnected:
+        text = tr("%1 is already connected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::RequestStarted:
+        text = tr("Connecting to %1...").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::Connected:
+        text = tr("%1 connected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::TimedOut:
+        text = tr("Connection to %1 timed out.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::Failed:
+        text = tr("Windows could not connect to %1.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    default:
+        return;
+    }
+
+    ShowMessage(tr("Quick connect"), text, icon);
 }
 
 void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value)

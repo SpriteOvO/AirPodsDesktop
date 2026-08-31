@@ -62,8 +62,11 @@ private:
     }
 };
 
-SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent)
-    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)}
+SettingsWindow::SettingsWindow(
+    std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect,
+    QWidget *parent)
+    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)},
+      _quickConnect{quickConnect}
 {
     const auto &constMetaFields = GetConstMetaFields();
 
@@ -85,9 +88,7 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
     InitCreditsText();
 
     auto versionText =
-        QString{"<a href=\"%1\">v%2</a>"}
-            .arg(Config::UrlCurrentRelease)
-            .arg(CONFIG_VERSION_STRING);
+        QString{"<a href=\"%1\">v%2</a>"}.arg(Config::UrlCurrentRelease).arg(CONFIG_VERSION_STRING);
 #if defined APD_BUILD_GIT_HASH
     versionText +=
         QString{" (<a href=\"%1\">%2</a>)"}
@@ -102,6 +103,9 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
     _ui.hlTipAutoEarDetection->addWidget(
         new TipLabel{constMetaFields.automatic_ear_detection.Description(), this});
 
+    _ui.hlTipTrayQuickConnect->addWidget(
+        new TipLabel{constMetaFields.tray_quick_connect_enabled.Description(), this});
+
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
 
@@ -109,6 +113,10 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
         _ui.cbLanguages->addItem(locale.nativeLanguageName());
     }
     _ui.cbLanguages->addItem("...");
+
+    connect(&_quickConnect, &Core::QuickConnect::Controller::DevicesChanged, this, [this] {
+        UpdateQuickConnectDevices(GetCurrent());
+    });
 
     Update(GetCurrent(), false);
 
@@ -128,6 +136,20 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
             On_cbAutoRun_toggled(checked);
         }
     });
+
+    connect(_ui.cbTrayQuickConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbTrayQuickConnectEnabled_toggled(checked);
+        }
+    });
+
+    connect(
+        _ui.cbTrayQuickConnectDevice, qOverload<int>(&QComboBox::currentIndexChanged), this,
+        [this](int index) {
+            if (_trigger) {
+                On_cbTrayQuickConnectDevice_currentIndexChanged(index);
+            }
+        });
 
     connect(_ui.cbLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
@@ -262,8 +284,7 @@ void SettingsWindow::InitCreditsText()
             { "SingleApplication", "https://github.com/itay-grudev/SingleApplication", "MIT", "https://github.com/itay-grudev/SingleApplication/blob/master/LICENSE" },
             { "pfr", "https://github.com/boostorg/pfr", "BSL-1.0", "https://github.com/boostorg/pfr/blob/develop/LICENSE_1_0.txt" },
             { "magic_enum", "https://github.com/Neargye/magic_enum", "MIT", "https://github.com/Neargye/magic_enum/blob/master/LICENSE" },
-            { "stacktrace", "https://github.com/boostorg/stacktrace", "BSL-1.0", "https://www.boost.org/LICENSE_1_0.txt" }
-            // clang-format on
+            { "stacktrace", "https://github.com/boostorg/stacktrace", "BSL-1.0", "https://www.boost.org/LICENSE_1_0.txt" } // clang-format on
         };
 
         QString result;
@@ -324,7 +345,40 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
+    UpdateQuickConnectDevices(fields);
+
     _trigger = true;
+}
+
+void SettingsWindow::UpdateQuickConnectDevices(const Fields &fields)
+{
+    const auto previousTrigger = _trigger;
+    _trigger = false;
+
+    const auto &selectedId = fields.tray_quick_connect_device_id;
+
+    _ui.cbTrayQuickConnectDevice->clear();
+    for (const auto &device : _quickConnect.Devices()) {
+        _ui.cbTrayQuickConnectDevice->addItem(device.name, device.id);
+    }
+
+    auto selectedIndex = _ui.cbTrayQuickConnectDevice->findData(selectedId);
+    if (selectedIndex == -1 && !selectedId.isEmpty()) {
+        // The saved device is paired but not reporting an audio endpoint right now - switched off,
+        // out of range, or the enumeration has not finished. Show it as chosen but unavailable
+        // rather than an empty box that reads like nothing was ever configured.
+        _ui.cbTrayQuickConnectDevice->addItem(tr("Saved device (not available)"), selectedId);
+        selectedIndex = _ui.cbTrayQuickConnectDevice->count() - 1;
+    }
+    _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
+
+    _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
+    // Always leave the checkbox usable: a transient empty enumeration must never trap the user in
+    // a state they cannot turn off.
+    _ui.cbTrayQuickConnectEnabled->setEnabled(true);
+    _ui.cbTrayQuickConnectDevice->setEnabled(_ui.cbTrayQuickConnectDevice->count() > 0);
+
+    _trigger = previousTrigger;
 }
 
 void SettingsWindow::UpdateAdvOverride()
@@ -356,6 +410,10 @@ void SettingsWindow::UpdateAdvOverride()
 void SettingsWindow::showEvent(QShowEvent *event)
 {
     Update(GetCurrent(), false);
+
+    // Enumerating paired Bluetooth devices and every audio endpoint is not free, so it happens
+    // when the dialog is opened rather than on every application start.
+    _quickConnect.RefreshDevices();
 }
 
 void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
@@ -381,6 +439,17 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
 {
     ModifiableAccess()->auto_run = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectEnabled_toggled(bool checked)
+{
+    ModifiableAccess()->tray_quick_connect_enabled = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectDevice_currentIndexChanged(int index)
+{
+    const auto id = _ui.cbTrayQuickConnectDevice->itemData(index).toString();
+    ModifiableAccess()->tray_quick_connect_device_id = id;
 }
 
 void SettingsWindow::On_pbUnbind_clicked()
