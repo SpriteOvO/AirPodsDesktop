@@ -19,7 +19,12 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <stop_token>
 #include <thread>
 #include <vector>
 
@@ -34,7 +39,8 @@ class Controller;
 
 enum class Outcome : uint32_t {
     Disabled,
-    NoDevice,
+    NoDevice,          // nothing is configured yet
+    DeviceUnavailable, // configured, but it is not reporting an audio endpoint right now
     AlreadyConnected,
     RequestStarted,
     Failed,
@@ -56,13 +62,24 @@ public:
     virtual void SetController(Controller *controller);
     virtual std::vector<Device> ListDevices(std::stop_token stopToken) = 0;
     virtual bool RequestReconnect(const QString &id, std::stop_token stopToken) = 0;
+
+    // Called once the Controller stops caring about endpoint-state changes for the device it last
+    // asked to reconnect. A backend that arms system notifications must disarm them here, otherwise
+    // it keeps doing that work for every device on the machine until the process exits.
+    virtual void StopObserving() {}
 };
 
 class NullBackend final : public Backend
 {
 public:
-    std::vector<Device> ListDevices(std::stop_token) override { return {}; }
-    bool RequestReconnect(const QString &, std::stop_token) override { return false; }
+    std::vector<Device> ListDevices(std::stop_token) override
+    {
+        return {};
+    }
+    bool RequestReconnect(const QString &, std::stop_token) override
+    {
+        return false;
+    }
 };
 
 class Controller final : public QObject
@@ -70,7 +87,18 @@ class Controller final : public QObject
     Q_OBJECT
 
 public:
-    explicit Controller(Backend &backend);
+    // How long to wait for the endpoint to come up after Windows accepted the reconnect request.
+    static constexpr std::chrono::milliseconds kDefaultResolveTimeout{10'000};
+
+    // The backend is shared rather than borrowed because a reconnect request can still be inside a
+    // blocking driver call when the Controller goes away; that worker is detached and keeps the
+    // backend alive for as long as it needs it.
+    //
+    // `resolveTimeout` is a parameter so tests can drive the real timer instead of calling the
+    // timeout slot by hand.
+    explicit Controller(
+        std::shared_ptr<Backend> backend,
+        std::chrono::milliseconds resolveTimeout = kDefaultResolveTimeout);
     ~Controller() override;
 
     void SetEnabled(bool enabled);
@@ -87,7 +115,16 @@ signals:
     void OutcomeChanged(Core::QuickConnect::Outcome outcome, QString deviceName);
 
 private:
-    Backend &_backend;
+    // Lets a worker post back without ever dereferencing a Controller that has started tearing
+    // down. `~Controller` clears the pointer under the mutex before anything else happens, so a
+    // worker either posts to a live Controller or finds nothing and gives up.
+    struct Link {
+        std::mutex mutex;
+        Controller *controller{};
+    };
+
+    std::shared_ptr<Backend> _backend;
+    std::shared_ptr<Link> _link{std::make_shared<Link>()};
     bool _enabled{};
     bool _pending{};
     QString _deviceId;
@@ -99,9 +136,14 @@ private:
     std::atomic<bool> _deviceRefreshRunning{};
     std::atomic<bool> _requestRunning{};
     std::jthread _deviceRefreshThread;
-    std::jthread _requestThread;
+    std::stop_source _requestStop;
+    std::thread _requestThread;
     QTimer _resolveTimer;
 
+    static void
+    PostToController(const std::shared_ptr<Link> &link, std::function<void(Controller &)> work);
+
+    QString DeviceNameFor(const QString &id) const;
     Outcome Complete(Outcome outcome);
     void EmitOutcome(Outcome outcome, const QString &deviceName);
 };

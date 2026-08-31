@@ -78,10 +78,12 @@ void SetRepository(std::unique_ptr<Repository> repository);
         Impl::Sensitive{})                                                                         \
     callback(TrayIconBatteryBehavior, tray_icon_battery, {TrayIconBatteryBehavior::Disable},       \
         Impl::OnApply(&OnApply_tray_icon_battery))                                                 \
-    callback(bool, tray_quick_connect_enabled, {false},                                           \
-        Impl::OnApply(&OnApply_tray_quick_connect_enabled))                                       \
-    callback(QString, tray_quick_connect_device_id, {},                                           \
-        Impl::OnApply(&OnApply_tray_quick_connect_device_id))                                     \
+    callback(bool, tray_quick_connect_enabled, {false},                                            \
+        Impl::OnApply(&OnApply_tray_quick_connect_enabled),                                         \
+        Impl::Desc{QObject::tr("A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.")}) \
+    callback(QString, tray_quick_connect_device_id, {},                                             \
+        Impl::OnApply(&OnApply_tray_quick_connect_device_id),                                       \
+        Impl::Sensitive{})                                                                          \
     callback(TaskbarStatusBehavior, battery_on_taskbar, {TaskbarStatusBehavior::Disable},          \
         Impl::OnApply(&OnApply_battery_on_taskbar))
 // clang-format on

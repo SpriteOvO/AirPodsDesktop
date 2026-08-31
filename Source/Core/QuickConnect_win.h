@@ -26,9 +26,9 @@
 #include "OS/Windows.h"
 
 #include <atomic>
+#include <memory>
 #include <mutex>
-
-#include <QPointer>
+#include <set>
 
 #include <mmdeviceapi.h>
 
@@ -43,6 +43,7 @@ public:
     void SetController(Controller *controller) override;
     std::vector<Device> ListDevices(std::stop_token stopToken) override;
     bool RequestReconnect(const QString &id, std::stop_token stopToken) override;
+    void StopObserving() override;
 
     ULONG STDMETHODCALLTYPE AddRef() override;
     ULONG STDMETHODCALLTYPE Release() override;
@@ -51,16 +52,28 @@ public:
     HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR deviceId, DWORD newState) override;
     HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR deviceId) override;
     HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR deviceId) override;
-    HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(
-        EDataFlow flow, ERole role, LPCWSTR defaultDeviceId) override;
-    HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR deviceId, const PROPERTYKEY key) override;
+    HRESULT STDMETHODCALLTYPE
+    OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR defaultDeviceId) override;
+    HRESULT STDMETHODCALLTYPE
+    OnPropertyValueChanged(LPCWSTR deviceId, const PROPERTYKEY key) override;
 
 private:
+    // What `OnDeviceStateChanged` needs in order to decide, without touching COM.
+    //
+    // The MMDevice API forbids a notification callback from blocking, from releasing the final
+    // reference on an MMDevice object, and from calling back into the API. Resolving an endpoint's
+    // container id inside the callback would do all three, so `RequestReconnect` resolves the
+    // endpoint ids up front and the callback only compares strings against this snapshot.
+    struct Observation {
+        QString containerId;           // canonical `{GUID}`, handed to the Controller
+        std::set<QString> endpointIds; // exact IMMDevice ids belonging to that container
+    };
+
     OS::Windows::Com::UniquePtr<IMMDeviceEnumerator> _deviceEnumerator;
-    QPointer<Controller> _controller;
+    std::atomic<std::shared_ptr<const Observation>> _observation;
+    Controller *_controller{};
     std::atomic<ULONG> _refCount{1};
-    std::mutex _mutex;
-    QString _observedContainerKey;
+    std::mutex _controllerMutex;
     bool _comInitialized{};
 
     void RegisterNotifications();

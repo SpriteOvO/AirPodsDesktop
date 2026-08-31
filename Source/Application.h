@@ -42,7 +42,7 @@ class Service;
 namespace Core::QuickConnect {
 class Backend;
 class Controller;
-}
+} // namespace Core::QuickConnect
 
 namespace Gui {
 class DownloadWindow;
@@ -67,10 +67,6 @@ public:
     {
         return _lowAudioLatencyController;
     }
-    inline auto *GetQuickConnect()
-    {
-        return _quickConnect.get();
-    }
 
     int GetCurrentLoadedLocaleIndex() const
     {
@@ -86,14 +82,17 @@ private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
     QTranslator _translator;
     int _currentLoadedLocaleIndex{0};
+    // Declared before the GUI members: `Gui::TrayIcon` and the `Gui::SettingsWindow` it owns hold a
+    // reference to the controller, so the controller has to outlive them, and members are destroyed
+    // in reverse declaration order.
+    std::shared_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
+    std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
     std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
-    std::unique_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
-    std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
     std::unique_ptr<Core::AutoStart::Service> _autoStartService;
 
     void InitSettings(Core::Settings::LoadResult loadResult);

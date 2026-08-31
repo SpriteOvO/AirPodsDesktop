@@ -135,7 +135,8 @@ void OnApply_tray_quick_connect_enabled(const Fields &newFields)
 
 void OnApply_tray_quick_connect_device_id(const Fields &newFields)
 {
-    LOG(Info, "OnApply_tray_quick_connect_device_id: {}", newFields.tray_quick_connect_device_id);
+    LOG(Info, "OnApply_tray_quick_connect_device_id: {}",
+        LogSensitiveData(newFields.tray_quick_connect_device_id));
 
     Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
         observer.OnTrayQuickConnectDeviceChanged(newFields.tray_quick_connect_device_id);
