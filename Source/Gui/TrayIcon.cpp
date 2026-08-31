@@ -27,13 +27,10 @@
 namespace Gui {
 
 TrayIcon::TrayIcon(
-    std::function<int()> getCurrentLocaleIndex,
-    Core::QuickConnect::Controller &quickConnect)
-    : _quickConnect{quickConnect},
-      _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
+    std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect)
+    : _quickConnect{quickConnect}, _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
     _singleClickTimer.setSingleShot(true);
-    _singleClickTimer.setInterval(QApplication::doubleClickInterval());
     connect(&_singleClickTimer, &QTimer::timeout, this, [this] {
         ExecuteTrayActivation(_trayActivationState.OnSingleClickTimeout());
     });
@@ -378,15 +375,21 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    const auto action = _trayActivationState.OnActivation(reason, _quickConnect.IsEnabled());
-    if (reason == QSystemTrayIcon::Trigger && _quickConnect.IsEnabled()) {
-        _singleClickTimer.start();
-    }
-    else if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::MiddleClick) {
+    const auto result = _trayActivationState.OnActivation(reason, _quickConnect.IsEnabled());
+
+    switch (result.timer) {
+    case SingleClickTimer::Start:
+        // Read the interval each time; the user can change it in Windows while we are running.
+        _singleClickTimer.start(QApplication::doubleClickInterval());
+        break;
+    case SingleClickTimer::Stop:
         _singleClickTimer.stop();
+        break;
+    case SingleClickTimer::Unchanged:
+        break;
     }
 
-    ExecuteTrayActivation(action);
+    ExecuteTrayActivation(result.action);
 }
 
 void TrayIcon::ExecuteTrayActivation(TrayActivationAction action)
@@ -401,8 +404,7 @@ void TrayIcon::ExecuteTrayActivation(TrayActivationAction action)
     }
 }
 
-void TrayIcon::OnQuickConnectOutcome(
-    Core::QuickConnect::Outcome outcome, const QString &deviceName)
+void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const QString &deviceName)
 {
     QString text;
     QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information;
@@ -415,11 +417,15 @@ void TrayIcon::OnQuickConnectOutcome(
         text = tr("Choose a Bluetooth audio device in Settings first.");
         icon = QSystemTrayIcon::Warning;
         break;
+    case Core::QuickConnect::Outcome::DeviceUnavailable:
+        text = tr("The selected device is not available. Turn it on or bring it into range.");
+        icon = QSystemTrayIcon::Warning;
+        break;
     case Core::QuickConnect::Outcome::AlreadyConnected:
         text = tr("%1 is already connected.").arg(deviceName);
         break;
     case Core::QuickConnect::Outcome::RequestStarted:
-        text = tr("Connecting to %1…").arg(deviceName);
+        text = tr("Connecting to %1...").arg(deviceName);
         break;
     case Core::QuickConnect::Outcome::Connected:
         text = tr("%1 connected.").arg(deviceName);

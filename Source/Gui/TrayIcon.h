@@ -40,8 +40,7 @@ class TrayIcon : public QWidget
 
 public:
     explicit TrayIcon(
-        std::function<int()> getCurrentLocaleIndex,
-        Core::QuickConnect::Controller &quickConnect);
+        std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect);
 
     template <class... ArgsT>
     inline void ShowMessage(ArgsT &&...args)
@@ -100,8 +99,7 @@ private:
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
-    void OnQuickConnectOutcome(
-        Core::QuickConnect::Outcome outcome, const QString &deviceName);
+    void OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const QString &deviceName);
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value);
     void OnLowAudioLatencyChanged(bool enabled);
 

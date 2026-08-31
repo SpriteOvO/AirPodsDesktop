@@ -41,8 +41,7 @@ class SettingsWindow : public QDialog
 
 public:
     explicit SettingsWindow(
-        std::function<int()> getCurrentLocaleIndex,
-        Core::QuickConnect::Controller &quickConnect,
+        std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect,
         QWidget *parent = nullptr);
     void SetLowAudioLatencyChecked(bool checked);
 
@@ -69,8 +68,6 @@ private:
     // General
     void On_cbLanguages_currentIndexChanged(int index);
     void On_cbAutoRun_toggled(bool checked);
-    void On_cbTrayQuickConnectEnabled_toggled(bool checked);
-    void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_pbUnbind_clicked();
 
     // Visual
@@ -79,6 +76,8 @@ private:
 
     // Features
     void On_cbLowAudioLatency_toggled(bool checked);
+    void On_cbTrayQuickConnectEnabled_toggled(bool checked);
+    void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_cbAutoEarDetection_toggled(bool checked);
     void On_hsMaxReceivingRange_valueChanged(int value);
 
