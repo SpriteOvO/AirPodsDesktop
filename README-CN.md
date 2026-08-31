@@ -58,4 +58,4 @@
 * [MagicPods](https://magicpods.app/)
 
 ### 贡献者
-* [@aizuon](https://github.com/aizuon) — 闲置 CPU 与低延迟音频重构，提交于 [#199](https://github.com/SpriteOvO/AirPodsDesktop/pull/199)，经由 [#210](https://github.com/SpriteOvO/AirPodsDesktop/pull/210) 合并
+* [@aizuon](https://github.com/aizuon) — 闲置 CPU 与低延迟音频重构，提交于 [#199](https://github.com/SpriteOvO/AirPodsDesktop/pull/199)，经由 [#210](https://github.com/SpriteOvO/AirPodsDesktop/pull/210) 合并；另见[性能说明](/Docs/Performance.md)

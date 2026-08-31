@@ -58,4 +58,4 @@ See the [Build Instructions](/Docs/Build.md).
 * [MagicPods](https://magicpods.app/)
 
 ### Contributors
-* [@aizuon](https://github.com/aizuon) — idle CPU and low-latency audio rework, contributed in [#199](https://github.com/SpriteOvO/AirPodsDesktop/pull/199) and merged through [#210](https://github.com/SpriteOvO/AirPodsDesktop/pull/210)
+* [@aizuon](https://github.com/aizuon) — idle CPU and low-latency audio rework, contributed in [#199](https://github.com/SpriteOvO/AirPodsDesktop/pull/199) and merged through [#210](https://github.com/SpriteOvO/AirPodsDesktop/pull/210); see the [performance notes](/Docs/Performance.md)
