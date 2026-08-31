@@ -116,7 +116,7 @@ Dernière version : %2%3</translation>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation type="unfinished"></translation>
+        <translation>Appareil enregistré (indisponible)</translation>
     </message>
 </context>
 <context>
@@ -159,39 +159,39 @@ Dernière version : %2%3</translation>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La connexion rapide est désactivée.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sélectionnez d&apos;abord un périphérique audio Bluetooth dans les paramètres.</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;appareil sélectionné n&apos;est pas disponible. Allumez-le ou rapprochez-le.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 est déjà connecté.</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Connexion à %1...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 est connecté.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le délai de connexion à %1 a expiré.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows n&apos;a pas pu se connecter à %1.</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Connexion rapide</translation>
     </message>
 </context>
 <context>
@@ -230,7 +230,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <name>QObject</name>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>Il met automatiquement en pause ou reprend le média lorsque vous retirez ou remettez vos AirPods dans vos oreilles.</translation>
+        <translation>La lecture est automatiquement mise en pause ou reprise lorsque vous retirez ou remettez vos AirPods dans vos oreilles.</translation>
     </message>
     <message>
         <source>Unavailable</source>
@@ -250,7 +250,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un clic sur l&apos;icône de la zone de notification connecte l&apos;appareil sélectionné au lieu d&apos;ouvrir la fenêtre principale. Un double-clic continue de l&apos;ouvrir.</translation>
     </message>
 </context>
 <context>
@@ -272,11 +272,11 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Open logs directory</source>
-        <translation>Ouvrir le répertoire des journaux</translation>
+        <translation>Ouvrir le dossier des journaux</translation>
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
-        <translation>Portée maximale de la réception Bluetooth</translation>
+        <translation>Portée Bluetooth maximale</translation>
     </message>
     <message>
         <source>Unbind AirPods</source>
@@ -292,7 +292,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Visual</source>
-        <translation>Visuel</translation>
+        <translation>Apparence</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
@@ -328,7 +328,7 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Détection automatique du port</translation>
+        <translation>Détection automatique des oreilles</translation>
     </message>
     <message>
         <source>Low audio latency</source>
@@ -348,15 +348,15 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation type="unfinished"></translation>
+        <translation>Connecter l&apos;appareil sélectionné en cliquant sur l&apos;icône de la zone de notification</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Appareil</translation>
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le périphérique audio Bluetooth associé qui sera connecté lors d&apos;un clic sur l&apos;icône de la zone de notification.</translation>
     </message>
 </context>
 </TS>

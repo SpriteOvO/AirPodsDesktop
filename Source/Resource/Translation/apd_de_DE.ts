@@ -14,7 +14,7 @@ This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
         <translation>Hallo, willkommen bei %1!
 
-Anscheinend benutzt du dieses Programm zum ersten mal.
+Anscheinend benutzt du dieses Programm zum ersten Mal.
 Lass uns zusammen ein paar Einstellungen vornehmen.</translation>
     </message>
     <message>
@@ -116,7 +116,7 @@ Neueste Version: %2%3</translation>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation type="unfinished"></translation>
+        <translation>Gespeichertes Gerät (nicht verfügbar)</translation>
     </message>
 </context>
 <context>
@@ -159,39 +159,39 @@ Neueste Version: %2%3</translation>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Schnellverbindung ist deaktiviert.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle zuerst in den Einstellungen ein Bluetooth-Audiogerät aus.</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das ausgewählte Gerät ist nicht verfügbar. Schalte es ein oder bringe es in Reichweite.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ist bereits verbunden.</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindung mit %1 wird hergestellt...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ist verbunden.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeitüberschreitung beim Verbinden mit %1.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows konnte keine Verbindung mit %1 herstellen.</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Schnellverbindung</translation>
     </message>
 </context>
 <context>
@@ -213,7 +213,7 @@ Neueste Version: %2%3</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>Release anzeigen</translation>
+        <translation>Versionshinweise anzeigen</translation>
     </message>
     <message>
         <source>Remind me later</source>
@@ -223,7 +223,7 @@ Neueste Version: %2%3</translation>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Kein gekoppeltes Gerät gefunden.
-Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation>
+Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation>
     </message>
 </context>
 <context>
@@ -250,7 +250,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ein Klick auf das Symbol im Infobereich verbindet das ausgewählte Gerät, anstatt das Hauptfenster zu öffnen. Ein Doppelklick öffnet es weiterhin.</translation>
     </message>
 </context>
 <context>
@@ -280,7 +280,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>AirPods trennen</translation>
+        <translation>AirPods entkoppeln</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
@@ -292,11 +292,11 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Visual</source>
-        <translation>Visuell</translation>
+        <translation>Darstellung</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
-        <translation>Batterie-Icon im Infobereich der Taskleiste anzeigen</translation>
+        <translation>Akkustand im Infobereich anzeigen</translation>
     </message>
     <message>
         <source>Disable</source>
@@ -304,7 +304,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>When low battery</source>
-        <translation>Bei niedrigem Batteriestand</translation>
+        <translation>Bei niedrigem Akkustand</translation>
     </message>
     <message>
         <source>Always</source>
@@ -320,7 +320,7 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Low audio latency</source>
-        <translation>Niedrige Audio-Latenz</translation>
+        <translation>Niedrige Audiolatenz</translation>
     </message>
     <message>
         <source>About</source>
@@ -348,15 +348,15 @@ Bitte verbinde deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</tra
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgewähltes Gerät per Klick auf das Symbol im Infobereich verbinden</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät</translation>
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das gekoppelte Bluetooth-Audiogerät, das beim Klicken auf das Symbol im Infobereich verbunden wird.</translation>
     </message>
 </context>
 </TS>

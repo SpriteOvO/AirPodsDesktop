@@ -116,7 +116,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation type="unfinished"></translation>
+        <translation>保存済みのデバイス（利用不可）</translation>
     </message>
 </context>
 <context>
@@ -155,43 +155,43 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Low audio latency (may cause hiss)</source>
-        <translation>低音声レイテンシー（ノイズが発生する場合があります）</translation>
+        <translation>低遅延モード（ノイズが発生する場合があります）</translation>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>クイック接続は無効です。</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation type="unfinished"></translation>
+        <translation>まず設定で Bluetooth オーディオデバイスを選択してください。</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation type="unfinished"></translation>
+        <translation>選択したデバイスは利用できません。電源を入れるか、通信範囲内に移動してください。</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 はすでに接続されています。</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 に接続しています...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 に接続しました。</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 への接続がタイムアウトしました。</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Windows は %1 に接続できませんでした。</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation type="unfinished"></translation>
+        <translation>クイック接続</translation>
     </message>
 </context>
 <context>
@@ -222,8 +222,8 @@ Latest version: %2%3</source>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>ペアリングされたデバイスが見つかりません。
-先にWindowsのBluetooth設定からAirPodsとペアリングする必要があります。</translation>
+        <translation>ペアリング済みのデバイスが見つかりません。
+先に Windows の Bluetooth 設定で AirPods をペアリングしてください。</translation>
     </message>
 </context>
 <context>
@@ -250,7 +250,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation type="unfinished"></translation>
+        <translation>通知領域のアイコンをクリックすると、メインウィンドウを開かずに選択したデバイスへ接続します。ダブルクリックすると、引き続きメインウィンドウが開きます。</translation>
     </message>
 </context>
 <context>
@@ -280,7 +280,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>AirPodsとの接続を解除</translation>
+        <translation>AirPods の登録を解除</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
@@ -292,7 +292,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Visual</source>
-        <translation>見た目</translation>
+        <translation>表示</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
@@ -348,15 +348,15 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation type="unfinished"></translation>
+        <translation>通知領域のアイコンをクリックして選択したデバイスに接続</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>デバイス</translation>
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation type="unfinished"></translation>
+        <translation>通知領域のアイコンをクリックしたときに接続する、ペアリング済みの Bluetooth オーディオデバイスです。</translation>
     </message>
 </context>
 </TS>

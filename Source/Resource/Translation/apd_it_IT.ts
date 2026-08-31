@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="pt_BR">
+<TS version="2.1" language="it_IT">
 <context>
     <name>ApdApplication</name>
     <message>
         <source>Settings format has changed a bit and needs to be reconfigured.</source>
-        <translation>O formato das configurações mudou um pouco e precisa ser reconfigurado.</translation>
+        <translation>Il formato delle impostazioni è un po&apos; cambiato e ha bisogno di essere riconfigurato.</translation>
     </message>
     <message>
         <source>Hello, welcome to %1!
 
 This seems to be your first time using this program.
 Let&apos;s configure something together.</source>
-        <translation>Olá, bem-vindo ao %1!
+        <translation>Ciao, benvenuti a %1 !
 
-Parece que é a primeira vez que você usa este programa.
-Vamos configurar algumas coisas juntos.</translation>
+Sembra sia la prima volta che usi questo programma.
+Configuriamo qualcosa insieme.</translation>
     </message>
     <message>
         <source>Do you want this program to launch when the system starts?
 
 If you frequently use AirPods with this computer, it is recommended that you click &quot;Yes&quot;.</source>
-        <translation>Deseja que este programa inicie com o sistema?
+        <translation>Vuoi che questo programma si apra all&apos;avvio del sistema?
 
-Se você usa AirPods frequentemente com este computador, é recomendado clicar em &quot;Sim&quot;.</translation>
+Se utilizzi spesso le AirPods su questo computer è consigliabile cliccare su &quot;Sì&quot;.</translation>
     </message>
     <message>
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>Deseja ativar o recurso &quot;baixa latência de áudio&quot;?
+        <translation>Vuoi attivare la funzionalità &quot;audio a bassa latenza&quot;?
 
 %1</translation>
     </message>
@@ -37,32 +37,32 @@ Se você usa AirPods frequentemente com este computador, é recomendado clicar e
         <source>Great! Everything is ready!
 
 Enjoy it all.</source>
-        <translation>Ótimo! Tudo está pronto!
+        <translation>Perfetto! È tutto pronto!
 
-Aproveite.</translation>
+Divertiti.</translation>
     </message>
     <message>
         <source>You can find me in the system tray</source>
-        <translation>Você pode me encontrar na bandeja do sistema</translation>
+        <translation>Mi puoi trovare nella barra di sistema</translation>
     </message>
     <message>
         <source>Click the icon to view battery information, right-click to customize settings or quit.</source>
-        <translation>Clique no ícone para ver informações sobre a bateria; clique com o botão direito para personalizar configurações ou sair.</translation>
+        <translation>Clicca l&apos;icona per visualizzare le informazioni sulla batteria. Clicca con il tasto destro per personalizzare le impostazioni o uscire.</translation>
     </message>
 </context>
 <context>
     <name>DownloadWindow</name>
     <message>
         <source>Download new version</source>
-        <translation>Baixar nova versão</translation>
+        <translation>Scarica la nuova versione</translation>
     </message>
     <message>
         <source>Download Manually</source>
-        <translation>Baixar manualmente</translation>
+        <translation>Scarica manualmente</translation>
     </message>
     <message>
         <source>If the download is slow or fails, you can:</source>
-        <translation>Se o download estiver lento ou falhar, você pode:</translation>
+        <translation>Se il download è lento o fallisce puoi:</translation>
     </message>
 </context>
 <context>
@@ -70,33 +70,33 @@ Aproveite.</translation>
     <message>
         <source>Oops, an error occurred during the automatic update.
 Please download and install the new version manually.</source>
-        <translation>Ops, ocorreu um erro durante a atualização automática.
-Por favor, baixe e instale a nova versão manualmente.</translation>
+        <translation>Oops,c&apos;è stato un errore durante l&apos;aggiornamento automatico.
+Per favore scarica e installa manualmente la nuova versione.</translation>
     </message>
 </context>
 <context>
     <name>Gui::MainWindow</name>
     <message>
         <source>Change log:</source>
-        <translation>Notas de versão:</translation>
+        <translation>Change log:</translation>
     </message>
     <message>
         <source>Hey! I found a new version available!
 
 Current version: %1
 Latest version: %2%3</source>
-        <translation>Uma nova versão está disponível!
+        <translation>Hei! Ho trovato una nuova versione disponibile!
 
-Versão atual: %1
-Última versão: %2%3</translation>
+Versione attuale: %1
+L&apos;ultima versione: %2%3</translation>
     </message>
     <message>
         <source>Bind to AirPods</source>
-        <translation>Vincular aos AirPods</translation>
+        <translation>Abbina le AirPods</translation>
     </message>
     <message>
         <source>Please select your AirPods device below.</source>
-        <translation>Selecione seu dispositivo AirPods abaixo.</translation>
+        <translation>Per favore seleziona qui sotto il tuo dispositivo AirPods.</translation>
     </message>
 </context>
 <context>
@@ -104,207 +104,208 @@ Versão atual: %1
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translation>Alex Martins|</translation>
+        <translatorcomment>Grazie della possibilità, mi sono divertito.</translatorcomment>
+        <translation>Luigi Oria|</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
-        <translation>Colaboradores da tradução:</translation>
+        <translation>Contributori alla traduzione:</translation>
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation>Bibliotecas de terceiros:</translation>
+        <translation>Librerie di terze parti:</translation>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation>Dispositivo salvo (indisponível)</translation>
+        <translation>Dispositivo salvato (non disponibile)</translation>
     </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
     <message>
         <source>Left</source>
-        <translation>Esquerdo</translation>
+        <translation>Sinistra</translation>
     </message>
     <message>
         <source>Right</source>
-        <translation>Direito</translation>
+        <translation>Destra</translation>
     </message>
     <message>
         <source>Case</source>
-        <translation>Estojo</translation>
+        <translation>Custodia</translation>
     </message>
     <message>
         <source>charging</source>
-        <translation>carregando</translation>
+        <translation>in carica</translation>
     </message>
     <message>
         <source>New version available!</source>
-        <translation>Nova versão disponível!</translation>
+        <translation>Nuova versione disponibile!</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Configurações</translation>
+        <translation>Impostazioni</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>Sobre</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>Sair</translation>
+        <translation>Esci</translation>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation>A conexão rápida está desativada.</translation>
+        <translation>La connessione rapida è disattivata.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation>Primeiro, escolha um dispositivo de áudio Bluetooth nas Configurações.</translation>
+        <translation>Seleziona prima un dispositivo audio Bluetooth nelle Impostazioni.</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation>O dispositivo selecionado não está disponível. Ligue-o ou aproxime-o.</translation>
+        <translation>Il dispositivo selezionato non è disponibile. Accendilo o avvicinalo.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation>%1 já está conectado.</translation>
+        <translation>%1 è già connesso.</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation>Conectando a %1...</translation>
+        <translation>Connessione a %1...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation>%1 conectado.</translation>
+        <translation>%1 connesso.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation>O tempo de conexão com %1 se esgotou.</translation>
+        <translation>Tempo scaduto durante la connessione a %1.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation>O Windows não conseguiu se conectar a %1.</translation>
+        <translation>Windows non è riuscito a connettersi a %1.</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation>Conexão rápida</translation>
+        <translation>Connessione rapida</translation>
     </message>
     <message>
         <source>Low audio latency (may cause hiss)</source>
-        <translation>Baixa latência de áudio (pode causar chiado)</translation>
+        <translation>Bassa latenza audio (potrebbe causare fruscii)</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
-        <translation>Informações do AirPodsDesktop</translation>
+        <translation>Informazioni su AirPodsDesktop</translation>
     </message>
 </context>
 <context>
     <name>QMessageBox</name>
     <message>
         <source>Update now</source>
-        <translation>Atualizar agora</translation>
+        <translation>Aggiorna adesso</translation>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation>Ignorar esta versão</translation>
+        <translation>Salta questa versione</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation>Ver notas da versão</translation>
+        <translation>Guarda la versione</translation>
     </message>
     <message>
         <source>Remind me later</source>
-        <translation>Lembrar mais tarde</translation>
+        <translation>Ricordamelo dopo</translation>
     </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Nenhum dispositivo emparelhado encontrado.
-Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Windows primeiro.</translation>
+        <translation>Nessun dispositivo abbinato trovato.
+Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
-        <translation>Pausa ou retoma a mídia automaticamente quando você remove ou coloca os AirPods nos ouvidos.</translation>
+        <translation>Mette automaticamente in pausa o riavvia la riproduzione di un contenuto quando.togli o metti le tue Airpods nelle orecchie.</translation>
     </message>
     <message>
         <source>Unavailable</source>
-        <translation>Indisponível</translation>
+        <translation>Non disponibile</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation>Desconectado</translation>
+        <translation>Disconnesso</translation>
     </message>
     <message>
         <source>Waiting for Binding</source>
-        <translation>Aguardando vinculação</translation>
+        <translation>In attessa dell&apos;abbinamento</translation>
     </message>
     <message>
         <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
-        <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão conectados para que sons curtos sejam reproduzidos imediatamente. Isso pode causar chiado audível e aumentar o consumo da bateria.</translation>
+        <translation>Mantiene attivo il dispositivo audio mentre gli AirPods sono connessi, così i suoni brevi iniziano subito. Potrebbe produrre un fruscio udibile e consumare più batteria.</translation>
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Um clique no ícone da bandeja conecta o dispositivo selecionado em vez de abrir a janela principal. Um clique duplo continua abrindo-a.</translation>
+        <translation>Un clic sull&apos;icona nell&apos;area di notifica connette il dispositivo selezionato invece di aprire la finestra principale. Un doppio clic continua ad aprirla.</translation>
     </message>
 </context>
 <context>
     <name>SelectWindow</name>
     <message>
         <source>Select</source>
-        <translation>Selecionar</translation>
+        <translation>Seleziona</translation>
     </message>
 </context>
 <context>
     <name>SettingsWindow</name>
     <message>
         <source>AirPodsDesktop Settings</source>
-        <translation>Configurações do AirPodsDesktop</translation>
+        <translation>Impostazioni di AirPodsDesktop</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Geral</translation>
+        <translation>Generale</translation>
     </message>
     <message>
         <source>Open logs directory</source>
-        <translation>Abrir pasta de logs</translation>
+        <translation>Apri la cartella dei logs</translation>
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
-        <translation>Alcance máximo de recepção do Bluetooth</translation>
+        <translation>Portata massima della ricezione bluetooth</translation>
     </message>
     <message>
         <source>Unbind AirPods</source>
-        <translation>Desvincular os AirPods</translation>
+        <translation>Disabbina AirPods</translation>
     </message>
     <message>
         <source>Launch when system starts</source>
-        <translation>Iniciar com o sistema</translation>
+        <translation>Apri all&apos;avvio del sistema</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Idioma</translation>
+        <translation>Lingua</translation>
     </message>
     <message>
         <source>Visual</source>
-        <translation>Aparência</translation>
+        <translation>Vista</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
-        <translation>Exibir bateria na barra de tarefas</translation>
+        <translation>Mostra la batteria sulla taskbar</translation>
     </message>
     <message>
         <source>Disable</source>
-        <translation>Desativar</translation>
+        <translation>Disabilita</translation>
     </message>
     <message>
         <source>When low battery</source>
-        <translation>Quando a bateria estiver baixa</translation>
+        <translation>Quando la batteria è bassa</translation>
     </message>
     <message>
         <source>Always</source>
@@ -312,43 +313,43 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>As text</source>
-        <translation>Como texto</translation>
+        <translation>Come testo</translation>
     </message>
     <message>
         <source>As icon</source>
-        <translation>Como ícone</translation>
+        <translation>Come icona</translation>
     </message>
     <message>
         <source>Display battery on tray icon</source>
-        <translation>Exibir bateria no ícone da bandeja</translation>
+        <translation>Mostra la batteria nell&apos;area di notifica</translation>
     </message>
     <message>
         <source>Features</source>
-        <translation>Recursos</translation>
+        <translation>Funzionalità</translation>
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Detecção automática de ouvido</translation>
+        <translation>Rilevamento automatico dell&apos;orecchio</translation>
     </message>
     <message>
         <source>Low audio latency</source>
-        <translation>Baixa latência de áudio</translation>
+        <translation>Audio a bassa latenza</translation>
     </message>
     <message>
         <source>About</source>
-        <translation>Sobre</translation>
+        <translation>Info</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Código-fonte aberto disponível no &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repositório&lt;/span&gt;&lt;/a&gt; e licenciado sob a &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Archivio&lt;/span&gt;&lt;/a&gt; open source e licenza di &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
-        <translation>Copyright © 2021-2022 SpriteOvO. Todos os direitos reservados.</translation>
+        <translation>Copyright © 2021-2022 SpriteOvO. Tutti i diritti riservati.</translation>
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation>Conectar o dispositivo selecionado ao clicar no ícone da bandeja</translation>
+        <translation>Connetti il dispositivo selezionato con un clic sull&apos;icona nell&apos;area di notifica</translation>
     </message>
     <message>
         <source>Device</source>
@@ -356,7 +357,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation>O dispositivo de áudio Bluetooth emparelhado que será conectado ao clicar no ícone da bandeja.</translation>
+        <translation>Il dispositivo audio Bluetooth associato che viene connesso facendo clic sull&apos;icona nell&apos;area di notifica.</translation>
     </message>
 </context>
 </TS>

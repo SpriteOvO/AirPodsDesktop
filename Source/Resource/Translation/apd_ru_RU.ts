@@ -5,7 +5,7 @@
     <name>ApdApplication</name>
     <message>
         <source>Settings format has changed a bit and needs to be reconfigured.</source>
-        <translation>Формат настройки был изменен и нуждается в перенастройке.</translation>
+        <translation>Формат настроек изменился, поэтому их необходимо настроить заново.</translation>
     </message>
     <message>
         <source>Hello, welcome to %1!
@@ -29,7 +29,7 @@ If you frequently use AirPods with this computer, it is recommended that you cli
         <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
-        <translation>Вы хотите включить функцию &quot;низкой задержки звука&quot;?
+        <translation>Включить функцию «Низкая задержка звука»?
 
 %1</translation>
     </message>
@@ -116,7 +116,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохраненное устройство (недоступно)</translation>
     </message>
 </context>
 <context>
@@ -131,7 +131,7 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Case</source>
-        <translation>Кейс</translation>
+        <translation>Футляр</translation>
     </message>
     <message>
         <source>charging</source>
@@ -159,46 +159,46 @@ Latest version: %2%3</source>
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Быстрое подключение отключено.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сначала выберите аудиоустройство Bluetooth в настройках.</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбранное устройство недоступно. Включите его или переместите в зону действия.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 уже подключено.</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключение к %1...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 подключено.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Время ожидания подключения к %1 истекло.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подключиться к %1 в Windows.</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Быстрое подключение</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
-        <translation>Информация о AirPodsDesktop</translation>
+        <translation>Информация об AirPodsDesktop</translation>
     </message>
 </context>
 <context>
@@ -250,7 +250,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Щелчок по значку в области уведомлений подключает выбранное устройство вместо открытия главного окна. Двойной щелчок по-прежнему открывает его.</translation>
     </message>
 </context>
 <context>
@@ -292,7 +292,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Visual</source>
-        <translation>Визуальные</translation>
+        <translation>Внешний вид</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
@@ -324,7 +324,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Features</source>
-        <translation>Особенности</translation>
+        <translation>Функции</translation>
     </message>
     <message>
         <source>Automatic ear detection</source>
@@ -348,15 +348,15 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключать выбранное устройство щелчком по значку в области уведомлений</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство</translation>
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сопряженное аудиоустройство Bluetooth, к которому выполняется подключение при щелчке по значку в области уведомлений.</translation>
     </message>
 </context>
 </TS>
