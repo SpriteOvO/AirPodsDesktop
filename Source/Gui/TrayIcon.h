@@ -59,6 +59,13 @@ Q_SIGNALS:
     void ToolTipChanged(const QString &text);
 
 private:
+    struct IconRenderState {
+        std::optional<QString> text;
+        bool showUpdateDot{false};
+
+        bool operator==(const IconRenderState &rhs) const = default;
+    };
+
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
     QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
@@ -72,6 +79,7 @@ private:
     std::optional<Core::AirPods::State> _airPodsState;
     std::optional<QString> _displayName;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
+    std::optional<IconRenderState> _lastIconRenderState;
 
     void ShowMainWindow();
     void Repaint();
