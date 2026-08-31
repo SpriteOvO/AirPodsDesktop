@@ -114,6 +114,10 @@ En son sürüm: %2%3</translation>
         <source>Third-Party Libraries:</source>
         <translation>Üçüncü Taraf Kütüphaneler:</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>Kayıtlı cihaz (kullanılamıyor)</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -148,6 +152,46 @@ En son sürüm: %2%3</translation>
     <message>
         <source>Quit</source>
         <translation>Çıkış</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>Hızlı bağlantı devre dışı.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>Önce Ayarlar&apos;dan bir Bluetooth ses cihazı seçin.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>Seçili cihaz kullanılamıyor. Cihazı açın veya kapsama alanına getirin.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 zaten bağlı.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>%1 cihazına bağlanılıyor...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 bağlandı.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>%1 bağlantısı zaman aşımına uğradı.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows %1 cihazına bağlanamadı.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>Hızlı bağlantı</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Düşük ses gecikmesi (dip sese neden olabilir)</translation>
     </message>
 </context>
 <context>
@@ -185,10 +229,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Kısa ses çalma sorunlarını düzeltir, ancak pil tüketimini artırabilir.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>AirPods&apos;unuzu çıkardığınızda veya kulağınıza taktığınızda medyayı otomatik olarak duraklatır veya devam ettirir.</translation>
     </message>
@@ -203,6 +243,14 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Waiting for Binding</source>
         <translation>Eşleştirme Bekleniyor</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>AirPods&apos;unuz bağlıyken ses cihazını etkin tutar; böylece kısa sesler hemen çalar. Bu, duyulabilir dip sese ve daha fazla pil tüketimine neden olabilir.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>Tepsi simgesine tıklamak ana pencereyi açmak yerine seçili cihaza bağlanır. Çift tıklamak pencereyi açmaya devam eder.</translation>
     </message>
 </context>
 <context>
@@ -297,6 +345,18 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>As icon</source>
         <translation>Simge olarak</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>Tepsi simgesine tıklandığında seçili cihaza bağlan</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>Cihaz</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>Tepsi simgesine tıklandığında bağlanılacak eşleştirilmiş Bluetooth ses cihazı.</translation>
     </message>
 </context>
 </TS>

@@ -50,7 +50,6 @@ Enjoy it all.</source>
         <translation>Кликнете върху иконата, за да видите информацията за батерията, а с десен бутон – за настройки или изход.</translation>
     </message>
 </context>
-
 <context>
     <name>DownloadWindow</name>
     <message>
@@ -66,7 +65,6 @@ Enjoy it all.</source>
         <translation>Ако изтеглянето е бавно или се провали, можете да:</translation>
     </message>
 </context>
-
 <context>
     <name>Gui::DownloadWindow</name>
     <message>
@@ -76,7 +74,6 @@ Please download and install the new version manually.</source>
 Моля, изтеглете и инсталирайте новата версия ръчно.</translation>
     </message>
 </context>
-
 <context>
     <name>Gui::MainWindow</name>
     <message>
@@ -102,12 +99,11 @@ Latest version: %2%3</source>
         <translation>Моля, изберете вашето AirPods устройство по-долу.</translation>
     </message>
 </context>
-
 <context>
     <name>Gui::SettingsWindow</name>
     <message>
         <source>|</source>
-        <extracomment>To credit translators...</extracomment>
+        <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
         <translation>Oleh Hnat|</translation>
     </message>
     <message>
@@ -118,8 +114,11 @@ Latest version: %2%3</source>
         <source>Third-Party Libraries:</source>
         <translation>Библиотеки на трети страни:</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>Запазено устройство (недостъпно)</translation>
+    </message>
 </context>
-
 <context>
     <name>Gui::TrayIcon</name>
     <message>
@@ -154,8 +153,47 @@ Latest version: %2%3</source>
         <source>Quit</source>
         <translation>Изход</translation>
     </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>Бързото свързване е изключено.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>Първо изберете Bluetooth аудиоустройство в настройките.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>Избраното устройство не е достъпно. Включете го или го доближете.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 вече е свързано.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>Свързване с %1...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 е свързано.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>Времето за свързване с %1 изтече.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows не можа да се свърже с %1.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>Бързо свързване</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Ниска латентност на звука (може да причини шум)</translation>
+    </message>
 </context>
-
 <context>
     <name>MainWindow</name>
     <message>
@@ -163,7 +201,6 @@ Latest version: %2%3</source>
         <translation>Информация за AirPodsDesktop</translation>
     </message>
 </context>
-
 <context>
     <name>QMessageBox</name>
     <message>
@@ -189,13 +226,8 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
 Първо трябва да сдвоите вашите AirPods в настройките на Bluetooth в Windows.</translation>
     </message>
 </context>
-
 <context>
     <name>QObject</name>
-    <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Това поправя проблеми с краткото аудио възпроизвеждане, но може да увеличи разхода на батерията.</translation>
-    </message>
     <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Автоматично поставя на пауза или възобновява медиите, когато AirPods се извадят или поставят в ушите.</translation>
@@ -212,8 +244,15 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Waiting for Binding</source>
         <translation>Изчакване за свързване</translation>
     </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>Поддържа аудиоустройството активно, докато AirPods са свързани, така че кратките звуци да започват веднага. Това може да причини доловим шум и да изразходва повече батерия.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>Щракването върху иконата в системната област свързва избраното устройство, вместо да отваря главния прозорец. Двукратното щракване продължава да го отваря.</translation>
+    </message>
 </context>
-
 <context>
     <name>SelectWindow</name>
     <message>
@@ -221,7 +260,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Избери</translation>
     </message>
 </context>
-
 <context>
     <name>SettingsWindow</name>
     <message>
@@ -301,12 +339,24 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Относно</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Отворен код, &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;репозитория&lt;/span&gt;&lt;/a&gt; и лицензирано под &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Отворен код, &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;репозитория&lt;/span&gt;&lt;/a&gt; и лицензирано под &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
         <translation>Авторско право © 2021–2022 SpriteOvO. Всички права запазени.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>Свързване на избраното устройство с щракване върху иконата в системната област</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>Устройство</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>Сдвоеното Bluetooth аудиоустройство, с което се осъществява връзка при щракване върху иконата в системната област.</translation>
     </message>
 </context>
 </TS>

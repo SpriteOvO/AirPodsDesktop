@@ -114,6 +114,10 @@ Latest version: %2%3</source>
         <source>Third-Party Libraries:</source>
         <translation>Сторонні бібліотеки:</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>Збережений пристрій (недоступний)</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -148,6 +152,46 @@ Latest version: %2%3</source>
     <message>
         <source>Quit</source>
         <translation>Вийти</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>Швидке підключення вимкнено.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>Спочатку виберіть аудіопристрій Bluetooth у налаштуваннях.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>Вибраний пристрій недоступний. Увімкніть його або перемістіть у зону дії.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 уже підключено.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>Підключення до %1...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 підключено.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>Час очікування підключення до %1 минув.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows не вдалося підключитися до %1.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>Швидке підключення</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Низька затримка звуку (може спричинити шипіння)</translation>
     </message>
 </context>
 <context>
@@ -185,10 +229,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Це вирішує проблеми з коротким відтворенням аудіо, але може збільшити споживання батареї.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Автоматично призупиняє або відновлює медіа, коли AirPods виймають або ставлять у вуха.</translation>
     </message>
@@ -203,6 +243,14 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Waiting for Binding</source>
         <translation>Очікування на зв&apos;язування</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>Підтримує аудіопристрій активним, поки AirPods підключені, щоб короткі звуки відтворювалися негайно. Це може спричинити чутне шипіння та збільшити споживання заряду.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>Клацання піктограми в області сповіщень підключає вибраний пристрій замість відкриття головного вікна. Подвійне клацання, як і раніше, відкриває його.</translation>
     </message>
 </context>
 <context>
@@ -297,6 +345,18 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
         <translation>Авторські права © 2021-2022 SpriteOvO. Всі права захищені.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>Підключати вибраний пристрій клацанням піктограми в області сповіщень</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>Пристрій</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>Спарений аудіопристрій Bluetooth, до якого виконується підключення після клацання піктограми в області сповіщень.</translation>
     </message>
 </context>
 </TS>

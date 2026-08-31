@@ -114,6 +114,10 @@ Versão atual: %1
         <source>Third-Party Libraries:</source>
         <translation>Bibliotecas de terceiros:</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>Dispositivo guardado (indisponível)</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -148,6 +152,46 @@ Versão atual: %1
     <message>
         <source>Quit</source>
         <translation>Sair</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>A ligação rápida está desativada.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>Escolha primeiro um dispositivo de áudio Bluetooth nas Definições.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>O dispositivo selecionado não está disponível. Ligue-o ou aproxime-o.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 já está ligado.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>A ligar a %1...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 ligado.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>A ligação a %1 excedeu o tempo limite.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>O Windows não conseguiu ligar-se a %1.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>Ligação rápida</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Baixa latência de áudio (pode causar ruído)</translation>
     </message>
 </context>
 <context>
@@ -185,10 +229,6 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Corrige problemas de reprodução de áudio curtos, mas pode aumentar o consumo da bateria.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Faz pausa ou retoma automaticamente os media quando os seus AirPods são retirados ou colocados nos ouvidos.</translation>
     </message>
@@ -203,6 +243,14 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     <message>
         <source>Waiting for Binding</source>
         <translation>À espera de ligação</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão ligados, para que os sons curtos sejam reproduzidos imediatamente. Isto pode produzir ruído audível e consumir mais bateria.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>Um clique no ícone da área de notificação liga o dispositivo selecionado em vez de abrir a janela principal. Um duplo clique continua a abri-la.</translation>
     </message>
 </context>
 <context>
@@ -297,6 +345,18 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
         <translation>Copyright © 2021-2022 SpriteOvO. Todos os direitos reservados.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>Ligar o dispositivo selecionado ao clicar no ícone da área de notificação</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>Dispositivo</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>O dispositivo de áudio Bluetooth emparelhado que será ligado ao clicar no ícone da área de notificação.</translation>
     </message>
 </context>
 </TS>

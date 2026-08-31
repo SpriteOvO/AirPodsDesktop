@@ -114,6 +114,10 @@ Latest version: %2%3</source>
         <source>Third-Party Libraries:</source>
         <translation>오픈 소스 및 타사 라이브러리 정보</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>저장된 기기(사용 불가)</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -148,6 +152,46 @@ Latest version: %2%3</source>
     <message>
         <source>Quit</source>
         <translation>종료</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>빠른 연결이 비활성화되어 있습니다.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>먼저 설정에서 Bluetooth 오디오 기기를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>선택한 기기를 사용할 수 없습니다. 기기를 켜거나 가까이 가져오세요.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1은(는) 이미 연결되어 있습니다.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>%1에 연결하는 중...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 연결됨.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>%1 연결 시간이 초과되었습니다.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows에서 %1에 연결하지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>빠른 연결</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>오디오 지연 최소화(잡음이 발생할 수 있음)</translation>
     </message>
 </context>
 <context>
@@ -185,10 +229,6 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>오디오 재생 문제를 해결합니다. 단, 배터리 소모가 증가할 수 있습니다.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>AirPods을 귀에서 빼거나 착용하면 미디어를 자동으로 일시 정지하거나 재개합니다.</translation>
     </message>
@@ -203,6 +243,14 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>Waiting for Binding</source>
         <translation>연결 대기 중</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>AirPods이 연결된 동안 오디오 기기를 활성 상태로 유지하여 짧은 소리가 즉시 재생되도록 합니다. 잡음이 들리거나 배터리 사용량이 증가할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>트레이 아이콘을 클릭하면 기본 창을 여는 대신 선택한 기기에 연결합니다. 두 번 클릭하면 기본 창이 열립니다.</translation>
     </message>
 </context>
 <context>
@@ -297,6 +345,18 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>As icon</source>
         <translation>아이콘</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>트레이 아이콘을 클릭하여 선택한 기기에 연결</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>기기</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>트레이 아이콘 클릭 시 연결할 페어링된 Bluetooth 오디오 기기입니다.</translation>
     </message>
 </context>
 </TS>

@@ -115,6 +115,10 @@ L&apos;ultima versione: %2%3</translation>
         <source>Third-Party Libraries:</source>
         <translation>Librerie di terze parti:</translation>
     </message>
+    <message>
+        <source>Saved device (not available)</source>
+        <translation>Dispositivo salvato (non disponibile)</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>
@@ -149,6 +153,46 @@ L&apos;ultima versione: %2%3</translation>
     <message>
         <source>Quit</source>
         <translation>Esci</translation>
+    </message>
+    <message>
+        <source>Quick connection is disabled.</source>
+        <translation>La connessione rapida è disattivata.</translation>
+    </message>
+    <message>
+        <source>Choose a Bluetooth audio device in Settings first.</source>
+        <translation>Seleziona prima un dispositivo audio Bluetooth nelle Impostazioni.</translation>
+    </message>
+    <message>
+        <source>The selected device is not available. Turn it on or bring it into range.</source>
+        <translation>Il dispositivo selezionato non è disponibile. Accendilo o avvicinalo.</translation>
+    </message>
+    <message>
+        <source>%1 is already connected.</source>
+        <translation>%1 è già connesso.</translation>
+    </message>
+    <message>
+        <source>Connecting to %1...</source>
+        <translation>Connessione a %1...</translation>
+    </message>
+    <message>
+        <source>%1 connected.</source>
+        <translation>%1 connesso.</translation>
+    </message>
+    <message>
+        <source>Connection to %1 timed out.</source>
+        <translation>Tempo scaduto durante la connessione a %1.</translation>
+    </message>
+    <message>
+        <source>Windows could not connect to %1.</source>
+        <translation>Windows non è riuscito a connettersi a %1.</translation>
+    </message>
+    <message>
+        <source>Quick connect</source>
+        <translation>Connessione rapida</translation>
+    </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Bassa latenza audio (potrebbe causare fruscii)</translation>
     </message>
 </context>
 <context>
@@ -186,10 +230,6 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Risolve il problema della riproduzione degli audio brevi, ma può aumentare il consumo di batteria.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Mette automaticamente in pausa o riavvia la riproduzione di un contenuto quando.togli o metti le tue Airpods nelle orecchie.</translation>
     </message>
@@ -204,6 +244,14 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
     <message>
         <source>Waiting for Binding</source>
         <translation>In attessa dell&apos;abbinamento</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>Mantiene attivo il dispositivo audio mentre gli AirPods sono connessi, così i suoni brevi iniziano subito. Potrebbe produrre un fruscio udibile e consumare più batteria.</translation>
+    </message>
+    <message>
+        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
+        <translation>Un clic sull&apos;icona nell&apos;area di notifica connette il dispositivo selezionato invece di aprire la finestra principale. Un doppio clic continua ad aprirla.</translation>
     </message>
 </context>
 <context>
@@ -298,6 +346,18 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
         <translation>Copyright © 2021-2022 SpriteOvO. Tutti i diritti riservati.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device on a tray icon click</source>
+        <translation>Connetti il dispositivo selezionato con un clic sull&apos;icona nell&apos;area di notifica</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>Dispositivo</translation>
+    </message>
+    <message>
+        <source>The paired Bluetooth audio device a tray icon click connects.</source>
+        <translation>Il dispositivo audio Bluetooth associato che viene connesso facendo clic sull&apos;icona nell&apos;area di notifica.</translation>
     </message>
 </context>
 </TS>
