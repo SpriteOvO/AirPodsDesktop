@@ -149,6 +149,10 @@ Dernière version : %2%3</translation>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>Faible latence audio (peut provoquer un souffle)</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -185,10 +189,6 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>Il résout les problèmes de lecture audio de courte durée, mais peut augmenter la consommation de la batterie.</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>Il met automatiquement en pause ou reprend le média lorsque vous retirez ou remettez vos AirPods dans vos oreilles.</translation>
     </message>
@@ -203,6 +203,10 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <message>
         <source>Waiting for Binding</source>
         <translation>En attente de connexion</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>Maintient le périphérique audio actif pendant que vos AirPods sont connectés afin que les sons courts démarrent immédiatement. Cela peut produire un souffle audible et augmenter la consommation de la batterie.</translation>
     </message>
 </context>
 <context>

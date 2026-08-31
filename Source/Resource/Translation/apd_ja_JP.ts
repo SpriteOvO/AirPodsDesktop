@@ -149,6 +149,10 @@ Latest version: %2%3</source>
         <source>Quit</source>
         <translation>終了</translation>
     </message>
+    <message>
+        <source>Low audio latency (may cause hiss)</source>
+        <translation>低音声レイテンシー（ノイズが発生する場合があります）</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -185,10 +189,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
 <context>
     <name>QObject</name>
     <message>
-        <source>It fixes short audio playback problems, but may increase battery consumption.</source>
-        <translation>短い音声が正常に再生されない問題を改善しますが、バッテリー消費量が増える場合があります。</translation>
-    </message>
-    <message>
         <source>It automatically pauses or resumes media when your AirPods are taken out or put in your ears.</source>
         <translation>AirPodsを外すと自動的に一時停止し、着けると再生を再開します。</translation>
     </message>
@@ -203,6 +203,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Waiting for Binding</source>
         <translation>接続待機中</translation>
+    </message>
+    <message>
+        <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
+        <translation>AirPodsが接続されている間、オーディオデバイスを起動状態に保ち、短い音声をすぐに再生できるようにします。聞こえる程度のノイズが発生したり、バッテリー消費が増えたりする場合があります。</translation>
     </message>
 </context>
 <context>
