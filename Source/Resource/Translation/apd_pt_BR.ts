@@ -112,11 +112,11 @@ Versão atual: %1
     </message>
     <message>
         <source>Third-Party Libraries:</source>
-        <translation>Bibliotecas de Terceiros:</translation>
+        <translation>Bibliotecas de terceiros:</translation>
     </message>
     <message>
         <source>Saved device (not available)</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo salvo (indisponível)</translation>
     </message>
 </context>
 <context>
@@ -155,43 +155,43 @@ Versão atual: %1
     </message>
     <message>
         <source>Quick connection is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>A conexão rápida está desativada.</translation>
     </message>
     <message>
         <source>Choose a Bluetooth audio device in Settings first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Primeiro, escolha um dispositivo de áudio Bluetooth nas Configurações.</translation>
     </message>
     <message>
         <source>The selected device is not available. Turn it on or bring it into range.</source>
-        <translation type="unfinished"></translation>
+        <translation>O dispositivo selecionado não está disponível. Ligue-o ou aproxime-o.</translation>
     </message>
     <message>
         <source>%1 is already connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 já está conectado.</translation>
     </message>
     <message>
         <source>Connecting to %1...</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectando a %1...</translation>
     </message>
     <message>
         <source>%1 connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 conectado.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>O tempo de conexão com %1 se esgotou.</translation>
     </message>
     <message>
         <source>Windows could not connect to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>O Windows não conseguiu se conectar a %1.</translation>
     </message>
     <message>
         <source>Quick connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Conexão rápida</translation>
     </message>
     <message>
         <source>Low audio latency (may cause hiss)</source>
-        <translation type="unfinished"></translation>
+        <translation>Baixa latência de áudio (pode causar chiado)</translation>
     </message>
 </context>
 <context>
@@ -213,7 +213,7 @@ Versão atual: %1
     </message>
     <message>
         <source>View release</source>
-        <translation>Ver versão</translation>
+        <translation>Ver notas da versão</translation>
     </message>
     <message>
         <source>Remind me later</source>
@@ -246,11 +246,11 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão conectados para que sons curtos sejam reproduzidos imediatamente. Isso pode causar chiado audível e aumentar o consumo da bateria.</translation>
     </message>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Um clique no ícone da bandeja conecta o dispositivo selecionado em vez de abrir a janela principal. Um clique duplo continua abrindo-a.</translation>
     </message>
 </context>
 <context>
@@ -272,7 +272,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Open logs directory</source>
-        <translation>Abrir diretório de logs</translation>
+        <translation>Abrir pasta de logs</translation>
     </message>
     <message>
         <source>Bluetooth maximum receiving range</source>
@@ -292,7 +292,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Visual</source>
-        <translation>Visual</translation>
+        <translation>Aparência</translation>
     </message>
     <message>
         <source>Display battery on taskbar</source>
@@ -328,7 +328,7 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Automatic ear detection</source>
-        <translation>Detecção automática de uso</translation>
+        <translation>Detecção automática de ouvido</translation>
     </message>
     <message>
         <source>Low audio latency</source>
@@ -348,15 +348,15 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     </message>
     <message>
         <source>Connect the selected device on a tray icon click</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectar o dispositivo selecionado ao clicar no ícone da bandeja</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo</translation>
     </message>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
-        <translation type="unfinished"></translation>
+        <translation>O dispositivo de áudio Bluetooth emparelhado que será conectado ao clicar no ícone da bandeja.</translation>
     </message>
 </context>
 </TS>
