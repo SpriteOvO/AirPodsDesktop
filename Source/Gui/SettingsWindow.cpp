@@ -62,8 +62,13 @@ private:
     }
 };
 
-SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent)
-    : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)}
+SettingsWindow::SettingsWindow(
+    std::function<int()> getCurrentLocaleIndex,
+    Core::QuickConnect::Controller &quickConnect,
+    QWidget *parent)
+    : QDialog{parent},
+      _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)},
+      _quickConnect{quickConnect}
 {
     const auto &constMetaFields = GetConstMetaFields();
 
@@ -110,6 +115,10 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
     }
     _ui.cbLanguages->addItem("...");
 
+    connect(
+        &_quickConnect, &Core::QuickConnect::Controller::DevicesChanged, this,
+        [this] { UpdateQuickConnectDevices(GetCurrent()); });
+
     Update(GetCurrent(), false);
 
     connect(
@@ -128,6 +137,20 @@ SettingsWindow::SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidg
             On_cbAutoRun_toggled(checked);
         }
     });
+
+    connect(_ui.cbTrayQuickConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            On_cbTrayQuickConnectEnabled_toggled(checked);
+        }
+    });
+
+    connect(
+        _ui.cbTrayQuickConnectDevice,
+        qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
+            if (_trigger) {
+                On_cbTrayQuickConnectDevice_currentIndexChanged(index);
+            }
+        });
 
     connect(_ui.cbLowAudioLatency, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
@@ -324,7 +347,31 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
 
     _ui.pbUnbind->setDisabled(fields.device_address == 0);
 
+    UpdateQuickConnectDevices(fields);
+    _quickConnect.RefreshDevices();
+
     _trigger = true;
+}
+
+void SettingsWindow::UpdateQuickConnectDevices(const Fields &fields)
+{
+    const auto previousTrigger = _trigger;
+    _trigger = false;
+
+    const auto devices = _quickConnect.Devices();
+    _ui.cbTrayQuickConnectDevice->clear();
+    for (const auto &device : devices) {
+        _ui.cbTrayQuickConnectDevice->addItem(device.name, device.id);
+    }
+    const auto selectedIndex = _ui.cbTrayQuickConnectDevice->findData(
+        fields.tray_quick_connect_device_id);
+    _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
+    const auto hasDevices = _ui.cbTrayQuickConnectDevice->count() > 0;
+    _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
+    _ui.cbTrayQuickConnectEnabled->setEnabled(true);
+    _ui.cbTrayQuickConnectDevice->setEnabled(hasDevices);
+
+    _trigger = previousTrigger;
 }
 
 void SettingsWindow::UpdateAdvOverride()
@@ -381,6 +428,17 @@ void SettingsWindow::On_cbLanguages_currentIndexChanged(int index)
 void SettingsWindow::On_cbAutoRun_toggled(bool checked)
 {
     ModifiableAccess()->auto_run = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectEnabled_toggled(bool checked)
+{
+    ModifiableAccess()->tray_quick_connect_enabled = checked;
+}
+
+void SettingsWindow::On_cbTrayQuickConnectDevice_currentIndexChanged(int index)
+{
+    const auto id = _ui.cbTrayQuickConnectDevice->itemData(index).toString();
+    ModifiableAccess()->tray_quick_connect_device_id = id;
 }
 
 void SettingsWindow::On_pbUnbind_clicked()

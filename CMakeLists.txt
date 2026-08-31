@@ -303,6 +303,7 @@ set(
     "Source/Core/Debug.cpp"
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
+    "Source/Core/QuickConnect.cpp"
     "Source/Core/Settings.cpp"
     "Source/Core/SettingsRepository.cpp"
     "Source/Core/LowAudioLatency.cpp"
@@ -338,6 +339,7 @@ if (WIN32)
         "Source/Core/AutoStart_win.cpp"
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
+        "Source/Core/QuickConnect_win.cpp"
     )
     list(APPEND APD_APP_CODE_FILES
         "Source/Resource/Application.manifest"
@@ -471,6 +473,10 @@ target_link_libraries(
     magic_enum::magic_enum
     Boost::pfr
 )
+
+if (WIN32)
+    target_link_libraries(apd_core PRIVATE Ole32 Uuid Ksuser)
+endif()
 
 target_link_libraries(
     apd_presentation

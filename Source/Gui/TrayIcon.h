@@ -21,12 +21,15 @@
 #include <functional>
 
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <QMenu>
 #include <QAction>
 
 #include "../Core/AirPods.h"
+#include "../Core/QuickConnect.h"
 #include "../Core/Update.h"
 #include "Base.h"
+#include "TrayActivation.h"
 #include "SettingsWindow.h"
 
 namespace Gui {
@@ -36,7 +39,9 @@ class TrayIcon : public QWidget
     Q_OBJECT
 
 public:
-    explicit TrayIcon(std::function<int()> getCurrentLocaleIndex);
+    explicit TrayIcon(
+        std::function<int()> getCurrentLocaleIndex,
+        Core::QuickConnect::Controller &quickConnect);
 
     template <class... ArgsT>
     inline void ShowMessage(ArgsT &&...args)
@@ -80,9 +85,13 @@ private:
     std::optional<QString> _displayName;
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
     std::optional<IconRenderState> _lastIconRenderState;
+    Core::QuickConnect::Controller &_quickConnect;
+    TrayActivationState _trayActivationState;
+    QTimer _singleClickTimer{this};
 
     void ShowMainWindow();
     void Repaint();
+    void ExecuteTrayActivation(TrayActivationAction action);
 
     static std::optional<QImage>
     GenerateIcon(int size, const std::optional<QString> &optText, const std::optional<QColor> &dot);
@@ -91,6 +100,8 @@ private:
     void OnSettingsClicked();
     void OnAboutClicked();
     void OnIconClicked(QSystemTrayIcon::ActivationReason reason);
+    void OnQuickConnectOutcome(
+        Core::QuickConnect::Outcome outcome, const QString &deviceName);
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value);
     void OnLowAudioLatencyChanged(bool enabled);
 

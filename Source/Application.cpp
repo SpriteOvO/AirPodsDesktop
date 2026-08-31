@@ -35,6 +35,10 @@
 #include "Core/Bluetooth.h"
 #include "Core/GlobalMedia.h"
 #include "Core/LowAudioLatency.h"
+#include "Core/QuickConnect.h"
+#if defined APD_OS_WIN
+    #include "Core/QuickConnect_win.h"
+#endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
@@ -169,7 +173,15 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     InitTranslator();
 
-    _trayIcon = std::make_unique<Gui::TrayIcon>([this] { return GetCurrentLoadedLocaleIndex(); });
+#if defined APD_OS_WIN
+    _quickConnectBackend = std::make_unique<Core::QuickConnect::WindowsBackend>();
+#else
+    _quickConnectBackend = std::make_unique<Core::QuickConnect::NullBackend>();
+#endif
+    _quickConnect = std::make_unique<Core::QuickConnect::Controller>(*_quickConnectBackend);
+
+    _trayIcon = std::make_unique<Gui::TrayIcon>(
+        [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
@@ -387,6 +399,16 @@ void ApdApplication::OnDeviceAddressChanged(uint64_t address)
 void ApdApplication::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior)
 {
     emit _trayIcon->OnTrayIconBatteryChangedSafely(behavior);
+}
+
+void ApdApplication::OnTrayQuickConnectEnabledChanged(bool enable)
+{
+    _quickConnect->SetEnabled(enable);
+}
+
+void ApdApplication::OnTrayQuickConnectDeviceChanged(const QString &deviceId)
+{
+    _quickConnect->SetDeviceId(deviceId);
 }
 
 void ApdApplication::OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior)

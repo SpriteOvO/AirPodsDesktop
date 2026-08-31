@@ -25,6 +25,7 @@
 #include <QSlider>
 #include <QCheckBox>
 
+#include "../Core/QuickConnect.h"
 #include "../Core/Settings.h"
 #include "Utils.h"
 
@@ -39,7 +40,10 @@ class SettingsWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsWindow(std::function<int()> getCurrentLocaleIndex, QWidget *parent = nullptr);
+    explicit SettingsWindow(
+        std::function<int()> getCurrentLocaleIndex,
+        Core::QuickConnect::Controller &quickConnect,
+        QWidget *parent = nullptr);
     void SetLowAudioLatencyChecked(bool checked);
 
     int GetTabCount() const;
@@ -52,10 +56,12 @@ private:
     bool _trigger{true};
     int _lastLanguageIndex{0};
     std::function<int()> _getCurrentLocaleIndex;
+    Core::QuickConnect::Controller &_quickConnect;
 
     void InitCreditsText();
     void RestoreDefaults();
     void Update(const Fields &fields, bool trigger);
+    void UpdateQuickConnectDevices(const Fields &fields);
     void UpdateAdvOverride();
 
     void showEvent(QShowEvent *event) override;
@@ -63,6 +69,8 @@ private:
     // General
     void On_cbLanguages_currentIndexChanged(int index);
     void On_cbAutoRun_toggled(bool checked);
+    void On_cbTrayQuickConnectEnabled_toggled(bool checked);
+    void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_pbUnbind_clicked();
 
     // Visual

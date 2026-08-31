@@ -36,10 +36,24 @@ public:
     void OnRssiMinChanged(int16_t) override {}
     void OnDeviceAddressChanged(uint64_t) override {}
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior) override {}
+    void OnTrayQuickConnectEnabledChanged(bool enable) override
+    {
+        quickConnectEnabled = enable;
+        ++quickConnectEnabledChanges;
+    }
+    void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override
+    {
+        quickConnectDeviceId = deviceId;
+        ++quickConnectDeviceChanges;
+    }
     void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior) override {}
 
     bool autoRun{false};
     int autoRunChanges{0};
+    bool quickConnectEnabled{false};
+    int quickConnectEnabledChanges{0};
+    QString quickConnectDeviceId;
+    int quickConnectDeviceChanges{0};
 };
 
 std::vector<uint8_t> MakePacket(
@@ -101,6 +115,7 @@ private Q_SLOTS:
     void BuildsLowBandwidthSilenceFormats();
     void CreatesCorrectPcmSilenceFrames();
     void LoadsSettingsThroughRepository();
+    void PropagatesQuickConnectSettings();
     void RejectsNullSettingsRepository();
     void ParsesUpdateVersions();
     void ParsesGitHubReleaseMetadata();
@@ -288,6 +303,28 @@ void AirPodsDomainTests::LoadsSettingsThroughRepository()
     Core::Settings::Apply();
     QCOMPARE(observer.autoRunChanges, 1);
     QVERIFY(observer.autoRun);
+
+    Core::Settings::SetApplyObserver(nullptr);
+    Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
+}
+
+void AirPodsDomainTests::PropagatesQuickConnectSettings()
+{
+    auto repository = std::make_unique<Core::Settings::MemoryRepository>();
+    repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
+    repository->Write("tray_quick_connect_enabled", true);
+    repository->Write("tray_quick_connect_device_id", "{A}");
+    Core::Settings::SetRepository(std::move(repository));
+
+    QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
+
+    RecordingSettingsObserver observer;
+    Core::Settings::SetApplyObserver(&observer);
+    Core::Settings::Apply();
+    QVERIFY(observer.quickConnectEnabled);
+    QCOMPARE(observer.quickConnectEnabledChanges, 1);
+    QCOMPARE(observer.quickConnectDeviceId, QString{"{A}"});
+    QCOMPARE(observer.quickConnectDeviceChanges, 1);
 
     Core::Settings::SetApplyObserver(nullptr);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());

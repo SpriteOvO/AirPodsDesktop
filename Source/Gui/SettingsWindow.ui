@@ -121,7 +121,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -132,7 +132,26 @@
            <height>185</height>
           </size>
          </property>
-        </spacer>
+         </spacer>
+       </item>
+       <item row="5" column="0">
+        <widget class="QGroupBox" name="gbTrayQuickConnect">
+         <property name="title">
+          <string>Tray quick connect</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayoutQuickConnect">
+          <item>
+           <widget class="QCheckBox" name="cbTrayQuickConnectEnabled">
+            <property name="text">
+             <string>Connect selected Bluetooth audio device on left click</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="cbTrayQuickConnectDevice"/>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item row="1" column="0">
         <layout class="QHBoxLayout" name="horizontalLayout">
