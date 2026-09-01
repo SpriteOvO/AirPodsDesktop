@@ -83,6 +83,8 @@ struct State {
 
 namespace Details {
 
+QString ResolveDisplayName(QString deviceName, Model model);
+
 class Advertisement
 {
 public:
