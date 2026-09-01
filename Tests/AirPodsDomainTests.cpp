@@ -107,6 +107,8 @@ class AirPodsDomainTests : public QObject
 
 private Q_SLOTS:
     void RejectsMalformedPackets();
+    void RecognizesAirPodsMaxUsbC();
+    void ResolvesAirPodsMaxUsbCDisplayName();
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
@@ -142,6 +144,26 @@ void AirPodsDomainTests::RejectsMalformedPackets()
     packet = MakePacket(0x2014, Side::Left, 8, 7, 5);
     packet[1] = 24;
     QVERIFY(!Core::AppleCP::AirPods::IsValid(packet));
+}
+
+void AirPodsDomainTests::RecognizesAirPodsMaxUsbC()
+{
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x201F), Model::AirPods_Max_USB_C);
+    QCOMPARE(Helper::ToString(Model::AirPods_Max_USB_C), QString{"AirPods Max (USB-C)"});
+}
+
+void AirPodsDomainTests::ResolvesAirPodsMaxUsbCDisplayName()
+{
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName("AirPods Max", Model::AirPods_Max_USB_C),
+        QString{"AirPods Max (USB-C)"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName(
+            "Studio AirPods Max - Find My", Model::AirPods_Max_USB_C),
+        QString{"Studio AirPods Max"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName("AirPods Max", Model::AirPods_Max),
+        QString{"AirPods Max"});
 }
 
 void AirPodsDomainTests::BuildsLowBandwidthSilenceFormats()
@@ -535,6 +557,10 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
     const auto pro = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_2_USB_C);
     QCOMPARE(pro.resource, QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
     QCOMPARE(pro.sourceSize, QSize(900, 450));
+
+    const auto maxUsbC = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Max_USB_C);
+    QCOMPARE(maxUsbC.resource, QString{"qrc:/Resource/Video/AirPods_Max.avi"});
+    QCOMPARE(maxUsbC.sourceSize, QSize(600, 650));
 
     const auto fallback = Gui::GetAnimationPresentation(Core::AirPods::Model::Unknown);
     QCOMPARE(fallback.resource, QString{"qrc:/Resource/Video/AirPods_1.avi"});

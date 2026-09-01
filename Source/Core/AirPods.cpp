@@ -28,6 +28,15 @@
 
 namespace Core::AirPods {
 
+QString Details::ResolveDisplayName(QString deviceName, Model model)
+{
+    deviceName.remove(" - Find My");
+
+    const bool isDefaultUsbCMaxName =
+        model == Model::AirPods_Max_USB_C && deviceName == "AirPods Max";
+    return deviceName.isEmpty() || isDefaultUsbCMaxName ? Helper::ToString(model) : deviceName;
+}
+
 Manager::Manager(QObject *parent) : QObject{parent}
 {
     _stateMgr.SetOnDiscardState([this] {
@@ -213,8 +222,7 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
     const auto &oldState = updateEvent.oldState;
     auto &newState = updateEvent.newState;
 
-    newState.displayName =
-        _deviceName.isEmpty() ? Helper::ToString(newState.model) : _deviceName.remove(" - Find My");
+    newState.displayName = Details::ResolveDisplayName(_deviceName, newState.model);
 
     emit StateUpdated(newState);
 
