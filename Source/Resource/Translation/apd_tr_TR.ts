@@ -118,6 +118,14 @@ En son sürüm: %2%3</translation>
         <source>Saved device (not available)</source>
         <translation>Kayıtlı cihaz (kullanılamıyor)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Varsayılanları geri yükle</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Kapat</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

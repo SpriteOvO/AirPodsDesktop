@@ -118,6 +118,14 @@ Latest version: %2%3</source>
         <source>Saved device (not available)</source>
         <translation>Запазено устройство (недостъпно)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Възстановяване на настройките по подразбиране</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Затваряне</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

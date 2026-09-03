@@ -118,6 +118,14 @@ Latest version: %2%3</source>
         <source>Saved device (not available)</source>
         <translation>저장된 기기(사용 불가)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>기본값 복원</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

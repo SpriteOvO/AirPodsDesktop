@@ -118,6 +118,14 @@ Dernière version : %2%3</translation>
         <source>Saved device (not available)</source>
         <translation>Appareil enregistré (indisponible)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Restaurer les valeurs par défaut</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fermer</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

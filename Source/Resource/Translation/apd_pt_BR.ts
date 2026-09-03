@@ -118,6 +118,14 @@ Versão atual: %1
         <source>Saved device (not available)</source>
         <translation>Dispositivo salvo (indisponível)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Restaurar padrões</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fechar</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

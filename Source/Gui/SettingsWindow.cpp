@@ -84,6 +84,7 @@ SettingsWindow::SettingsWindow(
 
     _aboutTextTemplate = _ui.label->text();
     UpdateDescriptions();
+    UpdateStandardButtonTexts();
     connect(
         &Theme::Manager::Instance(), &Theme::Manager::Changed, this,
         &SettingsWindow::UpdateDescriptions);
@@ -281,6 +282,12 @@ void SettingsWindow::UpdateDescriptions()
     // for the theme accent so it stays readable in dark mode.
     const auto accent = Theme::Manager::Instance().Accent().name(QColor::HexRgb);
     _ui.label->setText(QString{_aboutTextTemplate}.replace("#0000ff", accent, Qt::CaseInsensitive));
+}
+
+void SettingsWindow::UpdateStandardButtonTexts()
+{
+    _ui.buttonBox->button(QDialogButtonBox::RestoreDefaults)->setText(tr("Restore Defaults"));
+    _ui.buttonBox->button(QDialogButtonBox::Close)->setText(tr("Close"));
 }
 
 void SettingsWindow::InitCreditsText()

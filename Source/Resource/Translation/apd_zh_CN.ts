@@ -118,6 +118,14 @@ Latest version: %2%3</source>
         <source>Saved device (not available)</source>
         <translation>已保存的设备（当前不可用）</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>恢复默认设置</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

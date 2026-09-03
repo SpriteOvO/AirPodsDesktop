@@ -118,6 +118,14 @@ Latest version: %2%3</source>
         <source>Saved device (not available)</source>
         <translation>Збережений пристрій (недоступний)</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Відновити типові параметри</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрити</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

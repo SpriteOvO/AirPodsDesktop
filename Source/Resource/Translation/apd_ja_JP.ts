@@ -118,6 +118,14 @@ Latest version: %2%3</source>
         <source>Saved device (not available)</source>
         <translation>保存済みのデバイス（利用不可）</translation>
     </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>既定値に戻す</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
 </context>
 <context>
     <name>Gui::TrayIcon</name>

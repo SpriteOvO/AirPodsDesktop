@@ -24,6 +24,7 @@
 #include <QDialog>
 #include <QSlider>
 #include <QCheckBox>
+#include <QTimer>
 
 #include "../Core/QuickConnect.h"
 #include "../Core/Settings.h"
@@ -63,6 +64,7 @@ private:
     void Update(const Fields &fields, bool trigger);
     void UpdateQuickConnectDevices(const Fields &fields);
     void UpdateDescriptions();
+    void UpdateStandardButtonTexts();
     void UpdateAdvOverride();
 
     void showEvent(QShowEvent *event) override;
@@ -101,6 +103,9 @@ private:
         _aboutTextTemplate = _ui.label->text();
         InitCreditsText();
         UpdateDescriptions();
+        // QDialogButtonBox handles LanguageChange after its parent and resets standard-button
+        // labels to Qt's platform text. Apply our app translations once propagation ends.
+        QTimer::singleShot(0, this, [this] { UpdateStandardButtonTexts(); });
     });
 };
 } // namespace Gui

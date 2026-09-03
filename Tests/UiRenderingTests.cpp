@@ -141,6 +141,12 @@ private Q_SLOTS:
         QCoreApplication::processEvents();
         QCOMPARE(navigation->item(0)->text(), QString::fromUtf8("\xE4\xB8\x80\xE8\x88\xAC"));
         QCOMPARE(navigation->item(1)->text(), QString::fromUtf8("\xE5\xA4\x96\xE8\xA7\x80"));
+        QTRY_COMPARE(
+            buttonBox->button(QDialogButtonBox::RestoreDefaults)->text(),
+            QString::fromUtf8("\xE9\x82\x84\xE5\x8E\x9F\xE9\xA0\x90\xE8\xA8\xAD\xE5\x80\xBC"));
+        QTRY_COMPARE(
+            buttonBox->button(QDialogButtonBox::Close)->text(),
+            QString::fromUtf8("\xE9\x97\x9C\xE9\x96\x89"));
 
         const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation");
         QDir{}.mkpath(outputDir);
