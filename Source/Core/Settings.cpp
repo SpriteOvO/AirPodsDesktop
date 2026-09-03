@@ -72,6 +72,14 @@ void OnApply_language_locale(const Fields &newFields)
         [&](ApplyObserver &observer) { observer.OnLanguageLocaleChanged(locale); });
 }
 
+void OnApply_appearance_mode(const Fields &newFields)
+{
+    LOG(Info, "OnApply_appearance_mode: {}", newFields.appearance_mode);
+
+    Impl::NotifyApplyObserver(
+        [&](ApplyObserver &observer) { observer.OnAppearanceModeChanged(newFields.appearance_mode); });
+}
+
 void OnApply_auto_run(const Fields &newFields)
 {
     LOG(Info, "OnApply_auto_run: {}", newFields.auto_run);

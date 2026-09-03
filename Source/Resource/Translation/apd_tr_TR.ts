@@ -358,5 +358,33 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>Tepsi simgesine tıklandığında bağlanılacak eşleştirilmiş Bluetooth ses cihazı.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Başka bir çift bağlayabilmek için bağlı AirPods&apos;u unutun.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Tanılama</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Günlük dosyaları bir sorunu bildirirken yardımcı olur.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Görünüm</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Sistem ayarını kullan</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Açık</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Koyu</translation>
+    </message>
 </context>
 </TS>

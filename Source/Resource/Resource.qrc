@@ -1,6 +1,10 @@
 <RCC>
     <qresource prefix="/Resource">
         <file>Image/Icon.svg</file>
+        <file>Image/Theme/CheckMarkLight.svg</file>
+        <file>Image/Theme/CheckMarkDark.svg</file>
+        <file>Image/Theme/ChevronDownLight.svg</file>
+        <file>Image/Theme/ChevronDownDark.svg</file>
         <file>Video/AirPods_1.avi</file>
         <file>Video/AirPods_2.avi</file>
         <file>Video/AirPods_3.avi</file>

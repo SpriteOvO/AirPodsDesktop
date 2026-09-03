@@ -358,5 +358,33 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>O dispositivo de áudio Bluetooth emparelhado que será conectado ao clicar no ícone da bandeja.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Esqueça os AirPods vinculados para que outro par possa ser vinculado.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Diagnóstico</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Os arquivos de log ajudam ao relatar um problema.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Aparência</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Usar configuração do sistema</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Claro</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Escuro</translation>
+    </message>
 </context>
 </TS>

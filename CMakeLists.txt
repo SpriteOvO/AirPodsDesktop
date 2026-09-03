@@ -325,6 +325,7 @@ set(
     "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
+    "Source/Gui/Theme.cpp"
 )
 
 set(APD_APP_CODE_FILES
@@ -495,6 +496,10 @@ target_link_libraries(
     Qt5::Svg
     Qt5::MultimediaWidgets
 )
+
+if (WIN32)
+    target_link_libraries(apd_gui PRIVATE dwmapi)
+endif()
 
 add_executable(
     ${PROJECT_NAME} ${ADD_EXECUTABLE_ARG}

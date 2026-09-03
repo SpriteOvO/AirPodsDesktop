@@ -358,5 +358,33 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>트레이 아이콘 클릭 시 연결할 페어링된 Bluetooth 오디오 기기입니다.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>다른 AirPods을 바인딩할 수 있도록 현재 AirPods의 바인딩을 해제합니다.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>진단</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>문제를 신고할 때 로그 파일이 도움이 됩니다.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>화면 모드</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>시스템 설정 사용</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>라이트</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>다크</translation>
+    </message>
 </context>
 </TS>

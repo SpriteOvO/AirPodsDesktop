@@ -19,7 +19,11 @@
 #include "SettingsWindow.h"
 
 #include <QLabel>
-#include <QToolTip>
+#include <QListWidget>
+#include <QStackedWidget>
+#include <QStyledItemDelegate>
+
+#include "Theme.h"
 #include <QCheckBox>
 #include <QPushButton>
 #include <QMessageBox>
@@ -33,49 +37,59 @@ using namespace std::chrono_literals;
 
 namespace Gui {
 
-class TipLabel : public QLabel
-{
-    Q_OBJECT
-
-private:
-    constexpr static auto content = "(?)";
-
-public:
-    TipLabel(QString text, QWidget *parent) : QLabel{content, parent}, _text{std::move(text)}
-    {
-        QPalette palette = this->palette();
-        palette.setColor(QPalette::WindowText, Qt::darkGray);
-        setPalette(palette);
-    }
-
-private:
-    QString _text;
-
-    void enterEvent(QEvent *event) override
-    {
-        QToolTip::showText(QCursor::pos(), _text, this);
-    }
-
-    void leaveEvent(QEvent *event) override
-    {
-        QToolTip::hideText();
-    }
-};
-
 SettingsWindow::SettingsWindow(
     std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect,
     QWidget *parent)
     : QDialog{parent}, _getCurrentLocaleIndex{std::move(getCurrentLocaleIndex)},
       _quickConnect{quickConnect}
 {
-    const auto &constMetaFields = GetConstMetaFields();
-
     _ui.setupUi(this);
 
-    auto debugTabIndex = _ui.tabWidget->count() - 1;
-    APD_ASSERT(_ui.tabWidget->tabText(debugTabIndex) == "Debug");
+    // Navigation pane + stacked pages replace the former tab widget. The last page is Debug.
+    const auto debugPageIndex = _ui.navList->count() - 1;
+    APD_ASSERT(debugPageIndex == _ui.pages->count() - 1);
+    APD_ASSERT(_ui.navList->item(debugPageIndex)->text() == "Debug");
+
+    connect(
+        _ui.navList, &QListWidget::currentRowChanged, _ui.pages, &QStackedWidget::setCurrentIndex);
+    _ui.navList->setCurrentRow(0);
+
+    for (const auto &[label, checkBox] : {
+             std::pair{_ui.lbLowAudioLatency, _ui.cbLowAudioLatency},
+             std::pair{_ui.lbAutoEarDetection, _ui.cbAutoEarDetection},
+             std::pair{_ui.lbTrayQuickConnect, _ui.cbTrayQuickConnectEnabled},
+         })
+    {
+        label->setBuddy(checkBox);
+        checkBox->setAccessibleName(label->text());
+    }
+
+    // The default combo popup delegate ignores stylesheet item padding; the styled one honours it.
+    _ui.cbLanguages->setItemDelegate(new QStyledItemDelegate{_ui.cbLanguages});
+    _ui.cbAppearanceMode->setItemDelegate(new QStyledItemDelegate{_ui.cbAppearanceMode});
+    _ui.cbTrayQuickConnectDevice->setItemDelegate(
+        new QStyledItemDelegate{_ui.cbTrayQuickConnectDevice});
+    _ui.lbAppearance->setBuddy(_ui.cbAppearanceMode);
+    _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
+
+    // Neither is the dialog's default action; without this the first one would be drawn as the
+    // accent-coloured default button.
+    _ui.pbUnbind->setAutoDefault(false);
+    _ui.pbOpenLogsDirectory->setAutoDefault(false);
+    for (auto *button : _ui.buttonBox->buttons()) {
+        if (auto *pushButton = qobject_cast<QPushButton *>(button); pushButton != nullptr) {
+            pushButton->setAutoDefault(false);
+        }
+    }
+
+    _aboutTextTemplate = _ui.label->text();
+    UpdateDescriptions();
+    connect(
+        &Theme::Manager::Instance(), &Theme::Manager::Changed, this,
+        &SettingsWindow::UpdateDescriptions);
+
 #if !defined APD_DEBUG
-    _ui.tabWidget->setTabVisible(debugTabIndex, false);
+    _ui.navList->item(debugPageIndex)->setHidden(true);
 #else
     connect(
         _ui.cbAdvOverride, &QCheckBox::toggled, this, &SettingsWindow::On_cbAdvOverride_toggled);
@@ -96,15 +110,6 @@ SettingsWindow::SettingsWindow(
             .arg(QString{APD_BUILD_GIT_HASH}.left(7));
 #endif
     _ui.lbVersion->setText(versionText);
-
-    _ui.hlLowAudioLatency->addWidget(
-        new TipLabel{constMetaFields.low_audio_latency.Description(), this});
-
-    _ui.hlTipAutoEarDetection->addWidget(
-        new TipLabel{constMetaFields.automatic_ear_detection.Description(), this});
-
-    _ui.hlTipTrayQuickConnect->addWidget(
-        new TipLabel{constMetaFields.tray_quick_connect_enabled.Description(), this});
 
     _ui.hsMaxReceivingRange->setMinimum(50);
     _ui.hsMaxReceivingRange->setMaximum(100);
@@ -136,6 +141,14 @@ SettingsWindow::SettingsWindow(
             On_cbAutoRun_toggled(checked);
         }
     });
+
+    connect(
+        _ui.cbAppearanceMode, qOverload<int>(&QComboBox::currentIndexChanged), this,
+        [this](int index) {
+            if (_trigger) {
+                On_cbAppearanceMode_currentIndexChanged(index);
+            }
+        });
 
     connect(_ui.cbTrayQuickConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
@@ -225,7 +238,7 @@ SettingsWindow::SettingsWindow(
 
 int SettingsWindow::GetTabCount() const
 {
-    return _ui.tabWidget->count();
+    return _ui.pages->count();
 }
 
 void SettingsWindow::SetLowAudioLatencyChecked(bool checked)
@@ -238,7 +251,7 @@ void SettingsWindow::SetLowAudioLatencyChecked(bool checked)
 
 int SettingsWindow::GetTabCurrentIndex() const
 {
-    return _ui.tabWidget->currentIndex();
+    return _ui.pages->currentIndex();
 }
 
 int SettingsWindow::GetTabLastVisibleIndex() const
@@ -248,7 +261,23 @@ int SettingsWindow::GetTabLastVisibleIndex() const
 
 void SettingsWindow::SetTabIndex(int index)
 {
-    _ui.tabWidget->setCurrentIndex(index);
+    _ui.navList->setCurrentRow(index);
+}
+
+void SettingsWindow::UpdateDescriptions()
+{
+    // The setting descriptions live in `Core::Settings` (as `Impl::Desc`) and are translated
+    // there, so they are re-read on every language change.
+    const auto &constMetaFields = GetConstMetaFields();
+
+    _ui.lbDescLowAudioLatency->setText(constMetaFields.low_audio_latency.Description());
+    _ui.lbDescAutoEarDetection->setText(constMetaFields.automatic_ear_detection.Description());
+    _ui.lbDescTrayQuickConnect->setText(constMetaFields.tray_quick_connect_enabled.Description());
+
+    // The About text carries a hard-coded link colour inside the (translated) HTML; swap it
+    // for the theme accent so it stays readable in dark mode.
+    const auto accent = Theme::Manager::Instance().Accent().name(QColor::HexRgb);
+    _ui.label->setText(QString{_aboutTextTemplate}.replace("#0000ff", accent, Qt::CaseInsensitive));
 }
 
 void SettingsWindow::InitCreditsText()
@@ -317,6 +346,8 @@ void SettingsWindow::Update(const Fields &fields, bool trigger)
     _ui.cbLanguages->setCurrentIndex(currentLangIndex);
 
     _ui.cbAutoRun->setChecked(fields.auto_run);
+
+    _ui.cbAppearanceMode->setCurrentIndex(static_cast<int>(fields.appearance_mode));
 
     _ui.cbLowAudioLatency->setChecked(fields.low_audio_latency);
 
@@ -463,6 +494,16 @@ void SettingsWindow::On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavi
     ModifiableAccess()->tray_icon_battery = behavior;
 }
 
+void SettingsWindow::On_cbAppearanceMode_currentIndexChanged(int index)
+{
+    if (index < static_cast<int>(AppearanceMode::System) ||
+        index > static_cast<int>(AppearanceMode::Dark))
+    {
+        return;
+    }
+    ModifiableAccess()->appearance_mode = static_cast<AppearanceMode>(index);
+}
+
 void SettingsWindow::On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior behavior)
 {
     ModifiableAccess()->battery_on_taskbar = behavior;
@@ -499,5 +540,3 @@ void SettingsWindow::On_teAdvOverride_textChanged()
 }
 
 } // namespace Gui
-
-#include "SettingsWindow.moc"

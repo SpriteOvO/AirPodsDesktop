@@ -358,5 +358,33 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>通知領域のアイコンをクリックしたときに接続する、ペアリング済みの Bluetooth オーディオデバイスです。</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>別の AirPods をバインドできるよう、現在の AirPods のバインドを解除します。</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>診断</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>問題を報告する際にログファイルが役立ちます。</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>外観</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>システム設定を使用</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>ライト</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>ダーク</translation>
+    </message>
 </context>
 </TS>

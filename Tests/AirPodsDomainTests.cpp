@@ -26,6 +26,11 @@ class RecordingSettingsObserver final : public Core::Settings::ApplyObserver
 {
 public:
     void OnLanguageLocaleChanged(const QLocale &) override {}
+    void OnAppearanceModeChanged(Core::Settings::AppearanceMode mode) override
+    {
+        appearanceMode = mode;
+        ++appearanceModeChanges;
+    }
     void OnAutoRunChanged(bool enable) override
     {
         autoRun = enable;
@@ -50,6 +55,8 @@ public:
 
     bool autoRun{false};
     int autoRunChanges{0};
+    Core::Settings::AppearanceMode appearanceMode{Core::Settings::AppearanceMode::System};
+    int appearanceModeChanges{0};
     bool quickConnectEnabled{false};
     int quickConnectEnabledChanges{0};
     QString quickConnectDeviceId;
@@ -268,16 +275,21 @@ void AirPodsDomainTests::LoadsSettingsThroughRepository()
     auto repository = std::make_unique<Core::Settings::MemoryRepository>();
     repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
     repository->Write("auto_run", true);
+    repository->Write("appearance_mode", QString{"Dark"});
     Core::Settings::SetRepository(std::move(repository));
 
     QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
     QVERIFY(Core::Settings::GetCurrent().auto_run);
+    QCOMPARE(
+        Core::Settings::GetCurrent().appearance_mode, Core::Settings::AppearanceMode::Dark);
 
     RecordingSettingsObserver observer;
     Core::Settings::SetApplyObserver(&observer);
     Core::Settings::Apply();
     QCOMPARE(observer.autoRunChanges, 1);
     QVERIFY(observer.autoRun);
+    QCOMPARE(observer.appearanceModeChanges, 1);
+    QCOMPARE(observer.appearanceMode, Core::Settings::AppearanceMode::Dark);
 
     Core::Settings::SetApplyObserver(nullptr);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());

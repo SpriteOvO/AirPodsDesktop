@@ -358,5 +358,33 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>Das gekoppelte Bluetooth-Audiogerät, das beim Klicken auf das Symbol im Infobereich verbunden wird.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Löse die Bindung der aktuellen AirPods, damit ein anderes Paar gebunden werden kann.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Diagnose</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Protokolldateien helfen beim Melden eines Problems.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Erscheinungsbild</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Systemeinstellung verwenden</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Hell</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Dunkel</translation>
+    </message>
 </context>
 </TS>

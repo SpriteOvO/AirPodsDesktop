@@ -358,5 +358,33 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>Сдвоеното Bluetooth аудиоустройство, с което се осъществява връзка при щракване върху иконата в системната област.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Забравете свързаните AirPods, за да можете да свържете друга двойка.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Диагностика</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Регистрационните файлове помагат при докладване на проблем.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Външен вид</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Използване на системната настройка</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Светла</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Тъмна</translation>
+    </message>
 </context>
 </TS>

@@ -358,5 +358,33 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>Le périphérique audio Bluetooth associé qui sera connecté lors d&apos;un clic sur l&apos;icône de la zone de notification.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Oubliez les AirPods associés afin de pouvoir en associer une autre paire.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Diagnostic</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Les fichiers journaux sont utiles pour signaler un problème.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Apparence</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Utiliser le paramètre système</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Clair</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Sombre</translation>
+    </message>
 </context>
 </TS>

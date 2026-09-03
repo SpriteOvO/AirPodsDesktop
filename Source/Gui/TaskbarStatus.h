@@ -153,6 +153,7 @@ private:
     bool _drawDebugBorder{false};
 #endif
 
+    void ApplyTheme();
     void UpdateVisible();
     bool Enable();
     bool Disable();

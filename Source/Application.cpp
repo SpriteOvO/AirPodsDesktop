@@ -20,6 +20,7 @@
 
 #include <QGuiApplication>
 #include <QMessageBox>
+#include <QStyleFactory>
 
 #include <Config.h>
 #include "Logger.h"
@@ -30,6 +31,7 @@
 #include "Gui/MainWindow.h"
 #include "Gui/TaskbarStatus.h"
 #include "Gui/TrayIcon.h"
+#include "Gui/Theme.h"
 #include "Core/AirPods.h"
 #include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
@@ -41,6 +43,23 @@
 #endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
+
+namespace {
+
+Gui::Theme::Mode ToThemeMode(Core::Settings::AppearanceMode mode)
+{
+    switch (mode) {
+    case Core::Settings::AppearanceMode::System:
+        return Gui::Theme::Mode::System;
+    case Core::Settings::AppearanceMode::Light:
+        return Gui::Theme::Mode::Light;
+    case Core::Settings::AppearanceMode::Dark:
+        return Gui::Theme::Mode::Dark;
+    }
+    return Gui::Theme::Mode::System;
+}
+
+} // namespace
 
 ApdApplication::~ApdApplication()
 {
@@ -153,6 +172,10 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     Logger::CleanUpOldLogFiles();
 
+    // Fusion is fully palette-driven, which is what makes light/dark theming and the Fluent
+    // stylesheet consistent across every control. It must be set before any widget exists.
+    setStyle(QStyleFactory::create("Fusion"));
+
     QFont font;
     font.setFamily("Segoe UI");
     font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
@@ -170,6 +193,12 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     // pre-load for InitTranslator
     const auto settingsLoadResult = Core::Settings::Load();
+
+    // Apply the saved appearance before constructing any visible widget. System mode keeps
+    // following Windows changes; explicit light/dark modes only override the surface brightness.
+    auto &theme = Gui::Theme::Manager::Instance();
+    theme.SetMode(ToThemeMode(Core::Settings::GetCurrent().appearance_mode));
+    theme.ApplyToApplication();
 
     InitTranslator();
 
@@ -348,6 +377,11 @@ void ApdApplication::QuitSafely()
 void ApdApplication::OnLanguageLocaleChanged(const QLocale &locale)
 {
     emit SetTranslatorSafely(locale);
+}
+
+void ApdApplication::OnAppearanceModeChanged(Core::Settings::AppearanceMode mode)
+{
+    Gui::Theme::Manager::Instance().SetMode(ToThemeMode(mode));
 }
 
 void ApdApplication::OnAutoRunChanged(bool enable)

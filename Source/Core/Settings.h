@@ -31,6 +31,7 @@ class Repository;
 
 enum class TrayIconBatteryBehavior : uint32_t { Disable, WhenLowBattery, Always };
 enum class TaskbarStatusBehavior : uint32_t { Disable, Text, Icon };
+enum class AppearanceMode : uint32_t { System, Light, Dark };
 enum class LoadResult : uint32_t { AbiIncompatible, NoAbiField, Successful };
 
 // Receives settings side effects so that this module doesn't need to know
@@ -42,6 +43,7 @@ public:
     virtual ~ApplyObserver() = default;
 
     virtual void OnLanguageLocaleChanged(const QLocale &locale) = 0;
+    virtual void OnAppearanceModeChanged(AppearanceMode mode) = 0;
     virtual void OnAutoRunChanged(bool enable) = 0;
     virtual void OnLowAudioLatencyChanged(bool enable) = 0;
     virtual void OnAutomaticEarDetectionChanged(bool enable) = 0;
@@ -62,6 +64,8 @@ void SetRepository(std::unique_ptr<Repository> repository);
 // clang-format off
 #define SETTINGS_FIELDS(callback)                                                                  \
     callback(QString, language_locale, {}, Impl::OnApply(&OnApply_language_locale))                \
+    callback(AppearanceMode, appearance_mode, {AppearanceMode::System},                            \
+        Impl::OnApply(&OnApply_appearance_mode))                                                   \
     callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
     callback(bool, low_audio_latency, {false},                                                     \
         Impl::OnApply(&OnApply_low_audio_latency),                                                 \
@@ -240,6 +244,7 @@ private:
 constexpr inline uint32_t kFieldsAbiVersion = 1;
 
 void OnApply_language_locale(const Fields &newFields);
+void OnApply_appearance_mode(const Fields &newFields);
 void OnApply_auto_run(const Fields &newFields);
 void OnApply_low_audio_latency(const Fields &newFields);
 void OnApply_automatic_ear_detection(const Fields &newFields);

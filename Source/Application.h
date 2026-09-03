@@ -105,6 +105,7 @@ private:
     void InitTranslator();
 
     void OnLanguageLocaleChanged(const QLocale &locale) override;
+    void OnAppearanceModeChanged(Core::Settings::AppearanceMode mode) override;
     void OnAutoRunChanged(bool enable) override;
     void OnLowAudioLatencyChanged(bool enable) override;
     void OnAutomaticEarDetectionChanged(bool enable) override;

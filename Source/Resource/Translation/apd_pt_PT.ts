@@ -358,5 +358,33 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>O dispositivo de áudio Bluetooth emparelhado que será ligado ao clicar no ícone da área de notificação.</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Remova os AirPods associados para poder associar outro par.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Diagnóstico</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Os ficheiros de registo ajudam ao comunicar um problema.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Aparência</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Utilizar definição do sistema</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Claro</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Escuro</translation>
+    </message>
 </context>
 </TS>

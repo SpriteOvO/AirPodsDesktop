@@ -358,5 +358,33 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>按一下系統匣圖示時要連線的已配對藍牙音訊裝置。</translation>
     </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>解除目前綁定的 AirPods，以便綁定另一副。</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>診斷</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>回報問題時，日誌檔案能提供協助。</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>外觀</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>隨系統</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>淺色</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>深色</translation>
+    </message>
 </context>
 </TS>
