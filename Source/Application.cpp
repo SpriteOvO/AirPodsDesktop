@@ -64,6 +64,9 @@ Gui::Theme::Mode ToThemeMode(Core::Settings::AppearanceMode mode)
 ApdApplication::~ApdApplication()
 {
     Core::Settings::SetApplyObserver(nullptr);
+    if (_translator) {
+        removeTranslator(_translator.get());
+    }
 }
 
 void ApdApplication::PreConstruction()
@@ -349,11 +352,26 @@ void ApdApplication::SetTranslator(const QLocale &locale)
         return;
     }
 
-    QDir translationFolder = QCoreApplication::applicationDirPath();
-    translationFolder.cd("translations");
-    _translator.load(locale, "apd", "_", translationFolder.absolutePath());
+    std::unique_ptr<QTranslator> translator;
+    if (index != 0) {
+        QDir translationFolder = QCoreApplication::applicationDirPath();
+        translationFolder.cd("translations");
 
-    installTranslator(&_translator);
+        translator = std::make_unique<QTranslator>();
+        if (!translator->load(locale, "apd", "_", translationFolder.absolutePath())) {
+            LOG(Warn, "Failed to load translation for locale '{}', keep current language",
+                localeName);
+            return;
+        }
+    }
+
+    if (_translator) {
+        removeTranslator(_translator.get());
+    }
+    if (translator) {
+        installTranslator(translator.get());
+    }
+    _translator = std::move(translator);
 
     _currentLoadedLocaleIndex = index;
 }

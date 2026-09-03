@@ -21,6 +21,7 @@
 #include <memory>
 #include <mutex>
 
+#include <QCoreApplication>
 #include <QLocale>
 
 #include "../Helper.h"
@@ -69,10 +70,10 @@ void SetRepository(std::unique_ptr<Repository> repository);
     callback(bool, auto_run, {false}, Impl::OnApply(&OnApply_auto_run))                            \
     callback(bool, low_audio_latency, {false},                                                     \
         Impl::OnApply(&OnApply_low_audio_latency),                                                 \
-        Impl::Desc{QObject::tr("Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.")}) \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "Keeps the audio device awake while your AirPods are connected so short sounds start immediately. This may produce audible hiss and use more battery.")}) \
     callback(bool, automatic_ear_detection, {true},                                                \
         Impl::OnApply(&OnApply_automatic_ear_detection),                                           \
-        Impl::Desc{QObject::tr("It automatically pauses or resumes media when your AirPods are taken out or put in your ears.")}) \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "It automatically pauses or resumes media when your AirPods are taken out or put in your ears.")}) \
     callback(QString, skipped_version, {})                                                         \
     callback(int16_t, rssi_min, {-80}, Impl::OnApply(&OnApply_rssi_min))                           \
     callback(bool, reduce_loud_sounds, {false}, Impl::Deprecated())                                \
@@ -84,7 +85,7 @@ void SetRepository(std::unique_ptr<Repository> repository);
         Impl::OnApply(&OnApply_tray_icon_battery))                                                 \
     callback(bool, tray_quick_connect_enabled, {false},                                            \
         Impl::OnApply(&OnApply_tray_quick_connect_enabled),                                         \
-        Impl::Desc{QObject::tr("A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.")}) \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.")}) \
     callback(QString, tray_quick_connect_device_id, {},                                             \
         Impl::OnApply(&OnApply_tray_quick_connect_device_id),                                       \
         Impl::Sensitive{})                                                                          \
@@ -128,15 +129,15 @@ class Desc
 {
 public:
     Desc() = default;
-    Desc(QString description) : _description{std::move(description)} {}
+    Desc(const char *sourceText) : _sourceText{sourceText} {}
 
-    const QString &Description() const
+    QString Description() const
     {
-        return _description;
+        return _sourceText ? QCoreApplication::translate("QObject", _sourceText) : QString{};
     }
 
 private:
-    QString _description;
+    const char *_sourceText{nullptr};
 };
 
 // clang-format off
@@ -197,7 +198,7 @@ public:
         return _onApply;
     }
 
-    const QString &Description() const
+    QString Description() const
     {
         return _description.Description();
     }

@@ -2,11 +2,13 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QLabel>
 #include <QListWidget>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QTest>
+#include <QTranslator>
 
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/SettingsWindow.h"
@@ -65,13 +67,15 @@ private Q_SLOTS:
         QVERIFY(scrollArea->widgetResizable());
         QVERIFY(!scrollArea->horizontalScrollBar()->isVisible());
 
-        for (auto *radioButton : window.findChildren<QRadioButton *>())
-        {
+        for (auto *radioButton : window.findChildren<QRadioButton *>()) {
             if (!radioButton->isVisible())
                 continue;
 
-            const auto rightEdge = radioButton->mapTo(scrollArea->viewport(), radioButton->rect().topRight()).x();
-            QVERIFY2(rightEdge < scrollArea->viewport()->width(), radioButton->objectName().toUtf8().constData());
+            const auto rightEdge =
+                radioButton->mapTo(scrollArea->viewport(), radioButton->rect().topRight()).x();
+            QVERIFY2(
+                rightEdge < scrollArea->viewport()->width(),
+                radioButton->objectName().toUtf8().constData());
         }
 
         auto *buttonBox = window.findChild<QDialogButtonBox *>("buttonBox");
@@ -97,6 +101,40 @@ private Q_SLOTS:
         QVERIFY(window.grab().save(outputDir + "/settings-light.png"));
 
         theme.SetMode(originalMode);
+    }
+
+    void SettingsDescriptionsFollowConsecutiveLanguageChanges()
+    {
+        auto backend = std::make_shared<Core::QuickConnect::NullBackend>();
+        Core::QuickConnect::Controller quickConnect{backend};
+        Gui::SettingsWindow window{[] { return 0; }, quickConnect};
+
+        auto *description = window.findChild<QLabel *>("lbDescLowAudioLatency");
+        QVERIFY(description != nullptr);
+
+        constexpr auto sourceText =
+            "Keeps the audio device awake while your AirPods are connected so short sounds start "
+            "immediately. This may produce audible hiss and use more battery.";
+        const auto translationsDir = QCoreApplication::applicationDirPath() + "/translations";
+
+        QTranslator first;
+        QVERIFY(first.load(QLocale{"zh_TW"}, "apd", "_", translationsDir));
+        const auto firstDescription = first.translate("QObject", sourceText);
+        QVERIFY(!firstDescription.isEmpty());
+        QVERIFY(QCoreApplication::installTranslator(&first));
+        QCoreApplication::processEvents();
+        QCOMPARE(description->text(), firstDescription);
+
+        QTranslator second;
+        QVERIFY(second.load(QLocale{"de_DE"}, "apd", "_", translationsDir));
+        const auto secondDescription = second.translate("QObject", sourceText);
+        QVERIFY(!secondDescription.isEmpty());
+        QCoreApplication::removeTranslator(&first);
+        QVERIFY(QCoreApplication::installTranslator(&second));
+        QCoreApplication::processEvents();
+        QCOMPARE(description->text(), secondDescription);
+
+        QCoreApplication::removeTranslator(&second);
     }
 };
 

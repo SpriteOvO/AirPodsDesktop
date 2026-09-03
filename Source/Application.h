@@ -80,7 +80,7 @@ Q_SIGNALS:
 
 private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
-    QTranslator _translator;
+    std::unique_ptr<QTranslator> _translator;
     int _currentLoadedLocaleIndex{0};
     // Declared before the GUI members: `Gui::TrayIcon` and the `Gui::SettingsWindow` it owns hold a
     // reference to the controller, so the controller has to outlive them, and members are destroyed
