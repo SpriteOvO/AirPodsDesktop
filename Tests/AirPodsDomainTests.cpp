@@ -13,6 +13,7 @@
 #include "Source/Core/SettingsRepository.h"
 #include "Source/Core/Update.h"
 #include "Source/Gui/MainWindowPresentation.h"
+#include "Source/Gui/TaskbarGeometry.h"
 
 namespace {
 
@@ -128,6 +129,7 @@ private Q_SLOTS:
     void PresentsMainWindowDeviceState();
     void PresentsMainWindowCaseBattery();
     void MapsMainWindowAnimationResources();
+    void ConvertsTaskbarGeometryAcrossDpiBoundaries();
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -583,6 +585,28 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
             QFile::exists(QString{APD_SOURCE_DIR} + "/Source/Resource/" + entry),
             qPrintable(QString{"animation file missing: %1"}.arg(entry)));
     }
+}
+
+void AirPodsDomainTests::ConvertsTaskbarGeometryAcrossDpiBoundaries()
+{
+    // Reproduces issue #217: one 2560x1440 monitor at 125% display scaling. Win32 reports
+    // physical pixels, while QWidget geometry is expressed in device-independent pixels.
+    const auto layout =
+        Gui::TaskbarGeometry::CalculateLayout(QSize{2560, 50}, QRect{160, 0, 2325, 50}, 120, true);
+
+    QCOMPARE(layout.statusLogical, QRect(1988, 0, 60, 40));
+    QCOMPARE(layout.taskButtonsNative, QRect(160, 0, 2325, 50));
+
+    QCOMPARE(Gui::TaskbarGeometry::LogicalToNative(layout.statusLogical.right() + 1, 120), 2560);
+
+    const auto restored =
+        Gui::TaskbarGeometry::RestoreTaskButtons(QSize{2560, 50}, layout.taskButtonsNative, true);
+    QCOMPARE(restored, QRect(160, 0, 2400, 50));
+
+    const auto vertical =
+        Gui::TaskbarGeometry::CalculateLayout(QSize{50, 1440}, QRect{0, 120, 50, 1270}, 120, false);
+    QCOMPARE(vertical.statusLogical, QRect(0, 1112, 40, 40));
+    QCOMPARE(vertical.taskButtonsNative, QRect(0, 120, 50, 1270));
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)

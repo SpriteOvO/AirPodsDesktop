@@ -17,6 +17,7 @@
 //
 
 #include "TaskbarStatus.h"
+#include "TaskbarGeometry.h"
 
 #include <QWindow>
 #include <QApplication>
@@ -246,71 +247,32 @@ void TaskbarStatus::UpdatePos(const TaskBarInfo &info, bool enable)
 {
     LOG(Trace, "The taskbar is '{}'", info.isHorizontal ? "horizontal" : "vertical");
 
-    const auto &rectMSTaskSwWClass = info.rectMSTaskSwWClass;
     const auto &rectMSTaskSwWClassForParent = info.rectMSTaskSwWClassForParent;
     const auto &rectReBarWindow32 = info.rectReBarWindow32;
+    const auto dpi = static_cast<int>(GetDpiForWindow(info.hReBarWindow32));
+    const auto layout = TaskbarGeometry::CalculateLayout(
+        rectReBarWindow32.size(), rectMSTaskSwWClassForParent, dpi, info.isHorizontal,
+        QSize{kFixedWidth, kFixedHeight});
 
     if (enable) {
         if (!_isWin11OrGreater) {
-            if (info.isHorizontal) {
-                // Avoid causing multiple moves
-                auto newWidth = rectReBarWindow32.right() - kFixedWidth - rectMSTaskSwWClass.left();
-
-                MoveWindow(
-                    info.hMSTaskSwWClass, rectMSTaskSwWClassForParent.left(),
-                    rectMSTaskSwWClassForParent.top(), newWidth,
-                    rectMSTaskSwWClassForParent.height(), true);
-
-                move(rectReBarWindow32.width() - kFixedWidth, 0);
-            }
-            else {
-                // Same as above
-                auto newHeight =
-                    rectReBarWindow32.bottom() - kFixedHeight - rectMSTaskSwWClass.top();
-
-                MoveWindow(
-                    info.hMSTaskSwWClass, rectMSTaskSwWClassForParent.left(),
-                    rectMSTaskSwWClassForParent.top(), rectMSTaskSwWClassForParent.width(),
-                    newHeight, true);
-
-                move(0, rectReBarWindow32.height() - kFixedHeight);
-            }
-        }
-        else {
-            if (info.isHorizontal) {
-                move(rectReBarWindow32.width() - kFixedWidth, 0);
-            }
-            else {
-                // Currently Windows 11 does not support vertical taskbar, so we were unable to test
-                // it.
-                move(0, rectReBarWindow32.height() - kFixedHeight);
-            }
+            const auto &taskButtons = layout.taskButtonsNative;
+            MoveWindow(
+                info.hMSTaskSwWClass, taskButtons.left(), taskButtons.top(), taskButtons.width(),
+                taskButtons.height(), true);
         }
 
-        if (info.isHorizontal) {
-            _cachedLength = rectReBarWindow32.width();
-            setFixedSize(kFixedWidth, info.rectMSTaskSwWClass.height());
-        }
-        else {
-            _cachedLength = rectReBarWindow32.height();
-            setFixedSize(info.rectMSTaskSwWClass.width(), kFixedHeight);
-        }
+        move(layout.statusLogical.topLeft());
+        setFixedSize(layout.statusLogical.size());
+        _cachedLength = info.isHorizontal ? rectReBarWindow32.width() : rectReBarWindow32.height();
     }
     else {
         if (!_isWin11OrGreater) {
-            if (info.isHorizontal) {
-                MoveWindow(
-                    info.hMSTaskSwWClass, rectMSTaskSwWClassForParent.left(),
-                    rectMSTaskSwWClassForParent.top(),
-                    rectReBarWindow32.right() - rectMSTaskSwWClass.left(),
-                    rectMSTaskSwWClass.height(), true);
-            }
-            else {
-                MoveWindow(
-                    info.hMSTaskSwWClass, rectMSTaskSwWClassForParent.left(),
-                    rectMSTaskSwWClassForParent.top(), rectMSTaskSwWClass.width(),
-                    rectReBarWindow32.bottom() - rectMSTaskSwWClass.top(), true);
-            }
+            const auto restored = TaskbarGeometry::RestoreTaskButtons(
+                rectReBarWindow32.size(), rectMSTaskSwWClassForParent, info.isHorizontal);
+            MoveWindow(
+                info.hMSTaskSwWClass, restored.left(), restored.top(), restored.width(),
+                restored.height(), true);
         }
     }
 }
