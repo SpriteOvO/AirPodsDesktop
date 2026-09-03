@@ -162,6 +162,14 @@ private Q_SLOTS:
         QCOMPARE(theme.Colors().surface, QColor{"#2C2C2E"});
         QCoreApplication::processEvents();
         QVERIFY(window.grab().save(outputDir + "/settings-dark.png"));
+        appearanceMode->showPopup();
+        QTRY_VERIFY(QApplication::activePopupWidget() != nullptr);
+        auto *comboPopup = QApplication::activePopupWidget();
+        QCOMPARE(comboPopup->objectName(), QStringLiteral("apdComboPopup"));
+        QTRY_VERIFY(!comboPopup->mask().isEmpty());
+        QTest::qWait(100);
+        QVERIFY(comboPopup->grab().save(outputDir + "/combo-popup-dark.png"));
+        appearanceMode->hidePopup();
 
         theme.SetMode(Gui::Theme::Mode::Light);
         QVERIFY(!theme.IsDark());
@@ -169,6 +177,14 @@ private Q_SLOTS:
         QCOMPARE(theme.Colors().surface, QColor{"#FFFFFF"});
         QCoreApplication::processEvents();
         QVERIFY(window.grab().save(outputDir + "/settings-light.png"));
+        appearanceMode->showPopup();
+        QTRY_VERIFY(QApplication::activePopupWidget() != nullptr);
+        comboPopup = QApplication::activePopupWidget();
+        QCOMPARE(comboPopup->objectName(), QStringLiteral("apdComboPopup"));
+        QTRY_VERIFY(!comboPopup->mask().isEmpty());
+        QTest::qWait(100);
+        QVERIFY(comboPopup->grab().save(outputDir + "/combo-popup-light.png"));
+        appearanceMode->hidePopup();
 
         theme.SetMode(originalMode);
         QCoreApplication::removeTranslator(&traditionalChinese);

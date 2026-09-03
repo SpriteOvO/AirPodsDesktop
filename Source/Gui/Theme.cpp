@@ -643,11 +643,17 @@ QComboBox::down-arrow {
     image: url(:/Resource/Image/Theme/ChevronDown@onSurfaceGlyph.svg);
     width: 12px; height: 12px;
 }
-QComboBox QAbstractItemView {
+QWidget#apdComboPopup {
     background: @popupSurface;
     border: 1px solid @popupBorder;
     border-radius: 10px;
-    padding: 4px;
+    padding: 3px;
+}
+QWidget#apdComboPopup QAbstractItemView, QComboBox QAbstractItemView {
+    background: @popupSurface;
+    border: none;
+    border-radius: 7px;
+    padding: 0;
     outline: 0;
     color: @text;
     selection-background-color: @controlHover;

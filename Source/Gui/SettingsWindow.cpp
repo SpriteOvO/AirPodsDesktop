@@ -18,6 +18,9 @@
 
 #include "SettingsWindow.h"
 
+#include <QAbstractItemView>
+#include <QPainterPath>
+#include <QRegion>
 #include <QLabel>
 #include <QListWidget>
 #include <QStackedWidget>
@@ -36,6 +39,44 @@
 using namespace std::chrono_literals;
 
 namespace Gui {
+
+namespace {
+
+class ComboPopupMaskFilter final : public QObject
+{
+public:
+    explicit ComboPopupMaskFilter(QObject *parent) : QObject{parent} {}
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (event->type() == QEvent::Show || event->type() == QEvent::Resize) {
+            auto *popup = qobject_cast<QWidget *>(watched);
+            if (popup != nullptr && !popup->rect().isEmpty()) {
+                QPainterPath path;
+                path.addRoundedRect(QRectF{popup->rect()}, 10.0, 10.0);
+                popup->setMask(QRegion{path.toFillPolygon().toPolygon()});
+            }
+        }
+        return QObject::eventFilter(watched, event);
+    }
+};
+
+void ConfigureComboBoxPopup(QComboBox *comboBox)
+{
+    auto *view = comboBox->view();
+    view->setFrameShape(QFrame::NoFrame);
+
+    // Qt 5 wraps combo views in a rectangular private popup container. Mask the actual popup
+    // window so neither its background nor its native shadow can leak beyond the rounded surface.
+    auto *popup = view->window();
+    popup->setObjectName("apdComboPopup");
+    popup->setAutoFillBackground(true);
+    popup->setAttribute(Qt::WA_StyledBackground);
+    popup->installEventFilter(new ComboPopupMaskFilter{popup});
+}
+
+} // namespace
 
 SettingsWindow::SettingsWindow(
     std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect,
@@ -69,6 +110,9 @@ SettingsWindow::SettingsWindow(
     _ui.cbAppearanceMode->setItemDelegate(new QStyledItemDelegate{_ui.cbAppearanceMode});
     _ui.cbTrayQuickConnectDevice->setItemDelegate(
         new QStyledItemDelegate{_ui.cbTrayQuickConnectDevice});
+    ConfigureComboBoxPopup(_ui.cbLanguages);
+    ConfigureComboBoxPopup(_ui.cbAppearanceMode);
+    ConfigureComboBoxPopup(_ui.cbTrayQuickConnectDevice);
     _ui.lbAppearance->setBuddy(_ui.cbAppearanceMode);
     _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
 
