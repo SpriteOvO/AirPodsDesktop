@@ -28,6 +28,10 @@ private Q_SLOTS:
         window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&window));
 
+        auto *languages = window.findChild<QComboBox *>("cbLanguages");
+        QVERIFY(languages != nullptr);
+        QCOMPARE(languages->itemText(0), QStringLiteral("English"));
+
         auto *navigation = window.findChild<QListWidget *>("navList");
         QVERIFY(navigation != nullptr);
         QCOMPARE(navigation->frameShape(), QFrame::NoFrame);

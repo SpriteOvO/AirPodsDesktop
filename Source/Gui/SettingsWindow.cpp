@@ -115,7 +115,10 @@ SettingsWindow::SettingsWindow(
     _ui.hsMaxReceivingRange->setMaximum(100);
 
     for (const auto &locale : Utils::AvailableLocales()) {
-        _ui.cbLanguages->addItem(locale.nativeLanguageName());
+        const auto displayName = locale.language() == QLocale::English
+                                     ? QStringLiteral("English")
+                                     : locale.nativeLanguageName();
+        _ui.cbLanguages->addItem(displayName);
     }
     _ui.cbLanguages->addItem("...");
 

@@ -268,7 +268,7 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     </message>
     <message>
         <source>General</source>
-        <translation>General</translation>
+        <translation>Geral</translation>
     </message>
     <message>
         <source>Open logs directory</source>

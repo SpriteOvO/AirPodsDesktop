@@ -78,7 +78,7 @@ Per favore scarica e installa manualmente la nuova versione.</translation>
     <name>Gui::MainWindow</name>
     <message>
         <source>Change log:</source>
-        <translation>Change log:</translation>
+        <translation>Registro delle modifiche:</translation>
     </message>
     <message>
         <source>Hey! I found a new version available!
