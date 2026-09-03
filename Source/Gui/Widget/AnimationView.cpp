@@ -19,7 +19,6 @@
 #include "AnimationView.h"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <vector>
 
@@ -61,9 +60,9 @@ bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette)
 }
 
 //
-// Clears every matte-coloured pixel that is connected to the frame border. The device artwork
-// contains white too, but it is always enclosed by darker outlines, so the connectivity test is
-// what separates it from the background - the same idea the converter uses on the black source.
+// Clears matte-coloured pixels connected to the frame corners. Some animations crop white device
+// artwork against the right edge, so seeding every border pixel would erase that foreground too.
+// Starting from guaranteed-background corners lets the device outline stop the flood fill.
 //
 void KnockOutAnimationBackground(QImage &image)
 {
@@ -76,29 +75,43 @@ void KnockOutAnimationBackground(QImage &image)
     auto *pixels = reinterpret_cast<QRgb *>(image.bits());
     const auto at = [&](int x, int y) -> QRgb & { return pixels[y * stride + x]; };
 
-    // Transitional frames can carry different mattes on different edges. Each of these samples
-    // is guaranteed to be outside the centred device artwork, so all matching border-connected
-    // regions are background even when a frame fades through grey.
-    const std::array<QRgb, 8> matteSamples = {
-        at(0, 0),
-        at(width - 1, 0),
-        at(0, height - 1),
-        at(width - 1, height - 1),
-        at(width / 2, 0),
-        at(width / 2, height - 1),
-        at(0, height / 2),
-        at(width - 1, height / 2),
-    };
     std::vector<QRgb> mattePalette;
-    mattePalette.reserve(matteSamples.size());
-    for (const auto sample : matteSamples) {
-        const auto alreadyRepresented = std::any_of(
-            mattePalette.cbegin(), mattePalette.cend(),
-            [sample](QRgb matte) { return ColorDistance(sample, matte) <= kMatteDistance; });
+    mattePalette.reserve(32);
+    const auto addMatte = [&](QRgb sample) {
+        const auto alreadyRepresented =
+            std::any_of(mattePalette.cbegin(), mattePalette.cend(), [sample](QRgb matte) {
+                return ColorDistance(sample, matte) <= kMatteDistance;
+            });
         if (!alreadyRepresented) {
             mattePalette.push_back(sample);
         }
-    }
+    };
+
+    // Walk each edge inward from both corners. Smoothly changing matte shades are collected, but
+    // a sharp device outline stops that run. This handles fade frames whose border is a gradient
+    // without treating a cropped case or earbud at an edge midpoint as another matte colour.
+    const auto collectRun = [&](int x, int y, int dx, int dy, int length) {
+        auto previous = at(x, y);
+        addMatte(previous);
+        for (int i = 1; i < length; ++i) {
+            x += dx;
+            y += dy;
+            const auto current = at(x, y);
+            if (qAlpha(current) == 0 || ColorDistance(current, previous) > kMatteDistance) {
+                break;
+            }
+            addMatte(current);
+            previous = current;
+        }
+    };
+    collectRun(0, 0, 1, 0, width);
+    collectRun(width - 1, 0, -1, 0, width);
+    collectRun(0, height - 1, 1, 0, width);
+    collectRun(width - 1, height - 1, -1, 0, width);
+    collectRun(0, 0, 0, 1, height);
+    collectRun(0, height - 1, 0, -1, height);
+    collectRun(width - 1, 0, 0, 1, height);
+    collectRun(width - 1, height - 1, 0, -1, height);
 
     std::vector<std::pair<int, int>> stack;
     stack.reserve(4096);
@@ -108,14 +121,10 @@ void KnockOutAnimationBackground(QImage &image)
             stack.emplace_back(x, y);
         }
     };
-    for (int x = 0; x < width; ++x) {
-        seed(x, 0);
-        seed(x, height - 1);
-    }
-    for (int y = 1; y < height - 1; ++y) {
-        seed(0, y);
-        seed(width - 1, y);
-    }
+    seed(0, 0);
+    seed(width - 1, 0);
+    seed(0, height - 1);
+    seed(width - 1, height - 1);
 
     // Scanline flood fill. A cleared pixel has alpha 0 and therefore never matches again.
     while (!stack.empty()) {

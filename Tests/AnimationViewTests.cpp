@@ -10,7 +10,7 @@
 
 namespace {
 
-bool HasTransparentBorder(const QImage &image)
+bool HasTransparentBackgroundSamples(const QImage &image)
 {
     if (image.isNull()) {
         return false;
@@ -20,9 +20,7 @@ bool HasTransparentBorder(const QImage &image)
            transparent(0, image.height() - 1) &&
            transparent(image.width() - 1, image.height() - 1) &&
            transparent(image.width() / 2, 0) &&
-           transparent(image.width() / 2, image.height() - 1) &&
-           transparent(0, image.height() / 2) &&
-           transparent(image.width() - 1, image.height() / 2);
+           transparent(image.width() / 2, image.height() - 1) && transparent(0, image.height() / 2);
 }
 
 class CollectingSurface : public QAbstractVideoSurface
@@ -33,8 +31,9 @@ public:
     using QAbstractVideoSurface::QAbstractVideoSurface;
 
     int frameCount{0};
-    int framesWithOpaqueBorder{0};
-    QImage firstFrame;
+    int framesWithOpaqueBackgroundSamples{0};
+    int representativeOpaquePixels{0};
+    QImage representativeFrame;
 
     QList<QVideoFrame::PixelFormat>
     supportedPixelFormats(QAbstractVideoBuffer::HandleType type) const override
@@ -71,11 +70,18 @@ public:
         image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
         Gui::Widget::Detail::KnockOutAnimationBackground(image);
         ++frameCount;
-        if (!HasTransparentBorder(image)) {
-            ++framesWithOpaqueBorder;
+        if (!HasTransparentBackgroundSamples(image)) {
+            ++framesWithOpaqueBackgroundSamples;
         }
-        if (firstFrame.isNull()) {
-            firstFrame = image;
+        int opaquePixels = 0;
+        for (int y = 0; y < image.height(); y += 4) {
+            for (int x = 0; x < image.width(); x += 4) {
+                opaquePixels += qAlpha(image.pixel(x, y)) != 0;
+            }
+        }
+        if (opaquePixels > representativeOpaquePixels) {
+            representativeOpaquePixels = opaquePixels;
+            representativeFrame = image;
         }
         emit FrameReceived();
         return true;
@@ -85,9 +91,9 @@ Q_SIGNALS:
     void FrameReceived();
 };
 
-void VerifyTransparentBorder(const QImage &image)
+void VerifyTransparentBackgroundSamples(const QImage &image)
 {
-    QVERIFY(HasTransparentBorder(image));
+    QVERIFY(HasTransparentBackgroundSamples(image));
 }
 
 void SaveComposites(const QString &name, const QImage &frame)
@@ -129,13 +135,35 @@ private Q_SLOTS:
             painter.end();
 
             Gui::Widget::Detail::KnockOutAnimationBackground(image);
-            VerifyTransparentBorder(image);
+            VerifyTransparentBackgroundSamples(image);
             QCOMPARE(qAlpha(image.pixel(50, 50)), 255);
             QCOMPARE(qAlpha(image.pixel(80, 50)), 255); // enclosed matte-coloured detail survives
         }
     }
 
-    void BundledAnimationsHaveTransparentBorders()
+    void KeepsForegroundThatReachesAnEdgeMidpoint()
+    {
+        QImage image{160, 100, QImage::Format_ARGB32_Premultiplied};
+        image.fill(Qt::white);
+        QPainter painter{&image};
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor{"#202020"});
+        painter.drawRoundedRect(QRect{100, 20, 60, 60}, 14, 14);
+        painter.setBrush(Qt::white);
+        painter.drawRoundedRect(QRect{112, 32, 36, 36}, 8, 8);
+        painter.end();
+
+        Gui::Widget::Detail::KnockOutAnimationBackground(image);
+
+        QCOMPARE(qAlpha(image.pixel(0, 0)), 0);
+        QCOMPARE(qAlpha(image.pixel(image.width() - 1, image.height() - 1)), 0);
+        QCOMPARE(qAlpha(image.pixel(0, image.height() / 2)), 0);
+        QCOMPARE(qAlpha(image.pixel(110, 50)), 255);
+        QCOMPARE(qAlpha(image.pixel(140, 50)), 255);
+        QCOMPARE(qAlpha(image.pixel(image.width() - 1, image.height() / 2)), 255);
+    }
+
+    void BundledAnimationsRemoveMatteBackgrounds()
     {
         const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
         const auto videos = videoDir.entryList({"*.avi"}, QDir::Files, QDir::Name);
@@ -154,8 +182,9 @@ private Q_SLOTS:
             player.stop();
 
             QVERIFY2(surface.frameCount > 0, qPrintable(video + ": no frames decoded"));
-            QCOMPARE(surface.framesWithOpaqueBorder, 0);
-            SaveComposites(QFileInfo{video}.completeBaseName(), surface.firstFrame);
+            QCOMPARE(surface.framesWithOpaqueBackgroundSamples, 0);
+            QVERIFY(!surface.representativeFrame.isNull());
+            SaveComposites(QFileInfo{video}.completeBaseName(), surface.representativeFrame);
 
             player.setVideoOutput(static_cast<QAbstractVideoSurface *>(nullptr));
             player.setMedia({});
