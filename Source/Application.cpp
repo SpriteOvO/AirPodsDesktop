@@ -179,7 +179,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     // stylesheet consistent across every control. It must be set before any widget exists.
     setStyle(QStyleFactory::create("Fusion"));
 
-    setFont(Gui::Theme::ApplicationFont());
+    setFont(Gui::Theme::ApplicationFont(QLocale{}));
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
@@ -343,6 +343,7 @@ void ApdApplication::SetTranslator(const QLocale &locale)
     }
 
     if (_currentLoadedLocaleIndex == index) {
+        Gui::Theme::ApplyApplicationTypography(locale);
         LOG(Warn, "Try to set a same locale name '{}', ignore", localeName);
         return;
     }
@@ -359,6 +360,8 @@ void ApdApplication::SetTranslator(const QLocale &locale)
             return;
         }
     }
+
+    Gui::Theme::ApplyApplicationTypography(locale);
 
     if (_translator) {
         removeTranslator(_translator.get());

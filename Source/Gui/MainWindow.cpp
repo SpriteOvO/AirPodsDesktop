@@ -200,9 +200,9 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.pushButton->setProperty("cssClass", "accent");
 
     auto titleFont = _ui.deviceLabel->font();
-    titleFont.setFamilies(Theme::DisplayFontFamilies());
     titleFont.setWeight(QFont::DemiBold);
     _ui.deviceLabel->setFont(titleFont);
+    _ui.deviceLabel->setProperty("fontRole", "display");
 
     ApplyTheme();
     connect(&Theme::Manager::Instance(), &Theme::Manager::Changed, this, &MainWindow::ApplyTheme);

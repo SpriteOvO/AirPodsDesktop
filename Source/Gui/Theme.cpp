@@ -54,14 +54,77 @@ constexpr DWORD kDwmwcpRoundSmall = 3;
 
 constexpr auto kDefaultAccent = "#0067C0";
 
-const QStringList &BodyFontFamilies()
+QLocale &ActiveTypographyLocale()
 {
-    static const QStringList families{
-        "Inter",        "Noto Sans TC",          "Segoe UI Variable Text",
-        "Segoe UI",     "Microsoft JhengHei UI", "Microsoft YaHei UI",
-        "Yu Gothic UI", "Malgun Gothic",
-    };
+    static QLocale locale;
+    return locale;
+}
+
+QStringList RegionalFontFamilies(const QLocale &locale)
+{
+    switch (locale.language()) {
+    case QLocale::Chinese: {
+        const auto localeName = locale.name();
+        if (localeName.startsWith("zh_TW") || localeName.startsWith("zh_HK") ||
+            localeName.startsWith("zh_MO"))
+        {
+            return {"Noto Sans TC", "Microsoft JhengHei UI"};
+        }
+        return {"Microsoft YaHei UI", "DengXian"};
+    }
+    case QLocale::Japanese:
+        return {"Yu Gothic UI", "Meiryo UI"};
+    case QLocale::Korean:
+        return {"Malgun Gothic"};
+    default:
+        return {};
+    }
+}
+
+void AppendUnique(QStringList &target, const QStringList &families)
+{
+    for (const auto &family : families) {
+        if (!target.contains(family)) {
+            target.push_back(family);
+        }
+    }
+}
+
+QStringList BodyFontFamilies(const QLocale &locale)
+{
+    QStringList families{"Inter"};
+    AppendUnique(families, RegionalFontFamilies(locale));
+    AppendUnique(families, {"Segoe UI Variable Text", "Segoe UI"});
     return families;
+}
+
+QString CssFontFamilies(const QStringList &families)
+{
+    QStringList quoted;
+    quoted.reserve(families.size());
+    for (const auto &family : families) {
+        quoted.push_back(QString{'"'} + family + '"');
+    }
+    return quoted.join(", ");
+}
+
+void ApplyDisplayTypography(QWidget *topLevel, const QLocale &locale)
+{
+    if (topLevel == nullptr) {
+        return;
+    }
+
+    auto widgets = topLevel->findChildren<QWidget *>();
+    widgets.push_front(topLevel);
+    const auto displayFamilies = DisplayFontFamilies(locale);
+    for (auto *widget : widgets) {
+        if (widget->property("fontRole") != "display") {
+            continue;
+        }
+        auto font = widget->font();
+        font.setFamilies(displayFamilies);
+        widget->setFont(font);
+    }
 }
 
 struct SystemTheme {
@@ -269,32 +332,30 @@ bool LoadBundledFonts()
     return loaded;
 }
 
-QFont ApplicationFont()
+QFont ApplicationFont(const QLocale &locale)
 {
     LoadBundledFonts();
 
     QFont font;
-    font.setFamilies(BodyFontFamilies());
+    font.setFamilies(BodyFontFamilies(locale));
     font.setPointSize(9);
     font.setStyleStrategy(QFont::PreferAntialias);
     return font;
 }
 
-const QStringList &DisplayFontFamilies()
+QStringList DisplayFontFamilies(const QLocale &locale)
 {
-    static const QStringList families{
-        "Inter Display",
-        "Noto Sans TC",
-        "Inter",
-        "Segoe UI Variable Display",
-        "Segoe UI Variable",
-        "Segoe UI",
-        "Microsoft JhengHei UI",
-        "Microsoft YaHei UI",
-        "Yu Gothic UI",
-        "Malgun Gothic",
-    };
+    QStringList families{"Inter Display"};
+    AppendUnique(families, RegionalFontFamilies(locale));
+    AppendUnique(families, {"Inter", "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI"});
     return families;
+}
+
+void ApplyApplicationTypography(const QLocale &locale)
+{
+    ActiveTypographyLocale() = locale;
+    qApp->setFont(ApplicationFont(locale));
+    Manager::Instance().ApplyToApplication();
 }
 
 //////////////////////////////////////////////////
@@ -643,7 +704,7 @@ QFrame[cssClass="settingCard"] {
     border-radius: 6px;
 }
 QLabel[cssClass="cardTitle"] {
-    font-family: "Inter", "Noto Sans TC", "Microsoft JhengHei UI";
+    font-family: @bodyFontFamilies;
     font-size: 10pt;
     font-weight: 500;
     color: @text;
@@ -651,13 +712,13 @@ QLabel[cssClass="cardTitle"] {
 }
 QLabel[cssClass="cardDescription"] { color: @textSecondary; background: transparent; }
 QLabel[cssClass="pageTitle"] {
-    font-family: "Inter Display", "Noto Sans TC", "Microsoft JhengHei UI";
+    font-family: @displayFontFamilies;
     font-size: 20pt;
     font-weight: 600;
     color: @text;
 }
 QLabel[cssClass="appTitle"] {
-    font-family: "Inter Display", "Noto Sans TC", "Microsoft JhengHei UI";
+    font-family: @displayFontFamilies;
     font-size: 14pt;
     font-weight: 600;
     color: @text;
@@ -736,6 +797,8 @@ QDialogButtonBox { dialogbuttonbox-buttons-have-icons: 0; }
 )";
 
     const std::pair<QString, QString> replacements[] = {
+        {"@displayFontFamilies", CssFontFamilies(DisplayFontFamilies(ActiveTypographyLocale()))},
+        {"@bodyFontFamilies", CssFontFamilies(BodyFontFamilies(ActiveTypographyLocale()))},
         {"@windowBackground", ColorName(p.windowBackground)},
         {"@surfaceSecondary", ColorName(p.surfaceSecondary)},
         {"@surface", ColorName(p.surface)},
@@ -779,6 +842,8 @@ void Manager::ApplyToApplication()
 
 void Manager::ApplyToWindow(QWidget *topLevel)
 {
+    ApplyDisplayTypography(topLevel, ActiveTypographyLocale());
+
 #if defined APD_OS_WIN
     if (topLevel == nullptr || !topLevel->isWindow() ||
         topLevel->property(kSkipDwmProperty).toBool())

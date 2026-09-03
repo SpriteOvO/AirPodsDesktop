@@ -22,6 +22,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QLocale>
 #include <QObject>
 #include <QPalette>
 #include <QString>
@@ -33,11 +34,11 @@ namespace Gui::Theme {
 
 enum class Mode { System, Light, Dark };
 
-// Loads the bundled Inter typefaces and returns fonts with platform fallbacks for scripts that
-// Inter does not cover. Call ApplicationFont() before constructing widgets.
+// Loads the bundled typefaces and selects script-appropriate fallbacks for the active locale.
 bool LoadBundledFonts();
-QFont ApplicationFont();
-const QStringList &DisplayFontFamilies();
+QFont ApplicationFont(const QLocale &locale);
+QStringList DisplayFontFamilies(const QLocale &locale);
+void ApplyApplicationTypography(const QLocale &locale);
 
 //
 // Colour tokens for the whole application.

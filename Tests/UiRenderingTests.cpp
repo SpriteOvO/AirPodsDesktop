@@ -41,9 +41,33 @@ private Q_SLOTS:
         QVERIFY(
             std::all_of(glyphs.cbegin(), glyphs.cend(), [](quint32 glyph) { return glyph != 0; }));
 
-        const auto applicationFont = Gui::Theme::ApplicationFont();
+        const auto applicationFont = Gui::Theme::ApplicationFont(QLocale{"zh_TW"});
         QCOMPARE(applicationFont.families().first(), QStringLiteral("Inter"));
-        QCOMPARE(Gui::Theme::DisplayFontFamilies().first(), QStringLiteral("Inter Display"));
+        QCOMPARE(applicationFont.families().at(1), QStringLiteral("Noto Sans TC"));
+        QCOMPARE(
+            Gui::Theme::DisplayFontFamilies(QLocale{"zh_TW"}).first(),
+            QStringLiteral("Inter Display"));
+
+        struct LocaleFontCase {
+            const char *locale;
+            const char *bodyFallback;
+            const char *displayFallback;
+        };
+        constexpr LocaleFontCase cases[]{
+            {"zh_CN", "Microsoft YaHei UI", "Microsoft YaHei UI"},
+            {"zh_TW", "Noto Sans TC", "Noto Sans TC"},
+            {"ja_JP", "Yu Gothic UI", "Yu Gothic UI"},
+            {"ko_KR", "Malgun Gothic", "Malgun Gothic"},
+            {"de_DE", "Segoe UI Variable Text", "Inter"},
+        };
+        for (const auto &fontCase : cases) {
+            QCOMPARE(
+                Gui::Theme::ApplicationFont(QLocale{fontCase.locale}).families().at(1),
+                QString::fromLatin1(fontCase.bodyFallback));
+            QCOMPARE(
+                Gui::Theme::DisplayFontFamilies(QLocale{fontCase.locale}).at(1),
+                QString::fromLatin1(fontCase.displayFallback));
+        }
     }
 
     void SettingsWindowSupportsKeyboardAndCompactLayout()
@@ -51,8 +75,7 @@ private Q_SLOTS:
         auto backend = std::make_shared<Core::QuickConnect::NullBackend>();
         Core::QuickConnect::Controller quickConnect{backend};
 
-        qApp->setFont(Gui::Theme::ApplicationFont());
-        Gui::Theme::Manager::Instance().ApplyToApplication();
+        Gui::Theme::ApplyApplicationTypography(QLocale{"zh_TW"});
         Gui::SettingsWindow window{[] { return 0; }, quickConnect};
         window.resize(640, 420);
         window.show();
@@ -138,6 +161,7 @@ private Q_SLOTS:
 
         theme.SetMode(originalMode);
         QCoreApplication::removeTranslator(&traditionalChinese);
+        Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     }
 
     void SettingsDescriptionsFollowConsecutiveLanguageChanges()
@@ -158,20 +182,25 @@ private Q_SLOTS:
         QVERIFY(first.load(QLocale{"zh_TW"}, "apd", "_", translationsDir));
         const auto firstDescription = first.translate("QObject", sourceText);
         QVERIFY(!firstDescription.isEmpty());
+        Gui::Theme::ApplyApplicationTypography(QLocale{"zh_TW"});
         QVERIFY(QCoreApplication::installTranslator(&first));
         QCoreApplication::processEvents();
         QCOMPARE(description->text(), firstDescription);
+        QCOMPARE(qApp->font().families().at(1), QStringLiteral("Noto Sans TC"));
 
         QTranslator second;
         QVERIFY(second.load(QLocale{"de_DE"}, "apd", "_", translationsDir));
         const auto secondDescription = second.translate("QObject", sourceText);
         QVERIFY(!secondDescription.isEmpty());
         QCoreApplication::removeTranslator(&first);
+        Gui::Theme::ApplyApplicationTypography(QLocale{"de_DE"});
         QVERIFY(QCoreApplication::installTranslator(&second));
         QCoreApplication::processEvents();
         QCOMPARE(description->text(), secondDescription);
+        QCOMPARE(qApp->font().families().at(1), QStringLiteral("Segoe UI Variable Text"));
 
         QCoreApplication::removeTranslator(&second);
+        Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     }
 };
 
