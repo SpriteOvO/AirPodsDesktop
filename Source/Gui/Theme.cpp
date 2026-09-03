@@ -57,13 +57,9 @@ constexpr auto kDefaultAccent = "#0067C0";
 const QStringList &BodyFontFamilies()
 {
     static const QStringList families{
-        "Inter",
-        "Segoe UI Variable Text",
-        "Segoe UI",
-        "Microsoft JhengHei UI",
-        "Microsoft YaHei UI",
-        "Yu Gothic UI",
-        "Malgun Gothic",
+        "Inter",        "Noto Sans TC",          "Segoe UI Variable Text",
+        "Segoe UI",     "Microsoft JhengHei UI", "Microsoft YaHei UI",
+        "Yu Gothic UI", "Malgun Gothic",
     };
     return families;
 }
@@ -258,6 +254,7 @@ bool LoadBundledFonts()
             ":/Resource/Font/Inter/Inter-SemiBold.ttf",
             ":/Resource/Font/Inter/InterDisplay-Medium.ttf",
             ":/Resource/Font/Inter/InterDisplay-SemiBold.ttf",
+            ":/Resource/Font/NotoSansTC/NotoSansTC-Variable.ttf",
         };
 
         bool allLoaded = true;
@@ -286,9 +283,16 @@ QFont ApplicationFont()
 const QStringList &DisplayFontFamilies()
 {
     static const QStringList families{
-        "Inter Display",      "Inter",        "Segoe UI Variable Display",
-        "Segoe UI Variable",  "Segoe UI",     "Microsoft JhengHei UI",
-        "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic",
+        "Inter Display",
+        "Noto Sans TC",
+        "Inter",
+        "Segoe UI Variable Display",
+        "Segoe UI Variable",
+        "Segoe UI",
+        "Microsoft JhengHei UI",
+        "Microsoft YaHei UI",
+        "Yu Gothic UI",
+        "Malgun Gothic",
     };
     return families;
 }
@@ -639,7 +643,7 @@ QFrame[cssClass="settingCard"] {
     border-radius: 6px;
 }
 QLabel[cssClass="cardTitle"] {
-    font-family: "Inter";
+    font-family: "Inter", "Noto Sans TC", "Microsoft JhengHei UI";
     font-size: 10pt;
     font-weight: 500;
     color: @text;
@@ -647,13 +651,13 @@ QLabel[cssClass="cardTitle"] {
 }
 QLabel[cssClass="cardDescription"] { color: @textSecondary; background: transparent; }
 QLabel[cssClass="pageTitle"] {
-    font-family: "Inter Display";
+    font-family: "Inter Display", "Noto Sans TC", "Microsoft JhengHei UI";
     font-size: 20pt;
     font-weight: 600;
     color: @text;
 }
 QLabel[cssClass="appTitle"] {
-    font-family: "Inter Display";
+    font-family: "Inter Display", "Noto Sans TC", "Microsoft JhengHei UI";
     font-size: 14pt;
     font-weight: 600;
     color: @text;

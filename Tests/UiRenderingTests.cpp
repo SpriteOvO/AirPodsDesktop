@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -5,6 +7,7 @@
 #include <QFontDatabase>
 #include <QLabel>
 #include <QListWidget>
+#include <QRawFont>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -27,6 +30,16 @@ private Q_SLOTS:
         const auto families = QFontDatabase{}.families();
         QVERIFY(families.contains("Inter"));
         QVERIFY(families.contains("Inter Display"));
+        QVERIFY(families.contains("Noto Sans TC"));
+
+        QFont traditionalChineseFont{"Noto Sans TC"};
+        const auto traditionalChineseSample = QString::fromUtf8(
+            "\xE7\xB9\x81\xE9\xAB\x94\xE4\xB8\xAD\xE6\x96\x87\xE8\xA8\xAD\xE5\xAE\x9A");
+        const auto glyphs = QRawFont::fromFont(traditionalChineseFont)
+                                .glyphIndexesForString(traditionalChineseSample);
+        QVERIFY(!glyphs.isEmpty());
+        QVERIFY(
+            std::all_of(glyphs.cbegin(), glyphs.cend(), [](quint32 glyph) { return glyph != 0; }));
 
         const auto applicationFont = Gui::Theme::ApplicationFont();
         QCOMPARE(applicationFont.families().first(), QStringLiteral("Inter"));
@@ -38,6 +51,7 @@ private Q_SLOTS:
         auto backend = std::make_shared<Core::QuickConnect::NullBackend>();
         Core::QuickConnect::Controller quickConnect{backend};
 
+        qApp->setFont(Gui::Theme::ApplicationFont());
         Gui::Theme::Manager::Instance().ApplyToApplication();
         Gui::SettingsWindow window{[] { return 0; }, quickConnect};
         window.resize(640, 420);
@@ -97,6 +111,14 @@ private Q_SLOTS:
         const auto buttonBottom = buttonBox->mapTo(&window, buttonBox->rect().bottomLeft()).y();
         QVERIFY(buttonBottom < window.height());
 
+        QTranslator traditionalChinese;
+        const auto translationsDir = QCoreApplication::applicationDirPath() + "/translations";
+        QVERIFY(traditionalChinese.load(QLocale{"zh_TW"}, "apd", "_", translationsDir));
+        QVERIFY(QCoreApplication::installTranslator(&traditionalChinese));
+        QCoreApplication::processEvents();
+        QCOMPARE(navigation->item(0)->text(), QString::fromUtf8("\xE4\xB8\x80\xE8\x88\xAC"));
+        QCOMPARE(navigation->item(1)->text(), QString::fromUtf8("\xE5\xA4\x96\xE8\xA7\x80"));
+
         const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation");
         QDir{}.mkpath(outputDir);
         QVERIFY(window.grab().save(outputDir + "/settings-current-theme.png"));
@@ -115,6 +137,7 @@ private Q_SLOTS:
         QVERIFY(window.grab().save(outputDir + "/settings-light.png"));
 
         theme.SetMode(originalMode);
+        QCoreApplication::removeTranslator(&traditionalChinese);
     }
 
     void SettingsDescriptionsFollowConsecutiveLanguageChanges()

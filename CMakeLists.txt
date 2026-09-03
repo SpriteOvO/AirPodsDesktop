@@ -569,6 +569,10 @@ add_custom_command(
         ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Font/Inter/LICENSE.txt"
         "${APD_BINARY_OUT_DIR}/licenses/Inter.txt"
+    COMMAND
+        ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Font/NotoSansTC/LICENSE.txt"
+        "${APD_BINARY_OUT_DIR}/licenses/NotoSansTC.txt"
     COMMENT "Deploying third-party font licenses"
 )
 
