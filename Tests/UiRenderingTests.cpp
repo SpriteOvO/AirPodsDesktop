@@ -89,6 +89,7 @@ private Q_SLOTS:
         QVERIFY(navigation != nullptr);
         QCOMPARE(navigation->frameShape(), QFrame::NoFrame);
         QCOMPARE(navigation->focusPolicy(), Qt::StrongFocus);
+        QVERIFY(!qApp->styleSheet().contains(QStringLiteral("border-left")));
         navigation->setFocus();
         QCOMPARE(QApplication::focusWidget(), navigation);
         QCOMPARE(navigation->currentRow(), 0);

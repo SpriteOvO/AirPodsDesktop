@@ -688,13 +688,9 @@ QListWidget#navList::item {
     padding-left: 12px;
     margin: 2px 0;
     border-radius: 5px;
-    border-left: 3px solid transparent;
 }
 QListWidget#navList::item:hover { background: @controlHover; }
-QListWidget#navList::item:selected {
-    background: @controlHover;
-    border-left: 3px solid @accent;
-}
+QListWidget#navList::item:selected { background: @controlHover; }
 QListWidget#navList:focus::item:selected { background: @controlPressed; }
 
 /* ---------- Settings cards ---------- */
