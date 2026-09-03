@@ -1,6 +1,6 @@
 {
   "name": "airpods-desktop",
-  "version-string": "0.5.1",
+  "version-string": "0.5.2",
   "dependencies": [
     {
       "name": "cpr",
