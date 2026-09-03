@@ -25,7 +25,6 @@
 
 #include "ui_MainWindow.h"
 
-#include <QVideoWidget>
 #include <QMediaPlayer>
 #include <QPropertyAnimation>
 
@@ -35,11 +34,11 @@
 #include "../Core/Update.h"
 #include "Base.h"
 #include "Widget/Battery.h"
+#include "Widget/AnimationView.h"
 
 namespace Gui {
 
 class CloseButton;
-class VideoWidget;
 class BatteryInfo;
 
 class MainWindow : public QDialog
@@ -80,7 +79,7 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
-    VideoWidget *_videoWidget;
+    Widget::AnimationView *_animationView;
     QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
@@ -108,6 +107,7 @@ private:
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();
+    void ApplyTheme();
     void FitDeviceLabelFont();
 
     void OnAppStateChanged(Qt::ApplicationState state);

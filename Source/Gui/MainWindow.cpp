@@ -31,6 +31,7 @@
 #include "../Core/Settings.h"
 #include "DownloadWindow.h"
 #include "SelectWindow.h"
+#include "Theme.h"
 
 using namespace std::chrono_literals;
 
@@ -93,15 +94,17 @@ protected:
         {
             painter.setPen(Qt::NoPen);
 
+            const auto &colors = Theme::Manager::Instance().Colors();
+
             QColor color;
             if (_isHoldDown) {
-                color = QColor{218, 218, 219};
+                color = colors.mainClosePressed;
             }
             else if (_isHovering) {
-                color = QColor{228, 228, 229};
+                color = colors.mainCloseHover;
             }
             else {
-                color = QColor{238, 238, 239};
+                color = colors.mainCloseBg;
             }
 
             painter.setBrush(QBrush{color});
@@ -114,7 +117,9 @@ protected:
     {
         painter.save();
         {
-            painter.setPen(QPen{QColor{131, 131, 135}, 3});
+            painter.setPen(QPen{
+                Theme::Manager::Instance().Colors().mainCloseGlyph, 2.5, Qt::SolidLine,
+                Qt::RoundCap});
             painter.setBrush(Qt::NoBrush);
 
             QSize size = this->size();
@@ -126,25 +131,6 @@ protected:
             painter.drawLine(size.width() - margin, margin, margin, size.height() - margin);
         }
         painter.restore();
-    }
-};
-
-//////////////////////////////////////////////////
-
-class VideoWidget : public QVideoWidget
-{
-    Q_OBJECT
-
-public:
-    using QVideoWidget::QVideoWidget;
-
-Q_SIGNALS:
-    void Clicked();
-
-private:
-    void mouseReleaseEvent(QMouseEvent *event) override
-    {
-        Q_EMIT Clicked();
     }
 };
 
@@ -198,7 +184,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
     qRegisterMetaType<Core::Update::ReleaseInfo>("Core::Update::ReleaseInfo");
 
-    _videoWidget = new VideoWidget{this};
+    _animationView = new Widget::AnimationView{this};
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
@@ -207,15 +193,25 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
 
+    // Frameless and region-clipped to the iOS card shape; DWM must leave it alone.
+    setProperty(Theme::Manager::kSkipDwmProperty, true);
     Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
-    Utils::Qt::SetRoundedCorners(_ui.pushButton, 6);
-    Utils::Qt::SetPaletteColor(this, QPalette::Window, Qt::white);
-    Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, QColor{94, 94, 94});
+
+    _ui.pushButton->setProperty("cssClass", "accent");
+
+    auto titleFont = _ui.deviceLabel->font();
+    titleFont.setFamilies(
+        {"Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
+    titleFont.setWeight(QFont::DemiBold);
+    _ui.deviceLabel->setFont(titleFont);
+
+    ApplyTheme();
+    connect(&Theme::Manager::Instance(), &Theme::Manager::Changed, this, &MainWindow::ApplyTheme);
 
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
-    connect(_videoWidget, &VideoWidget::Clicked, this, &MainWindow::OnAnimationClicked);
+    connect(_animationView, &Widget::AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
     connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
 
@@ -233,17 +229,17 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
     _mediaPlayer->setMuted(true);
-    _mediaPlayer->setVideoOutput(_videoWidget);
+    _mediaPlayer->setVideoOutput(_animationView->Surface());
 
-    _ui.layoutAnimation->addWidget(_videoWidget);
+    _ui.layoutAnimation->addWidget(_animationView);
     _ui.layoutPods->addWidget(_leftBattery);
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
 
-    // For getting the correct initial height of `_videoWidget` later
+    // For getting the correct initial height of `_animationView` later
     _ui.layoutAnimation->activate();
-    _videoWidget->show();
+    _animationView->show();
 
     _updateChecker.Start();
 }
@@ -395,8 +391,8 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
         auto aspectRatio =
             (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
-        auto widgetWidth = _videoWidget->height() * aspectRatio;
-        _videoWidget->setFixedWidth(widgetWidth);
+        auto widgetWidth = _animationView->height() * aspectRatio;
+        _animationView->setFixedWidth(widgetWidth);
 
         _mediaPlayer->setMedia(QUrl{presentation.resource});
 
@@ -415,14 +411,13 @@ void MainWindow::PlayAnimation()
 {
     _isAnimationPlaying = true;
     _mediaPlayer->play();
-    _videoWidget->show();
+    _animationView->show();
 }
 
 void MainWindow::StopAnimation()
 {
-    // The player will go black after stopping
-    // I have no idea about this, so let's hide the widget here as a workaround
-    _videoWidget->hide();
+    _animationView->hide();
+    _animationView->Clear();
 
     _isAnimationPlaying = false;
     _mediaPlayer->stop();
@@ -550,6 +545,28 @@ void MainWindow::Repaint()
     applyBattery(_leftBattery, presentation.leftBattery);
     applyBattery(_rightBattery, presentation.rightBattery);
     applyBattery(_caseBattery, presentation.caseBattery);
+}
+
+void MainWindow::ApplyTheme()
+{
+    const auto &colors = Theme::Manager::Instance().Colors();
+
+    Utils::Qt::SetPaletteColor(this, QPalette::Window, colors.mainSurface);
+    Utils::Qt::SetPaletteColor(_ui.deviceLabel, QPalette::WindowText, colors.mainText);
+
+    for (auto *battery : {_leftBattery, _rightBattery, _caseBattery}) {
+        battery->setNormalColor(colors.batteryNormal);
+        battery->setAlarmColor(colors.batteryAlarm);
+        battery->setBorderColor(colors.batteryBorder);
+        battery->setChargingIconColor(colors.mainText);
+        battery->setBorderRadius(4);
+        battery->setBackgroundRadius(2.5);
+        battery->setHeadRadius(1.5);
+        Utils::Qt::SetPaletteColor(battery, QPalette::WindowText, colors.mainText);
+    }
+
+    _closeButton->update();
+    update();
 }
 
 void MainWindow::FitDeviceLabelFont()

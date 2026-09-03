@@ -37,6 +37,28 @@ target_include_directories(QuickConnectTests PRIVATE "${CMAKE_SOURCE_DIR}")
 
 add_test(NAME QuickConnectTests COMMAND QuickConnectTests)
 
+add_executable(AnimationViewTests AnimationViewTests.cpp)
+
+target_link_libraries(
+    AnimationViewTests
+
+    PRIVATE
+    apd_gui
+    Qt5::Multimedia
+    Qt5::Test
+    Qt5::Widgets
+)
+
+target_include_directories(AnimationViewTests PRIVATE "${CMAKE_SOURCE_DIR}")
+target_compile_definitions(
+    AnimationViewTests
+    PRIVATE
+    APD_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    APD_BINARY_DIR="${CMAKE_BINARY_DIR}"
+)
+
+add_test(NAME AnimationViewTests COMMAND AnimationViewTests)
+
 add_executable(UiRenderingTests UiRenderingTests.cpp)
 
 target_link_libraries(
@@ -53,7 +75,7 @@ target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINA
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
 
-foreach(test_target AirPodsDomainTests QuickConnectTests UiRenderingTests)
+foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
         POST_BUILD
