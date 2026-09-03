@@ -43,13 +43,13 @@ void ApplyApplicationTypography(const QLocale &locale);
 //
 // Colour tokens for the whole application.
 //
-// The Windows 11 (Fluent) surfaces drive every regular window, while the `main*` and `battery*`
-// tokens keep the iOS pairing-card look of the popup window.
+// macOS-inspired surfaces drive every regular window, while the `main*` and `battery*` tokens
+// keep the iOS pairing-card look of the popup window.
 //
 struct Palette {
     bool dark{false};
 
-    // Windows
+    // Application windows
     QColor windowBackground, surface, surfaceSecondary, cardBorder, separator;
     QColor text, textSecondary, textDisabled;
     QColor controlFill, controlHover, controlPressed, controlBorder;

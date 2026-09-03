@@ -232,20 +232,20 @@ Palette BuildPalette(const SystemTheme &system)
     p.dark = system.appsDark;
 
     if (!p.dark) {
-        p.windowBackground = QColor{"#F3F3F3"};
-        p.surface = QColor{"#FBFBFB"};
-        p.surfaceSecondary = QColor{"#EBEBEB"};
-        p.cardBorder = QColor{"#E5E5E5"};
-        p.separator = QColor{"#E5E5E5"};
-        p.text = QColor{"#1B1B1B"};
-        p.textSecondary = QColor{"#5F5F5F"};
-        p.textDisabled = QColor{"#9F9F9F"};
-        p.controlFill = QColor{"#FDFDFD"};
-        p.controlHover = QColor{"#F0F0F0"};
-        p.controlPressed = QColor{"#E6E6E6"};
-        p.controlBorder = QColor{"#D2D2D2"};
-        p.popupSurface = QColor{"#F9F9F9"};
-        p.popupBorder = QColor{"#DCDCDC"};
+        p.windowBackground = QColor{"#F5F5F7"};
+        p.surface = QColor{"#FFFFFF"};
+        p.surfaceSecondary = QColor{"#ECECEE"};
+        p.cardBorder = QColor{"#D9D9DD"};
+        p.separator = QColor{"#D1D1D6"};
+        p.text = QColor{"#1D1D1F"};
+        p.textSecondary = QColor{"#6E6E73"};
+        p.textDisabled = QColor{"#AEAEB2"};
+        p.controlFill = QColor{"#FFFFFF"};
+        p.controlHover = QColor{"#E5E5EA"};
+        p.controlPressed = QColor{"#D1D1D6"};
+        p.controlBorder = QColor{"#C7C7CC"};
+        p.popupSurface = QColor{"#FFFFFF"};
+        p.popupBorder = QColor{"#C7C7CC"};
 
         p.mainSurface = QColor{"#FFFFFF"};
         p.mainText = QColor{"#1B1B1B"};
@@ -259,20 +259,20 @@ Palette BuildPalette(const SystemTheme &system)
         p.accent = system.accentForLight.value_or(system.accent.darker(110));
     }
     else {
-        p.windowBackground = QColor{"#202020"};
-        p.surface = QColor{"#2B2B2B"};
-        p.surfaceSecondary = QColor{"#1B1B1B"};
-        p.cardBorder = QColor{"#383838"};
-        p.separator = QColor{"#3A3A3A"};
-        p.text = QColor{"#FFFFFF"};
-        p.textSecondary = QColor{"#C5C5C5"};
-        p.textDisabled = QColor{"#767676"};
-        p.controlFill = QColor{"#343434"};
-        p.controlHover = QColor{"#3D3D3D"};
-        p.controlPressed = QColor{"#2C2C2C"};
-        p.controlBorder = QColor{"#484848"};
+        p.windowBackground = QColor{"#1C1C1E"};
+        p.surface = QColor{"#2C2C2E"};
+        p.surfaceSecondary = QColor{"#242426"};
+        p.cardBorder = QColor{"#3A3A3C"};
+        p.separator = QColor{"#38383A"};
+        p.text = QColor{"#F5F5F7"};
+        p.textSecondary = QColor{"#AEAEB2"};
+        p.textDisabled = QColor{"#636366"};
+        p.controlFill = QColor{"#3A3A3C"};
+        p.controlHover = QColor{"#48484A"};
+        p.controlPressed = QColor{"#545458"};
+        p.controlBorder = QColor{"#545458"};
         p.popupSurface = QColor{"#2C2C2C"};
-        p.popupBorder = QColor{"#414141"};
+        p.popupBorder = QColor{"#545458"};
 
         p.mainSurface = QColor{"#1C1C1E"};
         p.mainText = QColor{"#F2F2F7"};
@@ -290,10 +290,10 @@ Palette BuildPalette(const SystemTheme &system)
     p.batteryNormal = QColor{"#34C759"};
     p.batteryAlarm = QColor{"#FF3B30"};
 
-    // Windows 11 renders hover/pressed as the accent at 90% / 80% opacity over the surface.
+    // Preserve the system accent preference while using macOS-like pressed-state blending.
     p.accentHover = Mix(p.accent, p.surface, 0.10);
     p.accentPressed = Mix(p.accent, p.surface, 0.20);
-    p.accentDisabled = p.dark ? QColor{"#434343"} : QColor{"#C8C8C8"};
+    p.accentDisabled = p.dark ? QColor{"#545458"} : QColor{"#C7C7CC"};
     p.accentText = AccessibleForeground(p.accent);
 
     return p;
@@ -544,7 +544,7 @@ QString Manager::StyleSheet() const
 QPushButton {
     min-height: 30px;
     padding: 0 16px;
-    border-radius: 5px;
+    border-radius: 7px;
     border: 1px solid @controlBorder;
     background: @controlFill;
     color: @text;
@@ -570,7 +570,7 @@ QPushButton:default:disabled, QPushButton[cssClass="accent"]:disabled {
 /* ---------- Check box ---------- */
 QCheckBox { spacing: 8px; }
 QCheckBox::indicator {
-    width: 18px; height: 18px;
+    width: 16px; height: 16px;
     border-radius: 4px;
     border: 1px solid @controlBorder;
     background: @controlFill;
@@ -588,18 +588,19 @@ QCheckBox::indicator:checked:disabled { background: @accentDisabled; border-colo
 /* ---------- Radio button ---------- */
 QRadioButton { spacing: 8px; }
 QRadioButton::indicator {
-    width: 18px; height: 18px;
-    border-radius: 10px;
+    width: 16px; height: 16px;
+    border-radius: 9px;
     border: 1px solid @controlBorder;
     background: @controlFill;
 }
 QRadioButton::indicator:hover { border-color: @textSecondary; background: @controlHover; }
 QRadioButton::indicator:checked {
-    width: 10px; height: 10px;
-    border: 5px solid @accent;
+    width: 8px; height: 8px;
+    border-radius: 8px;
+    border: 4px solid @accent;
     background: @accentText;
 }
-QRadioButton::indicator:checked:hover { width: 12px; height: 12px; border-width: 4px; }
+QRadioButton::indicator:checked:hover { width: 10px; height: 10px; border-width: 3px; }
 QRadioButton::indicator:checked:disabled { border-color: @accentDisabled; }
 
 /* ---------- Slider ---------- */
@@ -624,7 +625,7 @@ QSlider::sub-page:horizontal:disabled { background: @accentDisabled; }
 QComboBox {
     min-height: 28px;
     padding: 0 32px 0 10px;
-    border-radius: 5px;
+    border-radius: 7px;
     border: 1px solid @controlBorder;
     background: @controlFill;
     color: @text;
@@ -645,7 +646,7 @@ QComboBox::down-arrow {
 QComboBox QAbstractItemView {
     background: @popupSurface;
     border: 1px solid @popupBorder;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 4px;
     outline: 0;
     color: @text;
@@ -655,7 +656,7 @@ QComboBox QAbstractItemView {
 QComboBox QAbstractItemView::item {
     min-height: 28px;
     padding: 0 8px;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 QComboBox QAbstractItemView::item:hover { background: @controlHover; }
 
@@ -663,14 +664,14 @@ QComboBox QAbstractItemView::item:hover { background: @controlHover; }
 QListWidget {
     background: @surface;
     border: 1px solid @cardBorder;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 4px;
     outline: 0;
 }
 QListWidget::item {
     min-height: 32px;
     padding: 0 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     color: @text;
 }
 QListWidget::item:hover { background: @controlHover; }
@@ -682,22 +683,22 @@ QListWidget#navList {
     background: transparent;
     border: none;
     padding: 0;
+    selection-background-color: @accent;
+    selection-color: @accentText;
 }
 QListWidget#navList::item {
     min-height: 36px;
     padding-left: 12px;
     margin: 2px 0;
-    border-radius: 5px;
+    border-radius: 7px;
 }
 QListWidget#navList::item:hover { background: @controlHover; }
-QListWidget#navList::item:selected { background: @controlHover; }
-QListWidget#navList:focus::item:selected { background: @controlPressed; }
 
 /* ---------- Settings cards ---------- */
 QFrame[cssClass="settingCard"] {
     background: @surface;
     border: 1px solid @cardBorder;
-    border-radius: 6px;
+    border-radius: 10px;
 }
 QLabel[cssClass="cardTitle"] {
     font-family: @bodyFontFamilies;
@@ -724,8 +725,8 @@ QLabel[cssClass="appTitle"] {
 QTextEdit, QPlainTextEdit {
     background: @surface;
     border: 1px solid @controlBorder;
-    border-radius: 5px;
-    padding: 4px;
+    border-radius: 8px;
+    padding: 6px;
     selection-background-color: @accent;
     selection-color: @accentText;
 }
@@ -734,7 +735,7 @@ QTextBrowser#tbCredits { background: transparent; border: none; padding: 0; }
 /* ---------- Group box ---------- */
 QGroupBox {
     border: 1px solid @cardBorder;
-    border-radius: 6px;
+    border-radius: 10px;
     margin-top: 12px;
     padding-top: 8px;
     background: @surface;
@@ -752,10 +753,10 @@ QProgressBar {
 QProgressBar::chunk { background: @accent; border-radius: 3px; }
 
 /* ---------- Scroll bars ---------- */
-QScrollBar:vertical { width: 10px; background: transparent; margin: 2px; }
-QScrollBar:horizontal { height: 10px; background: transparent; margin: 2px; }
-QScrollBar::handle:vertical { min-height: 24px; border-radius: 3px; background: @controlBorder; }
-QScrollBar::handle:horizontal { min-width: 24px; border-radius: 3px; background: @controlBorder; }
+QScrollBar:vertical { width: 8px; background: transparent; margin: 2px; }
+QScrollBar:horizontal { height: 8px; background: transparent; margin: 2px; }
+QScrollBar::handle:vertical { min-height: 24px; border-radius: 4px; background: @controlBorder; }
+QScrollBar::handle:horizontal { min-width: 24px; border-radius: 4px; background: @controlBorder; }
 QScrollBar::handle:hover { background: @textSecondary; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; border: none; background: none; }
 QScrollBar::add-page, QScrollBar::sub-page { background: none; }
@@ -765,7 +766,7 @@ QToolTip {
     background: @popupSurface;
     color: @text;
     border: 1px solid @popupBorder;
-    border-radius: 4px;
+    border-radius: 7px;
     padding: 6px 8px;
 }
 
@@ -773,12 +774,12 @@ QToolTip {
 QMenu {
     background: @popupSurface;
     border: 1px solid @popupBorder;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 4px;
 }
 QMenu::item {
     padding: 7px 28px 7px 12px;
-    border-radius: 4px;
+    border-radius: 6px;
     background: transparent;
     color: @text;
 }

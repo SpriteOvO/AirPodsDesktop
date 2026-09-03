@@ -158,11 +158,15 @@ private Q_SLOTS:
 
         theme.SetMode(Gui::Theme::Mode::Dark);
         QVERIFY(theme.IsDark());
+        QCOMPARE(theme.Colors().windowBackground, QColor{"#1C1C1E"});
+        QCOMPARE(theme.Colors().surface, QColor{"#2C2C2E"});
         QCoreApplication::processEvents();
         QVERIFY(window.grab().save(outputDir + "/settings-dark.png"));
 
         theme.SetMode(Gui::Theme::Mode::Light);
         QVERIFY(!theme.IsDark());
+        QCOMPARE(theme.Colors().windowBackground, QColor{"#F5F5F7"});
+        QCOMPARE(theme.Colors().surface, QColor{"#FFFFFF"});
         QCoreApplication::processEvents();
         QVERIFY(window.grab().save(outputDir + "/settings-light.png"));
 
