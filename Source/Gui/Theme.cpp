@@ -18,6 +18,7 @@
 
 #include "Theme.h"
 
+#include <array>
 #include <cmath>
 #include <optional>
 
@@ -25,6 +26,7 @@
 #include <QPointer>
 #include <QApplication>
 #include <QEvent>
+#include <QFontDatabase>
 #include <QMenu>
 #include <QSettings>
 #include <QTimer>
@@ -51,6 +53,20 @@ constexpr DWORD kDwmwcpRoundSmall = 3;
 #endif
 
 constexpr auto kDefaultAccent = "#0067C0";
+
+const QStringList &BodyFontFamilies()
+{
+    static const QStringList families{
+        "Inter",
+        "Segoe UI Variable Text",
+        "Segoe UI",
+        "Microsoft JhengHei UI",
+        "Microsoft YaHei UI",
+        "Yu Gothic UI",
+        "Malgun Gothic",
+    };
+    return families;
+}
 
 struct SystemTheme {
     bool appsDark{false};
@@ -230,6 +246,52 @@ QString ColorName(const QColor &color)
 }
 
 } // namespace
+
+//////////////////////////////////////////////////
+
+bool LoadBundledFonts()
+{
+    static const bool loaded = [] {
+        constexpr std::array paths{
+            ":/Resource/Font/Inter/Inter-Regular.ttf",
+            ":/Resource/Font/Inter/Inter-Medium.ttf",
+            ":/Resource/Font/Inter/Inter-SemiBold.ttf",
+            ":/Resource/Font/Inter/InterDisplay-Medium.ttf",
+            ":/Resource/Font/Inter/InterDisplay-SemiBold.ttf",
+        };
+
+        bool allLoaded = true;
+        for (const auto *path : paths) {
+            if (QFontDatabase::addApplicationFont(path) < 0) {
+                LOG(Warn, "Failed to load bundled font '{}'", path);
+                allLoaded = false;
+            }
+        }
+        return allLoaded;
+    }();
+    return loaded;
+}
+
+QFont ApplicationFont()
+{
+    LoadBundledFonts();
+
+    QFont font;
+    font.setFamilies(BodyFontFamilies());
+    font.setPointSize(9);
+    font.setStyleStrategy(QFont::PreferAntialias);
+    return font;
+}
+
+const QStringList &DisplayFontFamilies()
+{
+    static const QStringList families{
+        "Inter Display",      "Inter",        "Segoe UI Variable Display",
+        "Segoe UI Variable",  "Segoe UI",     "Microsoft JhengHei UI",
+        "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic",
+    };
+    return families;
+}
 
 //////////////////////////////////////////////////
 
@@ -576,16 +638,22 @@ QFrame[cssClass="settingCard"] {
     border: 1px solid @cardBorder;
     border-radius: 6px;
 }
-QLabel[cssClass="cardTitle"] { font-size: 10pt; color: @text; background: transparent; }
+QLabel[cssClass="cardTitle"] {
+    font-family: "Inter";
+    font-size: 10pt;
+    font-weight: 500;
+    color: @text;
+    background: transparent;
+}
 QLabel[cssClass="cardDescription"] { color: @textSecondary; background: transparent; }
 QLabel[cssClass="pageTitle"] {
-    font-family: "Segoe UI Variable Display";
+    font-family: "Inter Display";
     font-size: 20pt;
     font-weight: 600;
     color: @text;
 }
 QLabel[cssClass="appTitle"] {
-    font-family: "Segoe UI Variable Display";
+    font-family: "Inter Display";
     font-size: 14pt;
     font-weight: 600;
     color: @text;

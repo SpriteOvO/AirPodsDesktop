@@ -59,7 +59,7 @@ target_compile_definitions(
 
 add_test(NAME AnimationViewTests COMMAND AnimationViewTests)
 
-add_executable(UiRenderingTests UiRenderingTests.cpp)
+add_executable(UiRenderingTests UiRenderingTests.cpp ${CMAKE_SOURCE_DIR}/Source/Resource/Resource.qrc)
 
 target_link_libraries(
     UiRenderingTests

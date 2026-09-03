@@ -2,6 +2,7 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFontDatabase>
 #include <QLabel>
 #include <QListWidget>
 #include <QRadioButton>
@@ -19,6 +20,19 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void BundledTypographyLoadsInterFamilies()
+    {
+        QVERIFY(Gui::Theme::LoadBundledFonts());
+
+        const auto families = QFontDatabase{}.families();
+        QVERIFY(families.contains("Inter"));
+        QVERIFY(families.contains("Inter Display"));
+
+        const auto applicationFont = Gui::Theme::ApplicationFont();
+        QCOMPARE(applicationFont.families().first(), QStringLiteral("Inter"));
+        QCOMPARE(Gui::Theme::DisplayFontFamilies().first(), QStringLiteral("Inter Display"));
+    }
+
     void SettingsWindowSupportsKeyboardAndCompactLayout()
     {
         auto backend = std::make_shared<Core::QuickConnect::NullBackend>();

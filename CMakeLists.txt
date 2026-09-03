@@ -561,6 +561,17 @@ if (MSVC)
     endif()
 endif()
 
+add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${APD_BINARY_OUT_DIR}/licenses"
+    COMMAND
+        ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Font/Inter/LICENSE.txt"
+        "${APD_BINARY_OUT_DIR}/licenses/Inter.txt"
+    COMMENT "Deploying third-party font licenses"
+)
+
 ##################################################
 # Installer generate
 #

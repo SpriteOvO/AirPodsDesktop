@@ -21,15 +21,23 @@
 #include <memory>
 
 #include <QColor>
+#include <QFont>
 #include <QObject>
 #include <QPalette>
 #include <QString>
+#include <QStringList>
 
 class QWidget;
 
 namespace Gui::Theme {
 
 enum class Mode { System, Light, Dark };
+
+// Loads the bundled Inter typefaces and returns fonts with platform fallbacks for scripts that
+// Inter does not cover. Call ApplicationFont() before constructing widgets.
+bool LoadBundledFonts();
+QFont ApplicationFont();
+const QStringList &DisplayFontFamilies();
 
 //
 // Colour tokens for the whole application.

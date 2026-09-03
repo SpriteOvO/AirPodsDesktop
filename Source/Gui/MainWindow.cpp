@@ -200,8 +200,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.pushButton->setProperty("cssClass", "accent");
 
     auto titleFont = _ui.deviceLabel->font();
-    titleFont.setFamilies(
-        {"Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
+    titleFont.setFamilies(Theme::DisplayFontFamilies());
     titleFont.setWeight(QFont::DemiBold);
     _ui.deviceLabel->setFont(titleFont);
 

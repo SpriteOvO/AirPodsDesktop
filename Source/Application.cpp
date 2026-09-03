@@ -179,12 +179,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     // stylesheet consistent across every control. It must be set before any widget exists.
     setStyle(QStyleFactory::create("Fusion"));
 
-    QFont font;
-    font.setFamily("Segoe UI");
-    font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
-    font.setPointSize(9);
-
-    setFont(font);
+    setFont(Gui::Theme::ApplicationFont());
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
