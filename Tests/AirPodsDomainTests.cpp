@@ -8,7 +8,6 @@
 
 #include <Config.h>
 #include "Source/Core/AirPods.h"
-#include "Source/Core/LowAudioLatency.h"
 #include "Source/Core/Settings.h"
 #include "Source/Core/SettingsRepository.h"
 #include "Source/Core/Update.h"
@@ -115,8 +114,7 @@ private Q_SLOTS:
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
-    void BuildsLowBandwidthSilenceFormats();
-    void CreatesCorrectPcmSilenceFrames();
+    void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void PropagatesQuickConnectSettings();
     void RejectsNullSettingsRepository();
@@ -168,61 +166,14 @@ void AirPodsDomainTests::ResolvesAirPodsMaxUsbCDisplayName()
         QString{"AirPods Max"});
 }
 
-void AirPodsDomainTests::BuildsLowBandwidthSilenceFormats()
+void AirPodsDomainTests::PackagesCompatibleLowLatencySilence()
 {
-    const auto candidates = Core::LowAudioLatency::Details::BuildSilenceFormatCandidates(
-        {16, 8, 16}, {QAudioFormat::Float, QAudioFormat::UnSignedInt, QAudioFormat::SignedInt},
-        {QAudioFormat::BigEndian, QAudioFormat::LittleEndian});
+    QFile qrc{QString{APD_SOURCE_DIR} + "/Source/Resource/Resource.qrc"};
+    QVERIFY(qrc.open(QIODevice::ReadOnly | QIODevice::Text));
 
-    QCOMPARE(candidates.size(), size_t{12});
-    for (const auto &candidate : candidates) {
-        QCOMPARE(candidate.sampleRate(), 8000);
-        QCOMPARE(candidate.channelCount(), 1);
-        QCOMPARE(candidate.codec(), QString{"audio/pcm"});
-    }
-
-    QCOMPARE(candidates.front().sampleSize(), 8);
-    QCOMPARE(candidates.front().sampleType(), QAudioFormat::SignedInt);
-    QCOMPARE(candidates.front().byteOrder(), QAudioFormat::LittleEndian);
-}
-
-void AirPodsDomainTests::CreatesCorrectPcmSilenceFrames()
-{
-    const auto makeFormat = [](int sampleSize, int channelCount,
-                               QAudioFormat::SampleType sampleType,
-                               QAudioFormat::Endian byteOrder) {
-        QAudioFormat format;
-        format.setSampleSize(sampleSize);
-        format.setChannelCount(channelCount);
-        format.setSampleType(sampleType);
-        format.setByteOrder(byteOrder);
-        return format;
-    };
-
-    const std::vector<uint8_t> signedSilence{0, 0, 0, 0};
-    QVERIFY(
-        Core::LowAudioLatency::Details::CreateSilentFrame(makeFormat(
-            16, 2, QAudioFormat::SignedInt, QAudioFormat::LittleEndian)) == signedSilence);
-
-    const std::vector<uint8_t> floatSilence{0, 0, 0, 0};
-    QVERIFY(
-        Core::LowAudioLatency::Details::CreateSilentFrame(
-            makeFormat(32, 1, QAudioFormat::Float, QAudioFormat::LittleEndian)) == floatSilence);
-
-    const std::vector<uint8_t> unsignedLittleEndian{0, 0x80, 0, 0x80};
-    QVERIFY(
-        Core::LowAudioLatency::Details::CreateSilentFrame(makeFormat(
-            16, 2, QAudioFormat::UnSignedInt, QAudioFormat::LittleEndian)) == unsignedLittleEndian);
-
-    const std::vector<uint8_t> unsignedBigEndian{0x80, 0};
-    QVERIFY(
-        Core::LowAudioLatency::Details::CreateSilentFrame(makeFormat(
-            16, 1, QAudioFormat::UnSignedInt, QAudioFormat::BigEndian)) == unsignedBigEndian);
-
-    const std::vector<uint8_t> unsignedTwentyBit{0, 0, 0x08};
-    QVERIFY(
-        Core::LowAudioLatency::Details::CreateSilentFrame(makeFormat(
-            20, 1, QAudioFormat::UnSignedInt, QAudioFormat::LittleEndian)) == unsignedTwentyBit);
+    const auto qrcContents = QString::fromUtf8(qrc.readAll());
+    QVERIFY(qrcContents.contains("<file>Audio/Silence.mp3</file>"));
+    QVERIFY(QFile::exists(QString{APD_SOURCE_DIR} + "/Source/Resource/Audio/Silence.mp3"));
 }
 
 void AirPodsDomainTests::ParsesAdvertisementState()

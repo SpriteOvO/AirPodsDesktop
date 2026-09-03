@@ -11,5 +11,6 @@
         <file>Video/AirPods_Pro_3.avi</file>
         <file>Video/AirPods_Max.avi</file>
         <file>Video/Beats_Fit_Pro.avi</file>
+        <file>Audio/Silence.mp3</file>
     </qresource>
 </RCC>

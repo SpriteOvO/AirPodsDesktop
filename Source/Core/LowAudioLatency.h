@@ -19,30 +19,15 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
 #include <memory>
-#include <vector>
 
-#include <QAudioFormat>
-#include <QAudioOutput>
-#include <QList>
-#include <QString>
+#include <QMediaPlayer>
+#include <QMediaPlaylist>
 #include <QTimer>
 
 using namespace std::chrono_literals;
 
 namespace Core::LowAudioLatency {
-
-namespace Details {
-
-std::vector<QAudioFormat> BuildSilenceFormatCandidates(
-    const QList<int> &sampleSizes, const QList<QAudioFormat::SampleType> &sampleTypes,
-    const QList<QAudioFormat::Endian> &byteOrders);
-std::vector<uint8_t> CreateSilentFrame(const QAudioFormat &format);
-
-} // namespace Details
-
-class SilenceDevice;
 
 class Controller : public QObject
 {
@@ -58,12 +43,9 @@ Q_SIGNALS:
 
 private:
     constexpr static inline auto kRetryInterval = 30s;
-    constexpr static inline auto kDeviceCheckInterval = 5s;
-    std::unique_ptr<QAudioOutput> _audioOutput;
-    std::unique_ptr<SilenceDevice> _silenceDevice;
+    std::unique_ptr<QMediaPlayer> _mediaPlayer;
+    std::unique_ptr<QMediaPlaylist> _mediaPlaylist;
     QTimer _initTimer;
-    QTimer _deviceCheckTimer;
-    QString _deviceName;
     bool _inited{false}, _enabled{false}, _deviceConnected{false};
 
     bool Initialize();
@@ -74,8 +56,7 @@ private:
 
     void Start();
     void Stop();
-    void CheckOutputDevice();
-    void OnStateChanged(QAudio::State state);
+    void OnError(QMediaPlayer::Error error);
 };
 
 } // namespace Core::LowAudioLatency
