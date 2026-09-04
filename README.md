@@ -36,21 +36,7 @@
 
 ## 🛠️ Build and test
 
-The Windows build uses C++20, CMake 3.20+, Visual Studio 2019, Qt 5.15.2 (MSVC 2019 32-bit), and a bootstrapped vcpkg checkout. See the [Build Instructions](/Docs/Build.md) for setup.
-
-Run these commands from the repository root after replacing the example paths:
-
-```powershell
-cmake -S . -B Build -G "Visual Studio 16 2019" -A Win32 `
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo `
-  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019 `
-  -DAPD_BUILD_TESTS=ON
-cmake --build Build --config RelWithDebInfo
-ctest --test-dir Build -C RelWithDebInfo --output-on-failure
-```
-
-Executables and deployed Qt files are written to `Build/Binary/`. Add `-DAPD_ENABLE_CONSOLE=ON` for console diagnostics or `-DAPD_GENERATE_INSTALLER=ON` to generate an installer with NSIS.
+See the [Build Instructions](/Docs/Build.md) for Windows prerequisites, build commands, and tests.
 
 ## 🤝 Contribute
 

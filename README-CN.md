@@ -36,21 +36,7 @@
 
 ## 🛠️ 构建与测试
 
-Windows 构建使用 C++20、CMake 3.20+、Visual Studio 2019、Qt 5.15.2（MSVC 2019 32 位），以及已完成初始化的 vcpkg。环境设置请参阅[构建说明](/Docs/Build.md)。
-
-替换示例路径后，在仓库根目录运行以下命令：
-
-```powershell
-cmake -S . -B Build -G "Visual Studio 16 2019" -A Win32 `
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo `
-  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019 `
-  -DAPD_BUILD_TESTS=ON
-cmake --build Build --config RelWithDebInfo
-ctest --test-dir Build -C RelWithDebInfo --output-on-failure
-```
-
-可执行文件与部署的 Qt 文件会输出至 `Build/Binary/`。添加 `-DAPD_ENABLE_CONSOLE=ON` 可启用控制台诊断；添加 `-DAPD_GENERATE_INSTALLER=ON` 可通过 NSIS 生成安装程序。
+Windows 环境要求、构建命令与测试方式请参阅[构建说明](/Docs/Build.md)。
 
 ## 🤝 贡献
 
