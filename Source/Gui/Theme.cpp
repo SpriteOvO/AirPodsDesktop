@@ -789,11 +789,12 @@ QMenu {
     padding: 4px;
 }
 QMenu::item {
-    padding: 7px 28px 7px 12px;
+    padding: 7px 28px 7px 34px;
     border-radius: 6px;
     background: transparent;
     color: @text;
 }
+QMenu::item:non-exclusive { padding-left: 12px; }
 QMenu::item:selected { background: @controlHover; }
 QMenu::item:disabled { color: @textDisabled; }
 QMenu::separator { height: 1px; background: @separator; margin: 4px 8px; }
