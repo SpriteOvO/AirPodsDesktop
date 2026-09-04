@@ -1,5 +1,7 @@
 #include <QAbstractVideoSurface>
+#include <QDataStream>
 #include <QDir>
+#include <QFile>
 #include <QMediaPlayer>
 #include <QPainter>
 #include <QTest>
@@ -34,6 +36,9 @@ public:
     int framesWithOpaqueBackgroundSamples{0};
     int representativeOpaquePixels{0};
     QImage representativeFrame;
+    QImage failedInput;
+    QImage failedOutput;
+    qint64 failedTime{-1};
 
     QList<QVideoFrame::PixelFormat>
     supportedPixelFormats(QAbstractVideoBuffer::HandleType type) const override
@@ -63,6 +68,7 @@ public:
     bool present(const QVideoFrame &frame) override
     {
         auto image = frame.image();
+        const auto input = image;
         if (image.isNull()) {
             return false;
         }
@@ -72,6 +78,11 @@ public:
         ++frameCount;
         if (!HasTransparentBackgroundSamples(image)) {
             ++framesWithOpaqueBackgroundSamples;
+            if (failedInput.isNull()) {
+                failedInput = input;
+                failedOutput = image;
+                failedTime = frame.startTime();
+            }
         }
         int opaquePixels = 0;
         for (int y = 0; y < image.height(); y += 4) {
@@ -163,34 +174,78 @@ private Q_SLOTS:
         QCOMPARE(qAlpha(image.pixel(image.width() - 1, image.height() / 2)), 255);
     }
 
-    void BundledAnimationsRemoveMatteBackgrounds()
+    void BundledAnimationsRemoveMatteBackgrounds_data()
     {
+        QTest::addColumn<QString>("video");
         const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
         const auto videos = videoDir.entryList({"*.avi"}, QDir::Files, QDir::Name);
         QVERIFY2(!videos.isEmpty(), "No bundled animations found");
 
         for (const auto &video : videos) {
-            CollectingSurface surface;
-            QMediaPlayer player;
-            player.setMuted(true);
-            player.setVideoOutput(&surface);
-            player.setMedia(QUrl::fromLocalFile(videoDir.filePath(video)));
-            player.setPlaybackRate(4.0);
-            player.play();
-
-            QTRY_COMPARE_WITH_TIMEOUT(player.mediaStatus(), QMediaPlayer::EndOfMedia, 15000);
-            player.stop();
-
-            QVERIFY2(surface.frameCount > 0, qPrintable(video + ": no frames decoded"));
-            QCOMPARE(surface.framesWithOpaqueBackgroundSamples, 0);
-            QVERIFY(!surface.representativeFrame.isNull());
-            SaveComposites(QFileInfo{video}.completeBaseName(), surface.representativeFrame);
-
-            player.setVideoOutput(static_cast<QAbstractVideoSurface *>(nullptr));
-            player.setMedia({});
-            surface.stop();
-            QCoreApplication::processEvents();
+            QTest::newRow(qPrintable(video)) << video;
         }
+    }
+
+    void BundledAnimationsUseCompleteMacroblocks_data()
+    {
+        BundledAnimationsRemoveMatteBackgrounds_data();
+    }
+
+    void BundledAnimationsUseCompleteMacroblocks()
+    {
+        QFETCH(QString, video);
+        QFile file{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video/") + video};
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const auto header = file.read(64 * 1024);
+        QCOMPARE(header.left(4), QByteArray{"RIFF"});
+        QCOMPARE(header.mid(8, 4), QByteArray{"AVI "});
+        const auto formatOffset = header.indexOf("strf");
+        QVERIFY(formatOffset >= 0);
+        QDataStream format{header.mid(formatOffset + 8)};
+        format.setByteOrder(QDataStream::LittleEndian);
+        quint32 headerSize;
+        qint32 width, height;
+        format >> headerSize >> width >> height;
+        QCOMPARE(format.status(), QDataStream::Ok);
+        QVERIFY(headerSize >= 40);
+        QVERIFY(width > 0 && height > 0);
+        // Partial MPEG-4 macroblocks can produce corrupt frames in the Windows decoder.
+        QCOMPARE(width % 16, 0);
+        QCOMPARE(height % 16, 0);
+    }
+
+    void BundledAnimationsRemoveMatteBackgrounds()
+    {
+        QFETCH(QString, video);
+        const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
+        CollectingSurface surface;
+        QMediaPlayer player;
+        player.setMuted(true);
+        player.setVideoOutput(&surface);
+        player.setMedia(QUrl::fromLocalFile(videoDir.filePath(video)));
+        player.setPlaybackRate(4.0);
+        player.play();
+
+        QTRY_COMPARE_WITH_TIMEOUT(player.mediaStatus(), QMediaPlayer::EndOfMedia, 15000);
+        player.stop();
+
+        QVERIFY2(surface.frameCount > 0, qPrintable(video + ": no frames decoded"));
+        if (!surface.failedInput.isNull()) {
+            QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/AnimationValidation"));
+            const auto prefix =
+                QStringLiteral(APD_BINARY_DIR "/AnimationValidation/diagnostic-") + video;
+            surface.failedInput.save(prefix + "-input.png");
+            surface.failedOutput.save(prefix + "-output.png");
+            qWarning() << "First failing frame:" << video << surface.failedTime << "us";
+        }
+        QCOMPARE(surface.framesWithOpaqueBackgroundSamples, 0);
+        QVERIFY(!surface.representativeFrame.isNull());
+        SaveComposites(QFileInfo{video}.completeBaseName(), surface.representativeFrame);
+
+        player.setVideoOutput(static_cast<QAbstractVideoSurface *>(nullptr));
+        player.setMedia({});
+        surface.stop();
+        QCoreApplication::processEvents();
     }
 };
 

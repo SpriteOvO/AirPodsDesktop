@@ -20,6 +20,8 @@ from pathlib import Path
 OUTPUT_WIDTH = 900
 OUTPUT_HEIGHT = 450
 OUTPUT_SIZE = f"{OUTPUT_WIDTH}x{OUTPUT_HEIGHT}"
+# Keep the authored canvas, then encode complete MPEG-4 macroblocks for Windows playback.
+ENCODED_SIZE = f"{OUTPUT_WIDTH // 16 * 16}x{OUTPUT_HEIGHT // 16 * 16}"
 SOURCE_SIZE = "1050x1086"
 SOURCE_FPS = 60
 
@@ -70,7 +72,9 @@ def convert(args: argparse.Namespace) -> None:
     right_x = half_width + args.right_offset_x
 
     video_filter = (
-        f"color=c=white:s={OUTPUT_SIZE}:r={SOURCE_FPS},format=rgb24[canvas];"
+        f"color=c=white:s={OUTPUT_SIZE}:r={SOURCE_FPS},"
+        "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,"
+        "format=rgb24[canvas];"
         "[0:v]split=3[original_source][shape_source][luma_source];"
         "[original_source]format=rgb24[original];"
         "[shape_source]format=gray,"
@@ -95,6 +99,7 @@ def convert(args: argparse.Namespace) -> None:
         f"[right_source]crop={half_width}:{OUTPUT_HEIGHT}:{half_width}:0[right];"
         f"[canvas][left]overlay=x={args.left_offset_x}:y=0:shortest=1[with_left];"
         f"[with_left][right]overlay=x={right_x}:y=0:shortest=1,"
+        f"scale={ENCODED_SIZE}:flags=lanczos,"
         "colorspace=all=bt709:range=tv:format=yuv420p[output]"
     )
 
