@@ -665,16 +665,7 @@ void MainWindow::BeginShow(bool fromHidden)
 {
     LOG(Trace, "MainWindow: Show");
 
-    if (_isVisible) {
-        ControlAutoHideTimer(true);
-        return;
-    }
-    _isVisible = true;
-
-    PlayAnimation();
-    ControlAutoHideTimer(true);
-
-    auto targetScreen = fromHidden ? QGuiApplication::screenAt(QCursor::pos()) : screen();
+    auto targetScreen = QGuiApplication::screenAt(QCursor::pos());
     if (targetScreen == nullptr) {
         targetScreen = screen();
     }
@@ -682,9 +673,31 @@ void MainWindow::BeginShow(bool fromHidden)
     const auto availableGeometry = targetScreen->availableGeometry();
     const auto screenGeometry = targetScreen->geometry();
     const auto target = PopupPosition(availableGeometry, size(), _screenMargin);
+    const bool changingScreen = screen() != targetScreen;
+
+    if (changingScreen && !fromHidden) {
+        // Hide before the native DPI transition so an intermediate resize is never painted.
+        hide();
+        QDialog::show();
+        return;
+    }
+
+    if (_isVisible && !changingScreen &&
+        (pos() == target || (_posAnimation.state() == QAbstractAnimation::Running &&
+                             _posAnimation.endValue().toPoint() == target)))
+    {
+        ControlAutoHideTimer(true);
+        return;
+    }
+    _isVisible = true;
+    PlayAnimation();
+    ControlAutoHideTimer(true);
 
     _posAnimation.stop();
-    if (fromHidden) {
+    if (fromHidden || changingScreen) {
+        // Resolve the native monitor and its DPI inside the destination screen before
+        // positioning the slide origin outside it.
+        move(target);
         move(target.x(), screenGeometry.bottom() + 1);
     }
     Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
