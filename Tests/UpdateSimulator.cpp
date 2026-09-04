@@ -14,18 +14,21 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#include "Source/Gui/DownloadWindow.h"
 #include "Source/Gui/Theme.h"
 #include "Source/Gui/UpdateWindow.h"
 
 namespace {
 
-enum class Command { Running, Fail, Succeed };
+enum class Command { Running, Waiting, Preparing, Fail, Succeed };
 
 Core::Update::ReleaseInfo ReleaseFixture()
 {
     Core::Update::ReleaseInfo info;
-    info.version = QVersionNumber{99, 0, 0};
+    info.version = QVersionNumber{2, 12, 345};
+    info.fileName = "simulated.exe";
+    info.downloadUrl = "https://example.invalid/simulated.exe";
+    info.fileSize = 64 * 1024 * 1024;
+    info.sha256 = QString(64, QChar{'0'});
     info.url = QStringLiteral("https://example.invalid/simulated-release");
     info.changeLog = QStringLiteral("這是一筆本機模擬更新，不會下載檔案或安裝軟體。\n\n"
                                     "• 統一更新視窗與設定視窗的外觀。\n"
@@ -34,7 +37,7 @@ Core::Update::ReleaseInfo ReleaseFixture()
     return info;
 }
 
-Gui::DownloadWindow::DownloadFunction SlowDownload(std::shared_ptr<std::atomic<Command>> command)
+Gui::UpdateWindow::DownloadFunction SlowDownload(std::shared_ptr<std::atomic<Command>> command)
 {
     return [command](const auto &, const Core::Update::FnProgress &progress) {
         constexpr size_t total = 64 * 1024 * 1024;
@@ -42,10 +45,14 @@ Gui::DownloadWindow::DownloadFunction SlowDownload(std::shared_ptr<std::atomic<C
         int ticks = 0;
         for (;;) {
             // The real window's stop token is checked by this callback on every tick.
-            if (!progress(downloaded, ticks < 10 ? 0 : total)) {
+            const auto current = command->load();
+            if (!progress(
+                    current == Command::Preparing ? total : downloaded,
+                    current == Command::Waiting || ticks < 10 ? 0 : total))
+            {
                 return false;
             }
-            switch (command->load()) {
+            switch (current) {
             case Command::Fail:
                 return false;
             case Command::Succeed:
@@ -54,11 +61,13 @@ Gui::DownloadWindow::DownloadFunction SlowDownload(std::shared_ptr<std::atomic<C
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds{500});
                 return true;
+            case Command::Waiting:
+            case Command::Preparing:
             case Command::Running:
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
-            if (++ticks >= 10) {
+            if (++ticks >= 10 && current == Command::Running) {
                 downloaded = (std::min)(downloaded + total / 1000, total * 95 / 100);
             }
         }
@@ -72,7 +81,7 @@ class UpdateSimulator : public QWidget
     Q_OBJECT
 
 public:
-    UpdateSimulator()
+    explicit UpdateSimulator(QTranslator &translator)
     {
         setWindowTitle(QStringLiteral("AirPodsDesktop 更新互動測試"));
         resize(430, 410);
@@ -102,6 +111,42 @@ public:
                 const Gui::Theme::Mode modes[]{
                     Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark, Gui::Theme::Mode::System};
                 Gui::Theme::Manager::Instance().SetMode(modes[index]);
+            });
+
+        auto *language = new QComboBox;
+        language->setAccessibleName(QStringLiteral("測試語言"));
+        language->addItems({QStringLiteral("繁體中文"), QStringLiteral("English")});
+        layout->addWidget(language);
+        connect(
+            language, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [&translator](int index) {
+                qApp->removeTranslator(&translator);
+                if (index == 0) {
+                    qApp->installTranslator(&translator);
+                }
+                const QLocale locale{index == 0 ? "zh_TW" : "en_US"};
+                QLocale::setDefault(locale);
+                Gui::Theme::ApplyApplicationTypography(locale);
+            });
+        _scenario = new QComboBox;
+        _scenario->setAccessibleName(QStringLiteral("發行情境"));
+        _scenario->addItems(
+            {QStringLiteral("正式版本"), QStringLiteral("預覽版本"), QStringLiteral("無更新說明")});
+        layout->addWidget(_scenario);
+        _progressState = new QComboBox;
+        _progressState->setAccessibleName(QStringLiteral("模擬進度狀態"));
+        _progressState->addItems(
+            {QStringLiteral("慢速下載"), QStringLiteral("等待下載大小"),
+             QStringLiteral("停留在 100%／準備安裝")});
+        layout->addWidget(_progressState);
+        connect(
+            _progressState, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int index) {
+                if (_command) {
+                    const Command commands[]{
+                        Command::Running, Command::Waiting, Command::Preparing};
+                    *_command = commands[index];
+                }
             });
 
         _start = new QPushButton{QStringLiteral("開啟更新視窗")};
@@ -137,7 +182,7 @@ public:
     ~UpdateSimulator() override
     {
         // Join the simulated worker before the panel and its controls are destroyed.
-        delete _download.data();
+        delete _prompt.data();
         QDesktopServices::unsetUrlHandler("https");
     }
 
@@ -151,13 +196,14 @@ private:
     QPushButton *_start{}, *_fail{}, *_succeed{};
     QLabel *_status{};
     QPointer<Gui::UpdateWindow> _prompt;
-    QPointer<Gui::DownloadWindow> _download;
+    QComboBox *_scenario{}, *_progressState{};
     std::shared_ptr<std::atomic<Command>> _command;
 
     void EnableOutcomeButtons(bool enabled)
     {
         _fail->setEnabled(enabled);
         _succeed->setEnabled(enabled);
+        _progressState->setEnabled(enabled);
     }
 
     void ShowBesidePanel(QDialog *dialog)
@@ -178,62 +224,54 @@ private:
 
     void ShowPrompt()
     {
-        if (_prompt || _download) {
+        if (_prompt) {
             return;
         }
         _start->setEnabled(false);
-        _status->setText(QStringLiteral("請在右側更新視窗點「立即更新」。"));
-        auto *prompt = new Gui::UpdateWindow{ReleaseFixture(), this};
-        _prompt = prompt;
-        connect(prompt, &QDialog::finished, this, [this, prompt] {
-            const auto action = prompt->SelectedAction();
-            if (action == Gui::UpdateWindow::Action::Update) {
-                ShowDownload();
-            }
-            else {
-                _start->setEnabled(true);
-                _status->setText(
-                    action == Gui::UpdateWindow::Action::Skip
-                        ? QStringLiteral("已模擬略過版本；沒有寫入正式設定。")
-                        : QStringLiteral("已關閉提示。可再次開啟更新視窗。"));
-            }
-        });
-        ShowBesidePanel(prompt);
-    }
-
-    void ShowDownload()
-    {
+        _scenario->setEnabled(false);
+        _progressState->setCurrentIndex(0);
         _command = std::make_shared<std::atomic<Command>>(Command::Running);
-        auto *download = new Gui::DownloadWindow{ReleaseFixture(), this};
-        _download = download;
-        connect(download, &Gui::DownloadWindow::FinishedSafely, this, [this](bool successful) {
+        auto info = ReleaseFixture();
+        info.isPreRelease = _scenario->currentIndex() == 1;
+        if (_scenario->currentIndex() == 2) {
+            info.changeLog.clear();
+        }
+        auto *prompt = new Gui::UpdateWindow{info, this, SlowDownload(_command)};
+        _prompt = prompt;
+        _status->setText(QStringLiteral("請在右側更新視窗點「立即更新」。"));
+        connect(prompt, &Gui::UpdateWindow::DownloadStarted, this, [this] {
+            EnableOutcomeButtons(true);
+            _status->setText(QStringLiteral("正在原視窗模擬慢速下載，可切換狀態或手動觸發失敗。"));
+        });
+        connect(prompt, &Gui::UpdateWindow::FinishedSafely, this, [this](bool successful) {
             EnableOutcomeButtons(false);
             if (!successful) {
                 _status->setText(
-                    QStringLiteral("已模擬失敗。請在右側選擇手動下載或關閉；主程式繼續執行。"));
+                    QStringLiteral("已模擬失敗。選擇手動下載或關閉；主程式繼續執行。"));
             }
         });
-        connect(download, &QDialog::finished, this, [this, download] {
+        connect(prompt, &QDialog::finished, this, [this, prompt] {
             EnableOutcomeButtons(false);
             _start->setEnabled(true);
-            switch (download->Result()) {
-            case Gui::DownloadWindow::Outcome::InstallerStarted:
+            _scenario->setEnabled(true);
+            switch (prompt->Result()) {
+            case Gui::UpdateWindow::Outcome::InstallerStarted:
                 _status->setText(
                     QStringLiteral("模擬成功：沒有啟動安裝程式。可再次開啟更新視窗。"));
                 break;
-            case Gui::DownloadWindow::Outcome::ManualDownload:
+            case Gui::UpdateWindow::Outcome::ManualDownload:
                 _status->setText(
                     QStringLiteral("已模擬切換手動下載。正式流程會退出，測試工具保持開啟。"));
                 break;
-            case Gui::DownloadWindow::Outcome::KeepRunning:
-                _status->setText(QStringLiteral("失敗視窗已關閉，程式繼續執行。可再次測試。"));
+            case Gui::UpdateWindow::Outcome::KeepRunning:
+                _status->setText(
+                    prompt->SelectedAction() == Gui::UpdateWindow::Action::Skip
+                        ? QStringLiteral("已模擬略過版本；沒有寫入正式設定。")
+                        : QStringLiteral("視窗已關閉，程式繼續執行。可再次測試。"));
                 break;
             }
         });
-        _status->setText(QStringLiteral("正在模擬慢速下載。隨時按「模擬失敗」或「模擬成功」。"));
-        EnableOutcomeButtons(true);
-        download->StartDownload(SlowDownload(_command));
-        ShowBesidePanel(download);
+        ShowBesidePanel(prompt);
     }
 };
 
@@ -241,6 +279,8 @@ int main(int argc, char **argv)
 {
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app{argc, argv};
     QTranslator translator;
     if (!translator.load(
@@ -251,7 +291,8 @@ int main(int argc, char **argv)
     app.installTranslator(&translator);
     Gui::Theme::ApplyApplicationTypography(QLocale{"zh_TW"});
     Gui::Theme::Manager::Instance().SetMode(Gui::Theme::Mode::Light);
-    UpdateSimulator simulator;
+    QLocale::setDefault(QLocale{"zh_TW"});
+    UpdateSimulator simulator{translator};
     simulator.show();
     return app.exec();
 }

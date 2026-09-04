@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <thread>
 #include <QDialog>
 
 #include "../Core/Update.h"
@@ -31,20 +32,44 @@ class UpdateWindow : public QDialog
 
 public:
     enum class Action { Update, Skip, Later };
+    enum class Outcome { KeepRunning, InstallerStarted, ManualDownload };
+    using DownloadFunction =
+        std::function<bool(const Core::Update::ReleaseInfo &, const Core::Update::FnProgress &)>;
 
-    explicit UpdateWindow(Core::Update::ReleaseInfo info, QWidget *parent = nullptr);
+    explicit UpdateWindow(
+        Core::Update::ReleaseInfo info, QWidget *parent = nullptr,
+        DownloadFunction download = Core::Update::DownloadInstall);
+    ~UpdateWindow() override;
+    void StartDownload();
     Action SelectedAction() const;
+    Outcome Result() const;
+
+Q_SIGNALS:
+    void DownloadStarted();
+    void UpdateProgressSafely(quint64 downloaded, quint64 total);
+    void FinishedSafely(bool successful);
 
 protected:
     void changeEvent(QEvent *event) override;
     void reject() override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     Ui::UpdateWindow _ui;
     Core::Update::ReleaseInfo _info;
+    DownloadFunction _download;
+    std::jthread _downloadThread;
+    enum class State { Prompt, Downloading, Failed, Finished };
+    State _state{State::Prompt};
     Action _action{Action::Later};
+    Outcome _result{Outcome::KeepRunning};
+    quint64 _downloaded{0}, _total{0};
 
     void UpdateText();
+    void UpdateProgress(quint64 downloaded, quint64 total);
+    void OnFinished(bool successful);
+    void DownloadManually();
+    void FitContent();
 };
 
 } // namespace Gui

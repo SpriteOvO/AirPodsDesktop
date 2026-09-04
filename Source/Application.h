@@ -45,7 +45,6 @@ class Controller;
 } // namespace Core::QuickConnect
 
 namespace Gui {
-class DownloadWindow;
 class MainWindow;
 class TaskbarStatus;
 class TrayIcon;
@@ -90,7 +89,6 @@ private:
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
-    std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
     std::unique_ptr<Core::AutoStart::Service> _autoStartService;

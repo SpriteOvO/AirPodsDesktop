@@ -26,7 +26,6 @@
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
-#include "Source/Gui/DownloadWindow.h"
 #include "Source/Gui/UpdateWindow.h"
 
 class UpdateUrlRecorder : public QObject
@@ -56,6 +55,10 @@ Core::Update::ReleaseInfo UpdateFixture()
     info.version = QVersionNumber{2, 12, 345};
     info.url = "https://example.invalid/release";
     info.isPreRelease = true;
+    info.fileName = "simulated.exe";
+    info.downloadUrl = "https://example.invalid/simulated.exe";
+    info.fileSize = 4000000000u;
+    info.sha256 = QString(64, QChar{'0'});
     info.changeLog =
         "Improved device connections.\nFixed battery status updates.\n<b>Plain text, not HTML</b>";
     return info;
@@ -82,7 +85,7 @@ struct SimulatedDownload {
         }
     }
 
-    Gui::DownloadWindow::DownloadFunction Function()
+    Gui::UpdateWindow::DownloadFunction Function()
     {
         return [this](const auto &info, const auto &progress) { return Run(info, progress); };
     }
@@ -97,7 +100,7 @@ private Q_SLOTS:
     void UpdatePromptActions()
     {
         UpdateUrlRecorder recorder;
-        for (const auto *name : {"updateButton", "skipButton", "laterButton", "escape", "close"}) {
+        for (const auto *name : {"skipButton", "laterButton", "escape", "close"}) {
             Gui::UpdateWindow window{UpdateFixture()};
             window.show();
             QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -125,15 +128,40 @@ private Q_SLOTS:
         }
     }
 
+    void UnsupportedUpdateOpensReleaseWithoutDownloading()
+    {
+        UpdateUrlRecorder recorder;
+        auto info = UpdateFixture();
+        info.sha256.clear();
+        SimulatedDownload download;
+        Gui::UpdateWindow window{info, nullptr, download.Function()};
+        window.show();
+        window.findChild<QPushButton *>("updateButton")->click();
+        QCOMPARE(download.calls.load(), 0);
+        QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::ManualDownload);
+        QCOMPARE(window.SelectedAction(), Gui::UpdateWindow::Action::Update);
+        QCOMPARE(recorder.urls, QList<QUrl>{QUrl{info.url}});
+        QVERIFY(!window.isVisible());
+    }
+
     void DownloadProgressAndCompletion()
     {
         SimulatedDownload download;
-        Gui::DownloadWindow window{UpdateFixture()};
+        Gui::UpdateWindow window{UpdateFixture(), nullptr, download.Function()};
         QCOMPARE(download.calls.load(), 0);
         QSignalSpy finished{&window, &QDialog::finished};
         window.show();
-        window.StartDownload(download.Function());
-        window.StartDownload(download.Function());
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const auto nativeWindow = window.winId();
+        auto *notes = window.findChild<QPlainTextEdit *>("releaseNotes");
+        const auto notesPosition = notes->mapTo(&window, QPoint{});
+        const auto windowPosition = window.pos();
+        QTest::mouseClick(window.findChild<QPushButton *>("updateButton"), Qt::LeftButton);
+        window.StartDownload();
+        QCOMPARE(window.winId(), nativeWindow);
+        QCOMPARE(window.SelectedAction(), Gui::UpdateWindow::Action::Update);
+        QCOMPARE(notes->mapTo(&window, QPoint{}), notesPosition);
+        QCOMPARE(window.pos(), windowPosition);
         QVERIFY(QTest::qWaitForWindowExposed(&window));
         auto *bar = window.findChild<QProgressBar *>("progressBar");
         QTRY_COMPARE(download.calls.load(), 1);
@@ -148,14 +176,20 @@ private Q_SLOTS:
         QCOMPARE(bar->value(), 500);
         download.stage = 0;
         QTRY_COMPARE(bar->maximum(), 0);
+        const auto downloadingHeight = window.height();
         download.stage = 2;
         QTRY_COMPARE(bar->value(), 1000);
-        QCOMPARE(window.findChild<QLabel *>("status")->text(), QString{"Preparing to install..."});
+        QVERIFY(!window.findChild<QPushButton *>("pushButtonDownloadManually")->isEnabled());
+        QVERIFY(window.findChild<QLabel *>("hint")->isHidden());
+        QVERIFY(window.height() < downloadingHeight);
+        QTest::keyClick(&window, Qt::Key_Escape);
+        QVERIFY(!window.close());
+        QCOMPARE(bar->accessibleName(), QString{"Preparing to install..."});
         QCOMPARE(finished.count(), 0);
-        QCOMPARE(window.Result(), Gui::DownloadWindow::Outcome::KeepRunning);
+        QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::KeepRunning);
         download.stage = 4;
         QTRY_COMPARE(finished.count(), 1);
-        QCOMPARE(window.Result(), Gui::DownloadWindow::Outcome::InstallerStarted);
+        QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::InstallerStarted);
         QVERIFY(!window.isVisible());
     }
 
@@ -163,25 +197,33 @@ private Q_SLOTS:
     {
         UpdateUrlRecorder recorder;
         for (const auto *action : {"closeButton", "escape", "close"}) {
-            Gui::DownloadWindow window{UpdateFixture()};
+            Gui::UpdateWindow window{
+                UpdateFixture(), nullptr, [](const auto &, const auto &) { return false; }};
             QSignalSpy finished{&window, &QDialog::finished};
-            window.StartDownload([](const auto &, const auto &) { return false; });
+            window.StartDownload();
             window.show();
             auto *close = window.findChild<QPushButton *>("closeButton");
             QTRY_VERIFY(close->isVisible());
             QVERIFY(window.windowFlags().testFlag(Qt::WindowCloseButtonHint));
+            window.activateWindow();
+            QVERIFY(QTest::qWaitForWindowActive(&window));
+            QCOMPARE(QApplication::focusWidget(), close);
+            const auto focusedSize = close->size();
+            window.findChild<QPushButton *>("viewButton")->setFocus();
+            QCOMPARE(close->size(), focusedSize);
+            close->setFocus();
             QCOMPARE(finished.count(), 0);
             QVERIFY(!window.findChild<QProgressBar *>("progressBar")->isVisible());
-            const auto failureText = window.findChild<QLabel *>("status")->text();
+            const auto failureText = window.findChild<QLabel *>("failureDescription")->text();
             window.UpdateProgressSafely(100, 100);
-            QCOMPARE(window.findChild<QLabel *>("status")->text(), failureText);
+            QCOMPARE(window.findChild<QLabel *>("failureDescription")->text(), failureText);
             const auto urlCount = recorder.urls.size();
             QTest::mouseClick(
-                window.findChild<QPushButton *>("pushButtonDownloadManually"), Qt::LeftButton);
+                window.findChild<QPushButton *>("failedManualButton"), Qt::LeftButton);
             QCOMPARE(recorder.urls.size(), urlCount + 1);
             QVERIFY(window.isVisible());
             QCOMPARE(finished.count(), 0);
-            QCOMPARE(window.Result(), Gui::DownloadWindow::Outcome::KeepRunning);
+            QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::KeepRunning);
             if (QString{action} == "escape") {
                 QTest::keyClick(&window, Qt::Key_Escape);
             }
@@ -192,22 +234,24 @@ private Q_SLOTS:
                 QTest::mouseClick(close, Qt::LeftButton);
             }
             QCOMPARE(finished.count(), 1);
-            QCOMPARE(window.Result(), Gui::DownloadWindow::Outcome::KeepRunning);
+            QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::KeepRunning);
+            QCOMPARE(window.SelectedAction(), Gui::UpdateWindow::Action::Update);
         }
         SimulatedDownload download;
-        Gui::DownloadWindow active{UpdateFixture()};
-        active.StartDownload(download.Function());
+        Gui::UpdateWindow active{UpdateFixture(), nullptr, download.Function()};
+        active.StartDownload();
         active.show();
         QVERIFY(QTest::qWaitForWindowExposed(&active));
         QTest::mouseClick(
             active.findChild<QPushButton *>("pushButtonDownloadManually"), Qt::LeftButton);
-        QCOMPARE(active.Result(), Gui::DownloadWindow::Outcome::ManualDownload);
+        QCOMPARE(active.Result(), Gui::UpdateWindow::Outcome::ManualDownload);
         QVERIFY(!active.isVisible());
     }
 
     void FailedDownloadStaysInModalLoop()
     {
-        Gui::DownloadWindow window{UpdateFixture()};
+        Gui::UpdateWindow window{
+            UpdateFixture(), nullptr, [](const auto &, const auto &) { return false; }};
         bool failureWasVisible = false;
         bool userClosed = false;
         QTimer closeWhenFailed;
@@ -222,11 +266,11 @@ private Q_SLOTS:
         });
         QTimer::singleShot(3000, &window, &QDialog::accept);
         closeWhenFailed.start();
-        window.StartDownload([](const auto &, const auto &) { return false; });
+        window.StartDownload();
         window.exec();
         QVERIFY(failureWasVisible);
         QVERIFY(userClosed);
-        QCOMPARE(window.Result(), Gui::DownloadWindow::Outcome::KeepRunning);
+        QCOMPARE(window.Result(), Gui::UpdateWindow::Outcome::KeepRunning);
     }
 
     void UpdateWindowsFollowLanguageAndThemeChanges()
@@ -234,8 +278,9 @@ private Q_SLOTS:
         auto &theme = Gui::Theme::Manager::Instance();
         const auto originalMode = theme.CurrentMode();
         Gui::UpdateWindow prompt{UpdateFixture()};
-        Gui::DownloadWindow failure{UpdateFixture()};
-        failure.StartDownload([](const auto &, const auto &) { return false; });
+        Gui::UpdateWindow failure{
+            UpdateFixture(), nullptr, [](const auto &, const auto &) { return false; }};
+        failure.StartDownload();
         failure.show();
         QTRY_VERIFY(failure.findChild<QPushButton *>("closeButton")->isVisible());
         const auto englishTitle = failure.findChild<QLabel *>("title")->text();
@@ -247,7 +292,7 @@ private Q_SLOTS:
         QCoreApplication::processEvents();
         QCOMPARE(
             failure.findChild<QLabel *>("title")->text(),
-            translator.translate("Gui::DownloadWindow", "Unable to update"));
+            translator.translate("Gui::UpdateWindow", "Unable to update"));
         QCOMPARE(
             prompt.findChild<QPushButton *>("updateButton")->text(),
             translator.translate("UpdateWindow", "Update now"));
@@ -296,18 +341,42 @@ private Q_SLOTS:
         const auto suffix = QString{"-%1-%2-scale%3.png"}.arg(
             localeName, dark ? "dark" : "light", qEnvironmentVariable("QT_SCALE_FACTOR", "1"));
         const auto verifyLayout = [](QWidget &window) {
+            if (window.width() != 560) {
+                return false;
+            }
             for (auto *button : window.findChildren<QPushButton *>()) {
                 if (button->isVisible() &&
                     (!window.rect().contains(
                          QRect{button->mapTo(&window, QPoint{}), button->size()}) ||
-                     button->width() <
-                         button->fontMetrics().horizontalAdvance(button->text()) + 24))
+                     button->height() != 28 ||
+                     button->width() < button->fontMetrics().horizontalAdvance(button->text()) +
+                                           (button->isFlat() ? 14 : 32)))
                 {
+                    qWarning() << button->objectName() << button->size() << button->text()
+                               << button->fontMetrics().horizontalAdvance(button->text());
                     return false;
                 }
             }
+            auto *status = window.findChild<QLabel *>("status");
+            auto *details = window.findChild<QLabel *>("progressDetails");
+            if (status->isVisible() &&
+                (status->fontMetrics().horizontalAdvance(status->text()) > status->width() ||
+                 details->fontMetrics().horizontalAdvance(details->text()) > details->width() ||
+                 status->geometry().intersects(details->geometry())))
+            {
+                qWarning() << status->geometry() << details->geometry();
+                return false;
+            }
             return true;
         };
+        auto stableInfo = UpdateFixture();
+        stableInfo.isPreRelease = false;
+        Gui::UpdateWindow stable{stableInfo};
+        stable.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&stable));
+        QVERIFY(stable.grab().save(outputDir + "/update-stable" + suffix));
+        QVERIFY(verifyLayout(stable));
+        stable.close();
         Gui::UpdateWindow prompt{UpdateFixture()};
         prompt.show();
         QVERIFY(QTest::qWaitForWindowExposed(&prompt));
@@ -337,17 +406,39 @@ private Q_SLOTS:
         emptyInfo.changeLog.clear();
         emptyInfo.isPreRelease = false;
         Gui::UpdateWindow emptyPrompt{emptyInfo};
-        QVERIFY(!emptyPrompt.findChild<QPlainTextEdit *>("releaseNotes")->toPlainText().isEmpty());
-        QVERIFY(emptyPrompt.findChild<QLabel *>("preRelease")->isHidden());
+        emptyPrompt.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&emptyPrompt));
+        QVERIFY(
+            emptyPrompt.findChild<QPlainTextEdit *>("releaseNotes")->isHidden() ||
+            !emptyPrompt.findChild<QPlainTextEdit *>("releaseNotes")->isVisible());
+        QVERIFY(emptyPrompt.findChild<QWidget *>("noChangeLogRow")->isVisible());
+        QVERIFY(verifyLayout(emptyPrompt));
+        QVERIFY(emptyPrompt.grab().save(outputDir + "/update-empty" + suffix));
+        emptyPrompt.close();
         SimulatedDownload download;
-        download.stage = 1;
-        Gui::DownloadWindow progress{UpdateFixture()};
-        progress.StartDownload(download.Function());
+        download.stage = 0;
+        Gui::UpdateWindow progress{UpdateFixture(), nullptr, download.Function()};
         progress.show();
         QVERIFY(QTest::qWaitForWindowExposed(&progress));
+        const auto notesPosition =
+            progress.findChild<QPlainTextEdit *>("releaseNotes")->mapTo(&progress, QPoint{});
+        const auto nativeWindow = progress.winId();
+        progress.findChild<QPushButton *>("updateButton")->click();
+        QCOMPARE(progress.winId(), nativeWindow);
+        QCOMPARE(
+            progress.findChild<QPlainTextEdit *>("releaseNotes")->mapTo(&progress, QPoint{}),
+            notesPosition);
+        QTRY_COMPARE(progress.findChild<QProgressBar *>("progressBar")->maximum(), 0);
+        QVERIFY(verifyLayout(progress));
+        QVERIFY(progress.grab().save(outputDir + "/update-waiting" + suffix));
+        download.stage = 1;
         QTRY_COMPARE(progress.findChild<QProgressBar *>("progressBar")->value(), 750);
         QVERIFY(verifyLayout(progress));
         QVERIFY(progress.grab().save(outputDir + "/update-download" + suffix));
+        download.stage = 2;
+        QTRY_COMPARE(progress.findChild<QProgressBar *>("progressBar")->value(), 1000);
+        QVERIFY(verifyLayout(progress));
+        QVERIFY(progress.grab().save(outputDir + "/update-preparing" + suffix));
         download.stage = 5;
         QTRY_VERIFY(progress.findChild<QPushButton *>("closeButton")->isVisible());
         QVERIFY(verifyLayout(progress));
@@ -566,6 +657,16 @@ private Q_SLOTS:
     }
 };
 
-QTEST_MAIN(UiRenderingTests)
+int main(int argc, char **argv)
+{
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+    QApplication app{argc, argv};
+    Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
+    UiRenderingTests tests;
+    return QTest::qExec(&tests, argc, argv);
+}
 
 #include "UiRenderingTests.moc"

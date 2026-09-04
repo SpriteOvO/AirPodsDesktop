@@ -27,7 +27,6 @@
 #include "Error.h"
 #include "Utils.h"
 #include "Gui/Utils.h"
-#include "Gui/DownloadWindow.h"
 #include "Gui/MainWindow.h"
 #include "Gui/TaskbarStatus.h"
 #include "Gui/TrayIcon.h"

@@ -72,6 +72,7 @@ target_link_libraries(
 
 target_include_directories(UiRenderingTests PRIVATE "${CMAKE_SOURCE_DIR}")
 target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINARY_DIR}")
+add_dependencies(UiRenderingTests apd_translations)
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
 
@@ -80,8 +81,8 @@ add_executable(
     UpdateSimulator WIN32 EXCLUDE_FROM_ALL
     UpdateSimulator.cpp
     ${CMAKE_SOURCE_DIR}/Source/Resource/Resource.qrc
-    ${APD_QM_FILES}
 )
+add_dependencies(UpdateSimulator apd_translations)
 target_link_libraries(UpdateSimulator PRIVATE apd_gui Qt5::Widgets)
 target_include_directories(UpdateSimulator PRIVATE "${CMAKE_SOURCE_DIR}")
 if(MSVC)

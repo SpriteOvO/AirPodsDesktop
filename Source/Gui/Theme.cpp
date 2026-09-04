@@ -289,6 +289,7 @@ Palette BuildPalette(const SystemTheme &system)
     // Shared iOS battery colours
     p.batteryNormal = QColor{"#34C759"};
     p.batteryAlarm = QColor{"#FF3B30"};
+    p.errorText = p.dark ? QColor{"#FF453A"} : QColor{"#FF3B30"};
 
     // Preserve the system accent preference while using macOS-like pressed-state blending.
     p.accentHover = Mix(p.accent, p.surface, 0.10);
@@ -797,11 +798,60 @@ QMenu::indicator:non-exclusive:checked { image: url(:/Resource/Image/Theme/Check
 
 /* ---------- Dialog button box ---------- */
 QDialogButtonBox { dialogbuttonbox-buttons-have-icons: 0; }
+
+/* ---------- Grouped software update dialog ---------- */
+QDialog#UpdateWindow { background: @windowBackground; }
+QDialog#UpdateWindow QFrame#card {
+    background: @surface; border: 1px solid @cardBorder; border-radius: 10px;
+}
+QDialog#UpdateWindow QFrame[updateRole="divider"] {
+    background: @separator; border: none; min-height: 1px; max-height: 1px;
+}
+QDialog#UpdateWindow QLabel { font-size: 9pt; color: @text; background: transparent; }
+QDialog#UpdateWindow QLabel[updateRole="title"] { font-size: 10pt; font-weight: 500; }
+QDialog#UpdateWindow QLabel[updateRole="sectionTitle"] { font-weight: 500; }
+QDialog#UpdateWindow QLabel[updateRole="secondary"] { color: @textSecondary; }
+QDialog#UpdateWindow QLabel[updateRole="error"] { color: @errorText; }
+QDialog#UpdateWindow QPlainTextEdit {
+    background: @notesBackground; border: 1px solid @notesBorder; border-radius: 6px;
+    padding: 8px; font-size: 9pt; color: @text;
+}
+QDialog#UpdateWindow QPushButton {
+    min-height: 0; padding: 0 16px; border-radius: 6px; font-size: 9pt;
+    border: 1px solid @controlBorder; background: @controlFill; color: @text;
+}
+QDialog#UpdateWindow QPushButton:hover { background: @controlHover; }
+QDialog#UpdateWindow QPushButton:pressed { background: @controlPressed; color: @textSecondary; }
+QDialog#UpdateWindow QPushButton:focus { border: 2px solid @accent; padding: 0 15px; }
+QDialog#UpdateWindow QPushButton[primary="true"] {
+    background: @accent; border-color: @accent; color: @accentText;
+}
+QDialog#UpdateWindow QPushButton[primary="true"]:hover {
+    background: @accentHover; border-color: @accentHover;
+}
+QDialog#UpdateWindow QPushButton[primary="true"]:pressed {
+    background: @accentPressed; border-color: @accentPressed; color: @accentText;
+}
+QDialog#UpdateWindow QPushButton[flat="true"] {
+    border: 1px solid transparent; background: transparent; color: @accent; padding: 0 7px;
+}
+QDialog#UpdateWindow QPushButton[flat="true"]:hover { background: @flatHover; }
+QDialog#UpdateWindow QPushButton[flat="true"]:focus {
+    border: 2px solid @accent; padding: 0 6px;
+}
+QDialog#UpdateWindow QPushButton:disabled {
+    background: @windowBackground; border: 1px solid @controlHover;
+    color: @textDisabled; padding: 0 16px;
+}
 )";
 
     const std::pair<QString, QString> replacements[] = {
         {"@displayFontFamilies", CssFontFamilies(DisplayFontFamilies(ActiveTypographyLocale()))},
         {"@bodyFontFamilies", CssFontFamilies(BodyFontFamilies(ActiveTypographyLocale()))},
+        {"@notesBackground", ColorName(p.dark ? p.surfaceSecondary : p.windowBackground)},
+        {"@notesBorder", ColorName(p.dark ? p.cardBorder : p.surfaceSecondary)},
+        {"@flatHover", ColorName(p.dark ? p.controlFill : p.surfaceSecondary)},
+        {"@errorText", ColorName(p.errorText)},
         {"@windowBackground", ColorName(p.windowBackground)},
         {"@surfaceSecondary", ColorName(p.surfaceSecondary)},
         {"@surface", ColorName(p.surface)},

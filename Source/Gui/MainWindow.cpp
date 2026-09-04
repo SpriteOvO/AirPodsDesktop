@@ -30,7 +30,6 @@
 #include "../Error.h"
 #include "../Core/AppleCP.h"
 #include "../Core/Settings.h"
-#include "DownloadWindow.h"
 #include "UpdateWindow.h"
 #include "SelectWindow.h"
 #include "Theme.h"
@@ -271,17 +270,8 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
     case UpdateWindow::Action::Update:
         LOG(Info, "VersionUpdate: User clicked Update.");
 
-        if (!releaseInfo.CanAutoUpdate()) {
-            LOG(Info, "VersionUpdate: Cannot auto update. Popup latest url and quit.");
-            releaseInfo.OpenUrl();
-        }
-        else {
-            DownloadWindow downloadWindow{releaseInfo};
-            downloadWindow.StartDownload();
-            downloadWindow.exec();
-            if (downloadWindow.Result() == DownloadWindow::Outcome::KeepRunning) {
-                return;
-            }
+        if (updateWindow.Result() == UpdateWindow::Outcome::KeepRunning) {
+            return;
         }
 
         Utils::Qt::QuitApplicationSafely();

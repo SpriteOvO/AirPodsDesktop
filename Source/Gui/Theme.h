@@ -51,7 +51,7 @@ struct Palette {
 
     // Application windows
     QColor windowBackground, surface, surfaceSecondary, cardBorder, separator;
-    QColor text, textSecondary, textDisabled;
+    QColor text, textSecondary, textDisabled, errorText;
     QColor controlFill, controlHover, controlPressed, controlBorder;
     QColor accent, accentHover, accentPressed, accentDisabled, accentText;
     QColor popupSurface, popupBorder;

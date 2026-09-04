@@ -51,64 +51,6 @@ Enjoy it all.</source>
     </message>
 </context>
 <context>
-    <name>DownloadWindow</name>
-    <message>
-        <source>Download Manually</source>
-        <translation>Скачать вручную</translation>
-    </message>
-    <message>
-        <source>Software Update</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>Закрыть</translation>
-    </message>
-</context>
-<context>
-    <name>Gui::DownloadWindow</name>
-    <message>
-        <source>Unable to update</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloading update</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New version: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>Gui::MainWindow</name>
     <message>
         <source>Bind to AirPods</source>
@@ -225,15 +167,63 @@ Enjoy it all.</source>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
-        <source>Current version: %1</source>
+        <source>Ready to install. You are using %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Latest version: %1</source>
+        <source>Downloading update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No release notes are available. You can view the release page for details.</source>
+        <source>Unable to update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update was stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stable release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No release notes for this version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -421,18 +411,6 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>A new version is available</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Preview release</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>View release</source>
         <translation>Посмотреть релиз</translation>
     </message>
@@ -447,6 +425,22 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Update now</source>
         <translation>Обновить сейчас</translation>
+    </message>
+    <message>
+        <source>Download Manually</source>
+        <translation>Скачать вручную</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

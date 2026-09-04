@@ -324,7 +324,6 @@ set(
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
-    "Source/Gui/DownloadWindow.cpp"
     "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
@@ -412,6 +411,10 @@ qt5_add_translation(
     APD_QM_FILES
     ${APD_TS_FILES}
 )
+
+# One owner for the generated translations, also when building a test target on its own.
+add_custom_target(apd_translations DEPENDS ${APD_QM_FILES})
+add_dependencies(apd_translations APD_CREATE_UPDATE_TS)
 
 ##################################################
 
@@ -510,10 +513,9 @@ add_executable(
 
     ${APD_APP_CODE_FILES}
     ${APD_QRC_FILE}
-    ${APD_QM_FILES}
 )
 
-add_dependencies(${PROJECT_NAME} APD_CREATE_UPDATE_TS)
+add_dependencies(${PROJECT_NAME} apd_translations)
 
 foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
     set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)
