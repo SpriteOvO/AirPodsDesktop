@@ -22,6 +22,7 @@
 #include <QThread>
 #include <QUrl>
 #include <QTimer>
+#include <QPainter>
 
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/SettingsWindow.h"
@@ -97,6 +98,62 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void UpdateTextHasSmoothNeutralEdges_data()
+    {
+        QTest::addColumn<QString>("localeName");
+        QTest::newRow("English") << "en_US";
+        QTest::newRow("Traditional Chinese") << "zh_TW";
+    }
+
+    void UpdateTextHasSmoothNeutralEdges()
+    {
+        QFETCH(QString, localeName);
+        Gui::Theme::ApplyApplicationTypography(QLocale{localeName});
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        Gui::UpdateWindow window{UpdateFixture()};
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            for (const auto *name : {"promptTitle", "rowSubtitle", "updateButton", "releaseNotes"})
+            {
+                const auto *widget = window.findChild<QWidget *>(name);
+                QVERIFY(widget);
+                const auto ratio = window.devicePixelRatioF();
+                QPixmap textImage{QSize{400, 60} * ratio};
+                textImage.setDevicePixelRatio(ratio);
+                const bool dark = mode == Gui::Theme::Mode::Dark;
+                textImage.fill(dark ? Qt::black : Qt::white);
+                {
+                    QPainter painter{&textImage};
+                    painter.setFont(widget->font());
+                    painter.setPen(dark ? Qt::white : Qt::black);
+                    painter.drawText(QPoint{8, 30}, QStringLiteral("AirPodsDesktop 更新版本 2.12"));
+                }
+                const auto pixels = textImage.toImage();
+                int intermediatePixels = 0;
+                int coloredPixels = 0;
+                for (int y = 0; y < pixels.height(); ++y) {
+                    for (int x = 0; x < pixels.width(); ++x) {
+                        const auto pixel = pixels.pixel(x, y);
+                        if (qRed(pixel) != qGreen(pixel) || qGreen(pixel) != qBlue(pixel)) {
+                            ++coloredPixels;
+                        }
+                        if (qRed(pixel) > 0 && qRed(pixel) < 255) {
+                            ++intermediatePixels;
+                        }
+                    }
+                }
+                // Actual raster output must have antialiased edges without RGB fringes.
+                QVERIFY2(intermediatePixels > 0, name);
+                QVERIFY2(coloredPixels == 0, name);
+            }
+        }
+        Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
+        theme.SetMode(originalMode);
+    }
+
     void UpdatePromptActions()
     {
         UpdateUrlRecorder recorder;

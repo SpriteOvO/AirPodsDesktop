@@ -340,7 +340,11 @@ QFont ApplicationFont(const QLocale &locale)
     QFont font;
     font.setFamilies(BodyFontFamilies(locale));
     font.setPointSize(9);
-    font.setStyleStrategy(QFont::PreferAntialias);
+    // Qt 5's DirectWrite path keeps ClearType fringes even with NoSubpixelAntialias.
+    // Full hinting selects the Windows rasterizer that honors grayscale antialiasing.
+    font.setHintingPreference(QFont::PreferFullHinting);
+    font.setStyleStrategy(
+        QFont::StyleStrategy(QFont::PreferAntialias | QFont::NoSubpixelAntialias));
     return font;
 }
 
