@@ -29,10 +29,10 @@
 
 ## ✨ Features
 
-* 🔋 View battery information from the notification area.
-* 👂 Automatically control media playback with ear detection.
-* 🚀 Enable low audio latency mode.
-* 🌈 Enjoy animated device popups and light, dark, or system-following themes.
+* 🔋 Battery information in the notification area.
+* 👂 Automatic ear detection and media playback control.
+* 🚀 Low audio latency mode.
+* 🌈 Animated device popups and light, dark, or system themes.
 
 ## 🛠️ Build and test
 
