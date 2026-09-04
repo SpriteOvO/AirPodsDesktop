@@ -123,7 +123,7 @@ AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model)
         return {"qrc:/Resource/Video/AirPods_Pro_3.avi", {900, 450}};
     case Model::AirPods_Max:
     case Model::AirPods_Max_USB_C:
-        return {"qrc:/Resource/Video/AirPods_Max.avi", {600, 650}};
+        return {"qrc:/Resource/Video/AirPods_Max.avi", {600, 650}, true};
     case Model::Beats_Fit_Pro:
         return {"qrc:/Resource/Video/Beats_Fit_Pro.avi", {900, 450}};
     case Model::Powerbeats_3:

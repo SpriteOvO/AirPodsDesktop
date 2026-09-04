@@ -392,6 +392,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
             (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
         auto widgetWidth = _animationView->height() * aspectRatio;
         _animationView->setFixedWidth(widgetWidth);
+        _animationView->SetRemoveEnclosedBackground(presentation.removeEnclosedBackground);
 
         _mediaPlayer->setMedia(QUrl{presentation.resource});
 

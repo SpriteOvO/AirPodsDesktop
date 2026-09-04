@@ -32,11 +32,10 @@ namespace Gui::Widget {
 
 namespace Detail {
 
-// AVI decoding introduces small variations around a nominally solid matte. Matching by distance
-// from the corner colour handles both the white and black source variants without keying out the
-// enclosed highlights or shadows of the device itself.
-constexpr int kMatteDistance = 24;
-constexpr int kSoftEdgeDistance = 72;
+// White devices are only a few RGB levels away from the compressed matte. Allow only codec
+// rounding here; a broad chroma tolerance removes the case and stems with the background.
+constexpr int kMatteDistance = 2;
+constexpr int kSoftEdgeDistance = 16;
 
 int ColorDistance(QRgb pixel, QRgb matte)
 {
@@ -64,7 +63,7 @@ bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette)
 // artwork against the right edge, so seeding every border pixel would erase that foreground too.
 // Starting from guaranteed-background corners lets the device outline stop the flood fill.
 //
-void KnockOutAnimationBackground(QImage &image)
+void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
 {
     const int width = image.width(), height = image.height();
     if (width == 0 || height == 0) {
@@ -76,7 +75,7 @@ void KnockOutAnimationBackground(QImage &image)
     const auto at = [&](int x, int y) -> QRgb & { return pixels[y * stride + x]; };
 
     std::vector<QRgb> mattePalette;
-    mattePalette.reserve(32);
+    mattePalette.reserve(4);
     const auto addMatte = [&](QRgb sample) {
         const auto alreadyRepresented =
             std::any_of(mattePalette.cbegin(), mattePalette.cend(), [sample](QRgb matte) {
@@ -87,31 +86,24 @@ void KnockOutAnimationBackground(QImage &image)
         }
     };
 
-    // Walk each edge inward from both corners. Smoothly changing matte shades are collected, but
-    // a sharp device outline stops that run. This handles fade frames whose border is a gradient
-    // without treating a cropped case or earbud at an edge midpoint as another matte colour.
-    const auto collectRun = [&](int x, int y, int dx, int dy, int length) {
-        auto previous = at(x, y);
-        addMatte(previous);
-        for (int i = 1; i < length; ++i) {
-            x += dx;
-            y += dy;
-            const auto current = at(x, y);
-            if (qAlpha(current) == 0 || ColorDistance(current, previous) > kMatteDistance) {
-                break;
+    // Only corners are guaranteed background. Following smooth colour changes along an edge can
+    // walk into a cropped white case and add its colours to the background palette.
+    addMatte(at(0, 0));
+    addMatte(at(width - 1, 0));
+    addMatte(at(0, height - 1));
+    addMatte(at(width - 1, height - 1));
+
+    // The Max headband encloses real background at some angles. This is an asset-specific opt-in:
+    // applying it to every model would erase enclosed white highlights on earbuds and cases.
+    if (removeEnclosedBackground) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (IsMatte(at(x, y), mattePalette)) {
+                    at(x, y) = 0;
+                }
             }
-            addMatte(current);
-            previous = current;
         }
-    };
-    collectRun(0, 0, 1, 0, width);
-    collectRun(width - 1, 0, -1, 0, width);
-    collectRun(0, height - 1, 1, 0, width);
-    collectRun(width - 1, height - 1, -1, 0, width);
-    collectRun(0, 0, 0, 1, height);
-    collectRun(0, height - 1, 0, -1, height);
-    collectRun(width - 1, 0, 0, 1, height);
-    collectRun(width - 1, height - 1, 0, -1, height);
+    }
 
     std::vector<std::pair<int, int>> stack;
     stack.reserve(4096);
@@ -273,6 +265,14 @@ void AnimationView::Clear()
     update();
 }
 
+void AnimationView::SetRemoveEnclosedBackground(bool enabled)
+{
+    if (_removeEnclosedBackground != enabled) {
+        _removeEnclosedBackground = enabled;
+        Clear();
+    }
+}
+
 void AnimationView::paintEvent(QPaintEvent *event)
 {
     if (_scaled.isNull()) {
@@ -318,7 +318,7 @@ void AnimationView::PresentFrame(QImage frame)
         frame.detach();
     }
 
-    Detail::KnockOutAnimationBackground(frame);
+    Detail::KnockOutAnimationBackground(frame, _removeEnclosedBackground);
 
     _frame = std::move(frame);
     RescaleFrame();

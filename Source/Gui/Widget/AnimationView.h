@@ -27,9 +27,10 @@ namespace Gui::Widget {
 
 namespace Detail {
 
-// Removes the matte colours connected to the image border. Exposed for deterministic tests
-// against light, dark, transitional synthetic frames and the bundled animation assets.
-void KnockOutAnimationBackground(QImage &image);
+// Removes the matte connected to the corners while preserving near-white device surfaces.
+// The Max animation opts into removing enclosed matte inside the headband as well.
+// Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
+void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
 
 } // namespace Detail
 
@@ -55,6 +56,8 @@ public:
     // Drops the last frame so nothing stale is painted the next time the widget shows.
     void Clear();
 
+    void SetRemoveEnclosedBackground(bool enabled);
+
 Q_SIGNALS:
     void Clicked();
 
@@ -69,6 +72,7 @@ private:
     VideoSurface *_surface;
     QImage _frame;  // processed, source resolution, ARGB32
     QImage _scaled; // `_frame` fitted to the widget
+    bool _removeEnclosedBackground{false};
 
     void PresentFrame(QImage frame);
     void RescaleFrame();

@@ -47,6 +47,7 @@ struct MainWindowPresentation {
 struct AnimationPresentation {
     QString resource;
     QSize sourceSize;
+    bool removeEnclosedBackground{false};
 };
 
 class MainWindowViewModel
