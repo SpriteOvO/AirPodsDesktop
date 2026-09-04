@@ -83,7 +83,3 @@ ctest --test-dir Build -C RelWithDebInfo --output-on-failure
 * [OpenPods](https://github.com/adolfintel/OpenPods)
 * [Discontinued Privacy: Personal Data Leaks in Apple Bluetooth-Low-Energy Continuity Protocols](https://hal.inria.fr/hal-02394619/document)
 * [MagicPods](https://magicpods.app/)
-
-### 貢獻者
-
-* [@aizuon](https://github.com/aizuon) — 閒置 CPU 與低延遲音訊重構，提交於 [#199](https://github.com/SpriteOvO/AirPodsDesktop/pull/199)，經由 [#210](https://github.com/SpriteOvO/AirPodsDesktop/pull/210) 合併；另見[效能說明](/Docs/Performance.md)。
