@@ -7,27 +7,27 @@ adds the architecture and workflow detail that only emerges from reading across 
 
 ## Build & Test
 
-Windows-only, **32-bit (Win32)** build. Requires CMake 3.20+, Visual Studio 2019 or 2022, Qt 5.15.2
-(`msvc2019`, 32-bit), and a bootstrapped vcpkg checkout.
+Windows-only, **32-bit (Win32)** build. For prerequisites, configuration, build commands, and test
+commands, read `Docs/Build.md` before setting up or rebuilding the project.
 
 ```powershell
-cmake -S . -B Build -G "Visual Studio 16 2019" -A Win32 `
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo `
-  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019 `
-  -DAPD_BUILD_TESTS=ON
-cmake --build Build --config RelWithDebInfo
-
-# Tests (Qt DLLs must be on PATH; the suite is QTEST_GUILESS_MAIN so no display is needed)
-ctest --test-dir Build -C RelWithDebInfo --output-on-failure
-
-# Single test case - ctest has only one test registration, so pass the slot name to the exe
+# Run a single Qt Test slot directly after building its executable.
 ./Build/Binary/AirPodsDomainTests.exe MergesAdvertisementsFromBothSides
 
 clang-format -i Source\Path\File.cpp
 ```
 
 Binaries and deployed Qt files land in `Build/Binary/`.
+
+With `APD_BUILD_TESTS=ON`, CTest registers `AirPodsDomainTests`, `QuickConnectTests`,
+`AnimationViewTests`, and `UiRenderingTests`; `Tests/CMakeLists.txt` is the source of truth.
+The domain and quick-connect suites use `QCoreApplication`. Animation and UI rendering tests
+create widgets and need an interactive Windows desktop; animation tests also exercise the
+Windows multimedia backend. Qt runtime DLLs must be deployed beside the executables or on `PATH`.
+
+For manual update-dialog checks, read `Docs/UpdateUiTesting.md` and explicitly build
+`UpdateSimulator`. It uses the production `UpdateWindow` with simulated downloads, is excluded
+from the default build and CTest, and is not shipped in the installer.
 
 | CMake option | Default | Effect |
 |---|---|---|
@@ -62,11 +62,11 @@ apd_support ──▶ apd_domain ──┬──▶ apd_core ──────�
 | `apd_domain` | `AirPodsAdvertisement`, `AirPodsStateManager`, `AppleCP` — pure protocol/state logic | `apd_support` only |
 | `apd_core` | `AirPods::Manager`, `Settings`, `SettingsRepository`, `Update`, `LowAudioLatency`, `Debug`, and the `_win.cpp` platform impls | `apd_domain`, Qt Multimedia, cpr, nlohmann_json, boost::pfr |
 | `apd_presentation` | `MainWindowPresentation` view models — plain state→struct mapping, no widgets | `apd_domain` only |
-| `apd_gui` | `MainWindow`, `TrayIcon`, `TaskbarStatus`, `SelectWindow`, `DownloadWindow`, `SettingsWindow`, `Widget::Battery` | `apd_core` + `apd_presentation`, Qt Widgets/Svg/MultimediaWidgets |
+| `apd_gui` | `MainWindow`, `TrayIcon`, `TaskbarStatus`, `SelectWindow`, `UpdateWindow`, `SettingsWindow`, `Theme`, `AnimationPlayback`, `Widget::Battery`, `Widget::AnimationView` | `apd_core` + `apd_presentation`, Qt Widgets/Svg/MultimediaWidgets |
 | `AirPodsDesktop` | `Main.cpp`, `Application.cpp`, resources | `apd_gui` + SingleApplication |
 
-`Tests/` links `apd_core` + `apd_presentation` + Qt Test — that layering is what makes the domain and
-view-model logic testable without a Bluetooth radio or a window.
+Domain and view-model tests link `apd_core` + `apd_presentation` + Qt Test and run without a
+Bluetooth radio or a window. Animation and UI rendering tests additionally link `apd_gui`.
 
 ## Runtime Data Flow
 
