@@ -23,6 +23,7 @@
 #include <QFontMetrics>
 #include <QPainter>
 #include <QMessageBox>
+#include <QCloseEvent>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -185,12 +186,12 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     qRegisterMetaType<Core::Update::ReleaseInfo>("Core::Update::ReleaseInfo");
 
     _animationView = new Widget::AnimationView{this};
+    _playback = new AnimationPlayback{*_animationView, this};
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
 
     setFixedSize(_windowSize);
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
 
     // Frameless and region-clipped to the iOS card shape; DWM must leave it alone.
@@ -212,7 +213,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
     connect(_animationView, &Widget::AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
-    connect(_mediaPlayer, &QMediaPlayer::stateChanged, this, &MainWindow::OnPlayerStateChanged);
 
     connect(this, &MainWindow::UpdateStateSafely, this, &MainWindow::UpdateState);
     connect(this, &MainWindow::AvailableSafely, this, &MainWindow::Available);
@@ -220,15 +220,13 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::DisconnectSafely, this, &MainWindow::Disconnect);
     connect(this, &MainWindow::BindSafely, this, &MainWindow::Bind);
     connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
-    connect(this, &MainWindow::ShowSafely, this, &MainWindow::show);
+    connect(this, &MainWindow::ShowSafely, this, &MainWindow::Show);
     connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
     connect(
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
 
     _posAnimation.setDuration(500);
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
-    _mediaPlayer->setMuted(true);
-    _mediaPlayer->setVideoOutput(_animationView->Surface());
 
     _ui.layoutAnimation->addWidget(_animationView);
     _ui.layoutPods->addWidget(_leftBattery);
@@ -239,12 +237,17 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     // For getting the correct initial height of `_animationView` later
     _ui.layoutAnimation->activate();
     _animationView->show();
+}
 
+void MainWindow::StartUpdateChecks()
+{
     _updateChecker.Start();
 }
 
 MainWindow::~MainWindow()
 {
+    // Stop the decoder before QObject destroys the video surface child.
+    delete _playback;
     _deviceQueryThread.request_stop();
     if (_deviceQueryThread.joinable()) {
         _deviceQueryThread.join();
@@ -383,7 +386,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
     if (!model.has_value()) {
         StopAnimation();
-        _mediaPlayer->setMedia(QMediaContent{});
+        _playback->SetAnimation({});
     }
     else {
         const auto presentation = GetAnimationPresentation(model.value());
@@ -392,9 +395,7 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
             (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
         auto widgetWidth = _animationView->height() * aspectRatio;
         _animationView->setFixedWidth(widgetWidth);
-        _animationView->SetRemoveEnclosedBackground(presentation.removeEnclosedBackground);
-
-        _mediaPlayer->setMedia(QUrl{presentation.resource});
+        _playback->SetAnimation(presentation);
 
         if (_isVisible) {
             PlayAnimation();
@@ -409,18 +410,14 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
 void MainWindow::PlayAnimation()
 {
-    _isAnimationPlaying = true;
-    _mediaPlayer->play();
+    _playback->SetActive(true);
     _animationView->show();
 }
 
 void MainWindow::StopAnimation()
 {
     _animationView->hide();
-    _animationView->Clear();
-
-    _isAnimationPlaying = false;
-    _mediaPlayer->stop();
+    _playback->SetActive(false);
 }
 
 void MainWindow::BindDevice()
@@ -587,14 +584,13 @@ void MainWindow::FitDeviceLabelFont()
 void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
 {
     LOG(Trace, "OnAppStateChanged: '{}'", Helper::ToString(state));
-    ControlAutoHideTimer(state != Qt::ApplicationActive);
+    ControlAutoHideTimer(_isVisible && state != Qt::ApplicationActive);
 }
 
 void MainWindow::OnPosMoveFinished()
 {
     if (!_isVisible) {
         hide();
-        StopAnimation();
     }
 }
 
@@ -629,14 +625,6 @@ void MainWindow::OnButtonClicked()
     }
 }
 
-// for loop play
-void MainWindow::OnPlayerStateChanged(QMediaPlayer::State newState)
-{
-    if (newState == QMediaPlayer::StoppedState && _isAnimationPlaying) {
-        _mediaPlayer->play();
-    }
-}
-
 void MainWindow::DoHide()
 {
     LOG(Trace, "MainWindow: Hide");
@@ -660,10 +648,25 @@ void MainWindow::DoHide()
 void MainWindow::showEvent(QShowEvent *event)
 {
     QDialog::showEvent(event);
+    BeginShow(true);
+}
 
+void MainWindow::Show()
+{
+    if (isVisible()) {
+        BeginShow(false);
+    }
+    else {
+        QDialog::show();
+    }
+}
+
+void MainWindow::BeginShow(bool fromHidden)
+{
     LOG(Trace, "MainWindow: Show");
 
     if (_isVisible) {
+        ControlAutoHideTimer(true);
         return;
     }
     _isVisible = true;
@@ -671,24 +674,40 @@ void MainWindow::showEvent(QShowEvent *event)
     PlayAnimation();
     ControlAutoHideTimer(true);
 
-    auto targetScreen = QGuiApplication::screenAt(QCursor::pos());
+    auto targetScreen = fromHidden ? QGuiApplication::screenAt(QCursor::pos()) : screen();
     if (targetScreen == nullptr) {
         targetScreen = screen();
     }
 
     const auto availableGeometry = targetScreen->availableGeometry();
     const auto screenGeometry = targetScreen->geometry();
-    const auto targetX = availableGeometry.right() - width() + 1 - _screenMargin.width();
-    const auto targetY = availableGeometry.bottom() - height() + 1 - _screenMargin.height();
-
-    move(targetX, screenGeometry.bottom() + 1);
-    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
+    const auto target = PopupPosition(availableGeometry, size(), _screenMargin);
 
     _posAnimation.stop();
+    if (fromHidden) {
+        move(target.x(), screenGeometry.bottom() + 1);
+    }
+    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
+
     _posAnimation.setEasingCurve(QEasingCurve::OutExpo);
     _posAnimation.setStartValue(pos());
-    _posAnimation.setEndValue(QPoint{targetX, targetY});
+    _posAnimation.setEndValue(target);
     _posAnimation.start();
+}
+
+void MainWindow::hideEvent(QHideEvent *event)
+{
+    _isVisible = false;
+    _posAnimation.stop();
+    ControlAutoHideTimer(false);
+    StopAnimation();
+    QDialog::hideEvent(event);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    DoHide();
 }
 } // namespace Gui
 

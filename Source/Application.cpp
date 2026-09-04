@@ -211,6 +211,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
         [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
+    _mainWindow->StartUpdateChecks();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
     _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
@@ -290,7 +291,7 @@ void ApdApplication::ConnectGuiComponents()
 {
     connect(
         _trayIcon.get(), &Gui::TrayIcon::ShowMainWindowRequested, _mainWindow.get(),
-        &Gui::MainWindow::show);
+        &Gui::MainWindow::Show);
     connect(
         _trayIcon.get(), &Gui::TrayIcon::UserUpdateRequested, _mainWindow.get(),
         &Gui::MainWindow::AskUserUpdate);
@@ -300,7 +301,7 @@ void ApdApplication::ConnectGuiComponents()
 
     connect(
         _taskbarStatus.get(), &Gui::TaskbarStatus::ShowMainWindowRequested, _mainWindow.get(),
-        &Gui::MainWindow::show);
+        &Gui::MainWindow::Show);
     connect(
         _taskbarStatus.get(), &Gui::TaskbarStatus::ShowTrayMenuRequested, _trayIcon.get(),
         &Gui::TrayIcon::ShowContextMenu);

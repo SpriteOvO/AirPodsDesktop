@@ -30,6 +30,7 @@
 
 #include "Utils.h"
 #include "MainWindowPresentation.h"
+#include "AnimationPlayback.h"
 #include "../Core/AirPods.h"
 #include "../Core/Update.h"
 #include "Base.h"
@@ -48,6 +49,9 @@ class MainWindow : public QDialog
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    void StartUpdateChecks();
+    void Show();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -80,7 +84,7 @@ private:
 
     QPropertyAnimation _posAnimation{this, "pos"};
     Widget::AnimationView *_animationView;
-    QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
+    AnimationPlayback *_playback;
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery = new Widget::Battery{this};
@@ -94,7 +98,6 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
-    bool _isAnimationPlaying{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
@@ -114,10 +117,12 @@ private:
     void OnPosMoveFinished();
     void OnAnimationClicked();
     void OnButtonClicked();
-    void OnPlayerStateChanged(QMediaPlayer::State newState);
 
     void DoHide();
+    void BeginShow(bool fromHidden);
     void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {

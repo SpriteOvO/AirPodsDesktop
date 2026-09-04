@@ -13,6 +13,7 @@
 #include <optional>
 
 #include <QSize>
+#include <QRect>
 #include <QString>
 
 #include "Base.h"
@@ -48,6 +49,8 @@ struct AnimationPresentation {
     QString resource;
     QSize sourceSize;
     bool removeEnclosedBackground{false};
+
+    QString FallbackResource() const;
 };
 
 class MainWindowViewModel
@@ -68,5 +71,6 @@ private:
 };
 
 AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model);
+QPoint PopupPosition(const QRect &availableGeometry, QSize windowSize, QSize margin);
 
 } // namespace Gui

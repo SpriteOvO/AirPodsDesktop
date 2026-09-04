@@ -57,9 +57,12 @@ public:
     void Clear();
 
     void SetRemoveEnclosedBackground(bool enabled);
+    void SetFallbackImage(QImage image);
+    void SetPlaybackEnabled(bool enabled);
 
 Q_SIGNALS:
     void Clicked();
+    void FramePresented();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -72,6 +75,7 @@ private:
     VideoSurface *_surface;
     QImage _frame;  // processed, source resolution, ARGB32
     QImage _scaled; // `_frame` fitted to the widget
+    QImage _fallback;
     bool _removeEnclosedBackground{false};
 
     void PresentFrame(QImage frame);

@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <mutex>
 #include <vector>
 
 #include <QAbstractVideoSurface>
@@ -187,6 +188,27 @@ class AnimationView::VideoSurface : public QAbstractVideoSurface
 public:
     explicit VideoSurface(AnimationView &view) : QAbstractVideoSurface{&view}, _view{view} {}
 
+    void Invalidate()
+    {
+        std::lock_guard lock{_mutex};
+        ++_generation;
+        _pending = {};
+    }
+
+    void SetEnabled(bool enabled)
+    {
+        std::lock_guard lock{_mutex};
+        _enabled = enabled;
+        ++_generation;
+        _pending = {};
+    }
+
+    void stop() override
+    {
+        Invalidate();
+        QAbstractVideoSurface::stop();
+    }
+
     QList<QVideoFrame::PixelFormat>
     supportedPixelFormats(QAbstractVideoBuffer::HandleType type) const override
     {
@@ -215,6 +237,14 @@ public:
 
     bool present(const QVideoFrame &frame) override
     {
+        quint64 generation;
+        {
+            std::lock_guard lock{_mutex};
+            if (!_enabled) {
+                return true;
+            }
+            generation = _generation;
+        }
         if (!frame.isValid()) {
             return false;
         }
@@ -230,10 +260,28 @@ public:
             _view.PresentFrame(std::move(image));
         }
         else {
+            std::lock_guard lock{_mutex};
+            if (!_enabled || generation != _generation) {
+                return true;
+            }
+            _pending = std::move(image);
+            if (_deliveryQueued) {
+                return true;
+            }
+            _deliveryQueued = true;
             QMetaObject::invokeMethod(
                 &_view,
-                [this, image = std::move(image)]() mutable {
-                    _view.PresentFrame(std::move(image));
+                [this] {
+                    QImage latest;
+                    {
+                        std::lock_guard lock{_mutex};
+                        latest = std::move(_pending);
+                        _pending = {};
+                        _deliveryQueued = false;
+                    }
+                    if (!latest.isNull()) {
+                        _view.PresentFrame(std::move(latest));
+                    }
                 },
                 Qt::QueuedConnection);
         }
@@ -242,6 +290,11 @@ public:
 
 private:
     AnimationView &_view;
+    std::mutex _mutex;
+    QImage _pending;
+    quint64 _generation{0};
+    bool _enabled{true};
+    bool _deliveryQueued{false};
 };
 
 //////////////////////////////////////////////////
@@ -260,9 +313,24 @@ QAbstractVideoSurface *AnimationView::Surface() const
 
 void AnimationView::Clear()
 {
+    _surface->Invalidate();
     _frame = {};
-    _scaled = {};
+    RescaleFrame();
     update();
+}
+
+void AnimationView::SetFallbackImage(QImage image)
+{
+    _fallback = std::move(image);
+    Clear();
+}
+
+void AnimationView::SetPlaybackEnabled(bool enabled)
+{
+    _surface->SetEnabled(enabled);
+    if (!enabled) {
+        Clear();
+    }
 }
 
 void AnimationView::SetRemoveEnclosedBackground(bool enabled)
@@ -275,6 +343,9 @@ void AnimationView::SetRemoveEnclosedBackground(bool enabled)
 
 void AnimationView::paintEvent(QPaintEvent *event)
 {
+    if (_scaled.devicePixelRatio() != devicePixelRatioF()) {
+        RescaleFrame();
+    }
     if (_scaled.isNull()) {
         return;
     }
@@ -282,7 +353,7 @@ void AnimationView::paintEvent(QPaintEvent *event)
     QPainter painter{this};
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    const auto target = QRect{QPoint{}, _scaled.size()};
+    const auto target = QRect{QPoint{}, _scaled.size() / _scaled.devicePixelRatio()};
     painter.drawImage(
         QPoint{(width() - target.width()) / 2, (height() - target.height()) / 2}, _scaled);
 }
@@ -302,7 +373,7 @@ void AnimationView::PresentFrame(QImage frame)
 {
     // The source videos are much larger than the popup. Keying at twice the display resolution
     // preserves antialiased edges while avoiding a full-frame flood fill on every decoded frame.
-    auto processingSize = size() * 2;
+    auto processingSize = size() * (std::max)(2.0, devicePixelRatioF());
     if (processingSize.isEmpty()) {
         processingSize = QSize{520, 244};
     }
@@ -323,16 +394,20 @@ void AnimationView::PresentFrame(QImage frame)
     _frame = std::move(frame);
     RescaleFrame();
     update();
+    Q_EMIT FramePresented();
 }
 
 void AnimationView::RescaleFrame()
 {
-    if (_frame.isNull() || size().isEmpty()) {
+    const auto &source = _frame.isNull() ? _fallback : _frame;
+    if (source.isNull() || size().isEmpty()) {
         _scaled = {};
         return;
     }
     // Area-averaging scale; a plain painter transform would alias at this reduction ratio.
-    _scaled = _frame.scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    _scaled =
+        source.scaled(size() * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    _scaled.setDevicePixelRatio(devicePixelRatioF());
 }
 
 } // namespace Gui::Widget

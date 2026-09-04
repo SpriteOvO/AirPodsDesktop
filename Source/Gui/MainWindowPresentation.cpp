@@ -10,6 +10,8 @@
 
 #include "MainWindowPresentation.h"
 
+#include <algorithm>
+
 namespace Gui {
 namespace {
 
@@ -132,6 +134,28 @@ AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model)
     default:
         return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}};
     }
+}
+
+QString AnimationPresentation::FallbackResource() const
+{
+    if (!resource.startsWith("qrc:/Resource/Video/") || !resource.endsWith(".avi")) {
+        return {};
+    }
+    auto result = resource;
+    result.replace("qrc:/Resource/Video/", ":/Resource/Image/Animation/");
+    result.chop(4);
+    return result + ".png";
+}
+
+QPoint PopupPosition(const QRect &availableGeometry, QSize windowSize, QSize margin)
+{
+    return {
+        (std::max)(
+            availableGeometry.left(),
+            availableGeometry.right() + 1 - windowSize.width() - margin.width()),
+        (std::max)(
+            availableGeometry.top(),
+            availableGeometry.bottom() + 1 - windowSize.height() - margin.height())};
 }
 
 } // namespace Gui
