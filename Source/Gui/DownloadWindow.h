@@ -32,25 +32,36 @@ class DownloadWindow : public QDialog
     Q_OBJECT
 
 public:
+    enum class Outcome { KeepRunning, InstallerStarted, ManualDownload };
+    using DownloadFunction =
+        std::function<bool(const Core::Update::ReleaseInfo &, const Core::Update::FnProgress &)>;
+
     DownloadWindow(Core::Update::ReleaseInfo info, QWidget *parent = nullptr);
     ~DownloadWindow();
+    void StartDownload(DownloadFunction download = Core::Update::DownloadInstall);
+    Outcome Result() const;
 
 Q_SIGNALS:
-    void UpdateProgressSafely(int downloaded, int total);
-    void OnFailedSafely();
+    void UpdateProgressSafely(quint64 downloaded, quint64 total);
+    void FinishedSafely(bool successful);
+
+protected:
+    void reject() override;
+    void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private:
     Ui::DownloadWindow _ui;
 
     Core::Update::ReleaseInfo _info;
     std::jthread _downloadThread;
+    enum class State { Ready, Downloading, Failed, Finished };
+    State _state{State::Ready};
+    Outcome _result{Outcome::KeepRunning};
+    quint64 _downloaded{0}, _total{0};
 
-    void UpdateProgress(int downloaded, int total);
-    void OnFailed();
-
-    void DownloadThread(std::stop_token stopToken);
-
-    UTILS_QT_DISABLE_ESC_QUIT(QDialog);
-    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] { _ui.retranslateUi(this); });
+    void UpdateProgress(quint64 downloaded, quint64 total);
+    void OnFinished(bool successful);
+    void UpdateText();
 };
 } // namespace Gui

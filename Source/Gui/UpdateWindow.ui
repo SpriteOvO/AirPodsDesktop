@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ui version="4.0">
- <class>DownloadWindow</class>
- <widget class="QDialog" name="DownloadWindow">
+ <class>UpdateWindow</class>
+ <widget class="QDialog" name="UpdateWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>480</width>
-    <height>280</height>
+    <width>560</width>
+    <height>440</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
    <item>
     <widget class="QLabel" name="title">
      <property name="text">
-      <string notr="true" />
+      <string>A new version is available</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -46,13 +46,13 @@
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="progressCard">
+    <widget class="QFrame" name="versionCard">
      <property name="cssClass" stdset="0">
       <string notr="true">settingCard</string>
      </property>
-     <layout class="QVBoxLayout" name="cardLayout">
+     <layout class="QVBoxLayout" name="versionLayout">
       <property name="spacing">
-       <number>12</number>
+       <number>6</number>
       </property>
       <property name="leftMargin">
        <number>16</number>
@@ -67,7 +67,23 @@
        <number>16</number>
       </property>
       <item>
-       <widget class="QLabel" name="version">
+       <widget class="QLabel" name="currentVersion">
+        <property name="text">
+         <string notr="true" />
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+        <property name="cssClass" stdset="0">
+         <string notr="true">cardDescription</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="latestVersion">
         <property name="text">
          <string notr="true" />
         </property>
@@ -83,32 +99,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="status">
+       <widget class="QLabel" name="preRelease">
         <property name="text">
-         <string notr="true" />
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-        <property name="cssClass" stdset="0">
-         <string notr="true">cardDescription</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QProgressBar" name="progressBar">
-        <property name="value">
-         <number>0</number>
-        </property>
-        <property name="textVisible">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="progressDetails">
-        <property name="text">
-         <string notr="true" />
+         <string>Preview release</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -122,35 +115,45 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="hint">
+    <widget class="QLabel" name="notesTitle">
      <property name="text">
-      <string>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
+      <string>What's new</string>
      </property>
      <property name="cssClass" stdset="0">
-      <string notr="true">cardDescription</string>
+      <string notr="true">cardTitle</string>
      </property>
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QPlainTextEdit" name="releaseNotes">
+     <property name="readOnly">
+      <bool>true</bool>
      </property>
-     <property name="sizeHint" stdset="0">
+     <property name="tabChangesFocus">
+      <bool>true</bool>
+     </property>
+     <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>0</height>
+       <height>80</height>
       </size>
      </property>
-    </spacer>
+    </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="actions">
+    <layout class="QHBoxLayout" name="secondaryActions">
      <item>
-      <spacer name="actionSpacer">
+      <widget class="QPushButton" name="viewButton">
+       <property name="text">
+        <string>View release</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="secondarySpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -163,19 +166,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonDownloadManually">
+      <widget class="QPushButton" name="skipButton">
        <property name="text">
-        <string>Download Manually</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="closeButton">
-       <property name="text">
-        <string>Close</string>
+        <string>Skip this version</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
@@ -184,11 +177,57 @@
      </item>
     </layout>
    </item>
+   <item>
+    <layout class="QHBoxLayout" name="primaryActions">
+     <item>
+      <spacer name="primarySpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="laterButton">
+       <property name="text">
+        <string>Remind me later</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="updateButton">
+       <property name="text">
+        <string>Update now</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+       <property name="cssClass" stdset="0">
+        <string notr="true">accent</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>pushButtonDownloadManually</tabstop>
-  <tabstop>closeButton</tabstop>
+  <tabstop>releaseNotes</tabstop>
+  <tabstop>viewButton</tabstop>
+  <tabstop>skipButton</tabstop>
+  <tabstop>laterButton</tabstop>
+  <tabstop>updateButton</tabstop>
  </tabstops>
  <resources />
  <connections />

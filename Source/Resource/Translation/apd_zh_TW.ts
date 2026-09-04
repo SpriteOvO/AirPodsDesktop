@@ -53,43 +53,63 @@ Enjoy it all.</source>
 <context>
     <name>DownloadWindow</name>
     <message>
-        <source>Download new version</source>
-        <translation>下載新版本</translation>
-    </message>
-    <message>
         <source>Download Manually</source>
         <translation>手動下載</translation>
     </message>
     <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>如果下載緩慢或失敗，您可以：</translation>
+        <source>Software Update</source>
+        <translation>軟體更新</translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation>如果下載緩慢，您可以改為手動下載。切換為手動下載時，AirPodsDesktop 將會關閉。</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>關閉</translation>
     </message>
 </context>
 <context>
     <name>Gui::DownloadWindow</name>
     <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>哎呀，在自動更新過程中發生錯誤。
-請手動下載並安裝新版本。</translation>
+        <source>Unable to update</source>
+        <translation>無法完成更新</translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation>正在下載更新</translation>
+    </message>
+    <message>
+        <source>New version: %1</source>
+        <translation>新版本：%1</translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation>無法完成自動更新。您可以手動下載並安裝新版本，或關閉此視窗繼續使用 AirPodsDesktop。</translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation>已下載 %1</translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation>正在取得下載大小…</translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation>正在準備安裝…</translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation>正在下載…</translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation>%1% · %2／%3</translation>
     </message>
 </context>
 <context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>更新日誌：</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>嗨！我發現有新版本可以更新！
-
-目前版本：%1
-最新版本：%2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>綁定至 AirPods</translation>
@@ -203,6 +223,21 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Current version: %1</source>
+        <translation>目前版本：%1</translation>
+    </message>
+    <message>
+        <source>Latest version: %1</source>
+        <translation>最新版本：%1</translation>
+    </message>
+    <message>
+        <source>No release notes are available. You can view the release page for details.</source>
+        <translation>目前沒有更新說明。您可以前往發行頁查看詳細資訊。</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -216,22 +251,6 @@ Latest version: %2%3</source>
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>未找到已配對的裝置。
 您需要先在 Windows 藍牙設定中配對您的 AirPods。</translation>
-    </message>
-    <message>
-        <source>Update now</source>
-        <translation>立即更新</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>略過此版本</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>檢視版本資訊</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>稍後提醒我</translation>
     </message>
 </context>
 <context>
@@ -393,6 +412,41 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>深色</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateWindow</name>
+    <message>
+        <source>Software Update</source>
+        <translation>軟體更新</translation>
+    </message>
+    <message>
+        <source>A new version is available</source>
+        <translation>有新版本可用</translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation>預覽版本</translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation>更新內容</translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>檢視版本資訊</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation>略過此版本</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation>稍後提醒我</translation>
+    </message>
+    <message>
+        <source>Update now</source>
+        <translation>立即更新</translation>
     </message>
 </context>
 </TS>

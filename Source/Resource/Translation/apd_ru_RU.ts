@@ -53,43 +53,63 @@ Enjoy it all.</source>
 <context>
     <name>DownloadWindow</name>
     <message>
-        <source>Download new version</source>
-        <translation>Скачать новую версию</translation>
-    </message>
-    <message>
         <source>Download Manually</source>
         <translation>Скачать вручную</translation>
     </message>
     <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>Если загрузка происходит медленно или с ошибками, вы можете:</translation>
+        <source>Software Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Закрыть</translation>
     </message>
 </context>
 <context>
     <name>Gui::DownloadWindow</name>
     <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>Упс, во время автоматического обновления произошла ошибка.
-Пожалуйста, загрузите и установите новую версию вручную.</translation>
+        <source>Unable to update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>Список изменений:</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>Найдена новая версия!
-
-Текущая версия: %1
-Последняя версия: %2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>Привязка к AirPods</translation>
@@ -203,6 +223,21 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Current version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Latest version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No release notes are available. You can view the release page for details.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -211,22 +246,6 @@ Latest version: %2%3</source>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Update now</source>
-        <translation>Обновить сейчас</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>Пропустить эту версию</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>Посмотреть релиз</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>Напомнить позже</translation>
-    </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
@@ -393,6 +412,41 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>Тёмная</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateWindow</name>
+    <message>
+        <source>Software Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A new version is available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>Посмотреть релиз</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation>Пропустить эту версию</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation>Напомнить позже</translation>
+    </message>
+    <message>
+        <source>Update now</source>
+        <translation>Обновить сейчас</translation>
     </message>
 </context>
 </TS>

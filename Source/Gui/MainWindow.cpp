@@ -31,6 +31,7 @@
 #include "../Core/AppleCP.h"
 #include "../Core/Settings.h"
 #include "DownloadWindow.h"
+#include "UpdateWindow.h"
 #include "SelectWindow.h"
 #include "Theme.h"
 
@@ -134,49 +135,6 @@ protected:
         painter.restore();
     }
 };
-
-//////////////////////////////////////////////////
-
-enum class NewVersionAction {
-    Update,
-    Skip,
-    Later,
-};
-
-NewVersionAction NewVersionMessageBox(
-    QWidget *parent, const QString &title, const QString &text,
-    const Core::Update::ReleaseInfo &releaseInfo)
-{
-    QMessageBox msgBox{QMessageBox::Question, title, text, QMessageBox::NoButton, parent};
-
-    const auto buttonUpdate = msgBox.addButton(QMessageBox::tr("Update now"), QMessageBox::YesRole);
-    const auto buttonSkip =
-        msgBox.addButton(QMessageBox::tr("Skip this version"), QMessageBox::AcceptRole);
-    const auto buttonView = msgBox.addButton(QMessageBox::tr("View release"), QMessageBox::NoRole);
-    const auto buttonLater =
-        msgBox.addButton(QMessageBox::tr("Remind me later"), QMessageBox::NoRole);
-
-    msgBox.setDefaultButton(buttonUpdate);
-
-    buttonView->disconnect();
-    msgBox.connect(buttonView, &QPushButton::clicked, &msgBox, [&] { releaseInfo.OpenUrl(); });
-
-    if (msgBox.exec() == -1) {
-        return NewVersionAction::Later;
-    }
-
-    const auto clickedButton = msgBox.clickedButton();
-
-    if (clickedButton == buttonUpdate) {
-        return NewVersionAction::Update;
-    }
-    else if (clickedButton == buttonSkip) {
-        return NewVersionAction::Skip;
-    }
-    else {
-        return NewVersionAction::Later;
-    }
-}
 
 //////////////////////////////////////////////////
 
@@ -306,25 +264,11 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
 {
     auto releaseVersion = releaseInfo.version.toString();
 
-    QString changeLogBlock;
-    if (!releaseInfo.changeLog.isEmpty()) {
-        changeLogBlock = QString{"\n\n%1\n%2"}.arg(tr("Change log:")).arg(releaseInfo.changeLog);
-    }
-
-    auto action = NewVersionMessageBox(
-        nullptr, Config::ProgramName,
-        tr("Hey! I found a new version available!\n"
-           "\n"
-           "Current version: %1\n"
-           "Latest version: %2"
-           "%3")
-            .arg(Core::Update::GetLocalVersion().toString())
-            .arg(releaseVersion)
-            .arg(changeLogBlock),
-        releaseInfo);
-
+    UpdateWindow updateWindow{releaseInfo};
+    updateWindow.exec();
+    const auto action = updateWindow.SelectedAction();
     switch (action) {
-    case Gui::NewVersionAction::Update:
+    case UpdateWindow::Action::Update:
         LOG(Info, "VersionUpdate: User clicked Update.");
 
         if (!releaseInfo.CanAutoUpdate()) {
@@ -332,13 +276,18 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
             releaseInfo.OpenUrl();
         }
         else {
-            Gui::DownloadWindow{releaseInfo}.exec();
+            DownloadWindow downloadWindow{releaseInfo};
+            downloadWindow.StartDownload();
+            downloadWindow.exec();
+            if (downloadWindow.Result() == DownloadWindow::Outcome::KeepRunning) {
+                return;
+            }
         }
 
         Utils::Qt::QuitApplicationSafely();
         return;
 
-    case Gui::NewVersionAction::Skip:
+    case UpdateWindow::Action::Skip:
         LOG(Info, "VersionUpdate: User clicked Skip.");
 
         Core::Settings::ModifiableAccess()->skipped_version = releaseVersion;
@@ -346,7 +295,7 @@ void MainWindow::AskUserUpdate(const Core::Update::ReleaseInfo &releaseInfo)
         // Continue checking for new versions after the skipped version
         break;
 
-    case Gui::NewVersionAction::Later:
+    case UpdateWindow::Action::Later:
         LOG(Info, "VersionUpdate: User clicked Later.");
 
         _updateChecker.Stop();

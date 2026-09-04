@@ -325,6 +325,7 @@ set(
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/DownloadWindow.cpp"
+    "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
