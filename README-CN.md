@@ -52,8 +52,6 @@ ctest --test-dir Build -C RelWithDebInfo --output-on-failure
 
 可执行文件与部署的 Qt 文件会输出至 `Build/Binary/`。添加 `-DAPD_ENABLE_CONSOLE=ON` 可启用控制台诊断；添加 `-DAPD_GENERATE_INSTALLER=ON` 可通过 NSIS 生成安装程序。
 
-后台 CPU 使用率的改进与测量步骤请参阅[性能说明](/Docs/Performance.md)。
-
 ## 🤝 贡献
 
 *AirPodsDesktop* 是一个开源项目，您可以通过以下方式贡献：

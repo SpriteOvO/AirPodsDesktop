@@ -52,8 +52,6 @@ ctest --test-dir Build -C RelWithDebInfo --output-on-failure
 
 Executables and deployed Qt files are written to `Build/Binary/`. Add `-DAPD_ENABLE_CONSOLE=ON` for console diagnostics or `-DAPD_GENERATE_INSTALLER=ON` to generate an installer with NSIS.
 
-See the [performance notes](/Docs/Performance.md) for background CPU improvements and measurement steps.
-
 ## 🤝 Contribute
 
 *AirPodsDesktop* is an open source project, here are some ways you can contribute:
