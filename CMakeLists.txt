@@ -634,6 +634,8 @@ if (APD_GENERATE_INSTALLER)
         # Match them by suffix rather than by name, so a new test target cannot ship by accident.
         PATTERN "*Tests.exe" EXCLUDE
         PATTERN "*Tests.pdb" EXCLUDE
+        PATTERN "UpdateSimulator.exe" EXCLUDE
+        PATTERN "UpdateSimulator.pdb" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 

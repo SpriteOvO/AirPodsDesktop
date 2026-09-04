@@ -75,6 +75,24 @@ target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINA
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
 
+# Interactive harness: explicitly built and never run by CTest or shipped to users.
+add_executable(
+    UpdateSimulator WIN32 EXCLUDE_FROM_ALL
+    UpdateSimulator.cpp
+    ${CMAKE_SOURCE_DIR}/Source/Resource/Resource.qrc
+    ${APD_QM_FILES}
+)
+target_link_libraries(UpdateSimulator PRIVATE apd_gui Qt5::Widgets)
+target_include_directories(UpdateSimulator PRIVATE "${CMAKE_SOURCE_DIR}")
+if(MSVC)
+    target_compile_options(UpdateSimulator PRIVATE /utf-8)
+endif()
+add_custom_command(
+    TARGET UpdateSimulator POST_BUILD
+    COMMAND "${Qt5_DIR}/../../../bin/windeployqt" "$<TARGET_FILE:UpdateSimulator>"
+    COMMENT "Deploying Qt runtime for the interactive update simulator"
+)
+
 foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
