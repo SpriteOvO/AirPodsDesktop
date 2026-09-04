@@ -340,11 +340,11 @@ QFont ApplicationFont(const QLocale &locale)
     QFont font;
     font.setFamilies(BodyFontFamilies(locale));
     font.setPointSize(9);
-    // Qt 5's DirectWrite path keeps ClearType fringes even with NoSubpixelAntialias.
-    // Full hinting selects the Windows rasterizer that honors grayscale antialiasing.
-    font.setHintingPreference(QFont::PreferFullHinting);
-    font.setStyleStrategy(
-        QFont::StyleStrategy(QFont::PreferAntialias | QFont::NoSubpixelAntialias));
+    font.setWeight(QFont::Medium);
+    // Keep DirectWrite: the GDI path renders the bundled variable CJK font at its
+    // default Thin instance. Natural outlines retain smooth curves at small sizes.
+    font.setHintingPreference(QFont::PreferNoHinting);
+    font.setStyleStrategy(QFont::PreferAntialias);
     return font;
 }
 
@@ -812,8 +812,8 @@ QDialog#UpdateWindow QFrame[updateRole="divider"] {
     background: @separator; border: none; min-height: 1px; max-height: 1px;
 }
 QDialog#UpdateWindow QLabel { font-size: 9pt; color: @text; background: transparent; }
-QDialog#UpdateWindow QLabel[updateRole="title"] { font-size: 10pt; font-weight: 500; }
-QDialog#UpdateWindow QLabel[updateRole="sectionTitle"] { font-weight: 500; }
+QDialog#UpdateWindow QLabel[updateRole="title"] { font-size: 10pt; font-weight: 600; }
+QDialog#UpdateWindow QLabel[updateRole="sectionTitle"] { font-weight: 600; }
 QDialog#UpdateWindow QLabel[updateRole="secondary"] { color: @textSecondary; }
 QDialog#UpdateWindow QLabel[updateRole="error"] { color: @errorText; }
 QDialog#UpdateWindow QPlainTextEdit {
