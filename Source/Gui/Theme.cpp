@@ -649,15 +649,14 @@ QComboBox::down-arrow {
     width: 12px; height: 12px;
 }
 QWidget#apdComboPopup {
-    background: @popupSurface;
-    border: 1px solid @popupBorder;
-    border-radius: 10px;
-    padding: 3px;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 QWidget#apdComboPopup QAbstractItemView, QComboBox QAbstractItemView {
-    background: @popupSurface;
-    border: none;
-    border-radius: 7px;
+    background: transparent;
+    border: 4px solid transparent;
+    border-radius: 0;
     padding: 0;
     outline: 0;
     color: @text;
@@ -670,6 +669,7 @@ QComboBox QAbstractItemView::item {
     border-radius: 6px;
 }
 QComboBox QAbstractItemView::item:hover { background: @controlHover; }
+QComboBox QAbstractItemView::item:selected { background: @controlHover; color: @text; }
 
 /* ---------- Lists ---------- */
 QListWidget {
@@ -886,6 +886,15 @@ QDialog#UpdateWindow QPushButton:disabled {
     }
 
     return sheet;
+}
+
+void ConfigurePopupSurface(QWidget *popup)
+{
+    popup->setWindowFlags(
+        popup->windowFlags() | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+    popup->setAttribute(Qt::WA_TranslucentBackground);
+    popup->setAutoFillBackground(false);
+    popup->setProperty(Manager::kSkipDwmProperty, true);
 }
 
 void Manager::ApplyToApplication()

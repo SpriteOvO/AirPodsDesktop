@@ -19,8 +19,7 @@
 #include "SettingsWindow.h"
 
 #include <QAbstractItemView>
-#include <QPainterPath>
-#include <QRegion>
+#include <QPainter>
 #include <QLabel>
 #include <QListWidget>
 #include <QStackedWidget>
@@ -42,21 +41,24 @@ namespace Gui {
 
 namespace {
 
-class ComboPopupMaskFilter final : public QObject
+class ComboPopupPaintFilter final : public QObject
 {
 public:
-    explicit ComboPopupMaskFilter(QObject *parent) : QObject{parent} {}
+    explicit ComboPopupPaintFilter(QObject *parent) : QObject{parent} {}
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override
     {
-        if (event->type() == QEvent::Show || event->type() == QEvent::Resize) {
+        if (event->type() == QEvent::Paint) {
             auto *popup = qobject_cast<QWidget *>(watched);
-            if (popup != nullptr && !popup->rect().isEmpty()) {
-                QPainterPath path;
-                path.addRoundedRect(QRectF{popup->rect()}, 10.0, 10.0);
-                popup->setMask(QRegion{path.toFillPolygon().toPolygon()});
-            }
+            const auto &colors = Theme::Manager::Instance().Colors();
+            QPainter painter{popup};
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setPen(colors.popupBorder);
+            painter.setBrush(colors.popupSurface);
+            painter.drawRoundedRect(QRectF{popup->rect()}.adjusted(0.5, 0.5, -0.5, -0.5), 9.5, 9.5);
+            // Consume the private QFrame paint event to avoid a second, native rectangular border.
+            return true;
         }
         return QObject::eventFilter(watched, event);
     }
@@ -67,13 +69,13 @@ void ConfigureComboBoxPopup(QComboBox *comboBox)
     auto *view = comboBox->view();
     view->setFrameShape(QFrame::NoFrame);
 
-    // Qt 5 wraps combo views in a rectangular private popup container. Mask the actual popup
-    // window so neither its background nor its native shadow can leak beyond the rounded surface.
+    // Qt 5 wraps combo views in a private QFrame. Paint one antialiased surface on a translucent
+    // window; a QRegion mask would discard the partially transparent pixels along its corners.
     auto *popup = view->window();
     popup->setObjectName("apdComboPopup");
-    popup->setAutoFillBackground(true);
-    popup->setAttribute(Qt::WA_StyledBackground);
-    popup->installEventFilter(new ComboPopupMaskFilter{popup});
+    Theme::ConfigurePopupSurface(popup);
+    popup->installEventFilter(new ComboPopupPaintFilter{popup});
+    view->viewport()->setAutoFillBackground(false);
 }
 
 } // namespace

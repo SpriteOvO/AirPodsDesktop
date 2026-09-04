@@ -17,6 +17,7 @@
 //
 
 #include "TrayIcon.h"
+#include "Theme.h"
 
 #include <QFont>
 #include <QApplication>
@@ -30,6 +31,7 @@ TrayIcon::TrayIcon(
     std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect)
     : _quickConnect{quickConnect}, _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
+    Theme::ConfigurePopupSurface(_menu);
     _singleClickTimer.setSingleShot(true);
     connect(&_singleClickTimer, &QTimer::timeout, this, [this] {
         ExecuteTrayActivation(_trayActivationState.OnSingleClickTimeout());

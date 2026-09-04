@@ -40,6 +40,9 @@ QFont ApplicationFont(const QLocale &locale);
 QStringList DisplayFontFamilies(const QLocale &locale);
 void ApplyApplicationTypography(const QLocale &locale);
 
+// Configure before the popup is first shown so its rounded surface can use per-pixel alpha.
+void ConfigurePopupSurface(QWidget *popup);
+
 //
 // Colour tokens for the whole application.
 //

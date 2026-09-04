@@ -27,6 +27,7 @@
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
+#include "Source/Gui/TrayIcon.h"
 #include "Source/Gui/UpdateWindow.h"
 
 class UpdateUrlRecorder : public QObject
@@ -50,6 +51,34 @@ public Q_SLOTS:
 };
 
 namespace {
+void VerifySmoothPopupCorners(QWidget *popup, const QString &fileName)
+{
+    const auto image = popup->grab().toImage();
+    QVERIFY(image.save(QStringLiteral(APD_BINARY_DIR "/UiValidation/") + fileName));
+    QVERIFY(image.hasAlphaChannel());
+    const int cornerSize = qRound(10 * image.devicePixelRatio());
+    // Every corner must have a transparent exterior and intermediate alpha along the curve.
+    // An opaque native background or a binary region mask fails these pixel checks.
+    for (const bool right : {false, true}) {
+        for (const bool bottom : {false, true}) {
+            const auto pixelAt = [&](int x, int y) {
+                return image.pixel(
+                    right ? image.width() - 1 - x : x, bottom ? image.height() - 1 - y : y);
+            };
+            QCOMPARE(qAlpha(pixelAt(0, 0)), 0);
+            QCOMPARE(qAlpha(pixelAt(cornerSize, cornerSize)), 255);
+            int blendedPixels = 0;
+            for (int y = 0; y < cornerSize; ++y) {
+                for (int x = 0; x < cornerSize; ++x) {
+                    const int alpha = qAlpha(pixelAt(x, y));
+                    blendedPixels += alpha > 0 && alpha < 255;
+                }
+            }
+            QVERIFY(blendedPixels > 0);
+        }
+    }
+}
+
 Core::Update::ReleaseInfo UpdateFixture()
 {
     Core::Update::ReleaseInfo info;
@@ -644,9 +673,13 @@ private Q_SLOTS:
         QTRY_VERIFY(QApplication::activePopupWidget() != nullptr);
         auto *comboPopup = QApplication::activePopupWidget();
         QCOMPARE(comboPopup->objectName(), QStringLiteral("apdComboPopup"));
-        QTRY_VERIFY(!comboPopup->mask().isEmpty());
+        QVERIFY(appearanceMode->view()->viewport()->mapTo(comboPopup, QPoint{}).x() >= 4);
+        QVERIFY(!appearanceMode->view()->verticalScrollBar()->isVisible());
+        appearanceMode->view()->setCurrentIndex(appearanceMode->model()->index(0, 0));
+        QVERIFY(appearanceMode->view()->selectionModel()->isSelected(
+            appearanceMode->model()->index(0, 0)));
         QTest::qWait(100);
-        QVERIFY(comboPopup->grab().save(outputDir + "/combo-popup-dark.png"));
+        VerifySmoothPopupCorners(comboPopup, "combo-popup-dark.png");
         appearanceMode->hidePopup();
 
         theme.SetMode(Gui::Theme::Mode::Light);
@@ -659,14 +692,51 @@ private Q_SLOTS:
         QTRY_VERIFY(QApplication::activePopupWidget() != nullptr);
         comboPopup = QApplication::activePopupWidget();
         QCOMPARE(comboPopup->objectName(), QStringLiteral("apdComboPopup"));
-        QTRY_VERIFY(!comboPopup->mask().isEmpty());
+        QVERIFY(appearanceMode->view()->viewport()->mapTo(comboPopup, QPoint{}).x() >= 4);
+        QVERIFY(!appearanceMode->view()->verticalScrollBar()->isVisible());
+        appearanceMode->view()->setCurrentIndex(appearanceMode->model()->index(2, 0));
+        QVERIFY(appearanceMode->view()->selectionModel()->isSelected(
+            appearanceMode->model()->index(2, 0)));
         QTest::qWait(100);
-        QVERIFY(comboPopup->grab().save(outputDir + "/combo-popup-light.png"));
+        VerifySmoothPopupCorners(comboPopup, "combo-popup-light.png");
         appearanceMode->hidePopup();
 
         theme.SetMode(originalMode);
         QCoreApplication::removeTranslator(&traditionalChinese);
         Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
+    }
+
+    void TrayMenuHasSmoothCorners()
+    {
+        auto backend = std::make_shared<Core::QuickConnect::NullBackend>();
+        Core::QuickConnect::Controller quickConnect{backend};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        auto *menu = tray.findChild<QMenu *>();
+        QVERIFY(menu != nullptr);
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/UiValidation"));
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            tray.ShowContextMenu(QPoint{100, 100});
+            QVERIFY(QTest::qWaitForWindowExposed(menu));
+            for (const bool last : {false, true}) {
+                if (last) {
+                    menu->setActiveAction(menu->actions().last());
+                }
+                else {
+                    QTest::keyClick(menu, Qt::Key_Down);
+                }
+                QVERIFY(menu->activeAction() != nullptr);
+                VerifySmoothPopupCorners(
+                    menu, QString{"tray-menu-%1-%2.png"}
+                              .arg(theme.IsDark() ? "dark" : "light")
+                              .arg(last ? "last" : "first"));
+            }
+            QTest::keyClick(menu, Qt::Key_Escape);
+            QTRY_VERIFY(!menu->isVisible());
+        }
+        theme.SetMode(originalMode);
     }
 
     void SettingsDescriptionsFollowConsecutiveLanguageChanges()
