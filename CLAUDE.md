@@ -7,7 +7,7 @@ adds the architecture and workflow detail that only emerges from reading across 
 
 ## Build & Test
 
-Windows-only, **32-bit (Win32)** build. For prerequisites, configuration, build commands, and test
+Windows-only, **64-bit (x64)** build with Qt 6.8.4 and Visual Studio 2022. For prerequisites, configuration, build commands, and test
 commands, read `Docs/Build.md` before setting up or rebuilding the project.
 
 ```powershell
@@ -24,10 +24,6 @@ With `APD_BUILD_TESTS=ON`, CTest registers `AirPodsDomainTests`, `QuickConnectTe
 The domain and quick-connect suites use `QCoreApplication`. Animation and UI rendering tests
 create widgets and need an interactive Windows desktop; animation tests also exercise the
 Windows multimedia backend. Qt runtime DLLs must be deployed beside the executables or on `PATH`.
-
-For manual update-dialog checks, read `Docs/UpdateUiTesting.md` and explicitly build
-`UpdateSimulator`. It uses the production `UpdateWindow` with simulated downloads, is excluded
-from the default build and CTest, and is not shipped in the installer.
 
 | CMake option | Default | Effect |
 |---|---|---|
@@ -62,7 +58,7 @@ apd_support ──▶ apd_domain ──┬──▶ apd_core ──────�
 | `apd_domain` | `AirPodsAdvertisement`, `AirPodsStateManager`, `AppleCP` — pure protocol/state logic | `apd_support` only |
 | `apd_core` | `AirPods::Manager`, `Settings`, `SettingsRepository`, `Update`, `LowAudioLatency`, `Debug`, and the `_win.cpp` platform impls | `apd_domain`, Qt Multimedia, cpr, nlohmann_json, boost::pfr |
 | `apd_presentation` | `MainWindowPresentation` view models — plain state→struct mapping, no widgets | `apd_domain` only |
-| `apd_gui` | `MainWindow`, `TrayIcon`, `TaskbarStatus`, `SelectWindow`, `UpdateWindow`, `SettingsWindow`, `Theme`, `AnimationPlayback`, `Widget::Battery`, `Widget::AnimationView` | `apd_core` + `apd_presentation`, Qt Widgets/Svg/MultimediaWidgets |
+| `apd_gui` | `MainWindow`, `TrayIcon`, `TaskbarStatus`, `SelectWindow`, `UpdateWindow`, `SettingsWindow`, `Theme`, `AnimationPlayback`, `Widget::Battery`, `Widget::AnimationView` | `apd_core` + `apd_presentation`, Qt Widgets/Svg/Multimedia |
 | `AirPodsDesktop` | `Main.cpp`, `Application.cpp`, resources | `apd_gui` + SingleApplication |
 
 Domain and view-model tests link `apd_core` + `apd_presentation` + Qt Test and run without a
@@ -169,9 +165,8 @@ Locales are listed in `APD_TRANSLATION_LOCALES` in `CMakeLists.txt`; `.ts` files
 `Source/Resource/Translation/`, and `.qm` files are generated into `Build/Binary/translations/`.
 
 A custom `APD_CREATE_UPDATE_TS` target runs `lupdate -recursive Source/ -no-obsolete -locations none`
-and is a hard dependency of the main executable — a workaround for QTBUG-31860. **Every build rewrites
-the `.ts` files**, so expect translation churn in `git status` after building and don't commit it
-unintentionally. Widgets call `UTILS_QT_REGISTER_LANGUAGECHANGE` to retranslate live.
+only when requested. Normal builds compile the existing `.ts` files to `.qm` without rewriting
+tracked translations. Widgets call `UTILS_QT_REGISTER_LANGUAGECHANGE` to retranslate live.
 
 Adding a locale is a CMake edit plus a rebuild; see `CONTRIBUTING.md` for the translator workflow and
 the `--print-all-locales` launch option.
@@ -179,8 +174,9 @@ the `--print-all-locales` launch option.
 ## Updater & Release
 
 `Core::Update` queries the GitHub API for `APD_GITHUB_OWNER/APD_GITHUB_REPOSITORY`, rejects metadata
-from any other repository, selects the `.exe` release asset whose name contains `win32`, and verifies
-its SHA-256 against the release digest before executing it. `AsyncChecker` polls hourly.
+from any other repository, selects the `.exe` release asset matching the compiled CPack architecture,
+and verifies its SHA-256 against the release digest before executing it. `AsyncChecker` polls hourly.
+Qt 6 builds select `win64`; legacy clients select the signed `win32-bridge` alias.
 
 The version must be identical in `project(... VERSION ...)` in `CMakeLists.txt` and `version-string`
 in `vcpkg.json`; a `v*.*.*` tag must match both. CI fails the build otherwise. Full process is in

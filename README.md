@@ -25,7 +25,9 @@
 
 ## 🔍 Preview
 
-![Preview Image](/Assets/Preview.gif)
+| Light theme | Dark theme |
+| :---: | :---: |
+| <img src="/Assets/Preview.gif" alt="Light theme popup animation" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="Dark theme popup animation" width="360"> |
 
 ## ✨ Features
 
@@ -33,6 +35,12 @@
 * 👂 Automatic ear detection and media playback control.
 * 🚀 Low audio latency mode.
 * 🌈 Animated device popups and light, dark, or system themes.
+
+## 💻 System requirements
+
+Official builds support Windows 10 1809 or newer and Windows 11 on x64. 32-bit Windows and ARM64
+are not supported. Existing Qt 5/Win32 users can migrate through the in-app updater while keeping
+their user settings.
 
 ## 🛠️ Build and test
 
@@ -50,7 +58,7 @@ Keep `README.md`, `README-CN.md`, and `README-TW.md` aligned in section order, f
 
 ## 💎 Third-party dependencies
 
-* [Qt 5.15.2](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-5/lgpl.html))
+* [Qt 6.8.4](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-6/lgpl.html))
 * [spdlog](https://github.com/gabime/spdlog) ([MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE))
 * [cxxopts](https://github.com/jarro2783/cxxopts) ([MIT License](https://github.com/jarro2783/cxxopts/blob/master/LICENSE))
 * [cpr](https://github.com/whoshuu/cpr) ([MIT License](https://github.com/whoshuu/cpr/blob/master/LICENSE))

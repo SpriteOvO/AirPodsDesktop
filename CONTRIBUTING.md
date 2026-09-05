@@ -18,7 +18,7 @@ Before you start contributing, make sure you already understand how Git works. Y
    ./AirPodsDesktop --print-all-locales=Complete
    ```
 
-2. You will need the [*Qt Linguist*](https://doc.qt.io/qt-5/linguist-translators.html) tool to complete the translation work. If you didn't have it, please download and install [Qt 5.15.2](https://www.qt.io/download-qt-installer).
+2. You will need the [*Qt Linguist*](https://doc.qt.io/qt-6/linguist-translators.html) tool to complete the translation work. If you don't have it, download and install [Qt 6.8.4](https://www.qt.io/download-qt-installer).
 
 3. This step is to get the `.ts` translation file for a new target locale. If you just want to improve an existing translation, you can skip this step.
 

@@ -2,13 +2,18 @@
 
 ## Windows prerequisites
 
-AirPodsDesktop uses C++20 and builds for **Win32 (32-bit)** with:
+AirPodsDesktop uses C++20 and builds for **Windows x64** with:
 
 - [CMake](https://cmake.org/download/) 3.20 or newer.
-- Visual Studio 2019 with the C++ desktop tools, or Visual Studio 2022 with the corresponding generator.
+- Visual Studio 2022 with the C++ desktop tools.
 - A cloned and [bootstrapped vcpkg checkout](https://github.com/microsoft/vcpkg#quick-start-windows).
-- [Qt 5.15.2](https://www.qt.io/download-qt-installer), including the `MSVC 2019 32-bit` components.
+- [Qt 6.8.4](https://www.qt.io/download-qt-installer), including the `MSVC 2022 64-bit` and Qt Multimedia components.
 - [NSIS](https://sourceforge.net/projects/nsis/files/latest/download) when generating an installer.
+
+Qt 6.8.4 is distributed through Qt's authenticated online installer. Repository CI therefore needs
+`QT_EMAIL` and `QT_PW` secrets for a Qt account that can install the 6.8.4 MSVC 2022 package. Since
+fork pull requests cannot access those secrets, the workflow uses public Qt 6.8.3 only for that
+untrusted compatibility build; official branch and release builds remain pinned to 6.8.4.
 
 ## Configure and build
 
@@ -22,16 +27,17 @@ cd AirPodsDesktop
 Replace the vcpkg and Qt paths before configuring:
 
 ```powershell
-cmake -S . -B Build -G "Visual Studio 16 2019" -A Win32 `
+cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_BUILD_TYPE=RelWithDebInfo `
   -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019 `
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.4\msvc2022_64 `
   -DAPD_BUILD_TESTS=ON
 cmake --build Build --config RelWithDebInfo
 ```
 
-For Visual Studio 2022, use `-G "Visual Studio 17 2022"`. Keep `-A Win32` and the
-32-bit Qt package. Use a new build directory when changing generators.
+Win32, ARM64, Visual Studio 2019, and Qt 5 are not supported. Use a new build directory when
+changing generators, architectures, or Qt installations. The minimum supported operating system is
+Windows 10 version 1809 (build 17763); Windows 11 x64 is also supported.
 
 Executables and deployed Qt files are written to `Build/Binary/`.
 Useful configuration options are:
@@ -54,6 +60,3 @@ CTest runs the domain, quick-connect, animation, and UI rendering suites registe
 [Tests/CMakeLists.txt](/Tests/CMakeLists.txt). Animation and UI rendering tests need an
 interactive Windows desktop; animation tests also use the Windows multimedia backend.
 Qt runtime DLLs must be deployed beside the test executables or available on `PATH`.
-
-For manual update-dialog testing with simulated downloads, see
-[Update UI testing](/Docs/UpdateUiTesting.md).

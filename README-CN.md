@@ -25,7 +25,9 @@
 
 ## 🔍 预览
 
-![Preview Image](/Assets/Preview.gif)
+| 浅色主题 | 深色主题 |
+| :---: | :---: |
+| <img src="/Assets/Preview.gif" alt="浅色主题弹窗动画" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="深色主题弹窗动画" width="360"> |
 
 ## ✨ 特性
 
@@ -33,6 +35,11 @@
 * 👂 自动入耳检测与媒体播放控制。
 * 🚀 低延迟音频模式。
 * 🌈 设备弹出窗口动画，以及浅色、深色或系统主题。
+
+## 💻 系统要求
+
+正式版本支持 Windows 10 1809 以上或 Windows 11 x64，不支持 32 位 Windows 与 ARM64。
+现有 Qt 5／Win32 用户可直接使用程序内更新器迁移至 Qt 6／x64，现有用户设置会保留。
 
 ## 🛠️ 构建与测试
 
@@ -50,7 +57,7 @@ Windows 环境要求、构建命令与测试方式请参阅[构建说明](/Docs/
 
 ## 💎 第三方依赖项
 
-* [Qt 5.15.2](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-5/lgpl.html))
+* [Qt 6.8.4](https://www.qt.io/download-qt-installer) ([LGPLv3 License](https://doc.qt.io/qt-6/lgpl.html))
 * [spdlog](https://github.com/gabime/spdlog) ([MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE))
 * [cxxopts](https://github.com/jarro2783/cxxopts) ([MIT License](https://github.com/jarro2783/cxxopts/blob/master/LICENSE))
 * [cpr](https://github.com/whoshuu/cpr) ([MIT License](https://github.com/whoshuu/cpr/blob/master/LICENSE))

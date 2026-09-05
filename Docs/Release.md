@@ -22,7 +22,7 @@ without the prefix, and the workflow's tag check accepts either.
 ## Prepare a Release
 
 1. Update the same semantic version in `CMakeLists.txt` and `vcpkg.json`.
-2. Build and test Win32 `RelWithDebInfo` locally.
+2. Build and test x64 `RelWithDebInfo` locally.
 3. Merge the version change into `main`.
 4. Create and push a matching annotated tag:
 
@@ -33,8 +33,10 @@ without the prefix, and the workflow's tag check accepts either.
    git push origin v0.5.0
    ```
 
-The workflow rejects a tag whose version differs from either project file. Do not manually upload
-or rename the installer: the updater selects an `.exe` asset containing `win32` in its name.
+The workflow rejects a tag whose version differs from either project file. It publishes the signed
+`win64` installer first, then copies that exact installer to a `win32-bridge` asset. Existing Win32
+clients select the bridge name, while Qt 6 clients select the `win64` name. The bridge installer
+checks for AMD64 Windows 10 build 17763 or newer before replacing the legacy installation.
 
 ## Verify a Release
 
@@ -42,18 +44,28 @@ Confirm that the workflow completed successfully, then download the installer an
 SHA-256 value with `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AirPodsDesktop-0.5.0-win32.exe -Algorithm SHA256
+Get-FileHash .\AirPodsDesktop-0.5.0-win64.exe -Algorithm SHA256
+Get-FileHash .\AirPodsDesktop-0.5.0-win32-bridge.exe -Algorithm SHA256
 ```
 
 Keep the release as a draft only when manual acceptance testing is required; the automated workflow
 publishes releases immediately.
 
-## Optional Windows Code Signing
+The two installer hashes must match because the bridge is an alternate release name for the same
+signed NSIS payload. Test an upgrade from the latest public Win32 release before publishing.
 
-Add both repository secrets below to sign tagged installers before checksum generation:
+## Required CI and Code-Signing Secrets
+
+Official branch and release builds require these Qt online-installer credentials:
+
+- `QT_EMAIL`: Qt account email with access to the Qt 6.8.4 MSVC 2022 package.
+- `QT_PW`: Password for that Qt account.
+
+Tagged releases also require both code-signing secrets below. The workflow signs before creating
+the bridge alias and checksums:
 
 - `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64-encoded PFX certificate.
 - `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password for the PFX certificate.
 
-The workflow publishes an unsigned installer when neither secret exists, but fails when only one is
-configured. The temporary certificate is deleted after `signtool` signs and verifies the installer.
+The workflow fails a tagged release if either signing secret is absent. The temporary certificate
+is deleted after `signtool` signs and verifies the installer.
