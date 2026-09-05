@@ -18,6 +18,14 @@
 
 cmake_minimum_required(VERSION 3.20)
 
+# Keep dependencies with older cmake_minimum_required declarations usable with CMake 4.
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 4.0)
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif()
+if (POLICY CMP0177)
+    cmake_policy(SET CMP0177 NEW)
+endif()
+
 set(APD_GITHUB_OWNER "SpriteOvO" CACHE STRING "GitHub repository owner used by the updater.")
 set(
     APD_GITHUB_REPOSITORY
@@ -40,8 +48,29 @@ project(
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
 )
 
+if (NOT WIN32 OR NOT MSVC)
+    message(FATAL_ERROR "AirPodsDesktop requires 64-bit Windows and MSVC 2022.")
+endif()
+if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "AirPodsDesktop no longer supports Win32. Configure with -A x64.")
+endif()
+if (NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
+    message(FATAL_ERROR "AirPodsDesktop supports the x64 ABI only; ARM64 is not supported.")
+endif()
+if (MSVC_VERSION LESS 1930)
+    message(FATAL_ERROR "AirPodsDesktop requires Visual Studio 2022 or newer.")
+endif()
+
 include(FetchContent)
 include(CMake/Utils.cmake)
+
+if (MSVC)
+    # windeployqt cannot always discover Visual Studio from non-developer shells. Ask CMake for the
+    # redistributable DLLs explicitly and copy them beside the executable before packaging.
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_NO_WARNINGS TRUE)
+    include(InstallRequiredSystemLibraries)
+endif()
 
 if(MSVC AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20.4")
     #
@@ -137,11 +166,10 @@ endif()
 
 # Qt
 #
-set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia MultimediaWidgets)
-find_package(Qt5 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
-find_package(Qt5LinguistTools REQUIRED)
+set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia LinguistTools)
+find_package(Qt6 6.8 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 if (APD_BUILD_TESTS)
-    find_package(Qt5 COMPONENTS Test REQUIRED)
+    find_package(Qt6 6.8 COMPONENTS Test REQUIRED)
 endif()
 
 # spdlog
@@ -222,11 +250,12 @@ endif()
 # SingleApplication
 #
 set(QAPPLICATION_CLASS "QApplication" CACHE STRING "Inheritance class for SingleApplication")
+set(QT_DEFAULT_MAJOR_VERSION 6 CACHE STRING "Qt major version used by dependencies" FORCE)
 message("Fetching 'SingleApplication'...")
 FetchContent_Declare(
     SingleApplication
     GIT_REPOSITORY "https://github.com/itay-grudev/SingleApplication.git"
-    GIT_TAG "bdbb09b5f21ebea4cd7dfb43b29114a94e04a3a1" # v3.3.0
+    GIT_TAG "a218603d76a55dddb65b84f2b49ecaa8efc074ea" # v3.5.6
 )
 FetchContent_MakeAvailable(SingleApplication)
 message("Fetch 'SingleApplication' done.")
@@ -396,10 +425,10 @@ set_source_files_properties(${APD_TS_FILES} PROPERTIES OUTPUT_LOCATION ${APD_QM_
 
 add_custom_target(
     APD_CREATE_UPDATE_TS
-    COMMAND ${Qt5_LUPDATE_EXECUTABLE} -recursive "${CMAKE_SOURCE_DIR}/Source/"
-                                      -ts ${APD_TS_FILES}
-                                      -no-obsolete
-                                      -locations none
+    COMMAND $<TARGET_FILE:Qt6::lupdate> -recursive "${CMAKE_SOURCE_DIR}/Source/"
+                                            -ts ${APD_TS_FILES}
+                                            -no-obsolete
+                                            -locations none
     WORKING_DIRECTORY ${APD_TS_DIR}
 )
 
@@ -407,14 +436,13 @@ add_custom_target(
 # Add .ts files as .qm files
 #
 
-qt5_add_translation(
+qt_add_translation(
     APD_QM_FILES
     ${APD_TS_FILES}
 )
 
 # One owner for the generated translations, also when building a test target on its own.
 add_custom_target(apd_translations DEPENDS ${APD_QM_FILES})
-add_dependencies(apd_translations APD_CREATE_UPDATE_TS)
 
 ##################################################
 
@@ -455,8 +483,8 @@ target_link_libraries(
     apd_support
 
     PUBLIC
-    Qt5::Core
-    Qt5::Gui
+    Qt6::Core
+    Qt6::Gui
     spdlog::spdlog
     cxxopts::cxxopts
     magic_enum::magic_enum
@@ -475,7 +503,7 @@ target_link_libraries(
 
     PUBLIC
     apd_domain
-    Qt5::Multimedia
+    Qt6::Multimedia
     cpr::cpr
     nlohmann_json::nlohmann_json
     magic_enum::magic_enum
@@ -499,9 +527,8 @@ target_link_libraries(
     PUBLIC
     apd_core
     apd_presentation
-    Qt5::Widgets
-    Qt5::Svg
-    Qt5::MultimediaWidgets
+    Qt6::Widgets
+    Qt6::Svg
 )
 
 if (WIN32)
@@ -560,9 +587,21 @@ if (MSVC)
         add_custom_command(
             TARGET ${PROJECT_NAME}
             POST_BUILD
-            COMMAND "${Qt5_DIR}/../../../bin/windeployqt" "${APD_BINARY_OUT_DIR}/${PROJECT_NAME}.exe"
+            COMMAND $<TARGET_FILE:Qt6::windeployqt>
+                    --no-compiler-runtime
+                    "${APD_BINARY_OUT_DIR}/${PROJECT_NAME}.exe"
             COMMENT "Deploying Qt..."
         )
+        foreach(runtime_library IN LISTS CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+            add_custom_command(
+                TARGET ${PROJECT_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${runtime_library}"
+                        "${APD_BINARY_OUT_DIR}"
+                COMMENT "Deploying MSVC runtime ${runtime_library}"
+            )
+        endforeach()
     endif()
 endif()
 
@@ -600,11 +639,24 @@ if (APD_GENERATE_INSTALLER)
 
     if (MSVC)
         set(CPACK_GENERATOR NSIS)
-        set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+        set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY ${PROJECT_NAME})
+        # A custom migration hook removes an existing Win32 release before registering x64.
+        set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL OFF)
         set(CPACK_NSIS_URL_INFO_ABOUT ${CMAKE_PROJECT_HOMEPAGE_URL})
         set(CPACK_NSIS_EXECUTABLES_DIRECTORY "./")
         set(CPACK_NSIS_MUI_FINISHPAGE_RUN "./${PROJECT_NAME}.exe")
         set(CPACK_NSIS_BRANDING_TEXT "${PROJECT_NAME} installer")
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/CMake/InstallerMigration.nsh.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/InstallerMigration.nsh"
+            @ONLY
+        )
+        file(READ "${CMAKE_CURRENT_BINARY_DIR}/InstallerMigration.nsh" APD_NSIS_MIGRATION_COMMANDS)
+        # CPack serializes this value into CPackConfig.cmake before expanding the NSIS template.
+        string(REPLACE "\\" "\\\\" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
+        string(REPLACE "\"" "\\\"" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
+        string(REPLACE "$" "\\$" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
+        set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
         string(REPLACE "/" "\\\\" ICON_FILEPATH ${ICON_FILEPATH})
         set(CPACK_NSIS_MUI_ICON ${ICON_FILEPATH})
 
@@ -619,7 +671,7 @@ if (APD_GENERATE_INSTALLER)
         )
         set(
             CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
-            "Delete \\\"$DESKTOP\\\\${SHORTCUT_NAME}.lnk\\\""
+            "SetRegView 64\nDelete \\\"$DESKTOP\\\\${SHORTCUT_NAME}.lnk\\\""
         )
     endif()
 
@@ -632,12 +684,23 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*.ilk" EXCLUDE
         PATTERN "*.exp" EXCLUDE
         PATTERN "*.lib" EXCLUDE
-        # Release CI configures with APD_BUILD_TESTS=ON, so every test executable lands here.
-        # Match them by suffix rather than by name, so a new test target cannot ship by accident.
-        PATTERN "*Tests.exe" EXCLUDE
-        PATTERN "*Tests.pdb" EXCLUDE
-        PATTERN "UpdateSimulator.exe" EXCLUDE
-        PATTERN "UpdateSimulator.pdb" EXCLUDE
+        PATTERN "*.pdb" EXCLUDE
+        # Release CI configures with APD_BUILD_TESTS=ON. Keep every automated-test, simulator,
+        # mock, harness, fixture, and validation artifact out of production packages.
+        PATTERN "*Test*" EXCLUDE
+        PATTERN "*test*" EXCLUDE
+        PATTERN "*Simulator*" EXCLUDE
+        PATTERN "*simulator*" EXCLUDE
+        PATTERN "*Simulation*" EXCLUDE
+        PATTERN "*simulation*" EXCLUDE
+        PATTERN "*Mock*" EXCLUDE
+        PATTERN "*mock*" EXCLUDE
+        PATTERN "*Fixture*" EXCLUDE
+        PATTERN "*fixture*" EXCLUDE
+        PATTERN "*Harness*" EXCLUDE
+        PATTERN "*harness*" EXCLUDE
+        PATTERN "*Validation*" EXCLUDE
+        PATTERN "*validation*" EXCLUDE
     )
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 

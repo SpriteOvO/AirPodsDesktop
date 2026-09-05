@@ -53,10 +53,13 @@ protected:
             auto *popup = qobject_cast<QWidget *>(watched);
             const auto &colors = Theme::Manager::Instance().Colors();
             QPainter painter{popup};
+            painter.setCompositionMode(QPainter::CompositionMode_Source);
+            painter.fillRect(popup->rect(), Qt::transparent);
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setPen(colors.popupBorder);
             painter.setBrush(colors.popupSurface);
-            painter.drawRoundedRect(QRectF{popup->rect()}.adjusted(0.5, 0.5, -0.5, -0.5), 9.5, 9.5);
+            painter.drawRoundedRect(QRectF{popup->rect()}.adjusted(3, 3, -3, -3), 8, 8);
             // Consume the private QFrame paint event to avoid a second, native rectangular border.
             return true;
         }
@@ -69,7 +72,7 @@ void ConfigureComboBoxPopup(QComboBox *comboBox)
     auto *view = comboBox->view();
     view->setFrameShape(QFrame::NoFrame);
 
-    // Qt 5 wraps combo views in a private QFrame. Paint one antialiased surface on a translucent
+    // Qt wraps combo views in a private QFrame. Paint one antialiased surface on a translucent
     // window; a QRegion mask would discard the partially transparent pixels along its corners.
     auto *popup = view->window();
     popup->setObjectName("apdComboPopup");
@@ -361,7 +364,7 @@ void SettingsWindow::InitCreditsText()
         };
         static std::vector<LibInfo> libs{
             // clang-format off
-            { "Qt 5", "https://www.qt.io/download-qt-installer", "LGPLv3", "https://doc.qt.io/qt-5/lgpl.html" },
+            { "Qt 6", "https://www.qt.io/download-qt-installer", "LGPLv3", "https://doc.qt.io/qt-6/lgpl.html" },
             { "spdlog", "https://github.com/gabime/spdlog", "MIT", "https://github.com/gabime/spdlog/blob/v1.x/LICENSE" },
             { "cxxopts", "https://github.com/jarro2783/cxxopts", "MIT", "https://github.com/jarro2783/cxxopts/blob/master/LICENSE" },
             { "cpr", "https://github.com/whoshuu/cpr", "MIT", "https://github.com/whoshuu/cpr/blob/master/LICENSE" },
@@ -471,13 +474,13 @@ void SettingsWindow::UpdateQuickConnectDevices(const Fields &fields)
 void SettingsWindow::UpdateAdvOverride()
 {
     auto advsStr = _ui.teAdvOverride->toPlainText();
-    auto vAdvsStr = advsStr.split('\n', QString::SkipEmptyParts);
+    auto vAdvsStr = advsStr.split('\n', Qt::SkipEmptyParts);
 
     std::vector<std::vector<uint8_t>> advs;
 
     for (const auto &advStr : vAdvsStr) {
 
-        auto advBytesStr = advStr.split(' ', QString::SkipEmptyParts);
+        auto advBytesStr = advStr.split(' ', Qt::SkipEmptyParts);
 
         std::vector<uint8_t> bytes;
         for (const auto advByteStr : advBytesStr) {

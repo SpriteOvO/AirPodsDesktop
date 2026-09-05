@@ -7,15 +7,13 @@ namespace Gui {
 AnimationPlayback::AnimationPlayback(Widget::AnimationView &view, QObject *parent)
     : QObject{parent}, _view{view}
 {
-    _player.setMuted(true);
-    _player.setVideoOutput(_view.Surface());
+    _player.setVideoSink(_view.VideoSink());
+    _player.setLoops(QMediaPlayer::Infinite);
     _view.SetPlaybackEnabled(false);
     _watchdog.setSingleShot(true);
     _watchdog.setInterval(3000);
     _retryTimer.setSingleShot(true);
     _retryTimer.setInterval(250);
-    _loopTimer.setSingleShot(true);
-    _loopTimer.setInterval(0);
 
     connect(&_watchdog, &QTimer::timeout, this, [this] {
         Fail(QStringLiteral("No video frame received for 3 seconds"));
@@ -27,12 +25,10 @@ AnimationPlayback::AnimationPlayback(Widget::AnimationView &view, QObject *paren
         }
     });
     connect(
-        &_player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this,
-        [this](QMediaPlayer::Error error) {
+        &_player, &QMediaPlayer::errorOccurred, this,
+        [this](QMediaPlayer::Error error, const QString &errorString) {
             if (error != QMediaPlayer::NoError) {
-                Fail(QStringLiteral("error %1: %2")
-                         .arg(static_cast<int>(error))
-                         .arg(_player.errorString()));
+                Fail(QStringLiteral("error %1: %2").arg(static_cast<int>(error)).arg(errorString));
             }
         });
     connect(&_player, &QMediaPlayer::mediaStatusChanged, this, [this](auto status) {
@@ -42,24 +38,13 @@ AnimationPlayback::AnimationPlayback(Widget::AnimationView &view, QObject *paren
         if (status == QMediaPlayer::InvalidMedia) {
             Fail(_player.errorString());
         }
-        else if (status == QMediaPlayer::EndOfMedia) {
-            // Wait for the backend's stopped transition before restarting; keep the last frame.
-            _loopTimer.start();
-        }
-    });
-    connect(&_loopTimer, &QTimer::timeout, this, [this] {
-        if (_active && _attemptRunning && _player.mediaStatus() == QMediaPlayer::EndOfMedia) {
-            _watchdog.start();
-            _player.setPosition(0);
-            _player.play();
-        }
     });
 }
 
 AnimationPlayback::~AnimationPlayback()
 {
     Stop();
-    _player.setVideoOutput(static_cast<QAbstractVideoSurface *>(nullptr));
+    _player.setVideoSink(nullptr);
 }
 
 void AnimationPlayback::SetAnimation(const AnimationPresentation &presentation)
@@ -98,8 +83,8 @@ void AnimationPlayback::StartAttempt()
     _view.SetPlaybackEnabled(true);
     _watchdog.start();
     Q_EMIT AttemptStarted();
-    _player.setMedia(QUrl{_presentation.resource});
-    // setMedia can synchronously report a missing backend or invalid resource.
+    _player.setSource(QUrl{_presentation.resource});
+    // setSource can synchronously report a missing backend or invalid resource.
     if (_attemptRunning) {
         _player.play();
     }
@@ -110,10 +95,9 @@ void AnimationPlayback::Stop()
     _attemptRunning = false;
     _watchdog.stop();
     _retryTimer.stop();
-    _loopTimer.stop();
     _view.SetPlaybackEnabled(false);
     _player.stop();
-    _player.setMedia({});
+    _player.setSource({});
 }
 
 void AnimationPlayback::Fail(const QString &reason)

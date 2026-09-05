@@ -19,12 +19,14 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QStyleOptionComboBox>
 #include <QThread>
 #include <QUrl>
 #include <QTimer>
 #include <QPainter>
 
 #include "Source/Core/QuickConnect.h"
+#include "Source/Gui/MainWindow.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
 #include "Source/Gui/TrayIcon.h"
@@ -127,6 +129,41 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void MainWindowElidesLongDeviceNames()
+    {
+        Gui::MainWindow window;
+        auto *label = window.findChild<QLabel *>("deviceLabel");
+        QVERIFY(label != nullptr);
+        QCOMPARE(label->textFormat(), Qt::PlainText);
+        QVERIFY(!label->wordWrap());
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_4;
+        state.displayName = QStringLiteral("AirPods 4");
+        window.UpdateState(state);
+        QCOMPARE(label->text(), state.displayName);
+        QCOMPARE(label->font().pointSize(), 18);
+        QCOMPARE(label->toolTip(), QString{});
+        QCOMPARE(label->accessibleName(), state.displayName);
+
+        state.displayName =
+            QStringLiteral("結城さくな專用的超級無敵特別限定版 AirPods Pro 第二世代");
+        window.UpdateState(state);
+        QCOMPARE(label->font().pointSize(), 12);
+        QVERIFY(label->text() != state.displayName);
+        QVERIFY(label->text().contains(QChar{0x2026}));
+        QVERIFY(!label->text().startsWith(QChar{0x2026}));
+        QVERIFY(!label->text().endsWith(QChar{0x2026}));
+        QVERIFY(
+            label->fontMetrics().horizontalAdvance(label->text()) <= label->contentsRect().width());
+        QCOMPARE(label->toolTip(), state.displayName);
+        QCOMPARE(label->accessibleName(), state.displayName);
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        VerifySmoothPopupCorners(
+            &window, QString{"main-window-long-device-name-scale%1.png"}.arg(scale));
+    }
+
     void UpdateTextHasAntialiasedEdges_data()
     {
         QTest::addColumn<QString>("localeName");
@@ -606,7 +643,24 @@ private Q_SLOTS:
         auto *appearanceMode = window.findChild<QComboBox *>("cbAppearanceMode");
         QVERIFY(appearanceMode != nullptr);
         QCOMPARE(appearanceMode->count(), 3);
+        QCOMPARE(appearanceMode->sizeAdjustPolicy(), QComboBox::AdjustToContents);
         QVERIFY(!appearanceMode->accessibleName().isEmpty());
+
+        const auto appearanceTextFits = [appearanceMode] {
+            QStyleOptionComboBox option;
+            option.initFrom(appearanceMode);
+            option.currentText = appearanceMode->currentText();
+            const auto textRect = appearanceMode->style()->subControlRect(
+                QStyle::CC_ComboBox, &option, QStyle::SC_ComboBoxEditField, appearanceMode);
+            const QFontMetrics metrics{appearanceMode->font()};
+            for (int i = 0; i < appearanceMode->count(); ++i) {
+                if (metrics.horizontalAdvance(appearanceMode->itemText(i)) > textRect.width()) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        QVERIFY(appearanceTextFits());
 
         for (const auto *name : {
                  "cbLowAudioLatency",
@@ -655,6 +709,7 @@ private Q_SLOTS:
         QTRY_COMPARE(
             buttonBox->button(QDialogButtonBox::Close)->text(),
             QString::fromUtf8("\xE9\x97\x9C\xE9\x96\x89"));
+        QVERIFY(appearanceTextFits());
 
         const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation");
         QDir{}.mkpath(outputDir);
@@ -713,6 +768,13 @@ private Q_SLOTS:
         Gui::TrayIcon tray{[] { return 0; }, quickConnect};
         auto *menu = tray.findChild<QMenu *>();
         QVERIFY(menu != nullptr);
+        const auto actions = menu->actions();
+        const auto checkableAction =
+            std::find_if(actions.cbegin(), actions.cend(), [](const QAction *action) {
+                return action->isCheckable();
+            });
+        QVERIFY(checkableAction != actions.cend());
+        (*checkableAction)->setChecked(true);
         auto &theme = Gui::Theme::Manager::Instance();
         const auto originalMode = theme.CurrentMode();
         QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/UiValidation"));
@@ -781,8 +843,6 @@ private Q_SLOTS:
 
 int main(int argc, char **argv)
 {
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app{argc, argv};

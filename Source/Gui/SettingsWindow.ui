@@ -574,6 +574,9 @@
                 <height>0</height>
                </size>
               </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToContents</enum>
+              </property>
               <item>
                <property name="text">
                 <string>Use system setting</string>

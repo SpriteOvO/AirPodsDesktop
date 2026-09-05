@@ -23,11 +23,10 @@
 #include <mutex>
 #include <vector>
 
-#include <QAbstractVideoSurface>
 #include <QPainter>
 #include <QThread>
 #include <QVideoFrame>
-#include <QVideoSurfaceFormat>
+#include <QVideoSink>
 
 namespace Gui::Widget {
 
@@ -183,137 +182,31 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
 
 //////////////////////////////////////////////////
 
-class AnimationView::VideoSurface : public QAbstractVideoSurface
-{
-public:
-    explicit VideoSurface(AnimationView &view) : QAbstractVideoSurface{&view}, _view{view} {}
-
-    void Invalidate()
-    {
-        std::lock_guard lock{_mutex};
-        ++_generation;
-        _pending = {};
-    }
-
-    void SetEnabled(bool enabled)
-    {
-        std::lock_guard lock{_mutex};
-        _enabled = enabled;
-        ++_generation;
-        _pending = {};
-    }
-
-    void stop() override
-    {
-        Invalidate();
-        QAbstractVideoSurface::stop();
-    }
-
-    QList<QVideoFrame::PixelFormat>
-    supportedPixelFormats(QAbstractVideoBuffer::HandleType type) const override
-    {
-        if (type != QAbstractVideoBuffer::NoHandle) {
-            return {};
-        }
-        // Everything `QVideoFrame::image()` can convert; the backend picks the first it offers.
-        return {
-            QVideoFrame::Format_ARGB32,
-            QVideoFrame::Format_RGB32,
-            QVideoFrame::Format_BGRA32,
-            QVideoFrame::Format_BGR32,
-            QVideoFrame::Format_RGB24,
-            QVideoFrame::Format_BGR24,
-            QVideoFrame::Format_RGB565,
-            QVideoFrame::Format_YUV420P,
-            QVideoFrame::Format_YV12,
-            QVideoFrame::Format_NV12,
-            QVideoFrame::Format_NV21,
-            QVideoFrame::Format_UYVY,
-            QVideoFrame::Format_YUYV,
-            QVideoFrame::Format_ARGB32_Premultiplied,
-            QVideoFrame::Format_BGRA32_Premultiplied,
-        };
-    }
-
-    bool present(const QVideoFrame &frame) override
-    {
-        quint64 generation;
-        {
-            std::lock_guard lock{_mutex};
-            if (!_enabled) {
-                return true;
-            }
-            generation = _generation;
-        }
-        if (!frame.isValid()) {
-            return false;
-        }
-
-        auto image = frame.image();
-        if (image.isNull()) {
-            setError(IncorrectFormatError);
-            stop();
-            return false;
-        }
-
-        if (QThread::currentThread() == _view.thread()) {
-            _view.PresentFrame(std::move(image));
-        }
-        else {
-            std::lock_guard lock{_mutex};
-            if (!_enabled || generation != _generation) {
-                return true;
-            }
-            _pending = std::move(image);
-            if (_deliveryQueued) {
-                return true;
-            }
-            _deliveryQueued = true;
-            QMetaObject::invokeMethod(
-                &_view,
-                [this] {
-                    QImage latest;
-                    {
-                        std::lock_guard lock{_mutex};
-                        latest = std::move(_pending);
-                        _pending = {};
-                        _deliveryQueued = false;
-                    }
-                    if (!latest.isNull()) {
-                        _view.PresentFrame(std::move(latest));
-                    }
-                },
-                Qt::QueuedConnection);
-        }
-        return true;
-    }
-
-private:
-    AnimationView &_view;
-    std::mutex _mutex;
-    QImage _pending;
-    quint64 _generation{0};
-    bool _enabled{true};
-    bool _deliveryQueued{false};
-};
-
-//////////////////////////////////////////////////
-
-AnimationView::AnimationView(QWidget *parent) : QWidget{parent}, _surface{new VideoSurface{*this}}
+AnimationView::AnimationView(QWidget *parent) : QWidget{parent}, _videoSink{new QVideoSink{this}}
 {
     setAttribute(Qt::WA_OpaquePaintEvent, false);
+    connect(
+        _videoSink, &QVideoSink::videoFrameChanged, this, &AnimationView::OnVideoFrameChanged,
+        Qt::DirectConnection);
 }
 
-AnimationView::~AnimationView() = default;
-
-QAbstractVideoSurface *AnimationView::Surface() const
+AnimationView::~AnimationView()
 {
-    return _surface;
+    // QVideoSink is a QObject child, but delete it while our frame-delivery state still exists.
+    // This also disconnects a decoder thread before the mutex and pending image are destroyed.
+    disconnect(_videoSink, nullptr, this, nullptr);
+    delete _videoSink;
+    _videoSink = nullptr;
+}
+
+QVideoSink *AnimationView::VideoSink() const
+{
+    return _videoSink;
 }
 
 void AnimationView::Clear()
 {
-    _surface->Invalidate();
+    InvalidatePendingFrames();
     _frame = {};
     RescaleFrame();
     update();
@@ -327,10 +220,72 @@ void AnimationView::SetFallbackImage(QImage image)
 
 void AnimationView::SetPlaybackEnabled(bool enabled)
 {
-    _surface->SetEnabled(enabled);
+    {
+        std::lock_guard lock{_frameMutex};
+        _playbackEnabled = enabled;
+        ++_generation;
+        _pendingFrame = {};
+    }
     if (!enabled) {
         Clear();
     }
+}
+
+void AnimationView::InvalidatePendingFrames()
+{
+    std::lock_guard lock{_frameMutex};
+    ++_generation;
+    _pendingFrame = {};
+}
+
+void AnimationView::OnVideoFrameChanged(const QVideoFrame &frame)
+{
+    quint64 generation;
+    {
+        std::lock_guard lock{_frameMutex};
+        if (!_playbackEnabled) {
+            return;
+        }
+        generation = _generation;
+    }
+    if (!frame.isValid()) {
+        return;
+    }
+
+    auto image = frame.toImage();
+    if (image.isNull()) {
+        return;
+    }
+
+    if (QThread::currentThread() == thread()) {
+        PresentFrame(std::move(image));
+        return;
+    }
+
+    std::lock_guard lock{_frameMutex};
+    if (!_playbackEnabled || generation != _generation) {
+        return;
+    }
+    _pendingFrame = std::move(image);
+    if (_deliveryQueued) {
+        return;
+    }
+    _deliveryQueued = true;
+    QMetaObject::invokeMethod(
+        this,
+        [this] {
+            QImage latest;
+            {
+                std::lock_guard lock{_frameMutex};
+                latest = std::move(_pendingFrame);
+                _pendingFrame = {};
+                _deliveryQueued = false;
+            }
+            if (!latest.isNull()) {
+                PresentFrame(std::move(latest));
+            }
+        },
+        Qt::QueuedConnection);
 }
 
 void AnimationView::SetRemoveEnclosedBackground(bool enabled)

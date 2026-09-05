@@ -70,8 +70,6 @@ ApdApplication::~ApdApplication()
 
 void ApdApplication::PreConstruction()
 {
-    setAttribute(Qt::AA_DisableWindowContextHelpButton);
-    setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 }

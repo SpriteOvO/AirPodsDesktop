@@ -18,10 +18,13 @@
 
 #pragma once
 
+#include <mutex>
+
 #include <QImage>
 #include <QWidget>
 
-class QAbstractVideoSurface;
+class QVideoFrame;
+class QVideoSink;
 
 namespace Gui::Widget {
 
@@ -38,7 +41,7 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = 
 // Video output for the device animations.
 //
 // The animation assets are matted onto opaque white (see `Source/Resource/Video/README.md`), so
-// this widget receives every frame through a `QAbstractVideoSurface`, knocks out the white
+// this widget receives every frame through a `QVideoSink`, knocks out the white
 // background reachable from the frame border, and paints the result over whatever the parent
 // window draws. That keeps the animation usable on a dark card without re-encoding the assets.
 //
@@ -50,8 +53,8 @@ public:
     explicit AnimationView(QWidget *parent = nullptr);
     ~AnimationView() override;
 
-    // Hand this to `QMediaPlayer::setVideoOutput()`.
-    QAbstractVideoSurface *Surface() const;
+    // Hand this to `QMediaPlayer::setVideoSink()`.
+    QVideoSink *VideoSink() const;
 
     // Drops the last frame so nothing stale is painted the next time the widget shows.
     void Clear();
@@ -70,14 +73,19 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
-    class VideoSurface;
-
-    VideoSurface *_surface;
+    QVideoSink *_videoSink;
+    std::mutex _frameMutex;
+    QImage _pendingFrame;
     QImage _frame;  // processed, source resolution, ARGB32
     QImage _scaled; // `_frame` fitted to the widget
     QImage _fallback;
+    quint64 _generation{0};
+    bool _playbackEnabled{true};
+    bool _deliveryQueued{false};
     bool _removeEnclosedBackground{false};
 
+    void InvalidatePendingFrames();
+    void OnVideoFrameChanged(const QVideoFrame &frame);
     void PresentFrame(QImage frame);
     void RescaleFrame();
 };

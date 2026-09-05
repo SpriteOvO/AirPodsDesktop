@@ -1,0 +1,80 @@
+SetRegView 64
+ReadRegStr $R0 HKLM \
+  "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+StrCmp $R0 "AMD64" apd_check_windows_version
+MessageBox MB_OK|MB_ICONSTOP \
+  "AirPodsDesktop requires Windows 10 or Windows 11 x64. 32-bit Windows and ARM64 are not supported." \
+  /SD IDOK
+Abort
+
+apd_check_windows_version:
+ReadRegStr $R1 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" "CurrentBuildNumber"
+IntCmp $R1 17763 apd_scan32_start apd_windows_too_old apd_scan32_start
+
+apd_windows_too_old:
+MessageBox MB_OK|MB_ICONSTOP \
+  "AirPodsDesktop requires Windows 10 version 1809 (build 17763) or newer." \
+  /SD IDOK
+Abort
+
+apd_scan32_start:
+SetRegView 32
+StrCpy $R0 0
+
+apd_scan32:
+EnumRegKey $R1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall" $R0
+StrCmp $R1 "" apd_migration_done
+IntOp $R0 $R0 + 1
+ReadRegStr $R2 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$R1" "DisplayName"
+StrCpy $R3 $R2 14
+StrCmp $R3 "AirPodsDesktop" 0 apd_scan32
+ReadRegStr $R3 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$R1" "UninstallString"
+StrCmp $R3 "" apd_scan32
+MessageBox MB_YESNO|MB_ICONEXCLAMATION \
+  "$R2 must be removed before installing the 64-bit version. Continue?" \
+  /SD IDYES IDYES apd_uninstall32 IDNO apd_migration_abort
+
+apd_uninstall32:
+ClearErrors
+StrCpy $R5 $R3 1 0
+StrCmp $R5 "$\"" 0 +2
+StrCpy $R3 $R3 "" 1
+StrCpy $R5 $R3 1 -1
+StrCmp $R5 "$\"" 0 +2
+StrCpy $R3 $R3 -1
+StrLen $R5 "\Uninstall.exe"
+StrCpy $R6 $R3 -$R5
+ExecWait '"$R3" /S _?=$R6' $R4
+IfErrors apd_uninstall_failed
+IntCmp $R4 0 apd_cleanup32_prepare apd_uninstall_failed apd_uninstall_failed
+
+apd_cleanup32_prepare:
+StrCpy $R7 0
+
+apd_cleanup32:
+ClearErrors
+Delete "$R3"
+RMDir "$R6"
+IfFileExists "$R3" apd_cleanup32_retry
+IfFileExists "$R6\*.*" apd_uninstall_failed
+Goto apd_migration_done
+
+apd_cleanup32_retry:
+IntOp $R7 $R7 + 1
+IntCmp $R7 20 apd_uninstall_failed apd_cleanup32_wait apd_uninstall_failed
+
+apd_cleanup32_wait:
+Sleep 250
+Goto apd_cleanup32
+
+apd_uninstall_failed:
+MessageBox MB_OK|MB_ICONSTOP \
+  "The existing AirPodsDesktop installation could not be removed. Remove it manually and try again." \
+  /SD IDOK
+Abort
+
+apd_migration_abort:
+Abort
+
+apd_migration_done:
+SetRegView 64

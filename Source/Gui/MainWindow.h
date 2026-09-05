@@ -111,7 +111,7 @@ private:
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();
     void ApplyTheme();
-    void FitDeviceLabelFont();
+    void FitDeviceLabelFont(const QString &text);
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();
@@ -120,6 +120,7 @@ private:
 
     void DoHide();
     void BeginShow(bool fromHidden);
+    void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
     void hideEvent(QHideEvent *event) override;
     void closeEvent(QCloseEvent *event) override;

@@ -21,7 +21,6 @@
 
 #include <QWindow>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include "../Core/OS/Windows.h"
 #include "Theme.h"
@@ -145,7 +144,7 @@ TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
     // (The parameter is incorrect.)"
     //
     // It is printed at
-    // https://code.qt.io/cgit/qt/qtbase.git/tree/src/plugins/platforms/windows/qwindowsbackingstore.cpp?h=v5.15.2#n108
+    // Match the alpha-composition behavior of Qt's Windows backing store.
     //
     // We remove the flag `Qt::FramelessWindowHint` to make it call `BitBlt` instead of
     // `UpdateLayeredWindowIndirect`, and probably thanks to the later `setParent` call (I guess),
@@ -256,7 +255,7 @@ bool TaskbarStatus::Enable()
     const auto &info = optInfo.value();
 
     winId(); // makes `windowHandle()` have a value
-    windowHandle()->setParent(QWindow::fromWinId((WId)info.hReBarWindow32));
+    windowHandle()->setParent(QWindow::fromWinId(reinterpret_cast<WId>(info.hReBarWindow32)));
     setAttribute(Qt::WA_TranslucentBackground);
     UpdatePos(info, true);
     _isFirstTimeout = true;
@@ -477,7 +476,7 @@ void TaskbarStatus::mouseReleaseEvent(QMouseEvent *event)
         emit ShowMainWindowRequested();
     }
     else if (button == Qt::RightButton) {
-        emit ShowTrayMenuRequested(event->globalPos());
+        emit ShowTrayMenuRequested(event->globalPosition().toPoint());
     }
 
     QDialog::mouseReleaseEvent(event);

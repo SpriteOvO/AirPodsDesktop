@@ -29,7 +29,6 @@ private:
     QMediaPlayer _player{this};
     QTimer _watchdog{this};
     QTimer _retryTimer{this};
-    QTimer _loopTimer{this};
     AnimationPresentation _presentation;
     bool _active{false};
     bool _attemptRunning{false};

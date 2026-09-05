@@ -28,6 +28,7 @@
 #include <QEvent>
 #include <QFontDatabase>
 #include <QMenu>
+#include <QPainter>
 #include <QSettings>
 #include <QTimer>
 #include <QWidget>
@@ -370,8 +371,9 @@ class Manager::NativeFilter : public QAbstractNativeEventFilter
 public:
     explicit NativeFilter(Manager &owner) : _owner{owner} {}
 
-    bool nativeEventFilter(const QByteArray &eventType, void *message, long *result) override
+    bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override
     {
+        Q_UNUSED(result);
 #if defined APD_OS_WIN
         if (eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") {
             return false;
@@ -540,7 +542,7 @@ QString Manager::StyleSheet() const
 {
     const auto &p = _impl->palette;
 
-    // `image: url()` cannot take data URIs in Qt 5, so glyphs ship as qrc SVGs in two tints.
+    // `image: url()` cannot take data URIs here, so glyphs ship as qrc SVGs in two tints.
     const auto onAccentGlyph = p.accentText == Qt::black ? "Dark" : "Light";
     const auto onSurfaceGlyph = p.dark ? "Light" : "Dark";
 
@@ -783,18 +785,17 @@ QToolTip {
 
 /* ---------- Menu ---------- */
 QMenu {
-    background: @popupSurface;
-    border: 1px solid @popupBorder;
+    background: transparent;
+    border: none;
     border-radius: 10px;
     padding: 4px;
 }
 QMenu::item {
-    padding: 7px 28px 7px 34px;
+    padding: 7px 28px 7px 12px;
     border-radius: 6px;
     background: transparent;
     color: @text;
 }
-QMenu::item:non-exclusive { padding-left: 12px; }
 QMenu::item:selected { background: @controlHover; }
 QMenu::item:disabled { color: @textDisabled; }
 QMenu::separator { height: 1px; background: @separator; margin: 4px 8px; }
@@ -888,6 +889,30 @@ QDialog#UpdateWindow QPushButton:disabled {
     return sheet;
 }
 
+class MenuSurfacePaintFilter final : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (event->type() == QEvent::Paint) {
+            auto *menu = qobject_cast<QMenu *>(watched);
+            const auto &colors = Manager::Instance().Colors();
+            QPainter painter{menu};
+            painter.setCompositionMode(QPainter::CompositionMode_Source);
+            painter.fillRect(menu->rect(), Qt::transparent);
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setPen(colors.popupBorder);
+            painter.setBrush(colors.popupSurface);
+            painter.drawRoundedRect(QRectF{menu->rect()}.adjusted(3, 3, -3, -3), 8, 8);
+        }
+        return QObject::eventFilter(watched, event);
+    }
+};
+
 void ConfigurePopupSurface(QWidget *popup)
 {
     popup->setWindowFlags(
@@ -895,6 +920,9 @@ void ConfigurePopupSurface(QWidget *popup)
     popup->setAttribute(Qt::WA_TranslucentBackground);
     popup->setAutoFillBackground(false);
     popup->setProperty(Manager::kSkipDwmProperty, true);
+    if (qobject_cast<QMenu *>(popup) != nullptr) {
+        popup->installEventFilter(new MenuSurfacePaintFilter{popup});
+    }
 }
 
 void Manager::ApplyToApplication()

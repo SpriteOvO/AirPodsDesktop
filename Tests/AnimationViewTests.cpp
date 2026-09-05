@@ -1,4 +1,3 @@
-#include <QAbstractVideoSurface>
 #include <QDataStream>
 #include <QDir>
 #include <QFile>
@@ -6,7 +5,7 @@
 #include <QPainter>
 #include <QTest>
 #include <QVideoFrame>
-#include <QVideoSurfaceFormat>
+#include <QVideoSink>
 
 #include "Source/Gui/Widget/AnimationView.h"
 
@@ -25,12 +24,20 @@ bool HasTransparentBackgroundSamples(const QImage &image)
            transparent(image.width() / 2, image.height() - 1) && transparent(0, image.height() / 2);
 }
 
-class CollectingSurface : public QAbstractVideoSurface
+class CollectingSink : public QObject
 {
     Q_OBJECT
 
 public:
-    using QAbstractVideoSurface::QAbstractVideoSurface;
+    CollectingSink()
+    {
+        connect(&_sink, &QVideoSink::videoFrameChanged, this, &CollectingSink::Present);
+    }
+
+    QVideoSink *Sink()
+    {
+        return &_sink;
+    }
 
     int frameCount{0};
     int framesWithOpaqueBackgroundSamples{0};
@@ -40,37 +47,13 @@ public:
     QImage failedOutput;
     qint64 failedTime{-1};
 
-    QList<QVideoFrame::PixelFormat>
-    supportedPixelFormats(QAbstractVideoBuffer::HandleType type) const override
+private:
+    void Present(const QVideoFrame &frame)
     {
-        if (type != QAbstractVideoBuffer::NoHandle) {
-            return {};
-        }
-        return {
-            QVideoFrame::Format_ARGB32,
-            QVideoFrame::Format_RGB32,
-            QVideoFrame::Format_BGRA32,
-            QVideoFrame::Format_BGR32,
-            QVideoFrame::Format_RGB24,
-            QVideoFrame::Format_BGR24,
-            QVideoFrame::Format_RGB565,
-            QVideoFrame::Format_YUV420P,
-            QVideoFrame::Format_YV12,
-            QVideoFrame::Format_NV12,
-            QVideoFrame::Format_NV21,
-            QVideoFrame::Format_UYVY,
-            QVideoFrame::Format_YUYV,
-            QVideoFrame::Format_ARGB32_Premultiplied,
-            QVideoFrame::Format_BGRA32_Premultiplied,
-        };
-    }
-
-    bool present(const QVideoFrame &frame) override
-    {
-        auto image = frame.image();
+        auto image = frame.toImage();
         const auto input = image;
         if (image.isNull()) {
-            return false;
+            return;
         }
         image = image.scaled(QSize{520, 244}, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
@@ -95,8 +78,9 @@ public:
             representativeFrame = image;
         }
         emit FrameReceived();
-        return true;
     }
+
+    QVideoSink _sink;
 
 Q_SIGNALS:
     void FrameReceived();
@@ -218,33 +202,31 @@ private Q_SLOTS:
     {
         QFETCH(QString, video);
         const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
-        CollectingSurface surface;
+        CollectingSink sink;
         QMediaPlayer player;
-        player.setMuted(true);
-        player.setVideoOutput(&surface);
-        player.setMedia(QUrl::fromLocalFile(videoDir.filePath(video)));
+        player.setVideoSink(sink.Sink());
+        player.setSource(QUrl::fromLocalFile(videoDir.filePath(video)));
         player.setPlaybackRate(4.0);
         player.play();
 
         QTRY_COMPARE_WITH_TIMEOUT(player.mediaStatus(), QMediaPlayer::EndOfMedia, 15000);
         player.stop();
 
-        QVERIFY2(surface.frameCount > 0, qPrintable(video + ": no frames decoded"));
-        if (!surface.failedInput.isNull()) {
+        QVERIFY2(sink.frameCount > 0, qPrintable(video + ": no frames decoded"));
+        if (!sink.failedInput.isNull()) {
             QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/AnimationValidation"));
             const auto prefix =
                 QStringLiteral(APD_BINARY_DIR "/AnimationValidation/diagnostic-") + video;
-            surface.failedInput.save(prefix + "-input.png");
-            surface.failedOutput.save(prefix + "-output.png");
-            qWarning() << "First failing frame:" << video << surface.failedTime << "us";
+            sink.failedInput.save(prefix + "-input.png");
+            sink.failedOutput.save(prefix + "-output.png");
+            qWarning() << "First failing frame:" << video << sink.failedTime << "us";
         }
-        QCOMPARE(surface.framesWithOpaqueBackgroundSamples, 0);
-        QVERIFY(!surface.representativeFrame.isNull());
-        SaveComposites(QFileInfo{video}.completeBaseName(), surface.representativeFrame);
+        QCOMPARE(sink.framesWithOpaqueBackgroundSamples, 0);
+        QVERIFY(!sink.representativeFrame.isNull());
+        SaveComposites(QFileInfo{video}.completeBaseName(), sink.representativeFrame);
 
-        player.setVideoOutput(static_cast<QAbstractVideoSurface *>(nullptr));
-        player.setMedia({});
-        surface.stop();
+        player.setVideoSink(nullptr);
+        player.setSource({});
         QCoreApplication::processEvents();
     }
 };

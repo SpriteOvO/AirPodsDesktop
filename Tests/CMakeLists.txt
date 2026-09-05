@@ -10,7 +10,7 @@ target_link_libraries(
     PRIVATE
     apd_core
     apd_presentation
-    Qt5::Test
+    Qt6::Test
 )
 
 target_include_directories(AirPodsDomainTests PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -29,8 +29,8 @@ target_link_libraries(
 
     PRIVATE
     apd_core
-    Qt5::Test
-    Qt5::Widgets
+    Qt6::Test
+    Qt6::Widgets
 )
 
 target_include_directories(QuickConnectTests PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -44,9 +44,9 @@ target_link_libraries(
 
     PRIVATE
     apd_gui
-    Qt5::Multimedia
-    Qt5::Test
-    Qt5::Widgets
+    Qt6::Multimedia
+    Qt6::Test
+    Qt6::Widgets
 )
 
 target_include_directories(AnimationViewTests PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -66,8 +66,8 @@ target_link_libraries(
 
     PRIVATE
     apd_gui
-    Qt5::Test
-    Qt5::Widgets
+    Qt6::Test
+    Qt6::Widgets
 )
 
 target_include_directories(UiRenderingTests PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -75,31 +75,24 @@ target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINA
 add_dependencies(UiRenderingTests apd_translations)
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
-
-# Interactive harness: explicitly built and never run by CTest or shipped to users.
-add_executable(
-    UpdateSimulator WIN32 EXCLUDE_FROM_ALL
-    UpdateSimulator.cpp
-    ${CMAKE_SOURCE_DIR}/Source/Resource/Resource.qrc
-)
-add_dependencies(UpdateSimulator apd_translations)
-target_link_libraries(UpdateSimulator PRIVATE apd_gui Qt5::Widgets)
-target_include_directories(UpdateSimulator PRIVATE "${CMAKE_SOURCE_DIR}")
-if(MSVC)
-    target_compile_options(UpdateSimulator PRIVATE /utf-8)
-endif()
-add_custom_command(
-    TARGET UpdateSimulator POST_BUILD
-    COMMAND "${Qt5_DIR}/../../../bin/windeployqt" "$<TARGET_FILE:UpdateSimulator>"
-    COMMENT "Deploying Qt runtime for the interactive update simulator"
-)
+foreach(scale_factor 1 1.25 1.5)
+    string(REPLACE "." "_" scale_suffix "${scale_factor}")
+    add_test(
+        NAME MainWindowRenderingScale${scale_suffix}
+        COMMAND UiRenderingTests MainWindowElidesLongDeviceNames
+    )
+    set_tests_properties(
+        MainWindowRenderingScale${scale_suffix}
+        PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
+    )
+endforeach()
 
 foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
         POST_BUILD
         COMMAND
-            ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt5::Test>
+            ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:Qt6::Test>
             $<TARGET_FILE_DIR:${test_target}>
         COMMENT "Deploying Qt Test runtime for ${test_target}"
     )

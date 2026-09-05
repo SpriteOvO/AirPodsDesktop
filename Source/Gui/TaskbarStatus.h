@@ -21,6 +21,7 @@
 #include <optional>
 
 #include <QDialog>
+#include <QPainter>
 
 #include "ui_TaskbarStatus.h"
 

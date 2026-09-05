@@ -24,6 +24,7 @@
 #include <QPainter>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QEnterEvent>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -64,7 +65,7 @@ protected:
         DrawX(painter);
     }
 
-    void enterEvent(QEvent *event) override
+    void enterEvent(QEnterEvent *event) override
     {
         _isHovering = true;
         repaint();
@@ -151,15 +152,19 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     setFixedSize(_windowSize);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
 
-    // Frameless and region-clipped to the iOS card shape; DWM must leave it alone.
+    // A translucent backing store retains fractional edge alpha. Native window regions and
+    // QBitmap masks are binary and produce visibly stepped corners, especially above 100% DPI.
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAutoFillBackground(false);
     setProperty(Theme::Manager::kSkipDwmProperty, true);
-    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
 
     _ui.pushButton->setProperty("cssClass", "accent");
 
     auto titleFont = _ui.deviceLabel->font();
     titleFont.setWeight(QFont::DemiBold);
     _ui.deviceLabel->setFont(titleFont);
+    _ui.deviceLabel->setTextFormat(Qt::PlainText);
+    _ui.deviceLabel->setWordWrap(false);
     _ui.deviceLabel->setProperty("fontRole", "display");
 
     ApplyTheme();
@@ -462,8 +467,7 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
 void MainWindow::Repaint()
 {
     const auto presentation = _viewModel.Present();
-    _ui.deviceLabel->setText(presentation.title);
-    FitDeviceLabelFont();
+    FitDeviceLabelFont(presentation.title);
     ChangeButtonAction(presentation.buttonAction);
     SetAnimation(presentation.animationModel);
 
@@ -505,19 +509,37 @@ void MainWindow::ApplyTheme()
     update();
 }
 
-void MainWindow::FitDeviceLabelFont()
+void MainWindow::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    QPainter painter{this};
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(Theme::Manager::Instance().Colors().mainSurface);
+    painter.drawRoundedRect(QRectF{rect()}, _windowCornerRadius, _windowCornerRadius);
+}
+
+void MainWindow::FitDeviceLabelFont(const QString &text)
 {
     auto font = _ui.deviceLabel->font();
     font.setPointSize(_deviceLabelMaximumPointSize);
 
     const auto availableWidth = _ui.deviceLabel->contentsRect().width();
     while (font.pointSize() > _deviceLabelMinimumPointSize &&
-           QFontMetrics{font}.horizontalAdvance(_ui.deviceLabel->text()) > availableWidth)
+           QFontMetrics{font}.horizontalAdvance(text) > availableWidth)
     {
         font.setPointSize(font.pointSize() - 1);
     }
 
     _ui.deviceLabel->setFont(font);
+    const QFontMetrics metrics{font};
+    const auto displayText = metrics.horizontalAdvance(text) > availableWidth
+                                 ? metrics.elidedText(text, Qt::ElideMiddle, availableWidth)
+                                 : text;
+    _ui.deviceLabel->setText(displayText);
+    _ui.deviceLabel->setAccessibleName(text);
+    _ui.deviceLabel->setToolTip(displayText == text ? QString{} : text);
 }
 
 void MainWindow::OnAppStateChanged(Qt::ApplicationState state)
@@ -639,8 +661,6 @@ void MainWindow::BeginShow(bool fromHidden)
         move(target);
         move(target.x(), screenGeometry.bottom() + 1);
     }
-    Utils::Qt::SetRoundedCorners(this, _windowCornerRadius);
-
     _posAnimation.setEasingCurve(QEasingCurve::OutExpo);
     _posAnimation.setStartValue(pos());
     _posAnimation.setEndValue(target);

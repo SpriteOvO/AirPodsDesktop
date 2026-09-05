@@ -99,8 +99,8 @@ QString ParseSha256Digest(const json &asset)
     }
 
     for (const auto character : hash) {
-        const bool isHex = character.isDigit()
-            || (character.toLower() >= QChar{'a'} && character.toLower() <= QChar{'f'});
+        const bool isHex = character.isDigit() ||
+                           (character.toLower() >= QChar{'a'} && character.toLower() <= QChar{'f'});
         if (!isHex) {
             return {};
         }
@@ -109,6 +109,20 @@ QString ParseSha256Digest(const json &asset)
 }
 
 } // namespace
+
+bool IsCompatibleInstallerAsset(const QString &fileName, const QString &systemName)
+{
+    if (QFileInfo{fileName}.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
+        return false;
+    }
+
+    // CPack emits names ending in -win64. The legacy updater searches for win32, so the bridge
+    // deliberately uses -win32-bridge without also containing win64.
+    const auto architectureMarker = QStringLiteral("-") + systemName.toLower();
+    const auto baseName = QFileInfo{fileName}.completeBaseName().toLower();
+    return baseName.endsWith(architectureMarker) ||
+           baseName.contains(architectureMarker + QStringLiteral("-"));
+}
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 {
@@ -173,14 +187,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
 #if !defined APD_OS_WIN
     #error "Need to port."
 #endif
-            // AirPodsDesktop-x.x.x-win32.exe
+            // AirPodsDesktop-x.x.x-win64.exe
             //
-            if (QFileInfo{fileName}.suffix() != "exe") {
-                LOG(Warn, "ParseSRResponse: Asset suffix is unsupported. Continue.");
-                continue;
-            }
-
-            if (fileName.indexOf(CONFIG_CPACK_SYSTEM_NAME) == -1) {
+            if (!IsCompatibleInstallerAsset(fileName, CONFIG_CPACK_SYSTEM_NAME)) {
                 LOG(Warn, "ParseSRResponse: Asset platform is mismatched. Continue.");
                 continue;
             }
