@@ -55,8 +55,10 @@ public Q_SLOTS:
 namespace {
 void VerifySmoothPopupCorners(QWidget *popup, const QString &fileName)
 {
+    const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation/");
+    QVERIFY(QDir{}.mkpath(outputDir));
     const auto image = popup->grab().toImage();
-    QVERIFY(image.save(QStringLiteral(APD_BINARY_DIR "/UiValidation/") + fileName));
+    QVERIFY(image.save(outputDir + fileName));
     QVERIFY(image.hasAlphaChannel());
     const int cornerSize = qRound(10 * image.devicePixelRatio());
     // Every corner must have a transparent exterior and intermediate alpha along the curve.
