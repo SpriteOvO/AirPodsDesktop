@@ -104,7 +104,17 @@ jobs:
         run: cmake --build Build/Release --config $env:BUILD_TYPE --parallel 2
 
       - name: Test
-        run: ctest --test-dir Build/Release -C $env:BUILD_TYPE --output-on-failure
+        run: |
+          $uiLog = Join-Path $env:RUNNER_TEMP 'UiRenderingTests.txt'
+          & Build/Release/Binary/UiRenderingTests.exe -o "$uiLog,txt"
+          $uiExitCode = $LASTEXITCODE
+          if ($uiExitCode -ne 0) {
+            Get-Content -LiteralPath $uiLog
+            throw "UiRenderingTests failed with exit code $uiExitCode."
+          }
+          ctest --test-dir Build/Release -C $env:BUILD_TYPE `
+            --exclude-regex '^UiRenderingTests$' `
+            --output-on-failure
 
       - name: Package release assets
         env:
