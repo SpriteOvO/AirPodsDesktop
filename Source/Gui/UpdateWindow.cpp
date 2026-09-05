@@ -243,6 +243,13 @@ void UpdateWindow::FitContent()
         button->ensurePolished();
         button->setFixedSize(button->sizeHint().width(), 28);
     }
+    // The progress values change on a queued signal from the download thread. Reserve their new
+    // width before activating the nested layout so a frame cannot retain the previous geometry
+    // and clip the numeric details; the status label remains the flexible, elided side.
+    _ui.progressDetails->setMinimumWidth(
+        _ui.progressDetails->fontMetrics().horizontalAdvance(_ui.progressDetails->text()));
+    _ui.statusLayout->invalidate();
+    _ui.statusLayout->activate();
     _ui.headerStack->setMinimumHeight(0);
     _ui.headerStack->setMaximumHeight(QWIDGETSIZE_MAX);
     _ui.rootLayout->activate();

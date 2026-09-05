@@ -846,6 +846,9 @@ int main(int argc, char **argv)
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app{argc, argv};
+    // Production logging installs a Qt message handler during static initialization. Restore the
+    // default handler so QTest assertion details remain visible in CTest and CI output.
+    qInstallMessageHandler(nullptr);
     Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     UiRenderingTests tests;
     return QTest::qExec(&tests, argc, argv);
