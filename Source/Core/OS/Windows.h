@@ -128,7 +128,9 @@ FindWindowsInfo(const std::wstring &className, const std::optional<std::wstring>
         info.className = className;
         info.titleName = titleName;
 
-        info.threadId = GetWindowThreadProcessId(lastHwnd, (DWORD *)&info.processId);
+        DWORD processId = 0;
+        info.threadId = GetWindowThreadProcessId(lastHwnd, &processId);
+        info.processId = processId;
         if (info.threadId == 0 || info.processId == 0) {
             continue;
         }
@@ -158,9 +160,10 @@ inline bool OpenFileLocation(const QDir &directory)
 {
     QString arguments = "/select,\"" + QDir::toNativeSeparators(directory.absolutePath()) + "\"";
 
-    return (uintptr_t)ShellExecuteW(
-               nullptr, nullptr, L"explorer.exe", arguments.toStdWString().c_str(), nullptr,
-               SW_SHOWDEFAULT) > 32;
+    const auto result = ShellExecuteW(
+        nullptr, nullptr, L"explorer.exe", arguments.toStdWString().c_str(), nullptr,
+        SW_SHOWDEFAULT);
+    return reinterpret_cast<INT_PTR>(result) > 32;
 }
 } // namespace File
 
@@ -302,7 +305,8 @@ inline bool IsVersionOrGreater(
 
             using FnRtlGetVersionT = NTSTATUS(NTAPI *)(RTL_OSVERSIONINFOW * pVersionInformation);
 
-            auto fnRtlGetVersion = (FnRtlGetVersionT)GetProcAddress(moduleNtdll, "RtlGetVersion");
+            auto fnRtlGetVersion =
+                reinterpret_cast<FnRtlGetVersionT>(GetProcAddress(moduleNtdll, "RtlGetVersion"));
             if (fnRtlGetVersion == nullptr) {
                 LOG(Error, "GetProcAddress for 'RtlGetVersion' failed");
                 break;
@@ -310,7 +314,7 @@ inline bool IsVersionOrGreater(
 
             osVersionInfo.dwOSVersionInfoSize = sizeof(osVersionInfo);
 
-            auto result = fnRtlGetVersion((RTL_OSVERSIONINFOW *)&osVersionInfo);
+            auto result = fnRtlGetVersion(reinterpret_cast<RTL_OSVERSIONINFOW *>(&osVersionInfo));
             if (result != STATUS_SUCCESS) {
                 LOG(Error, "RtlGetVersion returns '{}'", result);
                 break;

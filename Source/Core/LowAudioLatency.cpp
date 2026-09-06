@@ -18,7 +18,8 @@
 
 #include "LowAudioLatency.h"
 
-#include <QAudioDeviceInfo>
+#include <QAudioDevice>
+#include <QMediaDevices>
 #include <QUrl>
 
 #include "../Logger.h"
@@ -52,21 +53,21 @@ bool Controller::Initialize()
     //
     // Constructing `QMediaPlayer` when no audio output device is enabled will cause `play` to
     // continually raise errors and is unrecoverable until the device list changes.
-    if (QAudioDeviceInfo::availableDevices(QAudio::AudioOutput).empty()) {
+    if (QMediaDevices::audioOutputs().empty()) {
         LOG(Warn, "LowAudioLatency: Try to init, but no audio output device is enabled.");
         return false;
     }
 
     _mediaPlayer = std::make_unique<QMediaPlayer>();
-    _mediaPlaylist = std::make_unique<QMediaPlaylist>();
+    _audioOutput = std::make_unique<QAudioOutput>();
 
     connect(
-        _mediaPlayer.get(), qOverload<QMediaPlayer::Error>(&QMediaPlayer::error), this,
-        &Controller::OnError);
+        _mediaPlayer.get(), &QMediaPlayer::errorOccurred, this,
+        [this](QMediaPlayer::Error error, const QString &) { OnError(error); });
 
-    _mediaPlaylist->addMedia(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
-    _mediaPlaylist->setPlaybackMode(QMediaPlaylist::Loop);
-    _mediaPlayer->setPlaylist(_mediaPlaylist.get());
+    _mediaPlayer->setAudioOutput(_audioOutput.get());
+    _mediaPlayer->setSource(QUrl{"qrc:/Resource/Audio/Silence.mp3"});
+    _mediaPlayer->setLoops(QMediaPlayer::Infinite);
 
     _inited = true;
     LOG(Info, "LowAudioLatency: Compatible media backend initialized.");
@@ -91,7 +92,7 @@ void Controller::ResetAudio()
 {
     Stop();
     _mediaPlayer.reset();
-    _mediaPlaylist.reset();
+    _audioOutput.reset();
     _inited = false;
 }
 
@@ -142,7 +143,7 @@ void Controller::Start()
         return;
     }
 
-    if (_mediaPlayer->state() != QMediaPlayer::PlayingState) {
+    if (_mediaPlayer->playbackState() != QMediaPlayer::PlayingState) {
         _mediaPlayer->play();
     }
 }

@@ -1,38 +1,60 @@
 # Build Instructions
 
-## Preparations
-```
+## Windows prerequisites
+
+AirPodsDesktop uses C++20 and builds for **Windows x64** with:
+
+- [CMake](https://cmake.org/download/) 3.20 or newer.
+- Visual Studio 2022 with the C++ desktop tools.
+- A cloned and [bootstrapped vcpkg checkout](https://github.com/microsoft/vcpkg#quick-start-windows).
+- [Qt 6.8.3](https://www.qt.io/download-qt-installer), including the `MSVC 2022 64-bit` and Qt Multimedia components.
+- [NSIS](https://sourceforge.net/projects/nsis/files/latest/download) when generating an installer.
+
+Qt 6.8.3 is the supported development, CI, and release baseline. It is installed from the public
+Qt package feed, so repository builds do not require Qt account credentials.
+
+## Configure and build
+
+Clone the repository and enter its root directory in PowerShell:
+
+```powershell
 git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop.git
 cd AirPodsDesktop
-mkdir Build
-cd Build
 ```
-The current path will be named ___BuildPath___ in the rest of this document.
 
-1. Download and install [CMake](https://cmake.org/download/) (>= v3.20) if you didn't have it.
+Replace the vcpkg and Qt paths before configuring:
 
-2. Choose a target platform to continue:
-    - [Windows](#windows)
+```powershell
+cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo `
+  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64 `
+  -DAPD_BUILD_TESTS=ON
+cmake --build Build --config RelWithDebInfo
+```
 
-## Windows
+Win32, ARM64, Visual Studio 2019, and Qt 5 are not supported. Use a new build directory when
+changing generators, architectures, or Qt installations. The minimum supported operating system is
+Windows 10 version 1809 (build 17763); Windows 11 x64 is also supported.
 
-1. Download and install __Visual Studio 2019__ if you didn't have it.
+Executables and deployed Qt files are written to `Build/Binary/`.
+Useful configuration options are:
 
-2. Clone and bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start-windows) if you didn't have it.
+- `-DAPD_BUILD_TESTS=ON`: build and register the first-party tests (off by default).
+- `-DAPD_ENABLE_CONSOLE=ON`: enable console diagnostics.
+- `-DAPD_GENERATE_INSTALLER=ON`: generate an installer with NSIS.
 
-3. Download and install [Qt 5.15.2](https://www.qt.io/download-qt-installer). (Minimum required components are only `MSVC 2019 32-bit`)  
-Set the installed Qt directory to the `PATH` environment variable, or pass it to the CMake option later.
+See the `Build options` section in [CMakeLists.txt](/CMakeLists.txt) for all options.
 
-4. Download and install [NSIS](https://sourceforge.net/projects/nsis/files/latest/download). (Optional, not required if you do not generate installer)
+## Run tests
 
-5. Open __Powershell__, go to ___BuildPath___.  
-Modify the following arguments according to your needs and run it.
+After building with `APD_BUILD_TESTS=ON`, run from the repository root:
 
-    ```
-    cmake -G "Visual Studio 16 2019" -A Win32 -DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo> -DCMAKE_TOOLCHAIN_FILE=path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ../
-    cmake --build . --config <Debug|RelWithDebInfo>
-    ls ./Binary
-    ```
+```powershell
+ctest --test-dir Build -C RelWithDebInfo --output-on-failure
+```
 
-    - Note that if you have not just added the Qt directory to the `PATH` environment variable, you need to pass it to the `CMAKE_PREFIX_PATH` option in the first line this way `-DCMAKE_PREFIX_PATH=path\to\Qt\5.15.2\msvc2019`.
-    - See the [CMakeLists.txt](/CMakeLists.txt) `Build options` section for more options.
+CTest runs the domain, quick-connect, animation, and UI rendering suites registered in
+[Tests/CMakeLists.txt](/Tests/CMakeLists.txt). Animation and UI rendering tests need an
+interactive Windows desktop; animation tests also use the Windows multimedia backend.
+Qt runtime DLLs must be deployed beside the test executables or available on `PATH`.

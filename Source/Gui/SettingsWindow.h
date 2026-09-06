@@ -24,6 +24,7 @@
 #include <QDialog>
 #include <QSlider>
 #include <QCheckBox>
+#include <QTimer>
 
 #include "../Core/QuickConnect.h"
 #include "../Core/Settings.h"
@@ -54,6 +55,7 @@ private:
     Ui::SettingsWindow _ui;
     bool _trigger{true};
     int _lastLanguageIndex{0};
+    QString _aboutTextTemplate;
     std::function<int()> _getCurrentLocaleIndex;
     Core::QuickConnect::Controller &_quickConnect;
 
@@ -61,6 +63,8 @@ private:
     void RestoreDefaults();
     void Update(const Fields &fields, bool trigger);
     void UpdateQuickConnectDevices(const Fields &fields);
+    void UpdateDescriptions();
+    void UpdateStandardButtonTexts();
     void UpdateAdvOverride();
 
     void showEvent(QShowEvent *event) override;
@@ -71,6 +75,7 @@ private:
     void On_pbUnbind_clicked();
 
     // Visual
+    void On_cbAppearanceMode_currentIndexChanged(int index);
     void On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior behavior);
     void On_cbDisplayBatteryOnTaskbar_toggled(TaskbarStatusBehavior behavior);
 
@@ -91,7 +96,16 @@ private:
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
         _ui.retranslateUi(this);
+        _ui.cbLowAudioLatency->setAccessibleName(_ui.lbLowAudioLatency->text());
+        _ui.cbAutoEarDetection->setAccessibleName(_ui.lbAutoEarDetection->text());
+        _ui.cbTrayQuickConnectEnabled->setAccessibleName(_ui.lbTrayQuickConnect->text());
+        _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
+        _aboutTextTemplate = _ui.label->text();
         InitCreditsText();
+        UpdateDescriptions();
+        // QDialogButtonBox handles LanguageChange after its parent and resets standard-button
+        // labels to Qt's platform text. Apply our app translations once propagation ends.
+        QTimer::singleShot(0, this, [this] { UpdateStandardButtonTexts(); });
     });
 };
 } // namespace Gui

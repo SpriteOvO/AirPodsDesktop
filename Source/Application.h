@@ -45,7 +45,6 @@ class Controller;
 } // namespace Core::QuickConnect
 
 namespace Gui {
-class DownloadWindow;
 class MainWindow;
 class TaskbarStatus;
 class TrayIcon;
@@ -80,7 +79,7 @@ Q_SIGNALS:
 
 private:
     static inline Opts::LaunchOptsManager _launchOptsMgr;
-    QTranslator _translator;
+    std::unique_ptr<QTranslator> _translator;
     int _currentLoadedLocaleIndex{0};
     // Declared before the GUI members: `Gui::TrayIcon` and the `Gui::SettingsWindow` it owns hold a
     // reference to the controller, so the controller has to outlive them, and members are destroyed
@@ -90,7 +89,6 @@ private:
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
-    std::unique_ptr<Gui::DownloadWindow> _downloadWindow;
     std::unique_ptr<Core::AirPods::Manager> _airPodsManager;
     std::unique_ptr<Core::LowAudioLatency::Controller> _lowAudioLatencyController;
     std::unique_ptr<Core::AutoStart::Service> _autoStartService;
@@ -105,6 +103,7 @@ private:
     void InitTranslator();
 
     void OnLanguageLocaleChanged(const QLocale &locale) override;
+    void OnAppearanceModeChanged(Core::Settings::AppearanceMode mode) override;
     void OnAutoRunChanged(bool enable) override;
     void OnLowAudioLatencyChanged(bool enable) override;
     void OnAutomaticEarDetectionChanged(bool enable) override;

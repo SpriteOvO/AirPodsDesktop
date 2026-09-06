@@ -51,45 +51,7 @@ Enjoy it all.</source>
     </message>
 </context>
 <context>
-    <name>DownloadWindow</name>
-    <message>
-        <source>Download new version</source>
-        <translation>Изтегляне на новата версия</translation>
-    </message>
-    <message>
-        <source>Download Manually</source>
-        <translation>Ръчно изтегляне</translation>
-    </message>
-    <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>Ако изтеглянето е бавно или се провали, можете да:</translation>
-    </message>
-</context>
-<context>
-    <name>Gui::DownloadWindow</name>
-    <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>Опа, възникна грешка по време на автоматичната актуализация.
-Моля, изтеглете и инсталирайте новата версия ръчно.</translation>
-    </message>
-</context>
-<context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>Дневник на промените:</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>Хей! Намерих налична нова версия!
-
-Текуща версия: %1
-Последна версия: %2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>Свързване с AirPods</translation>
@@ -117,6 +79,14 @@ Latest version: %2%3</source>
     <message>
         <source>Saved device (not available)</source>
         <translation>Запазено устройство (недостъпно)</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Възстановяване на настройките по подразбиране</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Затваряне</translation>
     </message>
 </context>
 <context>
@@ -195,6 +165,69 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Ready to install. You are using %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update was stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stable release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No release notes for this version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -203,22 +236,6 @@ Latest version: %2%3</source>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Update now</source>
-        <translation>Актуализирай сега</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>Пропусни тази версия</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>Виж изданието</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>Напомни ми по-късно</translation>
-    </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
@@ -357,6 +374,73 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>Сдвоеното Bluetooth аудиоустройство, с което се осъществява връзка при щракване върху иконата в системната област.</translation>
+    </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>Забравете свързаните AirPods, за да можете да свържете друга двойка.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>Диагностика</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>Регистрационните файлове помагат при докладване на проблем.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>Външен вид</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>Използване на системната настройка</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Светла</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Тъмна</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateWindow</name>
+    <message>
+        <source>Software Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>Виж изданието</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation>Пропусни тази версия</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation>Напомни ми по-късно</translation>
+    </message>
+    <message>
+        <source>Update now</source>
+        <translation>Актуализирай сега</translation>
+    </message>
+    <message>
+        <source>Download Manually</source>
+        <translation>Ръчно изтегляне</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Затваряне</translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

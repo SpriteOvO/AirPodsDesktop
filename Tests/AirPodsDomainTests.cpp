@@ -26,6 +26,11 @@ class RecordingSettingsObserver final : public Core::Settings::ApplyObserver
 {
 public:
     void OnLanguageLocaleChanged(const QLocale &) override {}
+    void OnAppearanceModeChanged(Core::Settings::AppearanceMode mode) override
+    {
+        appearanceMode = mode;
+        ++appearanceModeChanges;
+    }
     void OnAutoRunChanged(bool enable) override
     {
         autoRun = enable;
@@ -50,10 +55,49 @@ public:
 
     bool autoRun{false};
     int autoRunChanges{0};
+    Core::Settings::AppearanceMode appearanceMode{Core::Settings::AppearanceMode::System};
+    int appearanceModeChanges{0};
     bool quickConnectEnabled{false};
     int quickConnectEnabledChanges{0};
     QString quickConnectDeviceId;
     int quickConnectDeviceChanges{0};
+};
+
+class FailingSyncRepository final : public Core::Settings::Repository
+{
+public:
+    bool Contains(const QString &key) const override
+    {
+        return _values.Contains(key);
+    }
+
+    QVariant Read(const QString &key) const override
+    {
+        return _values.Read(key);
+    }
+
+    QStringList Keys() const override
+    {
+        return _values.Keys();
+    }
+
+    void Write(const QString &key, const QVariant &value) override
+    {
+        _values.Write(key, value);
+    }
+
+    void Remove(const QString &key) override
+    {
+        _values.Remove(key);
+    }
+
+    bool Sync() override
+    {
+        return false;
+    }
+
+private:
+    Core::Settings::MemoryRepository _values;
 };
 
 std::vector<uint8_t> MakePacket(
@@ -116,10 +160,15 @@ private Q_SLOTS:
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
+    void MigratesLegacySettingsRepository();
+    void PreservesExistingSettingsDuringMigration();
+    void RollsBackFailedSettingsMigration();
     void PropagatesQuickConnectSettings();
     void RejectsNullSettingsRepository();
     void ParsesUpdateVersions();
     void ParsesGitHubReleaseMetadata();
+    void MatchesInstallerAssetsByArchitecture();
+    void RejectsUpdateAssetForAnotherArchitecture();
     void RejectsReleaseMetadataFromAnotherRepository();
     void RejectsUpdateAssetsWithoutDigest();
     void VerifiesUpdateFileDigest();
@@ -268,19 +317,66 @@ void AirPodsDomainTests::LoadsSettingsThroughRepository()
     auto repository = std::make_unique<Core::Settings::MemoryRepository>();
     repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
     repository->Write("auto_run", true);
+    repository->Write("appearance_mode", QString{"Dark"});
     Core::Settings::SetRepository(std::move(repository));
 
     QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
     QVERIFY(Core::Settings::GetCurrent().auto_run);
+    QCOMPARE(Core::Settings::GetCurrent().appearance_mode, Core::Settings::AppearanceMode::Dark);
 
     RecordingSettingsObserver observer;
     Core::Settings::SetApplyObserver(&observer);
     Core::Settings::Apply();
     QCOMPARE(observer.autoRunChanges, 1);
     QVERIFY(observer.autoRun);
+    QCOMPARE(observer.appearanceModeChanges, 1);
+    QCOMPARE(observer.appearanceMode, Core::Settings::AppearanceMode::Dark);
 
     Core::Settings::SetApplyObserver(nullptr);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());
+}
+
+void AirPodsDomainTests::MigratesLegacySettingsRepository()
+{
+    Core::Settings::MemoryRepository current;
+    Core::Settings::MemoryRepository legacy;
+    legacy.Write("auto_run", true);
+    legacy.Write("device_address", QVariant::fromValue<qulonglong>(0x12345678));
+    legacy.Write("abi_version", Core::Settings::kFieldsAbiVersion);
+
+    QVERIFY(Core::Settings::Details::MigrateLegacySettings(current, legacy));
+    QCOMPARE(current.Read("auto_run").toBool(), true);
+    QCOMPARE(current.Read("device_address").toULongLong(), qulonglong{0x12345678});
+    QCOMPARE(current.Read("abi_version").toUInt(), Core::Settings::kFieldsAbiVersion);
+}
+
+void AirPodsDomainTests::PreservesExistingSettingsDuringMigration()
+{
+    Core::Settings::MemoryRepository current;
+    Core::Settings::MemoryRepository legacy;
+    current.Write("auto_run", false);
+    legacy.Write("abi_version", Core::Settings::kFieldsAbiVersion);
+    legacy.Write("auto_run", true);
+    legacy.Write("language_locale", QStringLiteral("zh_TW"));
+
+    QVERIFY(Core::Settings::Details::MigrateLegacySettings(current, legacy));
+    QCOMPARE(current.Read("auto_run").toBool(), false);
+    QCOMPARE(current.Read("language_locale").toString(), QStringLiteral("zh_TW"));
+
+    current.Write("auto_run", true);
+    QVERIFY(!Core::Settings::Details::MigrateLegacySettings(current, legacy));
+    QCOMPARE(current.Read("auto_run").toBool(), true);
+}
+
+void AirPodsDomainTests::RollsBackFailedSettingsMigration()
+{
+    FailingSyncRepository current;
+    Core::Settings::MemoryRepository legacy;
+    legacy.Write("abi_version", Core::Settings::kFieldsAbiVersion);
+    legacy.Write("auto_run", true);
+
+    QVERIFY(!Core::Settings::Details::MigrateLegacySettings(current, legacy));
+    QVERIFY(current.Keys().isEmpty());
 }
 
 void AirPodsDomainTests::PropagatesQuickConnectSettings()
@@ -333,10 +429,10 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
         "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": [{
-            "name": "AirPodsDesktop-0.5.0-win32.exe",
+            "name": "AirPodsDesktop-0.5.0-win64.exe",
             "size": 123456,
             "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
+            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win64.exe"
         }]
     })json"}
                               .arg(Config::UrlReleases);
@@ -344,7 +440,7 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
 
     QVERIFY(release.has_value());
     QCOMPARE(release->version, QVersionNumber(0, 5, 0));
-    QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win32.exe"});
+    QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win64.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
     QCOMPARE(
         release->sha256,
@@ -384,6 +480,43 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
     QCOMPARE(decoratedRelease->changeLog, QString{"1. Supported AirPods 4"});
 }
 
+void AirPodsDomainTests::RejectsUpdateAssetForAnotherArchitecture()
+{
+    const auto metadata = QString{R"json({
+        "tag_name": "v0.5.0",
+        "body": "Change log\nLegacy bridge",
+        "html_url": "%1/tag/v0.5.0",
+        "prerelease": false,
+        "assets": [{
+            "name": "AirPodsDesktop-0.5.0-win32-bridge.exe",
+            "size": 123456,
+            "digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32-bridge.exe"
+        }]
+    })json"}
+                              .arg(Config::UrlReleases);
+
+    const auto release = Core::Update::Details::ParseSingleReleaseResponse(metadata.toStdString());
+    QVERIFY(release.has_value());
+    QVERIFY(release->fileName.isEmpty());
+    QVERIFY(!release->CanAutoUpdate());
+}
+
+void AirPodsDomainTests::MatchesInstallerAssetsByArchitecture()
+{
+    using Core::Update::Details::IsCompatibleInstallerAsset;
+
+    const auto installer = QStringLiteral("AirPodsDesktop-0.5.0-win64.exe");
+    const auto portable = QStringLiteral("AirPodsDesktop-0.5.0-win64-portable.zip");
+    const auto bridge = QStringLiteral("AirPodsDesktop-0.5.0-win32-bridge.exe");
+
+    QVERIFY(IsCompatibleInstallerAsset(installer, QStringLiteral("win64")));
+    QVERIFY(!IsCompatibleInstallerAsset(bridge, QStringLiteral("win64")));
+    QVERIFY(!IsCompatibleInstallerAsset(portable, QStringLiteral("win64")));
+    QVERIFY(IsCompatibleInstallerAsset(bridge, QStringLiteral("win32")));
+    QVERIFY(!IsCompatibleInstallerAsset(installer, QStringLiteral("win32")));
+}
+
 void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
 {
     const auto release = Core::Update::Details::ParseSingleReleaseResponse(R"json({
@@ -405,9 +538,9 @@ void AirPodsDomainTests::RejectsUpdateAssetsWithoutDigest()
         "html_url": "%1/tag/v0.5.0",
         "prerelease": false,
         "assets": [{
-            "name": "AirPodsDesktop-0.5.0-win32.exe",
+            "name": "AirPodsDesktop-0.5.0-win64.exe",
             "size": 123456,
-            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win32.exe"
+            "browser_download_url": "%1/download/v0.5.0/AirPodsDesktop-0.5.0-win64.exe"
         }]
     })json"}
                               .arg(Config::UrlReleases);

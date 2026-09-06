@@ -51,45 +51,7 @@ Enjoy it all.</source>
     </message>
 </context>
 <context>
-    <name>DownloadWindow</name>
-    <message>
-        <source>Download new version</source>
-        <translation>새로운 버전 다운로드</translation>
-    </message>
-    <message>
-        <source>Download Manually</source>
-        <translation>수동 다운로드</translation>
-    </message>
-    <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>다운로드 속도가 느리거나 실패할 경우</translation>
-    </message>
-</context>
-<context>
-    <name>Gui::DownloadWindow</name>
-    <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>업데이트를 완료할 수 없습니다.
-최신 버전을 직접 다운로드하여 설치할 수 있습니다.</translation>
-    </message>
-</context>
-<context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>변경 로그:</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>새로운 버전을 사용할 수 있습니다.
-
-현재 버전: %1
-최신 버전: %2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>AirPods에 연결하기</translation>
@@ -117,6 +79,14 @@ Latest version: %2%3</source>
     <message>
         <source>Saved device (not available)</source>
         <translation>저장된 기기(사용 불가)</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>기본값 복원</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
     </message>
 </context>
 <context>
@@ -195,6 +165,69 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Ready to install. You are using %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update was stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stable release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No release notes for this version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -203,22 +236,6 @@ Latest version: %2%3</source>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Update now</source>
-        <translation>지금 업데이트</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>이 버전 건너뛰기</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>업데이트 내용 보기</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>나중에 하기</translation>
-    </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
@@ -357,6 +374,73 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>트레이 아이콘 클릭 시 연결할 페어링된 Bluetooth 오디오 기기입니다.</translation>
+    </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation>다른 AirPods을 바인딩할 수 있도록 현재 AirPods의 바인딩을 해제합니다.</translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation>진단</translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation>문제를 신고할 때 로그 파일이 도움이 됩니다.</translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation>화면 모드</translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation>시스템 설정 사용</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>라이트</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>다크</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateWindow</name>
+    <message>
+        <source>Software Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation>업데이트 내용 보기</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation>이 버전 건너뛰기</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation>나중에 하기</translation>
+    </message>
+    <message>
+        <source>Update now</source>
+        <translation>지금 업데이트</translation>
+    </message>
+    <message>
+        <source>Download Manually</source>
+        <translation>수동 다운로드</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

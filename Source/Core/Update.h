@@ -50,6 +50,7 @@ namespace Details {
 
 std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text);
 std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text);
+bool IsCompatibleInstallerAsset(const QString &fileName, const QString &systemName);
 bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256);
 
 } // namespace Details

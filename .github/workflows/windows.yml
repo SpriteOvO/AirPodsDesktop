@@ -59,11 +59,13 @@ jobs:
 
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Clone Qt dependencies
-        run: |
-          git clone --depth 1 --recursive `
-            https://github.com/SpriteOvO/AirPodsDesktop-Deps.git `
-            Build/AirPodsDesktop-Deps
+      - name: Install Qt 6.8.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          modules: qtmultimedia
+          cache: true
 
       - name: Clone and bootstrap vcpkg
         run: |
@@ -74,9 +76,9 @@ jobs:
         run: |
           cmake -S . -B Build/Release `
             -G 'Visual Studio 17 2022' `
-            -A Win32 `
+            -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/Build/vcpkg/scripts/buildsystems/vcpkg.cmake `
-            -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019 `
+            -DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR `
             -DAPD_BUILD_TESTS=ON `
             -DAPD_GENERATE_INSTALLER=ON `
             -DAPD_GITHUB_OWNER=${{ github.repository_owner }} `
@@ -88,34 +90,81 @@ jobs:
 
       - name: Test
         run: |
-          $qtBin = "${{ github.workspace }}/Build/AirPodsDesktop-Deps/Qt/5.15.2/msvc2019/bin"
-          $env:PATH = "$qtBin;$env:PATH"
-          ctest --test-dir Build/Release -C $env:BUILD_TYPE --output-on-failure
+          $uiLog = Join-Path $env:RUNNER_TEMP 'UiRenderingTests.txt'
+          & Build/Release/Binary/UiRenderingTests.exe -o "$uiLog,txt"
+          $uiExitCode = $LASTEXITCODE
+          if ($uiExitCode -ne 0) {
+            Get-Content -LiteralPath $uiLog
+            throw "UiRenderingTests failed with exit code $uiExitCode."
+          }
+          ctest --test-dir Build/Release -C $env:BUILD_TYPE `
+            --exclude-regex '^UiRenderingTests$' `
+            --output-on-failure
 
       - name: Package release assets
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           $installer = Get-ChildItem `
-            Build/Release/Installer/AirPodsDesktop-*-win32.exe |
+            Build/Release/Installer/AirPodsDesktop-*-win64.exe |
             Select-Object -First 1
           if (-not $installer) {
             throw 'The NSIS installer was not generated.'
           }
 
           $portableSource =
-            "Build/Release/Installer/_CPack_Packages/win32/NSIS/AirPodsDesktop-$env:VERSION-win32/AirPodsDesktop"
+            "Build/Release/Installer/_CPack_Packages/win64/NSIS/AirPodsDesktop-$env:VERSION-win64/AirPodsDesktop"
           if (-not (Test-Path -LiteralPath $portableSource)) {
             throw "Portable package directory not found: $portableSource"
           }
+          $requiredRuntimeFiles = @(
+            'AirPodsDesktop.exe',
+            'Qt6Core.dll',
+            'platforms/qwindows.dll',
+            'iconengines/qsvgicon.dll',
+            'imageformats/qsvg.dll',
+            'multimedia/ffmpegmediaplugin.dll'
+          )
+          foreach ($relativePath in $requiredRuntimeFiles) {
+            if (-not (Test-Path -LiteralPath (Join-Path $portableSource $relativePath))) {
+              throw "Required deployed runtime is missing: $relativePath"
+            }
+          }
+          $forbiddenPackagePattern =
+            '(?i)((^|[\\/])[^\\/]*(test|mock|simulat(?:or|ion)|fixture|harness|validation)[^\\/]*($|[\\/])|(^|[\\/])[^\\/]+\.(pdb|ilk|lib|exp)$)'
+          $forbiddenPackageEntries = Get-ChildItem -LiteralPath $portableSource -Recurse -Force |
+            ForEach-Object {
+              [IO.Path]::GetRelativePath($portableSource, $_.FullName)
+            } |
+            Where-Object { $_ -match $forbiddenPackagePattern }
+          if ($forbiddenPackageEntries) {
+            throw "Production package contains forbidden test or simulation artifacts: $($forbiddenPackageEntries -join ', ')"
+          }
+
+          $dumpbin = Get-ChildItem `
+            "${env:ProgramFiles}/Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $dumpbin) {
+            throw 'dumpbin.exe was not found on the runner.'
+          }
+          $applicationHeaders = & $dumpbin.FullName /headers (Join-Path $portableSource 'AirPodsDesktop.exe')
+          $installerHeaders = & $dumpbin.FullName /headers $installer.FullName
+          if (($applicationHeaders -join "`n") -notmatch 'machine \(x64\)') {
+            throw 'The packaged application is not x64.'
+          }
+          if (($installerHeaders -join "`n") -notmatch 'machine \(x86\)') {
+            throw 'The NSIS compatibility bootstrap is not Win32-launchable.'
+          }
 
           New-Item -ItemType Directory -Path dist | Out-Null
-          $installerDestination = "dist/AirPodsDesktop-$env:VERSION-win32.exe"
-          $portableDestination = "dist/AirPodsDesktop-$env:VERSION-win32-portable.zip"
+          $installerDestination = "dist/AirPodsDesktop-$env:VERSION-win64.exe"
+          $portableDestination = "dist/AirPodsDesktop-$env:VERSION-win64-portable.zip"
           Copy-Item -LiteralPath $installer.FullName -Destination $installerDestination
           Compress-Archive -Path "$portableSource/*" -DestinationPath $portableDestination
 
-      - name: Sign installer when a certificate is configured
+      - name: Sign release installer when configured
+        id: signing
         if: github.ref_type == 'tag'
         env:
           SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
@@ -123,12 +172,13 @@ jobs:
         run: |
           $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_BASE64)
           $hasPassword = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE_PASSWORD)
-          if (-not $hasCertificate -and -not $hasPassword) {
-            Write-Warning 'Code-signing secrets are not configured; publishing an unsigned installer.'
-            exit 0
+          if ($hasCertificate -ne $hasPassword) {
+            throw 'Configure both Windows code-signing secrets or leave both unset.'
           }
-          if (-not $hasCertificate -or -not $hasPassword) {
-            throw 'Both Windows code-signing secrets must be configured together.'
+          if (-not $hasCertificate) {
+            Write-Warning 'Code-signing secrets are not configured; the draft release will contain unsigned installers.'
+            "signed=false" >> $env:GITHUB_OUTPUT
+            return
           }
 
           $certificatePath = Join-Path $env:RUNNER_TEMP 'AirPodsDesktop-signing.pfx'
@@ -145,7 +195,7 @@ jobs:
               throw 'signtool.exe was not found on the runner.'
             }
 
-            $installer = Get-ChildItem dist/AirPodsDesktop-*-win32.exe | Select-Object -First 1
+            $installer = Get-ChildItem dist/AirPodsDesktop-*-win64.exe | Select-Object -First 1
             & $signTool.FullName sign `
               /fd SHA256 `
               /td SHA256 `
@@ -161,20 +211,44 @@ jobs:
             if ($LASTEXITCODE -ne 0) {
               throw "signtool verify failed with exit code $LASTEXITCODE."
             }
+            "signed=true" >> $env:GITHUB_OUTPUT
           }
           finally {
             Remove-Item -LiteralPath $certificatePath -Force -ErrorAction SilentlyContinue
           }
 
-      - name: Generate release checksums
+      - name: Create Win32 update bridge
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          Get-ChildItem dist -File |
-            Where-Object Extension -In '.exe', '.zip' |
-            Sort-Object Name |
-            ForEach-Object {
-              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-              "$hash  $($_.Name)"
-            } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+          $source = "dist/AirPodsDesktop-$env:VERSION-win64.exe"
+          $bridge = "dist/AirPodsDesktop-$env:VERSION-win32-bridge.exe"
+          if (-not (Test-Path -LiteralPath $source)) {
+            throw "Signed x64 installer not found: $source"
+          }
+          Copy-Item -LiteralPath $source -Destination $bridge
+          $sourceHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
+          $bridgeHash = (Get-FileHash -LiteralPath $bridge -Algorithm SHA256).Hash
+          if ($sourceHash -ne $bridgeHash) {
+            throw 'The Win32 bridge does not contain the signed x64 installer byte-for-byte.'
+          }
+
+      - name: Verify release installer signatures
+        if: github.ref_type == 'tag' && steps.signing.outputs.signed == 'true'
+        run: |
+          $signTool = Get-ChildItem `
+            "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x86/signtool.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending |
+            Select-Object -First 1
+          if (-not $signTool) {
+            throw 'signtool.exe was not found on the runner.'
+          }
+          Get-ChildItem dist/AirPodsDesktop-*.exe | ForEach-Object {
+            & $signTool.FullName verify /pa /v $_.FullName
+            if ($LASTEXITCODE -ne 0) {
+              throw "Authenticode verification failed for $($_.Name)."
+            }
+          }
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
@@ -198,12 +272,16 @@ jobs:
           name: AirPodsDesktop-${{ needs.build.outputs.version }}-${{ github.sha }}
           path: dist
 
-      - name: Publish GitHub Release
+      - name: Create draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release create "${{ github.ref_name }}" dist/*
+          gh release create "${{ github.ref_name }}"
+          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win64.exe"
+          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win64-portable.zip"
+          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win32-bridge.exe"
           --repo "${{ github.repository }}"
+          --draft
           --verify-tag
           --generate-notes
           --title "AirPodsDesktop ${{ github.ref_name }}"

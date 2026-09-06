@@ -21,9 +21,9 @@
 
 #include <QWindow>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include "../Core/OS/Windows.h"
+#include "Theme.h"
 
 //
 // Windows 10
@@ -144,7 +144,7 @@ TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
     // (The parameter is incorrect.)"
     //
     // It is printed at
-    // https://code.qt.io/cgit/qt/qtbase.git/tree/src/plugins/platforms/windows/qwindowsbackingstore.cpp?h=v5.15.2#n108
+    // Match the alpha-composition behavior of Qt's Windows backing store.
     //
     // We remove the flag `Qt::FramelessWindowHint` to make it call `BitBlt` instead of
     // `UpdateLayeredWindowIndirect`, and probably thanks to the later `setParent` call (I guess),
@@ -153,8 +153,8 @@ TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
     setWindowFlags(
         windowFlags() | Qt::Tool /* | Qt::FramelessWindowHint*/ | Qt::WindowStaysOnTopHint);
 
-    SetPaletteColor(_ui.labelLeft, QPalette::WindowText, Qt::white);
-    SetPaletteColor(_ui.labelRight, QPalette::WindowText, Qt::white);
+    // Lives inside the shell's taskbar window; DWM attributes are not for it.
+    setProperty(Theme::Manager::kSkipDwmProperty, true);
 
     layout()->setContentsMargins(5, 5, 5, 5);
 
@@ -162,10 +162,12 @@ TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
     _icon.right->SetText("R");
     _battery.left->setBatterySize(25, 10);
     _battery.left->setShowText(false);
-    _battery.left->setChargingIconColor(Qt::white);
     _battery.right->setBatterySize(25, 10);
     _battery.right->setShowText(false);
-    _battery.right->setChargingIconColor(Qt::white);
+
+    ApplyTheme();
+    connect(
+        &Theme::Manager::Instance(), &Theme::Manager::Changed, this, &TaskbarStatus::ApplyTheme);
 
     _ui.horizontalLayoutLeft->insertWidget(0, _icon.left);
     _ui.horizontalLayoutLeft->addWidget(_battery.left);
@@ -189,6 +191,40 @@ void TaskbarStatus::UpdateState(const Core::AirPods::State &state)
 void TaskbarStatus::SetToolTip(const QString &text)
 {
     setToolTip(text);
+}
+
+void TaskbarStatus::ApplyTheme()
+{
+    using Utils::Qt::SetPaletteColor;
+
+    const auto &theme = Theme::Manager::Instance();
+    const auto &colors = theme.Colors();
+
+    // The taskbar follows `SystemUsesLightTheme`, which is independent of the apps theme.
+    const bool darkTaskbar = theme.IsSystemDark();
+    const QColor foreground = darkTaskbar ? QColor{"#FFFFFF"} : QColor{"#1B1B1B"};
+    const QColor iconForeground = darkTaskbar ? QColor{"#1B1B1B"} : QColor{"#FFFFFF"};
+    const QColor batteryBorder = darkTaskbar ? QColor{"#C8C8C8"} : QColor{"#5A5A5A"};
+
+    SetPaletteColor(_ui.labelLeft, QPalette::WindowText, foreground);
+    SetPaletteColor(_ui.labelRight, QPalette::WindowText, foreground);
+
+    for (auto *icon : {_icon.left, _icon.right}) {
+        icon->SetBgColor(foreground);
+        icon->SetFgColor(iconForeground);
+        icon->update();
+    }
+
+    for (auto *battery : {_battery.left, _battery.right}) {
+        battery->setChargingIconColor(foreground);
+        battery->setBorderColor(batteryBorder);
+        battery->setNormalColor(colors.batteryNormal);
+        battery->setAlarmColor(colors.batteryAlarm);
+        battery->setBorderRadius(3);
+        battery->setBackgroundRadius(2);
+    }
+
+    update();
 }
 
 void TaskbarStatus::UpdateVisible()
@@ -219,7 +255,7 @@ bool TaskbarStatus::Enable()
     const auto &info = optInfo.value();
 
     winId(); // makes `windowHandle()` have a value
-    windowHandle()->setParent(QWindow::fromWinId((WId)info.hReBarWindow32));
+    windowHandle()->setParent(QWindow::fromWinId(reinterpret_cast<WId>(info.hReBarWindow32)));
     setAttribute(Qt::WA_TranslucentBackground);
     UpdatePos(info, true);
     _isFirstTimeout = true;
@@ -440,7 +476,7 @@ void TaskbarStatus::mouseReleaseEvent(QMouseEvent *event)
         emit ShowMainWindowRequested();
     }
     else if (button == Qt::RightButton) {
-        emit ShowTrayMenuRequested(event->globalPos());
+        emit ShowTrayMenuRequested(event->globalPosition().toPoint());
     }
 
     QDialog::mouseReleaseEvent(event);

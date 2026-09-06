@@ -20,16 +20,17 @@
 
 #include <QGuiApplication>
 #include <QMessageBox>
+#include <QStyleFactory>
 
 #include <Config.h>
 #include "Logger.h"
 #include "Error.h"
 #include "Utils.h"
 #include "Gui/Utils.h"
-#include "Gui/DownloadWindow.h"
 #include "Gui/MainWindow.h"
 #include "Gui/TaskbarStatus.h"
 #include "Gui/TrayIcon.h"
+#include "Gui/Theme.h"
 #include "Core/AirPods.h"
 #include "Core/AutoStart.h"
 #include "Core/Bluetooth.h"
@@ -42,15 +43,33 @@
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
+namespace {
+
+Gui::Theme::Mode ToThemeMode(Core::Settings::AppearanceMode mode)
+{
+    switch (mode) {
+    case Core::Settings::AppearanceMode::System:
+        return Gui::Theme::Mode::System;
+    case Core::Settings::AppearanceMode::Light:
+        return Gui::Theme::Mode::Light;
+    case Core::Settings::AppearanceMode::Dark:
+        return Gui::Theme::Mode::Dark;
+    }
+    return Gui::Theme::Mode::System;
+}
+
+} // namespace
+
 ApdApplication::~ApdApplication()
 {
     Core::Settings::SetApplyObserver(nullptr);
+    if (_translator) {
+        removeTranslator(_translator.get());
+    }
 }
 
 void ApdApplication::PreConstruction()
 {
-    setAttribute(Qt::AA_DisableWindowContextHelpButton);
-    setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 }
@@ -153,12 +172,11 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     Logger::CleanUpOldLogFiles();
 
-    QFont font;
-    font.setFamily("Segoe UI");
-    font.setFamilies({"Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"});
-    font.setPointSize(9);
+    // Fusion is fully palette-driven, which is what makes light/dark theming and the Fluent
+    // stylesheet consistent across every control. It must be set before any widget exists.
+    setStyle(QStyleFactory::create("Fusion"));
 
-    setFont(font);
+    setFont(Gui::Theme::ApplicationFont(QLocale{}));
     setWindowIcon(QIcon{Config::QrcIconSvg});
     setQuitOnLastWindowClosed(false);
 
@@ -170,6 +188,12 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     // pre-load for InitTranslator
     const auto settingsLoadResult = Core::Settings::Load();
+
+    // Apply the saved appearance before constructing any visible widget. System mode keeps
+    // following Windows changes; explicit light/dark modes only override the surface brightness.
+    auto &theme = Gui::Theme::Manager::Instance();
+    theme.SetMode(ToThemeMode(Core::Settings::GetCurrent().appearance_mode));
+    theme.ApplyToApplication();
 
     InitTranslator();
 
@@ -184,6 +208,7 @@ bool ApdApplication::Prepare(int argc, char *argv[])
         [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
+    _mainWindow->StartUpdateChecks();
     _lowAudioLatencyController = std::make_unique<Core::LowAudioLatency::Controller>();
     _autoStartService = Core::AutoStart::CreateAutoStartService();
     _airPodsManager = std::make_unique<Core::AirPods::Manager>(this);
@@ -263,7 +288,7 @@ void ApdApplication::ConnectGuiComponents()
 {
     connect(
         _trayIcon.get(), &Gui::TrayIcon::ShowMainWindowRequested, _mainWindow.get(),
-        &Gui::MainWindow::show);
+        &Gui::MainWindow::Show);
     connect(
         _trayIcon.get(), &Gui::TrayIcon::UserUpdateRequested, _mainWindow.get(),
         &Gui::MainWindow::AskUserUpdate);
@@ -273,7 +298,7 @@ void ApdApplication::ConnectGuiComponents()
 
     connect(
         _taskbarStatus.get(), &Gui::TaskbarStatus::ShowMainWindowRequested, _mainWindow.get(),
-        &Gui::MainWindow::show);
+        &Gui::MainWindow::Show);
     connect(
         _taskbarStatus.get(), &Gui::TaskbarStatus::ShowTrayMenuRequested, _trayIcon.get(),
         &Gui::TrayIcon::ShowContextMenu);
@@ -316,15 +341,33 @@ void ApdApplication::SetTranslator(const QLocale &locale)
     }
 
     if (_currentLoadedLocaleIndex == index) {
+        Gui::Theme::ApplyApplicationTypography(locale);
         LOG(Warn, "Try to set a same locale name '{}', ignore", localeName);
         return;
     }
 
-    QDir translationFolder = QCoreApplication::applicationDirPath();
-    translationFolder.cd("translations");
-    _translator.load(locale, "apd", "_", translationFolder.absolutePath());
+    std::unique_ptr<QTranslator> translator;
+    if (index != 0) {
+        QDir translationFolder = QCoreApplication::applicationDirPath();
+        translationFolder.cd("translations");
 
-    installTranslator(&_translator);
+        translator = std::make_unique<QTranslator>();
+        if (!translator->load(locale, "apd", "_", translationFolder.absolutePath())) {
+            LOG(Warn, "Failed to load translation for locale '{}', keep current language",
+                localeName);
+            return;
+        }
+    }
+
+    Gui::Theme::ApplyApplicationTypography(locale);
+
+    if (_translator) {
+        removeTranslator(_translator.get());
+    }
+    if (translator) {
+        installTranslator(translator.get());
+    }
+    _translator = std::move(translator);
 
     _currentLoadedLocaleIndex = index;
 }
@@ -348,6 +391,11 @@ void ApdApplication::QuitSafely()
 void ApdApplication::OnLanguageLocaleChanged(const QLocale &locale)
 {
     emit SetTranslatorSafely(locale);
+}
+
+void ApdApplication::OnAppearanceModeChanged(Core::Settings::AppearanceMode mode)
+{
+    Gui::Theme::Manager::Instance().SetMode(ToThemeMode(mode));
 }
 
 void ApdApplication::OnAutoRunChanged(bool enable)

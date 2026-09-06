@@ -14,6 +14,7 @@
 
 #include <QHash>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 
 namespace Core::Settings {
@@ -25,8 +26,10 @@ public:
 
     virtual bool Contains(const QString &key) const = 0;
     virtual QVariant Read(const QString &key) const = 0;
+    virtual QStringList Keys() const = 0;
     virtual void Write(const QString &key, const QVariant &value) = 0;
     virtual void Remove(const QString &key) = 0;
+    virtual bool Sync() = 0;
 };
 
 class MemoryRepository final : public Repository
@@ -34,12 +37,20 @@ class MemoryRepository final : public Repository
 public:
     bool Contains(const QString &key) const override;
     QVariant Read(const QString &key) const override;
+    QStringList Keys() const override;
     void Write(const QString &key, const QVariant &value) override;
     void Remove(const QString &key) override;
+    bool Sync() override;
 
 private:
     QHash<QString, QVariant> _values;
 };
+
+namespace Details {
+
+bool MigrateLegacySettings(Repository &current, Repository &legacy);
+
+} // namespace Details
 
 std::unique_ptr<Repository> CreatePersistentRepository();
 

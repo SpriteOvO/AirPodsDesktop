@@ -21,6 +21,7 @@
 #include <optional>
 
 #include <QDialog>
+#include <QPainter>
 
 #include "ui_TaskbarStatus.h"
 
@@ -153,6 +154,7 @@ private:
     bool _drawDebugBorder{false};
 #endif
 
+    void ApplyTheme();
     void UpdateVisible();
     bool Enable();
     bool Disable();

@@ -21,18 +21,10 @@
 #include <functional>
 
 #include <QApplication>
-#include <QBitmap>
 #include <QDialog>
 #include <QKeyEvent>
-#include <QPainter>
-#include <QPainterPath>
 #include <QTimer>
 #include <QWidget>
-#include <QtMath>
-
-#ifdef Q_OS_WIN
-    #include <qt_windows.h>
-#endif
 
 #include "../Utils.h"
 
@@ -57,44 +49,6 @@ namespace Utils::Qt {
         }                                                                                          \
         base_name::changeEvent(event);                                                             \
     }
-
-inline void SetRoundedCorners(QDialog *widget, qreal radius)
-{
-#ifdef Q_OS_WIN
-    const auto windowHandle = reinterpret_cast<HWND>(widget->winId());
-    RECT windowRect{};
-    if (GetWindowRect(windowHandle, &windowRect)) {
-        const auto width = windowRect.right - windowRect.left;
-        const auto height = windowRect.bottom - windowRect.top;
-        const auto physicalRadius = qRound(radius * widget->devicePixelRatioF());
-        const auto diameter = physicalRadius * 2;
-        const auto region = CreateRoundRectRgn(0, 0, width + 1, height + 1, diameter, diameter);
-        if (region != nullptr) {
-            if (SetWindowRgn(windowHandle, region, TRUE) != 0) {
-                return;
-            }
-            DeleteObject(region);
-        }
-    }
-#endif
-
-    QBitmap bmp{widget->size()};
-    bmp.fill(::Qt::color0);
-
-    QPainter painter{&bmp};
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(::Qt::NoPen);
-    painter.setBrush(::Qt::color1);
-    painter.drawRoundedRect(QRectF{widget->rect()}, radius, radius, ::Qt::AbsoluteSize);
-    widget->setMask(bmp);
-}
-
-inline void SetRoundedCorners(QWidget *widget, qreal radius)
-{
-    QPainterPath path;
-    path.addRoundedRect(widget->rect(), radius, radius);
-    widget->setMask(QRegion{path.toFillPolygon().toPolygon()});
-}
 
 inline void SetPaletteColor(QWidget *widget, QPalette::ColorRole colorRole, const QColor &color)
 {

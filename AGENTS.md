@@ -2,19 +2,19 @@
 
 ## Project Structure & Module Organization
 
-AirPodsDesktop is a Windows-focused C++20 and Qt 5 application built with CMake. Application startup and shared utilities live directly under `Source/`. Platform-independent behavior is grouped in `Source/Core/`, while Windows implementations use the `_win.cpp` suffix. Qt windows, widgets, and `.ui` forms belong in `Source/Gui/`. Images, audio, videos, translations, and Qt/Windows resource manifests are under `Source/Resource/`. Keep CMake helpers in `CMake/`, build documentation in `Docs/`, and screenshots or promotional assets in `Assets/`. Generated output belongs in `Build/` and must not be committed.
+AirPodsDesktop is a Windows-focused C++20 and Qt 6 application built with CMake. Application startup and shared utilities live directly under `Source/`. Platform-independent behavior is grouped in `Source/Core/`, while Windows implementations use the `_win.cpp` suffix. Qt windows, widgets, and `.ui` forms belong in `Source/Gui/`. Images, audio, videos, translations, and Qt/Windows resource manifests are under `Source/Resource/`. Keep CMake helpers in `CMake/`, build documentation in `Docs/`, and screenshots or promotional assets in `Assets/`. Generated output belongs in `Build/` and must not be committed.
 
 Respect the target dependency direction: `apd_support` → `apd_domain` → `apd_core`, with `apd_presentation` feeding `apd_gui`. Keep platform calls and widgets out of domain code.
 
 ## Build, Test, and Development Commands
 
-Use PowerShell with CMake 3.20+, Visual Studio 2019, Qt 5.15.2 (`msvc2019`), and a bootstrapped vcpkg checkout.
+Use PowerShell with CMake 3.20+, Visual Studio 2022, Qt 6.8.3 (`msvc2022_64`), and a bootstrapped vcpkg checkout. The supported target is Windows 10 1809+ or Windows 11 on x64.
 
 ```powershell
-cmake -S . -B Build -G "Visual Studio 16 2019" -A Win32 `
+cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_BUILD_TYPE=RelWithDebInfo `
   -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64
 cmake --build Build --config RelWithDebInfo
 ```
 
@@ -26,7 +26,7 @@ Follow `.clang-format`: four-space indentation, no tabs, 100-column limit, and c
 
 ## Testing Guidelines
 
-First-party Qt Test coverage lives in `Tests/`. Configure with `-DAPD_BUILD_TESTS=ON`, build the selected configuration, then run `ctest --test-dir Build -C RelWithDebInfo --output-on-failure`. Every change must at least compile in Win32 `RelWithDebInfo`; manually exercise affected Bluetooth, tray, media, settings, or translation flows. Name new test files after the unit or feature under test, such as `AirPodsStateManagerTest.cpp`.
+First-party Qt Test coverage lives in `Tests/`. Configure with `-DAPD_BUILD_TESTS=ON`, build the selected configuration, then run `ctest --test-dir Build -C RelWithDebInfo --output-on-failure`. Every change must at least compile in x64 `RelWithDebInfo`; manually exercise affected Bluetooth, tray, media, settings, or translation flows. Name new test files after the unit or feature under test, such as `AirPodsStateManagerTest.cpp`.
 
 ## Commit & Pull Request Guidelines
 

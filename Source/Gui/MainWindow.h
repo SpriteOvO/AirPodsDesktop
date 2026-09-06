@@ -25,21 +25,21 @@
 
 #include "ui_MainWindow.h"
 
-#include <QVideoWidget>
 #include <QMediaPlayer>
 #include <QPropertyAnimation>
 
 #include "Utils.h"
 #include "MainWindowPresentation.h"
+#include "AnimationPlayback.h"
 #include "../Core/AirPods.h"
 #include "../Core/Update.h"
 #include "Base.h"
 #include "Widget/Battery.h"
+#include "Widget/AnimationView.h"
 
 namespace Gui {
 
 class CloseButton;
-class VideoWidget;
 class BatteryInfo;
 
 class MainWindow : public QDialog
@@ -49,6 +49,9 @@ class MainWindow : public QDialog
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    void StartUpdateChecks();
+    void Show();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -80,8 +83,8 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
-    VideoWidget *_videoWidget;
-    QMediaPlayer *_mediaPlayer = new QMediaPlayer{this};
+    Widget::AnimationView *_animationView;
+    AnimationPlayback *_playback;
     QTimer *_autoHideTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery = new Widget::Battery{this};
@@ -95,7 +98,6 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
-    bool _isAnimationPlaying{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
@@ -108,16 +110,20 @@ private:
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();
-    void FitDeviceLabelFont();
+    void ApplyTheme();
+    void FitDeviceLabelFont(const QString &text);
 
     void OnAppStateChanged(Qt::ApplicationState state);
     void OnPosMoveFinished();
     void OnAnimationClicked();
     void OnButtonClicked();
-    void OnPlayerStateChanged(QMediaPlayer::State newState);
 
     void DoHide();
+    void BeginShow(bool fromHidden);
+    void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
     UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
