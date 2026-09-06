@@ -27,7 +27,7 @@
 
 | 浅色主题 | 深色主题 |
 | :---: | :---: |
-| <img src="/Assets/Preview.gif" alt="浅色主题弹窗动画" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="深色主题弹窗动画" width="360"> |
+| <img src="/Assets/Preview-Light.gif" alt="浅色主题弹窗动画" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="深色主题弹窗动画" width="360"> |
 
 ## ✨ 特性
 

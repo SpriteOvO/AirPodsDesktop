@@ -27,7 +27,7 @@
 
 | 淺色主題 | 深色主題 |
 | :---: | :---: |
-| <img src="/Assets/Preview.gif" alt="淺色主題彈窗動畫" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="深色主題彈窗動畫" width="360"> |
+| <img src="/Assets/Preview-Light.gif" alt="淺色主題彈窗動畫" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="深色主題彈窗動畫" width="360"> |
 
 ## ✨ 功能
 
