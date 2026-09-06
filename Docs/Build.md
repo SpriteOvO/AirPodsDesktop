@@ -7,13 +7,11 @@ AirPodsDesktop uses C++20 and builds for **Windows x64** with:
 - [CMake](https://cmake.org/download/) 3.20 or newer.
 - Visual Studio 2022 with the C++ desktop tools.
 - A cloned and [bootstrapped vcpkg checkout](https://github.com/microsoft/vcpkg#quick-start-windows).
-- [Qt 6.8.4](https://www.qt.io/download-qt-installer), including the `MSVC 2022 64-bit` and Qt Multimedia components.
+- [Qt 6.8.3](https://www.qt.io/download-qt-installer), including the `MSVC 2022 64-bit` and Qt Multimedia components.
 - [NSIS](https://sourceforge.net/projects/nsis/files/latest/download) when generating an installer.
 
-Qt 6.8.4 is distributed through Qt's authenticated online installer. Repository CI therefore needs
-`QT_EMAIL` and `QT_PW` secrets for a Qt account that can install the 6.8.4 MSVC 2022 package. Since
-fork pull requests cannot access those secrets, the workflow uses public Qt 6.8.3 only for that
-untrusted compatibility build; official branch and release builds remain pinned to 6.8.4.
+Qt 6.8.3 is the supported development, CI, and release baseline. It is installed from the public
+Qt package feed, so repository builds do not require Qt account credentials.
 
 ## Configure and build
 
@@ -30,7 +28,7 @@ Replace the vcpkg and Qt paths before configuring:
 cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_BUILD_TYPE=RelWithDebInfo `
   -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.4\msvc2022_64 `
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64 `
   -DAPD_BUILD_TESTS=ON
 cmake --build Build --config RelWithDebInfo
 ```

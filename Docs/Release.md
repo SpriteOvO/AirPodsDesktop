@@ -54,14 +54,10 @@ publishes releases immediately.
 The two installer hashes must match because the bridge is an alternate release name for the same
 signed NSIS payload. Test an upgrade from the latest public Win32 release before publishing.
 
-## Required CI and Code-Signing Secrets
+## Required Code-Signing Secrets
 
-Official branch and release builds require these Qt online-installer credentials:
-
-- `QT_EMAIL`: Qt account email with access to the Qt 6.8.4 MSVC 2022 package.
-- `QT_PW`: Password for that Qt account.
-
-Tagged releases also require both code-signing secrets below. The workflow signs before creating
+Qt 6.8.3 is installed from the public package feed and does not require Qt account credentials.
+Tagged releases require both code-signing secrets below. The workflow signs before creating
 the bridge alias and checksums:
 
 - `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64-encoded PFX certificate.

@@ -7,7 +7,7 @@ adds the architecture and workflow detail that only emerges from reading across 
 
 ## Build & Test
 
-Windows-only, **64-bit (x64)** build with Qt 6.8.4 and Visual Studio 2022. For prerequisites, configuration, build commands, and test
+Windows-only, **64-bit (x64)** build with Qt 6.8.3 and Visual Studio 2022. For prerequisites, configuration, build commands, and test
 commands, read `Docs/Build.md` before setting up or rebuilding the project.
 
 ```powershell

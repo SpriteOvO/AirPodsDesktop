@@ -8,13 +8,13 @@ Respect the target dependency direction: `apd_support` → `apd_domain` → `apd
 
 ## Build, Test, and Development Commands
 
-Use PowerShell with CMake 3.20+, Visual Studio 2022, Qt 6.8.4 (`msvc2022_64`), and a bootstrapped vcpkg checkout. The supported target is Windows 10 1809+ or Windows 11 on x64.
+Use PowerShell with CMake 3.20+, Visual Studio 2022, Qt 6.8.3 (`msvc2022_64`), and a bootstrapped vcpkg checkout. The supported target is Windows 10 1809+ or Windows 11 on x64.
 
 ```powershell
 cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_BUILD_TYPE=RelWithDebInfo `
   -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.4\msvc2022_64
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64
 cmake --build Build --config RelWithDebInfo
 ```
 
