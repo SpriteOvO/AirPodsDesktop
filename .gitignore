@@ -20,4 +20,12 @@ Build/
 # Local notes for converted video assets
 Source/Resource/Video/README.md
 
+# Local animation conversion tooling
+Tools/convert_ios_animation.py
+Tools/__pycache__/
+
+# Local one-time release and performance notes
+Docs/ReleaseNotes/0.6.0.md
+Docs/Performance.md
+
 build_release.ps1

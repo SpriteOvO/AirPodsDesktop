@@ -194,11 +194,9 @@ in `vcpkg.json`; a `v*.*.*` tag must match both. CI fails the build otherwise. F
    the qrc does not list or that is missing from disk, so an unregistered file is caught.
 5. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
 
-Animations are converted from Apple's `com.apple.MobileAsset.SharingDeviceAssets` HEVC assets with
-`Tools/convert_ios_animation.py` (needs ffmpeg; output must be `.avi`). See
-`Source/Resource/Video/README.md` for asset identifiers and the redistribution caveat — every
-animation in the repository shares that provenance, including the ones predating the converter
-(all ten are 360 frames at 60 fps).
+Keep animation source material and conversion tooling outside the repository. Commit only the
+generated `.avi` runtime asset needed by the application, then register and test it as described
+above. The ten current animations are 360 frames at 60 fps.
 
 Note that `AirPods_4.avi` and `AirPods_4_ANC.avi` are currently byte-identical, so one conversion
 ran against the wrong source. Regenerating the ANC one needs the original `AirPods1,5-v2` asset.
