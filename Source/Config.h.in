@@ -31,9 +31,10 @@ namespace Config {
 #define CONFIG_CPACK_SYSTEM_NAME        "@CPACK_SYSTEM_NAME@"
 #define CONFIG_GITHUB_OWNER             "@APD_GITHUB_OWNER@"
 #define CONFIG_GITHUB_REPOSITORY        "@APD_GITHUB_REPOSITORY@"
+#define CONFIG_URL_UPSTREAM_REPO        "https://github.com/SpriteOvO/AirPodsDesktop"
 #define CONFIG_URL_REPO                 "https://github.com/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
 #define CONFIG_API_REPO                 "https://api.github.com/repos/" CONFIG_GITHUB_OWNER "/" CONFIG_GITHUB_REPOSITORY
-#define CONFIG_URL_ISSUES               CONFIG_URL_REPO "/issues"
+#define CONFIG_URL_ISSUES               CONFIG_URL_UPSTREAM_REPO "/issues"
 #define CONFIG_URL_RELEASES             CONFIG_URL_REPO "/releases"
 #define CONFIG_URL_LICENSE              CONFIG_URL_REPO "/blob/main/LICENSE"
 #define CONFIG_RELEASE_TAG_PREFIX       "@APD_RELEASE_TAG_PREFIX@"
