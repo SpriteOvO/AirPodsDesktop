@@ -27,7 +27,7 @@
 
 | Light theme | Dark theme |
 | :---: | :---: |
-| <img src="/Assets/Preview.gif" alt="Light theme popup animation" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="Dark theme popup animation" width="360"> |
+| <img src="/Assets/Preview-Light.gif" alt="Light theme popup animation" width="360"> | <img src="/Assets/Preview-Dark.gif" alt="Dark theme popup animation" width="360"> |
 
 ## ✨ Features
 
