@@ -59,22 +59,7 @@ jobs:
 
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Install Qt 6.8.4
-        if: github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.4'
-          arch: win64_msvc2022_64
-          modules: qtmultimedia
-          cache: true
-          use-official: true
-          email: ${{ secrets.QT_EMAIL }}
-          pw: ${{ secrets.QT_PW }}
-
-      # Qt's public aqt feed currently stops at 6.8.3. Fork pull requests cannot access repository
-      # secrets, so use the ABI-compatible public patch release for untrusted validation only.
-      - name: Install public Qt for fork validation
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork
+      - name: Install Qt 6.8.3
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
