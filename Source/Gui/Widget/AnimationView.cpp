@@ -35,7 +35,20 @@ namespace Detail {
 // White devices are only a few RGB levels away from the compressed matte. Allow only codec
 // rounding here; a broad chroma tolerance removes the case and stems with the background.
 constexpr int kMatteDistance = 2;
-constexpr int kSoftEdgeDistance = 16;
+constexpr int kChromaMatteDistance = 12;
+constexpr int kChromaRange = 128;
+constexpr int kChromaSpill = 16;
+constexpr int kForegroundDistance = 24;
+constexpr int kDarkForegroundDistance = 96;
+constexpr int kDarkForegroundLuma = 96;
+constexpr int kSoftEdgeDistance = 224;
+constexpr int kForegroundSearchRadius = 4;
+constexpr int kDarkForegroundSearchRadius = 8;
+constexpr int kEdgeSearchRadius = 2;
+constexpr int kDarkEdgeSearchRadius = 4;
+constexpr int kEnclosedForegroundSpan = 8;
+constexpr int kMinimumForegroundAreaDivisor = 600;
+constexpr int kForegroundIslandAlpha = 32;
 
 int ColorDistance(QRgb pixel, QRgb matte)
 {
@@ -53,9 +66,16 @@ int MatteDistance(QRgb pixel, const std::vector<QRgb> &palette)
     return distance;
 }
 
-bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette)
+QRgb NearestMatte(QRgb pixel, const std::vector<QRgb> &palette)
 {
-    return qAlpha(pixel) != 0 && MatteDistance(pixel, palette) <= kMatteDistance;
+    return *std::min_element(palette.cbegin(), palette.cend(), [pixel](QRgb lhs, QRgb rhs) {
+        return ColorDistance(pixel, lhs) < ColorDistance(pixel, rhs);
+    });
+}
+
+bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette, int tolerance)
+{
+    return qAlpha(pixel) != 0 && MatteDistance(pixel, palette) <= tolerance;
 }
 
 //
@@ -93,23 +113,18 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
     addMatte(at(0, height - 1));
     addMatte(at(width - 1, height - 1));
 
-    // The Max headband encloses real background at some angles. This is an asset-specific opt-in:
-    // applying it to every model would erase enclosed white highlights on earbuds and cases.
-    if (removeEnclosedBackground) {
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                if (IsMatte(at(x, y), mattePalette)) {
-                    at(x, y) = 0;
-                }
-            }
-        }
-    }
+    const bool chromaMatte =
+        std::any_of(mattePalette.cbegin(), mattePalette.cend(), [](QRgb matte) {
+            const auto [minimum, maximum] = std::minmax({qRed(matte), qGreen(matte), qBlue(matte)});
+            return maximum - minimum >= kChromaRange;
+        });
+    const int matteTolerance = chromaMatte ? kChromaMatteDistance : kMatteDistance;
 
     std::vector<std::pair<int, int>> stack;
     stack.reserve(4096);
 
     const auto seed = [&](int x, int y) {
-        if (IsMatte(at(x, y), mattePalette)) {
+        if (IsMatte(at(x, y), mattePalette, matteTolerance)) {
             stack.emplace_back(x, y);
         }
     };
@@ -123,16 +138,16 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
         auto [x, y] = stack.back();
         stack.pop_back();
 
-        if (!IsMatte(at(x, y), mattePalette)) {
+        if (!IsMatte(at(x, y), mattePalette, matteTolerance)) {
             continue;
         }
 
         int left = x;
-        while (left > 0 && IsMatte(at(left - 1, y), mattePalette)) {
+        while (left > 0 && IsMatte(at(left - 1, y), mattePalette, matteTolerance)) {
             --left;
         }
         int right = x;
-        while (right < width - 1 && IsMatte(at(right + 1, y), mattePalette)) {
+        while (right < width - 1 && IsMatte(at(right + 1, y), mattePalette, matteTolerance)) {
             ++right;
         }
 
@@ -146,7 +161,7 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
             }
             bool inSpan = false;
             for (int i = left; i <= right; ++i) {
-                const bool isMatte = IsMatte(at(i, ny), mattePalette);
+                const bool isMatte = IsMatte(at(i, ny), mattePalette, matteTolerance);
                 if (isMatte && !inSpan) {
                     stack.emplace_back(i, ny);
                 }
@@ -155,25 +170,225 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
         }
     }
 
-    // Soften the edge: opaque pixels next to the cleared background fade by their lightness.
+    if (chromaMatte) {
+        // The generated chroma matte cannot occur naturally in the product, so enclosed samples
+        // are always background and can be removed without the white-on-white preservation logic.
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (IsMatte(at(x, y), mattePalette, matteTolerance)) {
+                    at(x, y) = 0;
+                }
+            }
+        }
+    }
+    else if (removeEnclosedBackground) {
+        // The Max headband surrounds a large area of real matte. Its narrow white supports and
+        // highlights can use exactly the same RGB value, so clearing every matte-coloured pixel
+        // punches holes through the product. Keep a white pixel only when confidently non-matte
+        // pixels bracket it across a short horizontal, vertical, or diagonal span. That preserves
+        // the thin product surfaces while removing the broad enclosed background.
+        std::vector<bool> foreground(static_cast<size_t>(width) * height);
+        const auto index = [width](int x, int y) { return static_cast<size_t>(y) * width + x; };
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                foreground[index(x, y)] =
+                    qAlpha(at(x, y)) != 0 &&
+                    MatteDistance(at(x, y), mattePalette) >= kForegroundDistance;
+            }
+        }
+        const auto hasForeground = [&](int x, int y, int dx, int dy) {
+            for (int distance = 1; distance <= kEnclosedForegroundSpan; ++distance) {
+                const int sx = x + dx * distance, sy = y + dy * distance;
+                if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
+                    return false;
+                }
+                if (foreground[index(sx, sy)]) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                if (!IsMatte(at(x, y), mattePalette, matteTolerance)) {
+                    continue;
+                }
+                const bool horizontal = hasForeground(x, y, -1, 0) && hasForeground(x, y, 1, 0);
+                const bool vertical = hasForeground(x, y, 0, -1) && hasForeground(x, y, 0, 1);
+                const bool diagonal = (hasForeground(x, y, -1, -1) && hasForeground(x, y, 1, 1)) ||
+                                      (hasForeground(x, y, 1, -1) && hasForeground(x, y, -1, 1));
+                const int centreGapHalfWidth = (std::max)(2, width / 32);
+                const bool centralLowerGap =
+                    y >= height / 2 && std::abs(x - width / 2) <= centreGapHalfWidth && !vertical;
+                const bool insideEnclosedRegion = x >= width / 5 && x <= width * 4 / 5;
+                if ((!(horizontal || vertical || diagonal) && insideEnclosedRegion) ||
+                    centralLowerGap)
+                {
+                    at(x, y) = 0;
+                }
+            }
+        }
+    }
+
+    // Reconstruct antialiased edge pixels against transparency. Looking up a nearby foreground
+    // colour also removes the white spill that otherwise becomes a bright outline in dark mode.
+    std::vector<bool> clear(static_cast<size_t>(width) * height);
+    const auto index = [width](int x, int y) { return static_cast<size_t>(y) * width + x; };
+    qint64 foregroundLuma = 0;
+    int foregroundPixelCount = 0;
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            clear[index(x, y)] = qAlpha(at(x, y)) == 0;
+            if (!clear[index(x, y)]) {
+                foregroundLuma += qGray(at(x, y));
+                ++foregroundPixelCount;
+            }
+        }
+    }
+    const bool darkForeground =
+        foregroundPixelCount > 0 && foregroundLuma / foregroundPixelCount < kDarkForegroundLuma;
+    const int foregroundSearchRadius =
+        darkForeground || chromaMatte ? kDarkForegroundSearchRadius : kForegroundSearchRadius;
+    const int edgeSearchRadius =
+        darkForeground || chromaMatte ? kDarkEdgeSearchRadius : kEdgeSearchRadius;
+    const int minimumForegroundDistance =
+        darkForeground ? kDarkForegroundDistance : kForegroundDistance;
+    const QImage edgeSource = image.copy();
+    const auto edgeStride = edgeSource.bytesPerLine() / static_cast<int>(sizeof(QRgb));
+    const auto *edgePixels = reinterpret_cast<const QRgb *>(edgeSource.constBits());
+    const auto edgeAt = [&](int x, int y) { return edgePixels[y * edgeStride + x]; };
     const auto isClear = [&](int x, int y) {
-        return x >= 0 && y >= 0 && x < width && y < height && qAlpha(at(x, y)) == 0;
+        return x >= 0 && y >= 0 && x < width && y < height && clear[index(x, y)];
     };
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            const auto pixel = at(x, y);
+            const auto pixel = edgeAt(x, y);
             if (qAlpha(pixel) == 0) {
                 continue;
             }
-            if (!isClear(x - 1, y) && !isClear(x + 1, y) && !isClear(x, y - 1) &&
-                !isClear(x, y + 1))
-            {
+            const auto distance = MatteDistance(pixel, mattePalette);
+            const bool chromaContaminated = chromaMatte &&
+                                            qRed(pixel) - qGreen(pixel) >= kChromaSpill &&
+                                            qBlue(pixel) - qGreen(pixel) >= kChromaSpill;
+            if (chromaMatte && !chromaContaminated) {
                 continue;
             }
-            const auto distance = MatteDistance(pixel, mattePalette);
-            const int alpha = std::clamp(
-                (distance - kMatteDistance) * 255 / (kSoftEdgeDistance - kMatteDistance), 0, 255);
-            at(x, y) = qPremultiply(qRgba(qRed(pixel), qGreen(pixel), qBlue(pixel), alpha));
+            bool nearClear = chromaContaminated;
+            for (int dy = -edgeSearchRadius; dy <= edgeSearchRadius && !nearClear; ++dy) {
+                for (int dx = -edgeSearchRadius; dx <= edgeSearchRadius; ++dx) {
+                    if ((dx != 0 || dy != 0) && isClear(x + dx, y + dy)) {
+                        nearClear = true;
+                        break;
+                    }
+                }
+            }
+            if (!nearClear) {
+                continue;
+            }
+            if (!chromaMatte && distance >= kSoftEdgeDistance) {
+                continue;
+            }
+
+            QRgb foreground = pixel;
+            int foregroundDistance = distance;
+            for (int sy = (std::max)(0, y - foregroundSearchRadius);
+                 sy <= (std::min)(height - 1, y + foregroundSearchRadius); ++sy)
+            {
+                for (int sx = (std::max)(0, x - foregroundSearchRadius);
+                     sx <= (std::min)(width - 1, x + foregroundSearchRadius); ++sx)
+                {
+                    if (clear[index(sx, sy)]) {
+                        continue;
+                    }
+                    const int candidateDistance = MatteDistance(edgeAt(sx, sy), mattePalette);
+                    if (candidateDistance > foregroundDistance) {
+                        foreground = edgeAt(sx, sy);
+                        foregroundDistance = candidateDistance;
+                    }
+                }
+            }
+
+            if (foregroundDistance < minimumForegroundDistance) {
+                at(x, y) = 0;
+                continue;
+            }
+
+            const auto matte = NearestMatte(pixel, mattePalette);
+            const int channelDistances[]{
+                std::abs(qRed(foreground) - qRed(matte)),
+                std::abs(qGreen(foreground) - qGreen(matte)),
+                std::abs(qBlue(foreground) - qBlue(matte)),
+            };
+            const int channel = static_cast<int>(std::distance(
+                std::begin(channelDistances),
+                std::max_element(std::begin(channelDistances), std::end(channelDistances))));
+            const int observed[]{qRed(pixel), qGreen(pixel), qBlue(pixel)};
+            const int matteChannels[]{qRed(matte), qGreen(matte), qBlue(matte)};
+            const int foregroundChannels[]{qRed(foreground), qGreen(foreground), qBlue(foreground)};
+            const int denominator = foregroundChannels[channel] - matteChannels[channel];
+            const int alpha =
+                denominator == 0
+                    ? 255
+                    : std::clamp(
+                          (observed[channel] - matteChannels[channel]) * 255 / denominator, 0, 255);
+            int outputRed = qRed(foreground), outputGreen = qGreen(foreground);
+            int outputBlue = qBlue(foreground);
+            const auto [minimumChannel, maximumChannel] =
+                std::minmax({outputRed, outputGreen, outputBlue});
+            const bool foregroundHasMagentaSpill =
+                outputRed - outputGreen >= kChromaSpill && outputBlue - outputGreen >= kChromaSpill;
+            if (chromaMatte && (maximumChannel - minimumChannel < 64 || foregroundHasMagentaSpill))
+            {
+                // Chroma subsampling can tint otherwise neutral AirPods/Beats edges. Their nearby
+                // opaque foreground is the reliable colour reference, so neutralise only that
+                // low-saturation reference while preserving coloured LEDs and logos.
+                outputRed = outputGreen = outputBlue = qGray(foreground);
+            }
+            at(x, y) = qPremultiply(qRgba(outputRed, outputGreen, outputBlue, alpha));
+        }
+    }
+
+    // Compression can leave detached one-pixel strips and specks that are not connected to any
+    // device surface (notably beside the Pro 3 case). Remove only tiny alpha islands; separate
+    // earbuds and cases remain orders of magnitude larger than this scale-relative threshold.
+    std::vector<bool> visited(static_cast<size_t>(width) * height);
+    std::vector<std::pair<int, int>> component;
+    component.reserve(512);
+    const int minimumArea = (std::max)(16, width * height / kMinimumForegroundAreaDivisor);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            if (visited[index(x, y)] || qAlpha(at(x, y)) < kForegroundIslandAlpha) {
+                continue;
+            }
+            component.clear();
+            stack.clear();
+            stack.emplace_back(x, y);
+            visited[index(x, y)] = true;
+            while (!stack.empty()) {
+                const auto [cx, cy] = stack.back();
+                stack.pop_back();
+                component.emplace_back(cx, cy);
+                for (int dy = -1; dy <= 1; ++dy) {
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        if (dx == 0 && dy == 0) {
+                            continue;
+                        }
+                        const int nx = cx + dx, ny = cy + dy;
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height ||
+                            visited[index(nx, ny)] || qAlpha(at(nx, ny)) < kForegroundIslandAlpha)
+                        {
+                            continue;
+                        }
+                        visited[index(nx, ny)] = true;
+                        stack.emplace_back(nx, ny);
+                    }
+                }
+            }
+            if (static_cast<int>(component.size()) < minimumArea) {
+                for (const auto [cx, cy] : component) {
+                    at(cx, cy) = 0;
+                }
+            }
         }
     }
 }

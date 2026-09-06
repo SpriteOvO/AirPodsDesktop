@@ -30,8 +30,8 @@ namespace Gui::Widget {
 
 namespace Detail {
 
-// Removes the matte connected to the corners while preserving near-white device surfaces.
-// The Max animation opts into removing enclosed matte inside the headband as well.
+// Removes either the generated chroma matte or a legacy white matte while preserving product
+// surfaces. The Max animation also supports enclosed legacy matte inside the headband.
 // Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
 void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
 
@@ -40,10 +40,9 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = 
 //
 // Video output for the device animations.
 //
-// The animation assets are matted onto opaque white (see `Source/Resource/Video/README.md`), so
-// this widget receives every frame through a `QVideoSink`, knocks out the white
-// background reachable from the frame border, and paints the result over whatever the parent
-// window draws. That keeps the animation usable on a dark card without re-encoding the assets.
+// The animation assets use an opaque chroma matte, so this widget receives every frame through a
+// `QVideoSink`, reconstructs transparent antialiased edges, and paints the result over whatever
+// the parent window draws. Legacy white-matte assets remain supported as well.
 //
 class AnimationView : public QWidget
 {
