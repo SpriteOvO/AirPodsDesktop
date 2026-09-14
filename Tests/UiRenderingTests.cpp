@@ -190,15 +190,26 @@ private Q_SLOTS:
         QVERIFY(!autoHide->isActive());
         QVERIFY(lidSafety->isActive());
 
-        // Pods taken out: back to the usual auto-hide.
+        // Pods taken out (one, then both): the case is still open, the popup stays.
+        state.pods.right.isInEar = true;
         state.caseBox.isBothPodsInCase = false;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+        state.pods.left.isInEar = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+
+        // Pods back in and the lid closed: back to the usual auto-hide.
+        state.pods.left.isInEar = state.pods.right.isInEar = false;
+        state.caseBox.isBothPodsInCase = true;
         state.caseBox.isLidOpened = false;
         window.UpdateState(state);
         QVERIFY(autoHide->isActive());
         QVERIFY(!lidSafety->isActive());
 
         // Disconnect while the lid was open also releases the popup.
-        state.caseBox.isBothPodsInCase = true;
         state.caseBox.isLidOpened = true;
         window.UpdateState(state);
         QVERIFY(!autoHide->isActive());

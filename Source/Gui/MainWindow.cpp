@@ -227,9 +227,14 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     _viewModel.UpdateState(state);
     Repaint();
 
-    const bool lidOpenBothInCase = state.caseBox.isLidOpened && state.caseBox.isBothPodsInCase;
-    if (lidOpenBothInCase != _lidOpenBothInCase) {
-        _lidOpenBothInCase = lidOpenBothInCase;
+    // Lid state is only reported while the pods sit in the case, so with the pods out the last
+    // decision stands: an opened case keeps the popup, a closed one released it.
+    std::optional<bool> lidOpened;
+    if (state.caseBox.isBothPodsInCase) {
+        lidOpened = state.caseBox.isLidOpened;
+    }
+    if (lidOpened.has_value() && *lidOpened != _holdForOpenLid) {
+        _holdForOpenLid = *lidOpened;
         ControlAutoHideTimer(_isVisible);
     }
 }
@@ -248,7 +253,7 @@ void MainWindow::Unavailable()
 
     _viewModel.Unavailable();
     Repaint();
-    _lidOpenBothInCase = false;
+    _holdForOpenLid = false;
     ControlAutoHideTimer(_isVisible);
 }
 
@@ -258,7 +263,7 @@ void MainWindow::Disconnect()
 
     _viewModel.Disconnect();
     Repaint();
-    _lidOpenBothInCase = false;
+    _holdForOpenLid = false;
     ControlAutoHideTimer(_isVisible);
 }
 
@@ -458,12 +463,12 @@ void MainWindow::ControlAutoHideTimer(bool start)
 {
     LOG(Trace, "ControlAutoHideTimer: start == '{}', _isVisible == '{}'", start, _isVisible);
 
-    if (start && _isVisible && _lidOpenBothInCase) {
-        // Like iOS: the sheet stays while the case sits open; the safety timer only guards
-        // against a state that never updates again.
+    if (start && _isVisible && _holdForOpenLid) {
+        // Like iOS: the sheet stays while the case sits open, even as pods are taken out; the
+        // safety timer only guards against a lid close we never get to see.
         _autoHideTimer->stop();
         if (!_lidSafetyTimer->isActive()) {
-            _lidSafetyTimer->start(60s);
+            _lidSafetyTimer->start(90s);
         }
     }
     else if (start && _isVisible) {

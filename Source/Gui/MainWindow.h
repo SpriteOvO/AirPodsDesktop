@@ -100,8 +100,9 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
-    // Lid open with both pods inside: the popup stays until the pods come out or the lid closes.
-    bool _lidOpenBothInCase{false};
+    // Set when the lid opens with both pods inside; the popup then stays (also while the pods are
+    // out) until the lid is seen closed, the device disconnects or the safety cap fires.
+    bool _holdForOpenLid{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
