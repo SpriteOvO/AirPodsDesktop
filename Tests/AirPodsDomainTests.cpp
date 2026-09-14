@@ -1,4 +1,5 @@
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -19,8 +20,10 @@ namespace {
 using Core::AirPods::Model;
 using Core::AirPods::Side;
 using Core::AirPods::Details::Advertisement;
+using Core::AirPods::Details::EarDetectionTracker;
 using Core::AirPods::Details::StateManager;
 using ReceivedData = Core::Bluetooth::AdvertisementWatcher::ReceivedData;
+using namespace std::chrono_literals;
 
 class RecordingSettingsObserver final : public Core::Settings::ApplyObserver
 {
@@ -162,6 +165,41 @@ ReceivedData MakeTraceAdvertisementData(
     return data;
 }
 
+// Address hashes of the two pods in the issue #86 logs. The left pod broadcasts with bit 5 set
+// (0x2b/0x23/0x29), the right pod with it clear (0x0b/0x03/0x09).
+constexpr uint64_t kTraceLeftPod = 11520552839697973932ULL;
+constexpr uint64_t kTraceRightPod = 16108278626836700337ULL;
+
+struct TraceStep {
+    uint64_t address;
+    int16_t rssi;
+    uint8_t status;
+    // Idle gap before the advertisement, long enough for shortened `StateManager` timers to fire.
+    std::chrono::milliseconds idleBefore{0};
+};
+
+// Feeds the steps through the manager and the tracker the way `Manager::OnStateChanged` does and
+// returns the "both in ear" transitions in order.
+std::vector<bool> ReplayTrace(
+    StateManager &manager, EarDetectionTracker &tracker, const std::vector<TraceStep> &steps)
+{
+    std::vector<bool> transitions;
+    for (const auto &step : steps) {
+        if (step.idleBefore > 0ms) {
+            QTest::qSleep(static_cast<int>(step.idleBefore.count()));
+        }
+        const auto update = manager.OnAdvReceived(
+            Advertisement{MakeTraceAdvertisementData(step.address, step.rssi, step.status, 0xaa)});
+        if (!update.has_value()) {
+            continue;
+        }
+        if (const auto changed = tracker.Update(update->newState)) {
+            transitions.push_back(*changed);
+        }
+    }
+    return transitions;
+}
+
 } // namespace
 
 class AirPodsDomainTests : public QObject
@@ -176,11 +214,14 @@ private Q_SLOTS:
     void ParsesInEarBitsPerBroadcastSide();
     void FiltersDuplicateAndWeakAdvertisements();
     void AcceptsWeakAdvertisementFromTrackedAddress();
+    void RemembersSideAddressAcrossStateReset();
+    void AcceptsUnknownRssiFromTrackedAddress();
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void EarDetectionTrackerSurvivesStateLoss();
     void TraceReplayPausesOnceAndResumesOnce();
+    void TraceReplayFollowsAlternatingBroadcaster();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void MigratesLegacySettingsRepository();
@@ -368,6 +409,61 @@ void AirPodsDomainTests::AcceptsWeakAdvertisementFromTrackedAddress()
     QVERIFY(strangerAccepted->newState.pods.right.isInEar);
 }
 
+void AirPodsDomainTests::RemembersSideAddressAcrossStateReset()
+{
+    // A side that stops broadcasting for a while is dropped from the advertisement cache by
+    // `DoStateReset`. Its address must still be recognised when it comes back weakly.
+    StateManager manager{{.lost = 10s, .stateReset = 50ms}};
+    manager.OnRssiMinChanged(-80);
+
+    const auto first =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -76, 0x2b)});
+    QVERIFY(first.has_value());
+
+    QTest::qSleep(250);
+
+    const auto weak =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -88, 0x21)});
+    QVERIFY(weak.has_value());
+    QVERIFY(weak->oldState.has_value());
+    QVERIFY(!weak->newState.pods.left.isInEar);
+    QVERIFY(!weak->newState.pods.right.isInEar);
+
+    // Only the classic Bluetooth disconnect forgets the addresses.
+    manager.Disconnect();
+    const auto afterDisconnect =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -88, 0x2b)});
+    QVERIFY(!afterDisconnect.has_value());
+}
+
+void AirPodsDomainTests::AcceptsUnknownRssiFromTrackedAddress()
+{
+    // Windows reports -127 when it has no RSSI for a packet, often on the very advertisement
+    // that carries an in-ear change.
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+
+    const auto first =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -76, 0x2b)});
+    QVERIFY(first.has_value());
+
+    const auto unknownRssi =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -127, 0x29)});
+    QVERIFY(unknownRssi.has_value());
+    QVERIFY(!unknownRssi->newState.pods.left.isInEar);
+    QVERIFY(unknownRssi->newState.pods.right.isInEar);
+
+    const auto stranger =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xBBBB, -127, 0x2b)});
+    QVERIFY(!stranger.has_value());
+
+    // The other pod shows up afresh; -127 must not feed the rssiDiff heuristic against it.
+    const auto otherSide =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xCCCC, -70, 0x0b)});
+    QVERIFY(otherSide.has_value());
+    QVERIFY(otherSide->newState.pods.left.isInEar);
+}
+
 void AirPodsDomainTests::MergesAdvertisementsFromBothSides()
 {
     StateManager manager;
@@ -446,75 +542,121 @@ void AirPodsDomainTests::TraceReplayPausesOnceAndResumesOnce()
     // Replays the advertisement sequence from the issue #86 trace (07:58:55 - 07:59:36): the
     // right pod is taken out (0x23), then swapped for the left one (0x29), then both go back in
     // (0x2b). The pods stayed below the -80 dBm floor most of the time, so the original code
-    // starved the lost timer twice and never saw the in-ear transitions.
-    struct Step {
-        int16_t rssi;
-        uint8_t status;
-        bool lostBefore{false};
-    };
-    const std::vector<Step> steps = {
-        // Both in ear; only the -76 advertisement clears the floor.
-        {-82, 0x2b},
-        {-84, 0x2b},
-        {-76, 0x2b},
-        {-88, 0x2b},
-        {-82, 0x2b},
-        {-82, 0x2b},
-        {-88, 0x2b},
-        {-82, 0x2b},
-        // Right pod out.
-        {-82, 0x23},
-        {-88, 0x23},
-        {-88, 0x23},
-        // "Device is lost" at 07:59:09.
-        {-80, 0x23, true},
-        {-84, 0x23},
-        {-84, 0x23},
-        {-74, 0x23},
-        {-96, 0x23},
-        {-90, 0x23},
-        {-84, 0x23},
-        {-84, 0x23},
-        {-88, 0x23},
-        // Right pod back in, left pod out.
-        {-90, 0x29},
-        {-82, 0x29},
-        // "Device is lost" at 07:59:22.
-        {-86, 0x29, true},
-        {-88, 0x29},
-        {-92, 0x29},
-        {-86, 0x29},
-        {-88, 0x29},
-        // Both back in.
-        {-78, 0x2b},
-        {-78, 0x2b},
-        {-76, 0x2b},
-        {-80, 0x2b},
-        {-74, 0x2b},
-    };
-
-    StateManager manager;
+    // starved the lost timer twice and never saw the in-ear transitions. The lost timer is
+    // shortened so that the two "Device is lost" gaps in the trace can be reproduced.
+    StateManager manager{{.lost = 100ms, .stateReset = 10s}};
     manager.OnRssiMinChanged(-80);
-    Core::AirPods::Details::EarDetectionTracker tracker;
-    std::vector<bool> transitions;
+    EarDetectionTracker tracker;
 
-    for (const auto &step : steps) {
-        if (step.lostBefore) {
-            // The 10 s lost timer cannot be advanced from a test; `Disconnect()` runs the same
-            // `ResetAll()` that `DoLost()` does.
-            manager.Disconnect();
-        }
-        const auto update = manager.OnAdvReceived(Advertisement{
-            MakeTraceAdvertisementData(9518678252275700520ULL, step.rssi, step.status)});
-        if (!update.has_value()) {
-            continue;
-        }
-        if (const auto changed = tracker.Update(update->newState)) {
-            transitions.push_back(*changed);
-        }
-    }
+    const std::vector<TraceStep> steps = {
+        // Both in ear; only the -76 advertisement clears the floor.
+        {kTraceLeftPod, -82, 0x2b},
+        {kTraceLeftPod, -84, 0x2b},
+        {kTraceLeftPod, -76, 0x2b},
+        {kTraceLeftPod, -88, 0x2b},
+        {kTraceLeftPod, -82, 0x2b},
+        {kTraceLeftPod, -82, 0x2b},
+        {kTraceLeftPod, -88, 0x2b},
+        {kTraceLeftPod, -82, 0x2b},
+        // Right pod out.
+        {kTraceLeftPod, -82, 0x23},
+        {kTraceLeftPod, -88, 0x23},
+        {kTraceLeftPod, -88, 0x23},
+        // "Device is lost" at 07:59:09.
+        {kTraceLeftPod, -80, 0x23, 300ms},
+        {kTraceLeftPod, -84, 0x23},
+        {kTraceLeftPod, -84, 0x23},
+        {kTraceLeftPod, -74, 0x23},
+        {kTraceLeftPod, -96, 0x23},
+        {kTraceLeftPod, -90, 0x23},
+        {kTraceLeftPod, -84, 0x23},
+        {kTraceLeftPod, -84, 0x23},
+        {kTraceLeftPod, -88, 0x23},
+        // Right pod back in, left pod out.
+        {kTraceLeftPod, -90, 0x29},
+        {kTraceLeftPod, -82, 0x29},
+        // "Device is lost" at 07:59:22.
+        {kTraceLeftPod, -86, 0x29, 300ms},
+        {kTraceLeftPod, -88, 0x29},
+        {kTraceLeftPod, -92, 0x29},
+        {kTraceLeftPod, -86, 0x29},
+        {kTraceLeftPod, -88, 0x29},
+        // Both back in.
+        {kTraceLeftPod, -78, 0x2b},
+        {kTraceLeftPod, -78, 0x2b},
+        {kTraceLeftPod, -76, 0x2b},
+        {kTraceLeftPod, -80, 0x2b},
+        {kTraceLeftPod, -74, 0x2b},
+    };
 
-    QCOMPARE(transitions, (std::vector<bool>{false, true}));
+    QCOMPARE(ReplayTrace(manager, tracker, steps), (std::vector<bool>{false, true}));
+}
+
+void AirPodsDomainTests::TraceReplayFollowsAlternatingBroadcaster()
+{
+    // Replays the hardware test from 08:53:25 to 08:54:20: the pods alternate which one
+    // broadcasts. While the right pod broadcasts, the left side is dropped by `DoStateReset`
+    // (08:53:40); when the left pod comes back at -84..-88 with the right pod still out (0x23)
+    // it has to be accepted without a spurious transition. The timers are shortened so that
+    // the state reset and the lost timeout can be exercised: had the weak left advertisements
+    // been rejected, the lost timer would have starved during the idle gaps.
+    StateManager manager{{.lost = 500ms, .stateReset = 50ms}};
+    manager.OnRssiMinChanged(-80);
+    EarDetectionTracker tracker;
+
+    const std::vector<TraceStep> untilRightPodOut = {
+        {kTraceLeftPod, -78, 0x2b},
+        {kTraceLeftPod, -82, 0x2b},
+        // Left pod out.
+        {kTraceLeftPod, -78, 0x29},
+        {kTraceLeftPod, -96, 0x29},
+        // The right pod takes over broadcasting and confirms it.
+        {kTraceRightPod, -68, 0x03},
+        {kTraceRightPod, -80, 0x03},
+        // Left pod back in.
+        {kTraceRightPod, -70, 0x0b},
+        {kTraceRightPod, -70, 0x0b},
+        {kTraceRightPod, -70, 0x0b},
+        {kTraceRightPod, -74, 0x0b},
+        {kTraceRightPod, -76, 0x0b},
+        // "DoStateReset called. Side: Left" at 08:53:40.
+        {kTraceRightPod, -82, 0x0b, 150ms},
+        {kTraceRightPod, -72, 0x0b},
+        {kTraceRightPod, -86, 0x0b},
+        {kTraceRightPod, -78, 0x0b},
+        // Right pod out.
+        {kTraceRightPod, -80, 0x09},
+        {kTraceRightPod, -80, 0x09},
+        // The left pod takes over again, weakly; each advertisement must feed the lost timer.
+        {kTraceLeftPod, -84, 0x23, 250ms},
+        {kTraceLeftPod, -86, 0x23, 250ms},
+        {kTraceLeftPod, -88, 0x23, 250ms},
+    };
+    QCOMPARE(
+        ReplayTrace(manager, tracker, untilRightPodOut), (std::vector<bool>{false, true, false}));
+    QVERIFY(manager.GetCurrentState().has_value());
+    QVERIFY(!manager.GetCurrentState()->pods.right.isInEar);
+
+    const std::vector<TraceStep> untilBothIn = {
+        {kTraceLeftPod, -78, 0x23},
+        {kTraceLeftPod, -100, 0x23},
+        {kTraceLeftPod, -84, 0x23},
+        // "DoStateReset called. Side: Right" at 08:53:59.
+        {kTraceLeftPod, -90, 0x23, 150ms},
+        {kTraceLeftPod, -92, 0x23},
+        {kTraceLeftPod, -92, 0x23},
+        {kTraceLeftPod, -84, 0x23},
+        {kTraceLeftPod, -82, 0x23},
+        {kTraceLeftPod, -78, 0x23},
+        {kTraceLeftPod, -80, 0x23},
+        {kTraceLeftPod, -78, 0x23},
+        {kTraceLeftPod, -76, 0x23},
+        {kTraceLeftPod, -88, 0x23},
+        {kTraceLeftPod, -80, 0x23},
+        // Both back in at 08:54:20.
+        {kTraceLeftPod, -80, 0x2b},
+    };
+    QCOMPARE(ReplayTrace(manager, tracker, untilBothIn), (std::vector<bool>{true}));
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()

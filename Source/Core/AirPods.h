@@ -125,7 +125,14 @@ public:
         State newState;
     };
 
-    StateManager();
+    // How long a side may stay silent before its cached advertisement is dropped, and how long
+    // the whole device may stay silent before it is reported lost. Tests shorten them.
+    struct Intervals {
+        std::chrono::milliseconds lost{std::chrono::seconds{10}};
+        std::chrono::milliseconds stateReset{std::chrono::seconds{10}};
+    };
+
+    explicit StateManager(Intervals intervals = {});
     ~StateManager();
 
     void SetOnDiscardState(std::function<void()> callback);
@@ -146,10 +153,14 @@ private:
     Helper::Timer _lostTimer;
     Helper::Sides<Helper::Timer> _stateResetTimer;
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
+    // Outlives `_adv`: a side that goes quiet loses its cached advertisement after
+    // `Intervals::stateReset`, but its address stays valid until the device disconnects.
+    Helper::Sides<std::optional<Advertisement::AddressType>> _knownAddress;
     std::optional<State> _cachedState;
     int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
 
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
+    bool IsKnownAddress(Advertisement::AddressType address) const;
     void UpdateAdv(Advertisement adv);
     std::optional<UpdateEvent> UpdateState();
     std::function<void()> ResetAll();
