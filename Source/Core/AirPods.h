@@ -157,6 +157,19 @@ private:
     std::function<void()> DoLost();
     void DoStateReset(Side side);
 };
+
+// Remembers the last "both pods in ear" value across state updates so that a transition is still
+// detected after `StateManager` has dropped and re-created its cached state (issue #86).
+//
+class EarDetectionTracker
+{
+public:
+    std::optional<bool> Update(const State &state);
+    void Reset();
+
+private:
+    std::optional<bool> _lastBothInEar;
+};
 } // namespace Details
 
 class Manager : public QObject
@@ -177,6 +190,7 @@ public:
 private:
     std::mutex _mutex;
     Details::StateManager _stateMgr;
+    Details::EarDetectionTracker _earDetection;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
     Model _boundModel{Model::Unknown};

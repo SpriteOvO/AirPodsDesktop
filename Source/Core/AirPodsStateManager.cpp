@@ -104,18 +104,32 @@ void StateManager::SetOnDiscardState(std::function<void()> callback)
 
 bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
-    const auto advRssi = adv.GetRssi();
-    if (advRssi < _rssiMin) {
-        LOG(Warn,
-            "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
-            "curr: '{}' min: '{}'",
-            advRssi, _rssiMin);
-        return false;
-    }
-
     const auto &advState = adv.GetAdvState();
     auto &lastAdv = advState.side == Side::Left ? _adv.left : _adv.right;
     auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
+
+    // The RSSI floor keeps us from locking onto a stranger's AirPods. Once we are tracking an
+    // address, weak advertisements from that same address are still ours; rejecting them would
+    // drop in-ear changes and starve the lost timer while the pods are merely far from the PC.
+    const auto hasSameAddress = [&](const auto &cachedAdv) {
+        return cachedAdv.has_value() && cachedAdv->first.GetAddress() == adv.GetAddress();
+    };
+    const bool isTrackedAddress = hasSameAddress(lastAdv) || hasSameAddress(lastAnotherAdv);
+
+    const auto advRssi = adv.GetRssi();
+    if (advRssi < _rssiMin) {
+        if (!isTrackedAddress) {
+            LOG(Warn,
+                "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
+                "curr: '{}' min: '{}'",
+                advRssi, _rssiMin);
+            return false;
+        }
+        LOG(Trace,
+            "RSSI below limit but address matches tracked device, accepting. "
+            "curr: '{}' min: '{}'",
+            advRssi, _rssiMin);
+    }
 
     const auto hasDifferentModel = [&](const auto &cachedAdv) {
         if (!cachedAdv.has_value()) {

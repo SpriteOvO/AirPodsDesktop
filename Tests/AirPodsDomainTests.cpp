@@ -143,6 +143,25 @@ ReceivedData MakeAdvertisementData(
     return data;
 }
 
+// Replays the ProximityPairing payload captured from AirPods Pro 2 (USB-C, model id 0x2024) in
+// the trace behind issue #86. `statusByte` carries the in-ear and broadcast-side bits,
+// `batteryByte` the two pod battery nibbles, `chargingByte` the case battery nibble and the
+// charging flags.
+ReceivedData MakeTraceAdvertisementData(
+    uint64_t address, int16_t rssi, uint8_t statusByte, uint8_t batteryByte = 0x88,
+    uint8_t chargingByte = 0x8f)
+{
+    std::vector<uint8_t> packet = {0x07,        0x19,         0x01, 0x24, 0x20, statusByte,
+                                   batteryByte, chargingByte, 0x11, 0x00, 0x05};
+    packet.resize(27, 0);
+
+    ReceivedData data;
+    data.address = address;
+    data.rssi = rssi;
+    data.manufacturerDataMap.emplace(Core::AppleCP::VendorId, std::move(packet));
+    return data;
+}
+
 } // namespace
 
 class AirPodsDomainTests : public QObject
@@ -154,10 +173,14 @@ private Q_SLOTS:
     void RecognizesAirPodsMaxUsbC();
     void ResolvesAirPodsMaxUsbCDisplayName();
     void ParsesAdvertisementState();
+    void ParsesInEarBitsPerBroadcastSide();
     void FiltersDuplicateAndWeakAdvertisements();
+    void AcceptsWeakAdvertisementFromTrackedAddress();
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
+    void EarDetectionTrackerSurvivesStateLoss();
+    void TraceReplayPausesOnceAndResumesOnce();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void MigratesLegacySettingsRepository();
@@ -241,6 +264,50 @@ void AirPodsDomainTests::ParsesAdvertisementState()
     QVERIFY(state.caseBox.isLidOpened);
 }
 
+void AirPodsDomainTests::ParsesInEarBitsPerBroadcastSide()
+{
+    // The packet only knows "current" (broadcasting) and "another" pod, so the same bit maps to
+    // a different side depending on the broadcast-from flag (bit 5).
+    const auto parse = [](uint8_t statusByte, uint8_t chargingByte = 0x8f) {
+        return Advertisement{
+            MakeTraceAdvertisementData(0x1234, -45, statusByte, 0x88, chargingByte)}
+            .GetAdvState();
+    };
+
+    auto state = parse(0x2b);
+    QCOMPARE(state.model, Model::AirPods_Pro_2_USB_C);
+    QCOMPARE(state.side, Side::Left);
+    QVERIFY(state.pods.left.isInEar);
+    QVERIFY(state.pods.right.isInEar);
+
+    state = parse(0x23);
+    QVERIFY(state.pods.left.isInEar);
+    QVERIFY(!state.pods.right.isInEar);
+
+    state = parse(0x29);
+    QVERIFY(!state.pods.left.isInEar);
+    QVERIFY(state.pods.right.isInEar);
+
+    state = parse(0x0b);
+    QCOMPARE(state.side, Side::Right);
+    QVERIFY(state.pods.left.isInEar);
+    QVERIFY(state.pods.right.isInEar);
+
+    state = parse(0x03);
+    QVERIFY(!state.pods.left.isInEar);
+    QVERIFY(state.pods.right.isInEar);
+
+    state = parse(0x09);
+    QVERIFY(state.pods.left.isInEar);
+    QVERIFY(!state.pods.right.isInEar);
+
+    // A charging pod reports a stale in-ear bit, so charging masks it.
+    state = parse(0x2b, 0x9f);
+    QVERIFY(state.pods.left.isCharging);
+    QVERIFY(!state.pods.left.isInEar);
+    QVERIFY(state.pods.right.isInEar);
+}
+
 void AirPodsDomainTests::FiltersDuplicateAndWeakAdvertisements()
 {
     StateManager manager;
@@ -256,9 +323,49 @@ void AirPodsDomainTests::FiltersDuplicateAndWeakAdvertisements()
     QVERIFY(!duplicate.has_value());
 
     auto weak = manager.OnAdvReceived(
-        Advertisement{MakeAdvertisementData(0x1234, -90, Side::Left, 7, 7, 5)});
+        Advertisement{MakeAdvertisementData(0x5678, -90, Side::Left, 7, 7, 5)});
     QVERIFY(!weak.has_value());
     QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 80U);
+}
+
+void AirPodsDomainTests::AcceptsWeakAdvertisementFromTrackedAddress()
+{
+    // Issue #86: the RSSI floor rejected the in-ear change broadcast by the pods we were already
+    // tracking, and starved the lost timer until the state was wiped.
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+
+    const auto first =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -76, 0x2b)});
+    QVERIFY(first.has_value());
+    QVERIFY(first->newState.pods.left.isInEar);
+    QVERIFY(first->newState.pods.right.isInEar);
+
+    const auto weak =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xAAAA, -88, 0x23)});
+    QVERIFY(weak.has_value());
+    QVERIFY(weak->oldState.has_value());
+    QVERIFY(weak->oldState->pods.left.isInEar);
+    QVERIFY(weak->oldState->pods.right.isInEar);
+    QVERIFY(weak->newState.pods.left.isInEar);
+    QVERIFY(!weak->newState.pods.right.isInEar);
+
+    // An unknown address still has to pass the RSSI floor...
+    const auto stranger =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xBBBB, -88, 0x2b)});
+    QVERIFY(!stranger.has_value());
+    QVERIFY(!manager.GetCurrentState()->pods.right.isInEar);
+
+    // ...and then the address-change heuristics: a battery jump is rejected, a plausible
+    // advertisement is accepted.
+    const auto strangerBattery =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xBBBB, -70, 0x2b, 0x68)});
+    QVERIFY(!strangerBattery.has_value());
+
+    const auto strangerAccepted =
+        manager.OnAdvReceived(Advertisement{MakeTraceAdvertisementData(0xBBBB, -70, 0x2b)});
+    QVERIFY(strangerAccepted.has_value());
+    QVERIFY(strangerAccepted->newState.pods.right.isInEar);
 }
 
 void AirPodsDomainTests::MergesAdvertisementsFromBothSides()
@@ -310,6 +417,104 @@ void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
         manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
     QVERIFY(known.has_value());
     QCOMPARE(known->newState.model, Model::AirPods_Pro_2);
+}
+
+void AirPodsDomainTests::EarDetectionTrackerSurvivesStateLoss()
+{
+    const auto makeState = [](bool leftInEar, bool rightInEar) {
+        Core::AirPods::State state;
+        state.pods.left.isInEar = leftInEar;
+        state.pods.right.isInEar = rightInEar;
+        return state;
+    };
+
+    Core::AirPods::Details::EarDetectionTracker tracker;
+
+    // The first observation has nothing to compare against.
+    QCOMPARE(tracker.Update(makeState(true, true)), std::optional<bool>{});
+    QCOMPARE(tracker.Update(makeState(true, false)), std::optional<bool>{false});
+    QCOMPARE(tracker.Update(makeState(true, false)), std::optional<bool>{});
+    QCOMPARE(tracker.Update(makeState(false, false)), std::optional<bool>{});
+    QCOMPARE(tracker.Update(makeState(true, true)), std::optional<bool>{true});
+
+    tracker.Reset();
+    QCOMPARE(tracker.Update(makeState(true, true)), std::optional<bool>{});
+}
+
+void AirPodsDomainTests::TraceReplayPausesOnceAndResumesOnce()
+{
+    // Replays the advertisement sequence from the issue #86 trace (07:58:55 - 07:59:36): the
+    // right pod is taken out (0x23), then swapped for the left one (0x29), then both go back in
+    // (0x2b). The pods stayed below the -80 dBm floor most of the time, so the original code
+    // starved the lost timer twice and never saw the in-ear transitions.
+    struct Step {
+        int16_t rssi;
+        uint8_t status;
+        bool lostBefore{false};
+    };
+    const std::vector<Step> steps = {
+        // Both in ear; only the -76 advertisement clears the floor.
+        {-82, 0x2b},
+        {-84, 0x2b},
+        {-76, 0x2b},
+        {-88, 0x2b},
+        {-82, 0x2b},
+        {-82, 0x2b},
+        {-88, 0x2b},
+        {-82, 0x2b},
+        // Right pod out.
+        {-82, 0x23},
+        {-88, 0x23},
+        {-88, 0x23},
+        // "Device is lost" at 07:59:09.
+        {-80, 0x23, true},
+        {-84, 0x23},
+        {-84, 0x23},
+        {-74, 0x23},
+        {-96, 0x23},
+        {-90, 0x23},
+        {-84, 0x23},
+        {-84, 0x23},
+        {-88, 0x23},
+        // Right pod back in, left pod out.
+        {-90, 0x29},
+        {-82, 0x29},
+        // "Device is lost" at 07:59:22.
+        {-86, 0x29, true},
+        {-88, 0x29},
+        {-92, 0x29},
+        {-86, 0x29},
+        {-88, 0x29},
+        // Both back in.
+        {-78, 0x2b},
+        {-78, 0x2b},
+        {-76, 0x2b},
+        {-80, 0x2b},
+        {-74, 0x2b},
+    };
+
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    Core::AirPods::Details::EarDetectionTracker tracker;
+    std::vector<bool> transitions;
+
+    for (const auto &step : steps) {
+        if (step.lostBefore) {
+            // The 10 s lost timer cannot be advanced from a test; `Disconnect()` runs the same
+            // `ResetAll()` that `DoLost()` does.
+            manager.Disconnect();
+        }
+        const auto update = manager.OnAdvReceived(Advertisement{
+            MakeTraceAdvertisementData(9518678252275700520ULL, step.rssi, step.status)});
+        if (!update.has_value()) {
+            continue;
+        }
+        if (const auto changed = tracker.Update(update->newState)) {
+            transitions.push_back(*changed);
+        }
+    }
+
+    QCOMPARE(transitions, (std::vector<bool>{false, true}));
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()
