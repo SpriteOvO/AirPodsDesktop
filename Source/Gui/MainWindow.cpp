@@ -145,6 +145,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 
     _animationView = new Widget::AnimationView{this};
     _playback = new AnimationPlayback{*_animationView, this};
+    _deviceImage = new Widget::DeviceImage{this};
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
@@ -173,6 +174,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
+    connect(_deviceImage, &Widget::DeviceImage::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_animationView, &Widget::AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
 
@@ -193,16 +195,78 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _lidSafetyTimer->setObjectName("lidSafetyTimer");
     _lidSafetyTimer->setSingleShot(true);
     _lidSafetyTimer->callOnTimeout([this] { DoHide(); });
+    _podsRowGeometry = _ui.podsBatteryContainer->geometry();
+    _sceneFade.setDuration(500);
+    _sceneFade.setEasingCurve(QEasingCurve::InOutSine);
+    connect(&_sceneFade, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+        const qreal opacity = value.toReal();
+        if (_fadePhase == FadePhase::Out) {
+            if (_fadeMedia) {
+                SetMediaOpacity(_shownView, opacity); // the outgoing view, still playing
+            }
+            if (_fadeBatteries) {
+                // The snapshot is what was on screen when this phase began; it leaves in step
+                // with the picture, however far along the picture already was.
+                _batteryFade->SetSnapshotOpacity(_fadeFrom > 0.0 ? opacity / _fadeFrom : 0.0);
+            }
+        }
+        else if (_fadePhase == FadePhase::In) {
+            if (_fadeMedia) {
+                SetMediaOpacity(_shownView, opacity); // the incoming view
+            }
+            if (_fadeBatteries) {
+                const qreal remaining =
+                    _fadeFrom < 1.0 ? (1.0 - opacity) / (1.0 - _fadeFrom) : 0.0;
+                _batteryFade->SetCoverOpacity(remaining);
+                _batteryFade->SetSnapshotOpacity(remaining); // only set when a fade-in was resumed
+            }
+        }
+    });
+    connect(&_sceneFade, &QVariantAnimation::finished, this, [this] {
+        if (_fadePhase == FadePhase::Out) {
+            // Everything old is gone: swap the picture, then bring the new scene in together.
+            if (_fadeMedia) {
+                _deviceImage->SetArrangement(_pendingArrangement, false);
+                ShowMedia(_rotating);
+                SetMediaOpacity(_shownView, 0.0);
+            }
+            if (_fadeBatteries) {
+                _batteryFade->DropSnapshot();
+            }
+            StartSceneFade(FadePhase::In);
+        }
+        else {
+            _fadePhase = FadePhase::Idle;
+            if (_fadeBatteries) {
+                _batteryFade->Finish();
+            }
+            _fadeMedia = _fadeBatteries = false;
+        }
+    });
+    _podsOnlyTimer->setObjectName("podsOnlyTimer");
+    _podsOnlyTimer->setSingleShot(true);
+    _podsOnlyTimer->callOnTimeout([this] {
+        _viewModel.SetPodsOnly(true);
+        Repaint();
+    });
 
     _ui.layoutAnimation->addWidget(_animationView);
+    _ui.layoutAnimation->addWidget(_deviceImage);
+    _animationView->hide();
+    for (auto *battery : {_leftBattery, _rightBattery, _caseBattery}) {
+        battery->setShape(Widget::Battery::Shape::Ring);
+        battery->setTextPadding(4);
+        battery->setBatterySize(28, 28);
+    }
     _ui.layoutPods->addWidget(_leftBattery);
     _ui.layoutPods->addWidget(_rightBattery);
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
 
-    // For getting the correct initial height of `_animationView` later
+    // For getting the correct initial height of `_deviceImage` later
     _ui.layoutAnimation->activate();
-    _animationView->show();
+    _deviceImage->show();
+
 }
 
 void MainWindow::StartUpdateChecks()
@@ -261,6 +325,8 @@ void MainWindow::Disconnect()
 {
     LOG(Info, "MainWindow::Disconnect");
 
+    _viewModel.SetPodsOnly(false);
+    _podsOnlyTimer->stop();
     _viewModel.Disconnect();
     Repaint();
     _holdForOpenLid = false;
@@ -350,15 +416,18 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
     if (!model.has_value()) {
         StopAnimation();
         _playback->SetAnimation({});
+        _deviceImage->SetSource({});
     }
     else {
         const auto presentation = GetAnimationPresentation(model.value());
 
         auto aspectRatio =
             (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
-        auto widgetWidth = _animationView->height() * aspectRatio;
+        auto widgetWidth = _deviceImage->height() * aspectRatio;
+        _deviceImage->setFixedWidth(widgetWidth);
         _animationView->setFixedWidth(widgetWidth);
         _playback->SetAnimation(presentation);
+        _deviceImage->SetSource(QImage{presentation.FallbackResource()});
 
         if (_isVisible) {
             PlayAnimation();
@@ -373,14 +442,103 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
 
 void MainWindow::PlayAnimation()
 {
-    _playback->SetActive(true);
-    _animationView->show();
+    _sceneFade.stop();
+    _fadePhase = FadePhase::Idle;
+    _fadeMedia = _fadeBatteries = false;
+    _batteryFade->Finish();
+    _animationView->SetOpacity(1.0);
+    _deviceImage->SetOpacity(1.0);
+    _deviceImage->SetArrangement(_pendingArrangement, false);
+    ShowMedia(_rotating);
+}
+
+void MainWindow::ShowMedia(bool rotating)
+{
+    _shownView = rotating;
+    if (rotating) {
+        _deviceImage->hide();
+        _animationView->show();
+        _playback->SetActive(true);
+    }
+    else {
+        _playback->SetActive(false);
+        _animationView->hide();
+        _deviceImage->show();
+    }
+}
+
+void MainWindow::SetMediaOpacity(bool rotatingView, qreal opacity)
+{
+    if (rotatingView) {
+        _animationView->SetOpacity(opacity);
+    }
+    else {
+        _deviceImage->SetOpacity(opacity);
+    }
+}
+
+qreal MainWindow::MediaOpacity(bool rotatingView) const
+{
+    return rotatingView ? _animationView->Opacity() : _deviceImage->Opacity();
+}
+
+void MainWindow::StartSceneFade(FadePhase phase)
+{
+    _fadePhase = phase;
+    // Pick up from wherever the picture currently is, so a reversed hand-over never jumps.
+    const bool outgoing = phase == FadePhase::Out;
+    const bool resumed = _sceneFade.state() == QAbstractAnimation::Running;
+    _sceneFade.stop();
+    const qreal from = _fadeMedia ? MediaOpacity(_shownView)
+                       : resumed ? _sceneFade.currentValue().toReal()
+                                 : (outgoing ? 1.0 : 0.0);
+    _fadeFrom = from;
+    _sceneFade.setStartValue(from);
+    _sceneFade.setEndValue(outgoing ? 0.0 : 1.0);
+    _sceneFade.setDuration(qRound(500 * (outgoing ? from : 1.0 - from)) + 1);
+    _sceneFade.start();
 }
 
 void MainWindow::StopAnimation()
 {
-    _animationView->hide();
     _playback->SetActive(false);
+    _animationView->hide();
+    _deviceImage->hide();
+}
+
+void MainWindow::ApplyScene(Scene scene)
+{
+    using Arrangement = Widget::DeviceImage::Arrangement;
+
+    switch (scene) {
+    case Scene::BothPodsOut:
+        if (!_podsOnlyTimer->isActive()) {
+            _podsOnlyTimer->start(15s);
+        }
+        break;
+    case Scene::PodsOnly:
+        _podsOnlyTimer->stop();
+        break;
+    default:
+        _podsOnlyTimer->stop();
+        if (_viewModel.IsPodsOnly()) {
+            _viewModel.SetPodsOnly(false);
+        }
+        break;
+    }
+
+    _pendingArrangement = scene == Scene::PodsOnly ? Arrangement::PodsOnly : Arrangement::Spread;
+    _rotating = scene == Scene::PodsInCase || scene == Scene::BothPodsOut;
+
+    // Pods only: the single ring takes the whole row so it sits under the centred pair.
+    const QRect podsRow = _ui.podsBatteryContainer->geometry();
+    const QRect centredRow{
+        _podsRowGeometry.x(), _podsRowGeometry.y(), width() - 2 * _podsRowGeometry.x(),
+        _podsRowGeometry.height()};
+    const QRect fullRow = scene == Scene::PodsOnly ? centredRow : _podsRowGeometry;
+    if (podsRow != fullRow) {
+        _ui.podsBatteryContainer->setGeometry(fullRow);
+    }
 }
 
 void MainWindow::BindDevice()
@@ -496,9 +654,33 @@ void MainWindow::VersionUpdateAvailable(const Core::Update::ReleaseInfo &release
 void MainWindow::Repaint()
 {
     const auto presentation = _viewModel.Present();
+
+    const bool wasRotating = _rotating;
+    const auto wasArrangement = _pendingArrangement;
+    const bool batteriesChanged =
+        _lastPresentation.has_value() &&
+        (_lastPresentation->leftBattery != presentation.leftBattery ||
+         _lastPresentation->rightBattery != presentation.rightBattery ||
+         _lastPresentation->caseBattery != presentation.caseBattery ||
+         _lastPresentation->scene != presentation.scene);
+
+    // Snapshot the battery row before anything moves; the old look then leaves together with
+    // the old picture, and the new row arrives together with the new one.
+    const QRect batteryRow{
+        _podsRowGeometry.x(), _podsRowGeometry.y(), width() - 2 * _podsRowGeometry.x(),
+        _podsRowGeometry.height()};
+    QPixmap before;
+    if (_isVisible && _lastPresentation.has_value() &&
+        (batteriesChanged || _batteryFade->IsRunning())) {
+        // Taken with any running overlay still in place: the fade resumes from exactly what
+        // is on screen right now.
+        before = grab(batteryRow);
+    }
+
     FitDeviceLabelFont(presentation.title);
     ChangeButtonAction(presentation.buttonAction);
     SetAnimation(presentation.animationModel);
+    ApplyScene(presentation.scene);
 
     const auto applyBattery = [](Widget::Battery *widget, const BatteryPresentation &battery) {
         if (!battery.visible) {
@@ -508,12 +690,59 @@ void MainWindow::Repaint()
 
         widget->setCharging(battery.charging);
         widget->setValue(battery.value);
+        static_assert(
+            static_cast<int>(Widget::Battery::Badge::Case) == static_cast<int>(BatteryBadge::Case),
+            "BatteryBadge and Widget::Battery::Badge must line up");
+        widget->setBadge(static_cast<Widget::Battery::Badge>(battery.badge));
         widget->show();
     };
 
     applyBattery(_leftBattery, presentation.leftBattery);
     applyBattery(_rightBattery, presentation.rightBattery);
     applyBattery(_caseBattery, presentation.caseBattery);
+    _lastPresentation = presentation;
+
+    const bool mediaChanged = wasRotating != _rotating || wasArrangement != _pendingArrangement;
+    if (!_isVisible) {
+        if (mediaChanged) {
+            _deviceImage->SetArrangement(_pendingArrangement, false);
+        }
+        return;
+    }
+    if (!mediaChanged && before.isNull()) {
+        return;
+    }
+
+    if (!before.isNull()) {
+        _ui.podsBatteryContainer->layout()->activate();
+        _ui.caseBatteryContainer->layout()->activate();
+        _batteryFade->Begin(before, batteryRow);
+        _fadeBatteries = true;
+    }
+    _fadeMedia = _fadeMedia || mediaChanged;
+
+    // Whatever is on screen keeps doing its thing (the video keeps turning) while it fades out;
+    // only then does the new scene fade in. A change caught mid-fade continues from where the
+    // previous one got to.
+    switch (_fadePhase) {
+    case FadePhase::Idle:
+        StartSceneFade(FadePhase::Out);
+        break;
+    case FadePhase::In:
+        // The half-arrived scene goes back out, from wherever it is now.
+        StartSceneFade(FadePhase::Out);
+        break;
+    case FadePhase::Out:
+        if (_fadeMedia && _shownView == _rotating &&
+            (_rotating || _deviceImage->GetArrangement() == _pendingArrangement)) {
+            // Target flipped back to what is currently fading out: fade it in again.
+            StartSceneFade(FadePhase::In);
+            break;
+        }
+        // Restart the fade-out from the current opacity so a fresh snapshot leaves in step.
+        StartSceneFade(FadePhase::Out);
+        break;
+    }
 }
 
 void MainWindow::ApplyTheme()
@@ -628,8 +857,10 @@ void MainWindow::DoHide()
 
     const auto screenGeometry = screen()->geometry();
 
+    // Leaving is quicker than arriving: the popup is out of the way in a quarter second.
     _posAnimation.stop();
-    _posAnimation.setEasingCurve(QEasingCurve::InExpo);
+    _posAnimation.setDuration(250);
+    _posAnimation.setEasingCurve(QEasingCurve::InCubic);
     _posAnimation.setStartValue(pos());
     _posAnimation.setEndValue(QPoint{x(), screenGeometry.bottom() + 1});
     _posAnimation.start();
@@ -690,6 +921,7 @@ void MainWindow::BeginShow(bool fromHidden)
         move(target);
         move(target.x(), screenGeometry.bottom() + 1);
     }
+    _posAnimation.setDuration(500);
     _posAnimation.setEasingCurve(QEasingCurve::OutExpo);
     _posAnimation.setStartValue(pos());
     _posAnimation.setEndValue(target);
@@ -699,6 +931,7 @@ void MainWindow::BeginShow(bool fromHidden)
 void MainWindow::hideEvent(QHideEvent *event)
 {
     _isVisible = false;
+    _batteryFade->hide();
     _posAnimation.stop();
     ControlAutoHideTimer(false);
     StopAnimation();

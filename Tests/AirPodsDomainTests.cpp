@@ -175,6 +175,8 @@ private Q_SLOTS:
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
     void PresentsMainWindowCaseBattery();
+    void MergesMatchingPodBatteries();
+    void PresentsScenesFromPodPlacement();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
 };
@@ -607,7 +609,97 @@ void AirPodsDomainTests::PresentsMainWindowDeviceState()
     QCOMPARE(presentation.leftBattery.value, 80U);
     QVERIFY(presentation.rightBattery.visible);
     QCOMPARE(presentation.rightBattery.value, 60U);
+    QCOMPARE(presentation.leftBattery.badge, Gui::BatteryBadge::Left);
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::Right);
     QVERIFY(!presentation.caseBattery.visible);
+}
+
+void AirPodsDomainTests::MergesMatchingPodBatteries()
+{
+    Core::AirPods::State state;
+    state.model = Core::AirPods::Model::AirPods_Pro_2;
+    state.pods.left.battery = 95;
+    state.pods.right.battery = 95;
+    state.caseBox.battery = 99;
+
+    Gui::MainWindowViewModel viewModel;
+    viewModel.UpdateState(state);
+    auto presentation = viewModel.Present();
+
+    QVERIFY(!presentation.leftBattery.visible);
+    QVERIFY(presentation.rightBattery.visible);
+    QCOMPARE(presentation.rightBattery.value, 95U);
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
+    QCOMPARE(presentation.caseBattery.badge, Gui::BatteryBadge::Case);
+
+    // Both pods in the case: the case glyph goes away as well.
+    state.caseBox.isBothPodsInCase = true;
+    state.pods.left.isInCase = state.pods.right.isInCase = true;
+    viewModel.UpdateState(state);
+    QCOMPARE(viewModel.Present().caseBattery.badge, Gui::BatteryBadge::None);
+    QCOMPARE(viewModel.Present().scene, Gui::Scene::PodsInCase);
+    state.caseBox.isBothPodsInCase = false;
+    state.pods.left.isInCase = state.pods.right.isInCase = false;
+
+    // Same level but only one side charging: shown separately again.
+    state.pods.right.isCharging = true;
+    viewModel.UpdateState(state);
+    presentation = viewModel.Present();
+    QVERIFY(presentation.leftBattery.visible);
+    QCOMPARE(presentation.leftBattery.badge, Gui::BatteryBadge::Left);
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::Right);
+}
+
+void AirPodsDomainTests::PresentsScenesFromPodPlacement()
+{
+    Core::AirPods::State state;
+    state.model = Core::AirPods::Model::AirPods_Pro_2;
+    state.pods.left.battery = 80;
+    state.pods.right.battery = 60;
+    state.pods.right.isCharging = true;
+    state.caseBox.battery = 99;
+
+    Gui::MainWindowViewModel viewModel;
+
+    // Both in the case: one ring for the pair even though the levels differ.
+    state.pods.left.isInCase = state.pods.right.isInCase = true;
+    state.caseBox.isBothPodsInCase = true;
+    viewModel.UpdateState(state);
+    auto presentation = viewModel.Present();
+    QCOMPARE(presentation.scene, Gui::Scene::PodsInCase);
+    QVERIFY(!presentation.leftBattery.visible);
+    QCOMPARE(presentation.rightBattery.value, 60U);
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
+    QCOMPARE(presentation.caseBattery.badge, Gui::BatteryBadge::None);
+
+    // One pod out: still render, both rings labelled, case ring labelled.
+    state.pods.right.isInCase = false;
+    state.caseBox.isBothPodsInCase = false;
+    viewModel.UpdateState(state);
+    presentation = viewModel.Present();
+    QCOMPARE(presentation.scene, Gui::Scene::OnePodOut);
+    QVERIFY(presentation.leftBattery.visible && presentation.rightBattery.visible);
+    QCOMPARE(presentation.caseBattery.badge, Gui::BatteryBadge::Case);
+
+    // Both out: keeps turning until the window says otherwise.
+    state.pods.left.isInCase = false;
+    viewModel.UpdateState(state);
+    QCOMPARE(viewModel.Present().scene, Gui::Scene::BothPodsOut);
+
+    viewModel.SetPodsOnly(true);
+    presentation = viewModel.Present();
+    QCOMPARE(presentation.scene, Gui::Scene::PodsOnly);
+    QVERIFY(!presentation.leftBattery.visible);
+    QVERIFY(presentation.rightBattery.visible);
+    QCOMPARE(presentation.rightBattery.value, 60U); // the weaker pod
+    QVERIFY(!presentation.rightBattery.charging);   // only one of them is
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
+    QVERIFY(!presentation.caseBattery.visible);
+
+    // Ear state does not change the pods-only scene.
+    state.pods.left.isInEar = state.pods.right.isInEar = true;
+    viewModel.UpdateState(state);
+    QCOMPARE(viewModel.Present().scene, Gui::Scene::PodsOnly);
 }
 
 void AirPodsDomainTests::PresentsMainWindowCaseBattery()
