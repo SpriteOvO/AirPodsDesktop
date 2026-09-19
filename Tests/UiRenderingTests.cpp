@@ -213,6 +213,58 @@ private Q_SLOTS:
             &window, QString{"main-window-long-device-name-scale%1.png"}.arg(scale));
     }
 
+    void MainWindowStaysWhileLidIsOpen()
+    {
+        Gui::MainWindow window;
+        auto *autoHide = window.findChild<QTimer *>("autoHideTimer");
+        auto *lidSafety = window.findChild<QTimer *>("lidSafetyTimer");
+        QVERIFY(autoHide != nullptr);
+        QVERIFY(lidSafety != nullptr);
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{90};
+        state.pods.right.battery = Core::AirPods::Battery{90};
+        state.caseBox.battery = Core::AirPods::Battery{80};
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+
+        // Lid open: no 10 s auto-hide, only the safety cap.
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+
+        // Pods taken out (one, then both): the case is still open, the popup stays.
+        state.pods.right.isInEar = true;
+        state.caseBox.isBothPodsInCase = false;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+        state.pods.left.isInEar = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+
+        // Pods back in and the lid closed: back to the usual auto-hide.
+        state.pods.left.isInEar = state.pods.right.isInEar = false;
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+
+        // Disconnect while the lid was open also releases the popup.
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        window.Disconnect();
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+    }
+
     void UpdateTextHasAntialiasedEdges_data()
     {
         QTest::addColumn<QString>("localeName");

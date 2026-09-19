@@ -188,7 +188,11 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
 
     _posAnimation.setDuration(500);
+    _autoHideTimer->setObjectName("autoHideTimer");
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
+    _lidSafetyTimer->setObjectName("lidSafetyTimer");
+    _lidSafetyTimer->setSingleShot(true);
+    _lidSafetyTimer->callOnTimeout([this] { DoHide(); });
 
     _ui.layoutAnimation->addWidget(_animationView);
     _ui.layoutPods->addWidget(_leftBattery);
@@ -222,6 +226,17 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
 
     _viewModel.UpdateState(state);
     Repaint();
+
+    // Lid state is only reported while the pods sit in the case, so with the pods out the last
+    // decision stands: an opened case keeps the popup, a closed one released it.
+    std::optional<bool> lidOpened;
+    if (state.caseBox.isBothPodsInCase) {
+        lidOpened = state.caseBox.isLidOpened;
+    }
+    if (lidOpened.has_value() && *lidOpened != _holdForOpenLid) {
+        _holdForOpenLid = *lidOpened;
+        ControlAutoHideTimer(_isVisible);
+    }
 }
 
 void MainWindow::Available()
@@ -238,6 +253,8 @@ void MainWindow::Unavailable()
 
     _viewModel.Unavailable();
     Repaint();
+    _holdForOpenLid = false;
+    ControlAutoHideTimer(_isVisible);
 }
 
 void MainWindow::Disconnect()
@@ -246,6 +263,8 @@ void MainWindow::Disconnect()
 
     _viewModel.Disconnect();
     Repaint();
+    _holdForOpenLid = false;
+    ControlAutoHideTimer(_isVisible);
 }
 
 void MainWindow::Bind()
@@ -444,10 +463,20 @@ void MainWindow::ControlAutoHideTimer(bool start)
 {
     LOG(Trace, "ControlAutoHideTimer: start == '{}', _isVisible == '{}'", start, _isVisible);
 
-    if (start && _isVisible) {
+    if (start && _isVisible && _holdForOpenLid) {
+        // Like iOS: the sheet stays while the case sits open, even as pods are taken out; the
+        // safety timer only guards against a lid close we never get to see.
+        _autoHideTimer->stop();
+        if (!_lidSafetyTimer->isActive()) {
+            _lidSafetyTimer->start(90s);
+        }
+    }
+    else if (start && _isVisible) {
+        _lidSafetyTimer->stop();
         _autoHideTimer->start(10s);
     }
     else {
+        _lidSafetyTimer->stop();
         _autoHideTimer->stop();
     }
 }

@@ -86,6 +86,8 @@ private:
     Widget::AnimationView *_animationView;
     AnimationPlayback *_playback;
     QTimer *_autoHideTimer = new QTimer{this};
+    // Caps how long an opened lid may keep the popup up, in case the state stops updating.
+    QTimer *_lidSafetyTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery = new Widget::Battery{this};
     Widget::Battery *_rightBattery = new Widget::Battery{this};
@@ -98,6 +100,9 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
+    // Set when the lid opens with both pods inside; the popup then stays (also while the pods are
+    // out) until the lid is seen closed, the device disconnects or the safety cap fires.
+    bool _holdForOpenLid{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
