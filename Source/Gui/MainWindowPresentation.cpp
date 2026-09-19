@@ -116,6 +116,8 @@ AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model)
         return {"qrc:/Resource/Video/AirPods_4.avi", {900, 450}};
     case Model::AirPods_4_ANC:
         return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}};
+    case Model::AirPods_5:
+        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}};
     case Model::AirPods_Pro:
         return {"qrc:/Resource/Video/AirPods_Pro.avi", {900, 450}};
     case Model::AirPods_Pro_2:

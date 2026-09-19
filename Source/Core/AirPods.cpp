@@ -32,9 +32,10 @@ QString Details::ResolveDisplayName(QString deviceName, Model model)
 {
     deviceName.remove(" - Find My");
 
-    const bool isDefaultUsbCMaxName =
-        model == Model::AirPods_Max_USB_C && deviceName == "AirPods Max";
-    return deviceName.isEmpty() || isDefaultUsbCMaxName ? Helper::ToString(model) : deviceName;
+    const bool isDefaultModelName =
+        (model == Model::AirPods_Max_USB_C && deviceName == "AirPods Max") ||
+        (model == Model::AirPods_5 && deviceName == "AirPods");
+    return deviceName.isEmpty() || isDefaultModelName ? Helper::ToString(model) : deviceName;
 }
 
 Manager::Manager(QObject *parent) : QObject{parent}

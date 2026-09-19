@@ -75,7 +75,7 @@ target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINA
 add_dependencies(UiRenderingTests apd_translations)
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
-foreach(scale_factor 1 1.25 1.5)
+foreach(scale_factor 1 1.25 1.5 2)
     string(REPLACE "." "_" scale_suffix "${scale_factor}")
     add_test(
         NAME MainWindowRenderingScale${scale_suffix}
@@ -83,6 +83,14 @@ foreach(scale_factor 1 1.25 1.5)
     )
     set_tests_properties(
         MainWindowRenderingScale${scale_suffix}
+        PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
+    )
+    add_test(
+        NAME AirPods5RenderingScale${scale_suffix}
+        COMMAND UiRenderingTests MainWindowRendersAirPods5
+    )
+    set_tests_properties(
+        AirPods5RenderingScale${scale_suffix}
         PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
     )
 endforeach()
