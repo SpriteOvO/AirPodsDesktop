@@ -131,6 +131,53 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void MainWindowRendersAirPods5()
+    {
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_5;
+        state.displayName = QStringLiteral("AirPods 5");
+        state.pods.left.battery = 80;
+        state.pods.right.battery = 70;
+        state.caseBox.battery = 50;
+
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation");
+        QVERIFY(QDir{}.mkpath(outputDir));
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            Gui::MainWindow window;
+            window.UpdateState(state);
+            window.Show();
+            QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+            auto *label = window.findChild<QLabel *>("deviceLabel");
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QVERIFY(label != nullptr);
+            QVERIFY(animation != nullptr);
+            QCOMPARE(label->text(), state.displayName);
+            QTRY_VERIFY(animation->isVisible());
+            QCOMPARE(animation->width(), animation->height() * 2);
+
+            const auto animationImage = animation->grab().toImage();
+            int visiblePixels = 0;
+            for (int y = 0; y < animationImage.height(); y += 2) {
+                for (int x = 0; x < animationImage.width(); x += 2) {
+                    visiblePixels += qAlpha(animationImage.pixel(x, y)) != 0;
+                }
+            }
+            QVERIFY(visiblePixels > 100);
+
+            const auto suffix =
+                QString{"airpods-5-%1-scale%2.png"}.arg(theme.IsDark() ? "dark" : "light", scale);
+            QVERIFY(window.grab().save(outputDir + '/' + suffix));
+            window.close();
+        }
+        theme.SetMode(originalMode);
+    }
+
     void MainWindowElidesLongDeviceNames()
     {
         Gui::MainWindow window;

@@ -1,6 +1,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <tuple>
 #include <vector>
 
 #include <QtTest>
@@ -151,6 +152,8 @@ class AirPodsDomainTests : public QObject
 
 private Q_SLOTS:
     void RejectsMalformedPackets();
+    void RecognizesAirPods5();
+    void ResolvesAirPods5DisplayName();
     void RecognizesAirPodsMaxUsbC();
     void ResolvesAirPodsMaxUsbCDisplayName();
     void ParsesAdvertisementState();
@@ -193,6 +196,79 @@ void AirPodsDomainTests::RejectsMalformedPackets()
     packet = MakePacket(0x2014, Side::Left, 8, 7, 5);
     packet[1] = 24;
     QVERIFY(!Core::AppleCP::AirPods::IsValid(packet));
+}
+
+void AirPodsDomainTests::RecognizesAirPods5()
+{
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x2030), Model::AirPods_5);
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x2036), Model::AirPods_5);
+    QCOMPARE(Helper::ToString(Model::AirPods_5), QString{"AirPods 5"});
+
+    for (const auto modelId : {uint16_t{0x2030}, uint16_t{0x2036}}) {
+        const Advertisement advertisement{
+            MakeAdvertisementData(0x1234, -45, Side::Left, 8, 7, 5, modelId)};
+        QCOMPARE(advertisement.GetAdvState().model, Model::AirPods_5);
+        QCOMPARE(advertisement.GetAdvState().pods.left.battery.Value(), 80u);
+        QCOMPARE(advertisement.GetAdvState().pods.right.battery.Value(), 70u);
+        QCOMPARE(advertisement.GetAdvState().caseBox.battery.Value(), 50u);
+    }
+
+    // Sanitized captures from an AirPods 5 with Wireless Charging Case. Bytes 11-26 are
+    // intentionally zeroed because the protocol's trailing payload may identify the device.
+    constexpr std::array<uint8_t, 27> capturedLeft{
+        0x07, 0x19, 0x01, 0x30, 0x20, 0x35, 0xaa, 0xba, 0x32, 0x00, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    constexpr std::array<uint8_t, 27> capturedRight{
+        0x07, 0x19, 0x01, 0x30, 0x20, 0x55, 0xaa, 0xba, 0x32, 0x00, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    for (const auto &[side, address, packet] : {
+             std::tuple{Side::Left, uint64_t{0x1111}, capturedLeft},
+             std::tuple{Side::Right, uint64_t{0x2222}, capturedRight},
+         })
+    {
+        ReceivedData data;
+        data.address = address;
+        data.rssi = -60;
+        data.manufacturerDataMap.emplace(
+            Core::AppleCP::VendorId, std::vector<uint8_t>{packet.cbegin(), packet.cend()});
+        const Advertisement captured{data};
+        const auto &state = captured.GetAdvState();
+        QCOMPARE(state.model, Model::AirPods_5);
+        QCOMPARE(state.side, side);
+        QCOMPARE(state.pods.left.battery.Value(), 100u);
+        QCOMPARE(state.pods.right.battery.Value(), 100u);
+        QCOMPARE(state.caseBox.battery.Value(), 100u);
+        QVERIFY(state.pods.left.isCharging);
+        QVERIFY(state.pods.right.isCharging);
+        QVERIFY(!state.caseBox.isCharging);
+        QVERIFY(!state.pods.left.isInEar);
+        QVERIFY(!state.pods.right.isInEar);
+        QVERIFY(state.caseBox.isBothPodsInCase);
+        QVERIFY(state.caseBox.isLidOpened);
+        const auto update = manager.OnAdvReceived(captured);
+        if (side == Side::Left) {
+            QVERIFY(update.has_value());
+        }
+    }
+    QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_5);
+}
+
+void AirPodsDomainTests::ResolvesAirPods5DisplayName()
+{
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName("AirPods", Model::AirPods_5),
+        QString{"AirPods 5"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName(
+            "Kashionz's AirPods - Find My", Model::AirPods_5),
+        QString{"Kashionz's AirPods"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName({}, Model::AirPods_5), QString{"AirPods 5"});
 }
 
 void AirPodsDomainTests::RecognizesAirPodsMaxUsbC()
@@ -640,6 +716,10 @@ void AirPodsDomainTests::PresentsMainWindowCaseBattery()
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
 {
+    const auto airPods5 = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_5);
+    QCOMPARE(airPods5.resource, QString{"qrc:/Resource/Video/AirPods_4_ANC.avi"});
+    QCOMPARE(airPods5.sourceSize, QSize(900, 450));
+
     const auto pro = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_2_USB_C);
     QCOMPARE(pro.resource, QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
     QCOMPARE(pro.sourceSize, QSize(900, 450));
