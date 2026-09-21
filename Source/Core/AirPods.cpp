@@ -38,6 +38,19 @@ QString Details::ResolveDisplayName(QString deviceName, Model model)
     return deviceName.isEmpty() || isDefaultModelName ? Helper::ToString(model) : deviceName;
 }
 
+std::optional<bool> Details::EarDetectionTracker::Update(const State &state)
+{
+    const bool bothInEar = state.pods.left.isInEar && state.pods.right.isInEar;
+    const bool changed = _lastBothInEar.has_value() && _lastBothInEar != bothInEar;
+    _lastBothInEar = bothInEar;
+    return changed ? std::optional{bothInEar} : std::nullopt;
+}
+
+void Details::EarDetectionTracker::Reset()
+{
+    _lastBothInEar.reset();
+}
+
 Manager::Manager(QObject *parent) : QObject{parent}
 {
     _stateMgr.SetOnDiscardState([this] {
@@ -133,6 +146,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundModel = Model::Unknown;
     _deviceConnected = false;
     _stateMgr.Disconnect();
+    _earDetection.Reset();
     emit DeviceConnectionChanged(false);
     QMetaObject::invokeMethod(this, [this] { StopScanner(); }, Qt::QueuedConnection);
 
@@ -212,6 +226,7 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
+        _earDetection.Reset();
     }
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", oldDeviceConnected,
@@ -240,12 +255,10 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
         OnLidOpened(newLidOpened);
     }
 
-    if (oldState.has_value()) {
-        bool oldBothInEar = oldState->pods.left.isInEar && oldState->pods.right.isInEar;
-        bool newBothInEar = newState.pods.left.isInEar && newState.pods.right.isInEar;
-        if (oldBothInEar != newBothInEar) {
-            OnBothInEar(newBothInEar);
-        }
+    // Compared against the tracker rather than `oldState`: `StateManager` drops its cached state
+    // when the device is lost, and the next update would otherwise start over without a baseline.
+    if (auto changed = _earDetection.Update(newState)) {
+        OnBothInEar(*changed);
     }
 }
 
@@ -260,6 +273,8 @@ void Manager::OnBothInEar(bool isBothInEar)
         LOG(Info, "automatic_ear_detection: Do nothing because it is disabled. ({})", isBothInEar);
         return;
     }
+
+    LOG(Info, "automatic_ear_detection: bothInEar changed to {}", isBothInEar);
 
     if (isBothInEar) {
         GlobalMedia::Play();

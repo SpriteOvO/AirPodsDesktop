@@ -27,9 +27,12 @@ using namespace std::chrono_literals;
 
 namespace Core::AirPods::Details {
 
-StateManager::StateManager()
+// Windows reports this RSSI when the radio has no measurement for the packet.
+constexpr int16_t kRssiUnavailable = -127;
+
+StateManager::StateManager(Intervals intervals)
 {
-    _lostTimer.Start(10s, [this] {
+    _lostTimer.Start(intervals.lost, [this] {
         std::function<void()> onDiscardState;
         {
             std::lock_guard<std::mutex> lock{_mutex};
@@ -40,12 +43,12 @@ StateManager::StateManager()
         }
     });
 
-    _stateResetTimer.left.Start(10s, [this] {
+    _stateResetTimer.left.Start(intervals.stateReset, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Left);
     });
 
-    _stateResetTimer.right.Start(10s, [this] {
+    _stateResetTimer.right.Start(intervals.stateReset, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Right);
     });
@@ -84,6 +87,8 @@ void StateManager::Disconnect()
         std::lock_guard<std::mutex> lock{_mutex};
         LOG(Info, "StateManager: Disconnect.");
         onDiscardState = ResetAll();
+        _knownAddress.left.reset();
+        _knownAddress.right.reset();
     }
     if (onDiscardState) {
         onDiscardState();
@@ -104,18 +109,40 @@ void StateManager::SetOnDiscardState(std::function<void()> callback)
 
 bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
 {
-    const auto advRssi = adv.GetRssi();
-    if (advRssi < _rssiMin) {
-        LOG(Warn,
-            "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
-            "curr: '{}' min: '{}'",
-            advRssi, _rssiMin);
-        return false;
-    }
-
     const auto &advState = adv.GetAdvState();
     auto &lastAdv = advState.side == Side::Left ? _adv.left : _adv.right;
     auto &lastAnotherAdv = advState.side == Side::Left ? _adv.right : _adv.left;
+
+    // The RSSI floor keeps us from locking onto a stranger's AirPods. Once we are tracking an
+    // address, weak advertisements from that same address are still ours; rejecting them would
+    // drop in-ear changes and starve the lost timer while the pods are merely far from the PC.
+    const auto advRssi = adv.GetRssi();
+    if (advRssi < _rssiMin) {
+        if (!IsKnownAddress(adv.GetAddress())) {
+            if (advRssi == kRssiUnavailable) {
+                LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: RSSI unavailable (-127)");
+            }
+            else {
+                LOG(Warn,
+                    "IsPossibleDesiredAdv returns false. Reason: RSSI is less than the limit. "
+                    "curr: '{}' min: '{}'",
+                    advRssi, _rssiMin);
+            }
+            return false;
+        }
+        LOG(Trace,
+            "RSSI below limit but address matches tracked device, accepting. "
+            "curr: '{}' min: '{}'",
+            advRssi, _rssiMin);
+    }
+
+    // An unavailable RSSI on either side says nothing about the distance between two packets.
+    const auto isPlausibleRssiDiff = [&](int16_t cachedRssi) {
+        if (advRssi == kRssiUnavailable || cachedRssi == kRssiUnavailable) {
+            return true;
+        }
+        return std::abs(advRssi - cachedRssi) <= 50;
+    };
 
     const auto hasDifferentModel = [&](const auto &cachedAdv) {
         if (!cachedAdv.has_value()) {
@@ -160,26 +187,27 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
             return false;
         }
 
-        int16_t rssiDiff = std::abs(advRssi - lastAdv->first.GetRssi());
-        if (rssiDiff > 50) {
+        if (!isPlausibleRssiDiff(lastAdv->first.GetRssi())) {
             LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Current side rssiDiff '{}'",
-                rssiDiff);
+                std::abs(advRssi - lastAdv->first.GetRssi()));
             return false;
         }
 
         LOG(Warn, "Address changed, but it might still be the same device.");
     }
 
-    if (lastAnotherAdv.has_value()) {
-        int16_t rssiDiff = std::abs(advRssi - lastAnotherAdv->first.GetRssi());
-        if (rssiDiff > 50) {
-            LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
-                rssiDiff);
-            return false;
-        }
+    if (lastAnotherAdv.has_value() && !isPlausibleRssiDiff(lastAnotherAdv->first.GetRssi())) {
+        LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
+            std::abs(advRssi - lastAnotherAdv->first.GetRssi()));
+        return false;
     }
 
     return true;
+}
+
+bool StateManager::IsKnownAddress(Advertisement::AddressType address) const
+{
+    return _knownAddress.left == address || _knownAddress.right == address;
 }
 
 void StateManager::UpdateAdv(Advertisement adv)
@@ -189,10 +217,12 @@ void StateManager::UpdateAdv(Advertisement adv)
     const auto &advState = adv.GetAdvState();
     if (advState.side == Side::Left) {
         _stateResetTimer.left.Reset();
+        _knownAddress.left = adv.GetAddress();
         _adv.left = std::make_pair(std::move(adv), Clock::now());
     }
     else if (advState.side == Side::Right) {
         _stateResetTimer.right.Reset();
+        _knownAddress.right = adv.GetAddress();
         _adv.right = std::make_pair(std::move(adv), Clock::now());
     }
 }
