@@ -356,6 +356,8 @@ set(
     "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
+    "Source/Gui/Widget/DeviceImage.cpp"
+    "Source/Gui/Widget/FadeOverlay.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
     "Source/Gui/Theme.cpp"
 )

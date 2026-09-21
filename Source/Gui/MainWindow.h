@@ -18,7 +18,10 @@
 
 #pragma once
 
+
 #include <atomic>
+#include <chrono>
+#include <map>
 #include <thread>
 
 #include <QDialog>
@@ -30,12 +33,14 @@
 
 #include "Utils.h"
 #include "MainWindowPresentation.h"
-#include "AnimationPlayback.h"
 #include "../Core/AirPods.h"
 #include "../Core/Update.h"
 #include "Base.h"
 #include "Widget/Battery.h"
+#include "AnimationPlayback.h"
 #include "Widget/AnimationView.h"
+#include "Widget/DeviceImage.h"
+#include "Widget/FadeOverlay.h"
 
 namespace Gui {
 
@@ -83,9 +88,30 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
+    // One fade for the whole scene: picture and battery row leave together, then the new ones
+    // arrive together. The overlay carries the old battery row while the widgets underneath are
+    // already rearranged.
+    Widget::FadeOverlay *_batteryFade = new Widget::FadeOverlay{this};
+    std::optional<MainWindowPresentation> _lastPresentation;
+    // Turntable video while both pods rest in the open case; a still render (cross-faded from
+    // the last frame) as soon as one is taken out.
     Widget::AnimationView *_animationView;
     AnimationPlayback *_playback;
+    Widget::DeviceImage *_deviceImage;
+    bool _rotating{false};  // what the scene asks for
+    bool _shownView{false}; // which view is on screen right now (may lag during a fade)
+    QVariantAnimation _sceneFade{this};
+    enum class FadePhase { Idle, Out, In } _fadePhase{FadePhase::Idle};
+    bool _fadeMedia{false};     // the picture takes part in the running fade
+    bool _fadeBatteries{false}; // the battery row takes part in the running fade
+    qreal _fadeFrom{1.0};       // opacity the running phase started from (a resumed fade)
+    Widget::DeviceImage::Arrangement _pendingArrangement{Widget::DeviceImage::Arrangement::Spread};
+    // Both pods out: the render keeps turning this long, then the case leaves the picture.
+    QTimer *_podsOnlyTimer = new QTimer{this};
+    QRect _podsRowGeometry;
     QTimer *_autoHideTimer = new QTimer{this};
+    // Caps how long an opened lid may keep the popup up, in case the state stops updating.
+    QTimer *_lidSafetyTimer = new QTimer{this};
     CloseButton *_closeButton;
     Widget::Battery *_leftBattery = new Widget::Battery{this};
     Widget::Battery *_rightBattery = new Widget::Battery{this};
@@ -98,6 +124,9 @@ private:
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
+    // Set when the lid opens with both pods inside; the popup then stays (also while the pods are
+    // out) until the lid is seen closed, the device disconnects or the safety cap fires.
+    bool _holdForOpenLid{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
@@ -105,6 +134,11 @@ private:
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
     void StopAnimation();
+    void ShowMedia(bool rotating);
+    void StartSceneFade(FadePhase phase);
+    void SetMediaOpacity(bool rotatingView, qreal opacity);
+    qreal MediaOpacity(bool rotatingView) const;
+    void ApplyScene(Scene scene);
     void BindDevice();
     void ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices);
     void ControlAutoHideTimer(bool start);

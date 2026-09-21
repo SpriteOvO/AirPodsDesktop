@@ -27,6 +27,9 @@
 
 #include "Source/Core/QuickConnect.h"
 #include "Source/Gui/MainWindow.h"
+#include "Source/Gui/Widget/Battery.h"
+#include "Source/Gui/Widget/DeviceImage.h"
+#include "Source/Gui/Widget/FadeOverlay.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
 #include "Source/Gui/TrayIcon.h"
@@ -211,6 +214,210 @@ private Q_SLOTS:
         const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
         VerifySmoothPopupCorners(
             &window, QString{"main-window-long-device-name-scale%1.png"}.arg(scale));
+    }
+
+    void MainWindowStaysWhileLidIsOpen()
+    {
+        Gui::MainWindow window;
+        auto *autoHide = window.findChild<QTimer *>("autoHideTimer");
+        auto *lidSafety = window.findChild<QTimer *>("lidSafetyTimer");
+        QVERIFY(autoHide != nullptr);
+        QVERIFY(lidSafety != nullptr);
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{90};
+        state.pods.right.battery = Core::AirPods::Battery{90};
+        state.caseBox.battery = Core::AirPods::Battery{80};
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+
+        // Lid open: no 10 s auto-hide, only the safety cap.
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+
+        // Pods taken out (one, then both): the case is still open, the popup stays.
+        state.pods.right.isInEar = true;
+        state.caseBox.isBothPodsInCase = false;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+        state.pods.left.isInEar = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+
+        // Pods back in and the lid closed: back to the usual auto-hide.
+        state.pods.left.isInEar = state.pods.right.isInEar = false;
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+
+        // Disconnect while the lid was open also releases the popup.
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        window.Disconnect();
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+    }
+
+    void DeviceImageSlicesAndRearrangesPods()
+    {
+        const QImage source{":/Resource/Image/Animation/AirPods_Pro_2.png"};
+        QVERIFY(!source.isNull());
+        const auto slices = Gui::Widget::Detail::SliceByTransparentGaps(
+            source, (std::max)(source.width() / 50, 4)).slices;
+        QCOMPARE(slices.size(), size_t{3}); // left pod, right pod, case
+
+        Gui::Widget::DeviceImage image;
+        image.resize(260, 122);
+        image.SetSource(source);
+        const auto spread = image.CurrentComposition();
+        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Together, false);
+        const auto together = image.CurrentComposition();
+        QVERIFY(spread != together);
+        QCOMPARE(spread.size(), together.size());
+
+        // The pods moved towards each other: the left pod's right edge shifted right and the
+        // case stayed where it was.
+        const auto edges = [](const QImage &composition) {
+            const auto s = Gui::Widget::Detail::SliceByTransparentGaps(composition, 2).slices;
+            return std::pair{s.front().right, s.back().left};
+        };
+        const auto [spreadPodEdge, spreadCaseEdge] = edges(spread);
+        const auto [togetherPodEdge, togetherCaseEdge] = edges(together);
+        QVERIFY(togetherPodEdge > spreadPodEdge);
+        QCOMPARE(togetherCaseEdge, spreadCaseEdge);
+
+        // Pods only: the case is gone, the pair sits in the middle.
+        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::PodsOnly, false);
+        const auto podsOnly = image.CurrentComposition();
+        const auto podsOnlySlices = Gui::Widget::Detail::SliceByTransparentGaps(podsOnly, 2).slices;
+        QCOMPARE(podsOnlySlices.size(), size_t{2});
+        const int centre = (podsOnlySlices.front().left + podsOnlySlices.back().right) / 2;
+        QVERIFY(std::abs(centre - podsOnly.width() / 2) <= 2);
+        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Together, false);
+
+        // Back to spread with animation: a cross-fade runs while visible.
+        image.show();
+        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Spread, true);
+        QVERIFY(image.IsFading());
+        QTRY_VERIFY(!image.IsFading());
+        QCOMPARE(image.CurrentComposition(), spread);
+    }
+
+    void MainWindowDissolvesTheBatteryRow()
+    {
+        Gui::MainWindow window;
+        auto *overlay = window.findChild<Gui::Widget::FadeOverlay *>();
+        QVERIFY(overlay != nullptr);
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2_USB_C;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{90};
+        state.pods.right.battery = Core::AirPods::Battery{90};
+        state.pods.left.isInCase = state.pods.right.isInCase = true;
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.battery = Core::AirPods::Battery{80};
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+        QVERIFY(!overlay->IsRunning());
+
+        // One pod out: rings split, the row dissolves from the old look.
+        state.pods.right.isInCase = false;
+        state.caseBox.isBothPodsInCase = false;
+        window.UpdateState(state);
+        QVERIFY(overlay->IsRunning());
+        QVERIFY(overlay->isVisible());
+        QTRY_VERIFY(!overlay->IsRunning());
+        QVERIFY(overlay->isHidden());
+    }
+
+    void MainWindowCentresTheLonePodsRing()
+    {
+        Gui::MainWindow window;
+        auto *timer = window.findChild<QTimer *>("podsOnlyTimer");
+        QVERIFY(timer != nullptr);
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2_USB_C;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{97};
+        state.pods.right.battery = Core::AirPods::Battery{95};
+        state.pods.left.isInEar = state.pods.right.isInEar = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+        QVERIFY(timer->isActive());
+
+        timer->start(0);
+        QTRY_VERIFY(!timer->isActive());
+        QCoreApplication::processEvents();
+
+        auto rings = window.findChildren<Gui::Widget::Battery *>();
+        Gui::Widget::Battery *shown = nullptr;
+        for (auto *ring : rings) {
+            if (ring->isVisibleTo(&window)) {
+                QVERIFY(shown == nullptr);
+                shown = ring;
+            }
+        }
+        QVERIFY(shown != nullptr);
+        QCOMPARE(shown->getValue(), 95u);
+        const int ringCentre = shown->mapTo(&window, shown->rect().center()).x();
+        QVERIFY(std::abs(ringCentre - window.width() / 2) <= 3);
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        VerifySmoothPopupCorners(&window, QString{"main-window-pods-only-scale%1.png"}.arg(scale));
+    }
+
+    void MainWindowRendersBatteryRings()
+    {
+        Gui::MainWindow window;
+        auto rings = window.findChildren<Gui::Widget::Battery *>();
+        QCOMPARE(rings.size(), 3);
+        for (auto *ring : rings) {
+            QCOMPARE(ring->getShape(), Gui::Widget::Battery::Shape::Ring);
+        }
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2_USB_C;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{98};
+        state.pods.right.battery = Core::AirPods::Battery{15};
+        state.pods.right.isCharging = true;
+        state.caseBox.battery = Core::AirPods::Battery{100};
+        state.caseBox.isCharging = true;
+        state.caseBox.isBothPodsInCase = true;
+        state.pods.left.isInCase = state.pods.right.isInCase = true;
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+
+        // Ring plus label fit the popup's 51 px battery row; the rest of the layout is untouched.
+        for (auto *ring : rings) {
+            QVERIFY(ring->height() <= 51);
+        }
+        // Both pods in the case: one merged pods ring and the case ring, neither labelled.
+        int visible = 0;
+        for (auto *ring : rings) {
+            if (ring->isVisibleTo(&window)) {
+                ++visible;
+                QCOMPARE(ring->getBadge(), Gui::Widget::Battery::Badge::None);
+            }
+        }
+        QCOMPARE(visible, 2);
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        VerifySmoothPopupCorners(&window, QString{"main-window-battery-rings-scale%1.png"}.arg(scale));
     }
 
     void UpdateTextHasAntialiasedEdges_data()

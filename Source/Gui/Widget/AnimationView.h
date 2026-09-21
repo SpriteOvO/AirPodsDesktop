@@ -62,6 +62,13 @@ public:
     void SetFallbackImage(QImage image);
     void SetPlaybackEnabled(bool enabled);
 
+    // The last decoded frame (keyed, source resolution), for a hand-over to a still view.
+    QImage LastFrame() const;
+
+    // Whole-view opacity, so the video can fade while it keeps playing.
+    void SetOpacity(qreal opacity);
+    qreal Opacity() const;
+
 Q_SIGNALS:
     void Clicked();
     void FramePresented();
@@ -82,6 +89,7 @@ private:
     bool _playbackEnabled{true};
     bool _deliveryQueued{false};
     bool _removeEnclosedBackground{false};
+    qreal _opacity{1.0};
 
     void InvalidatePendingFrames();
     void OnVideoFrameChanged(const QVideoFrame &frame);

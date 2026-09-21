@@ -15,7 +15,8 @@
 namespace Gui {
 namespace {
 
-BatteryPresentation PresentBattery(const Core::AirPods::Details::BasicState &state)
+BatteryPresentation
+PresentBattery(const Core::AirPods::Details::BasicState &state, BatteryBadge badge)
 {
     if (!state.battery.Available()) {
         return {};
@@ -25,6 +26,7 @@ BatteryPresentation PresentBattery(const Core::AirPods::Details::BasicState &sta
         .visible = true,
         .charging = state.isCharging,
         .value = state.battery.Value(),
+        .badge = badge,
     };
 }
 
@@ -34,6 +36,16 @@ void MainWindowViewModel::UpdateState(const Core::AirPods::State &state)
 {
     _status = Status::Updating;
     _state = state;
+}
+
+void MainWindowViewModel::SetPodsOnly(bool podsOnly)
+{
+    _podsOnly = podsOnly;
+}
+
+bool MainWindowViewModel::IsPodsOnly() const
+{
+    return _podsOnly;
 }
 
 void MainWindowViewModel::Available()
@@ -95,9 +107,49 @@ MainWindowPresentation MainWindowViewModel::Present() const
 
     result.title = _state->displayName;
     result.animationModel = _state->model;
-    result.leftBattery = PresentBattery(_state->pods.left);
-    result.rightBattery = PresentBattery(_state->pods.right);
-    result.caseBattery = PresentBattery(_state->caseBox);
+
+    const int podsInCase = (_state->pods.left.isInCase ? 1 : 0) + (_state->pods.right.isInCase ? 1 : 0);
+    if (podsInCase == 2) {
+        result.scene = Scene::PodsInCase;
+    }
+    else if (podsInCase == 1) {
+        result.scene = Scene::OnePodOut;
+    }
+    else {
+        result.scene = _podsOnly ? Scene::PodsOnly : Scene::BothPodsOut;
+    }
+
+    result.leftBattery = PresentBattery(_state->pods.left, BatteryBadge::Left);
+    result.rightBattery = PresentBattery(_state->pods.right, BatteryBadge::Right);
+    result.caseBattery = PresentBattery(_state->caseBox, BatteryBadge::Case);
+
+    // One unlabelled ring for the pair (the weaker pod, charging only if both are) while the
+    // pods rest in the case or stand on their own; also whenever both simply report the same.
+    const bool matchingPods = result.leftBattery.visible && result.rightBattery.visible &&
+                              result.leftBattery.value == result.rightBattery.value &&
+                              result.leftBattery.charging == result.rightBattery.charging;
+    const bool mergePods =
+        result.scene == Scene::PodsInCase || result.scene == Scene::PodsOnly || matchingPods;
+    if (mergePods) {
+        if (result.leftBattery.visible && result.rightBattery.visible) {
+            result.rightBattery.value =
+                (std::min)(result.leftBattery.value, result.rightBattery.value);
+            result.rightBattery.charging =
+                result.leftBattery.charging && result.rightBattery.charging;
+        }
+        else if (result.leftBattery.visible) {
+            result.rightBattery = result.leftBattery;
+        }
+        result.leftBattery = {};
+        result.rightBattery.badge = BatteryBadge::None;
+    }
+
+    if (_state->caseBox.isBothPodsInCase) {
+        result.caseBattery.badge = BatteryBadge::None;
+    }
+    if (result.scene == Scene::PodsOnly) {
+        result.caseBattery = {};
+    }
     return result;
 }
 

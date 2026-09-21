@@ -227,17 +227,21 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 
     emit StateUpdated(newState);
 
-    bool newLidOpened = newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
-    bool lidStateSwitched;
-    if (!oldState.has_value()) {
-        lidStateSwitched = newLidOpened;
+    // The lid is only observable while both pods are inside. Report "opened" on that edge and
+    // "closed" only when actually seen closed; taking the pods out is neither.
+    const auto lidOpened = [](const State &state) {
+        return state.caseBox.isBothPodsInCase && state.caseBox.isLidOpened;
+    };
+    const auto lidClosed = [](const State &state) {
+        return state.caseBox.isBothPodsInCase && !state.caseBox.isLidOpened;
+    };
+    const bool oldLidOpened = oldState.has_value() && lidOpened(*oldState);
+    const bool oldLidClosed = oldState.has_value() && lidClosed(*oldState);
+    if (lidOpened(newState) && !oldLidOpened) {
+        OnLidOpened(true);
     }
-    else {
-        bool oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
-        lidStateSwitched = oldLidOpened != newLidOpened;
-    }
-    if (lidStateSwitched) {
-        OnLidOpened(newLidOpened);
+    else if (lidClosed(newState) && !oldLidClosed) {
+        OnLidOpened(false);
     }
 
     if (oldState.has_value()) {
