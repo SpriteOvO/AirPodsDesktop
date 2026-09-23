@@ -153,10 +153,6 @@ if (MSVC)
     
     add_compile_options(
         "/MP"           # Multi-processor compilation
-
-        "/await"        # Enable the legacy pre-C++20 coroutine.
-                        # Workaround for cppwinrt v2.0.200609.3 in C++20.
-                        # For more information, see https://github.com/microsoft/cppwinrt/issues/866
     )
 endif()
 
