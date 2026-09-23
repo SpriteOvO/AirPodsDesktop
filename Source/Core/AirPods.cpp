@@ -41,6 +41,7 @@ QString Details::ResolveDisplayName(QString deviceName, Model model)
 Manager::Manager(QObject *parent) : QObject{parent}
 {
     _stateMgr.SetOnDiscardState([this] {
+        _lidTracker.OnLost(Details::LidTracker::Clock::now());
         QMetaObject::invokeMethod(this, [this] { emit Disconnected(); }, Qt::QueuedConnection);
     });
 
@@ -133,6 +134,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundModel = Model::Unknown;
     _deviceConnected = false;
     _stateMgr.Disconnect();
+    _lidTracker.Reset();
     emit DeviceConnectionChanged(false);
     QMetaObject::invokeMethod(this, [this] { StopScanner(); }, Qt::QueuedConnection);
 
@@ -212,6 +214,10 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
+        // The AirPods drop the Bluetooth connection when the lid closes, and the scanner stops
+        // before the closed lid is advertised. Forget the last lid state so that the next
+        // opening always shows the popup.
+        _lidTracker.Reset();
     }
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", oldDeviceConnected,
@@ -228,14 +234,12 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
     emit StateUpdated(newState);
 
     bool newLidOpened = newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
-    bool lidStateSwitched;
-    if (!oldState.has_value()) {
-        lidStateSwitched = newLidOpened;
+    std::optional<bool> oldLidOpened;
+    if (oldState.has_value()) {
+        oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
     }
-    else {
-        bool oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
-        lidStateSwitched = oldLidOpened != newLidOpened;
-    }
+    bool lidStateSwitched =
+        _lidTracker.Update(oldLidOpened, newLidOpened, Details::LidTracker::Clock::now());
     if (lidStateSwitched) {
         OnLidOpened(newLidOpened);
     }

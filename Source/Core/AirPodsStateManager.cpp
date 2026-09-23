@@ -267,4 +267,36 @@ void StateManager::DoStateReset(Side side)
     }
 }
 
+bool LidTracker::Update(std::optional<bool> oldLidOpened, bool newLidOpened, Timestamp now)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    bool switched;
+    if (oldLidOpened.has_value()) {
+        switched = oldLidOpened.value() != newLidOpened;
+    }
+    else if (_lastLidOpened.has_value() && _lostAt.has_value() && now - *_lostAt <= kMemory) {
+        switched = _lastLidOpened.value() != newLidOpened;
+    }
+    else {
+        switched = newLidOpened;
+    }
+    _lastLidOpened = newLidOpened;
+    _lostAt.reset();
+    return switched;
+}
+
+void LidTracker::OnLost(Timestamp now)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _lostAt = now;
+}
+
+void LidTracker::Reset()
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _lastLidOpened.reset();
+    _lostAt.reset();
+}
+
 } // namespace Core::AirPods::Details

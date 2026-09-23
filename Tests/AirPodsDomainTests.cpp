@@ -20,6 +20,7 @@ namespace {
 using Core::AirPods::Model;
 using Core::AirPods::Side;
 using Core::AirPods::Details::Advertisement;
+using Core::AirPods::Details::LidTracker;
 using Core::AirPods::Details::StateManager;
 using ReceivedData = Core::Bluetooth::AdvertisementWatcher::ReceivedData;
 
@@ -161,6 +162,7 @@ private Q_SLOTS:
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
+    void TracksLidAcrossShortGaps();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void MigratesLegacySettingsRepository();
@@ -386,6 +388,36 @@ void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
         manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
     QVERIFY(known.has_value());
     QCOMPARE(known->newState.model, Model::AirPods_Pro_2);
+}
+
+void AirPodsDomainTests::TracksLidAcrossShortGaps()
+{
+    using namespace std::chrono_literals;
+
+    const LidTracker::Timestamp start{};
+    LidTracker tracker;
+
+    // The first state ever seen with the lid open is a real opening.
+    QVERIFY(tracker.Update(std::nullopt, true, start));
+    QVERIFY(!tracker.Update(true, true, start + 1s));
+
+    // The device is lost while the lid stays open and comes back later (#233).
+    tracker.OnLost(start + 40s);
+    QVERIFY(!tracker.Update(std::nullopt, true, start + 70s));
+
+    // The lid is seen closed, the device goes quiet, then the lid opens again.
+    QVERIFY(tracker.Update(true, false, start + 80s));
+    tracker.OnLost(start + 90s);
+    QVERIFY(tracker.Update(std::nullopt, true, start + 95s));
+
+    // After a long gap the last lid state is no longer trusted.
+    tracker.OnLost(start + 100s);
+    QVERIFY(tracker.Update(std::nullopt, true, start + 101s + LidTracker::kMemory));
+
+    // Binding another device forgets the last lid state.
+    tracker.OnLost(start + 200s);
+    tracker.Reset();
+    QVERIFY(tracker.Update(std::nullopt, true, start + 201s));
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()
