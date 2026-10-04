@@ -182,7 +182,8 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::DisconnectSafely, this, &MainWindow::Disconnect);
     connect(this, &MainWindow::BindSafely, this, &MainWindow::Bind);
     connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
-    connect(this, &MainWindow::ShowSafely, this, &MainWindow::Show);
+    connect(
+        this, &MainWindow::ShowWithoutActivatingSafely, this, &MainWindow::ShowWithoutActivating);
     connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
     connect(
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
@@ -620,6 +621,16 @@ void MainWindow::Show()
     else {
         QDialog::show();
     }
+}
+
+// Used when the popup opens by itself (the case lid opened), so it doesn't pull focus away from
+// the app in use, e.g. a full-screen game.
+//
+void MainWindow::ShowWithoutActivating()
+{
+    setAttribute(Qt::WA_ShowWithoutActivating, true);
+    Show();
+    setAttribute(Qt::WA_ShowWithoutActivating, false);
 }
 
 void MainWindow::BeginShow(bool fromHidden)

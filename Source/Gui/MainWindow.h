@@ -52,6 +52,7 @@ public:
 
     void StartUpdateChecks();
     void Show();
+    void ShowWithoutActivating();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -68,7 +69,7 @@ Q_SIGNALS:
     void DisconnectSafely();
     void BindSafely();
     void UnbindSafely();
-    void ShowSafely();
+    void ShowWithoutActivatingSafely();
     void HideSafely();
     bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void SilentUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
