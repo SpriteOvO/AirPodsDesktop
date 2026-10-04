@@ -84,6 +84,7 @@ private:
     void On_cbTrayQuickConnectEnabled_toggled(bool checked);
     void On_cbTrayQuickConnectDevice_currentIndexChanged(int index);
     void On_cbAutoEarDetection_toggled(bool checked);
+    void On_cbLidPopup_toggled(bool checked);
     void On_hsMaxReceivingRange_valueChanged(int value);
 
     // About
@@ -98,6 +99,7 @@ private:
         _ui.retranslateUi(this);
         _ui.cbLowAudioLatency->setAccessibleName(_ui.lbLowAudioLatency->text());
         _ui.cbAutoEarDetection->setAccessibleName(_ui.lbAutoEarDetection->text());
+        _ui.cbLidPopup->setAccessibleName(_ui.lbLidPopup->text());
         _ui.cbTrayQuickConnectEnabled->setAccessibleName(_ui.lbTrayQuickConnect->text());
         _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
         _aboutTextTemplate = _ui.label->text();

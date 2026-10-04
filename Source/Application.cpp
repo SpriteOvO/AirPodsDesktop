@@ -276,7 +276,9 @@ void ApdApplication::ConnectAirPodsManager()
         &Core::LowAudioLatency::Controller::SetDeviceConnectedSafely);
     connect(manager, &Core::AirPods::Manager::LidToggled, mainWindow, [mainWindow](bool opened) {
         if (opened) {
-            emit mainWindow->ShowSafely();
+            if (Core::Settings::GetCurrent().popup_on_lid_open) {
+                emit mainWindow->ShowWithoutActivatingSafely();
+            }
         }
         else {
             emit mainWindow->HideSafely();

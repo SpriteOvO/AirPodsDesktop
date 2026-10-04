@@ -714,6 +714,7 @@ private Q_SLOTS:
         for (const auto *name : {
                  "cbLowAudioLatency",
                  "cbAutoEarDetection",
+                 "cbLidPopup",
                  "cbTrayQuickConnectEnabled",
              })
         {
