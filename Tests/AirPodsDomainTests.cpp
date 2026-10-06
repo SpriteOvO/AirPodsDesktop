@@ -179,6 +179,7 @@ private Q_SLOTS:
     void PresentsMainWindowDeviceState();
     void PresentsMainWindowCaseBattery();
     void CollapsesAirPodsMaxToSingleBattery();
+    void ParsesCapturedSpaceGrayAirPodsMax();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
 };
@@ -744,6 +745,40 @@ void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
             QVERIFY(!presentation.caseBattery.visible);
         }
     }
+}
+
+void AirPodsDomainTests::ParsesCapturedSpaceGrayAirPodsMax()
+{
+    // Sanitized capture from a Space Gray AirPods Max at 40%. Bytes 11-26 are zeroed by the
+    // app's desensitizer. Its unused right and case fields read 0, which must not be shown.
+    constexpr std::array<uint8_t, 27> captured{
+        0x07, 0x19, 0x01, 0x0a, 0x20, 0x22, 0x04, 0x80, 0x01, 0x0f, 0x45, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    ReceivedData data;
+    data.address = 0x1234;
+    data.rssi = -60;
+    data.manufacturerDataMap.emplace(
+        Core::AppleCP::VendorId, std::vector<uint8_t>{captured.cbegin(), captured.cend()});
+    const Advertisement advertisement{data};
+    const auto &state = advertisement.GetAdvState();
+
+    QCOMPARE(state.model, Model::AirPods_Max);
+    QCOMPARE(state.color, Core::AppleCP::Color::MaxSpaceGray);
+    QCOMPARE(state.pods.left.battery.Value(), 40u);
+    QVERIFY(!state.caseBox.battery.Available());
+
+    Gui::MainWindowViewModel viewModel;
+    viewModel.UpdateState(state);
+    const auto presentation = viewModel.Present();
+    QVERIFY(presentation.singleBattery);
+    QCOMPARE(presentation.leftBattery.value, 40U);
+    QVERIFY(presentation.animationTint.has_value());
+
+    QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Max, Core::AppleCP::Color::White).has_value());
+    QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Pro_2, Core::AppleCP::Color::MaxSpaceGray)
+                 .has_value());
 }
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()

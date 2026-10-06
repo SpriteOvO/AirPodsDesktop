@@ -471,6 +471,7 @@ void MainWindow::Repaint()
     FitDeviceLabelFont(presentation.title);
     ChangeButtonAction(presentation.buttonAction);
     SetAnimation(presentation.animationModel);
+    _animationView->SetTint(presentation.animationTint);
 
     const auto applyBattery = [](Widget::Battery *widget, const BatteryPresentation &battery) {
         if (!battery.visible) {

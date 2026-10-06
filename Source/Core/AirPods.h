@@ -70,6 +70,7 @@ struct PodsState {
 
 struct State {
     Model model{Model::Unknown};
+    AppleCP::Color color{AppleCP::Color::White};
     PodsState pods;
     CaseState caseBox;
     QString displayName;

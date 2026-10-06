@@ -43,6 +43,7 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     _protocol = std::move(protocol.value());
 
     _state.model = _protocol.GetModel();
+    _state.color = _protocol.GetColor();
     _state.side = _protocol.GetBroadcastedSide();
 
     _state.pods.left.battery = _protocol.GetLeftBattery();

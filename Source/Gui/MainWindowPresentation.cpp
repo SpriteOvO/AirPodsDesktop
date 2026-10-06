@@ -95,6 +95,7 @@ MainWindowPresentation MainWindowViewModel::Present() const
 
     result.title = _state->displayName;
     result.animationModel = _state->model;
+    result.animationTint = GetAnimationTint(_state->model, _state->color);
     if (Core::AirPods::HasSingleBattery(_state->model)) {
         result.singleBattery = true;
         result.leftBattery = PresentBattery(_state->pods.left);
@@ -141,6 +142,24 @@ AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model)
     case Model::Beats_Solo3:
     default:
         return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}};
+    }
+}
+
+std::optional<QColor> GetAnimationTint(Core::AirPods::Model model, Core::AppleCP::Color color)
+{
+    using Core::AirPods::Model;
+    using Core::AppleCP::Color;
+
+    if (model != Model::AirPods_Max && model != Model::AirPods_Max_USB_C) {
+        return std::nullopt;
+    }
+
+    switch (color) {
+    case Color::MaxSpaceGray:
+    case Color::SpaceGray:
+        return QColor{0x6E, 0x70, 0x75};
+    default:
+        return std::nullopt;
     }
 }
 

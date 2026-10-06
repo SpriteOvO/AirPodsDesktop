@@ -397,6 +397,39 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
 
 //////////////////////////////////////////////////
 
+void Detail::TintAnimationFrame(QImage &image, const QColor &tint)
+{
+    const float tintRgb[3] = {
+        static_cast<float>(tint.redF()), static_cast<float>(tint.greenF()),
+        static_cast<float>(tint.blueF())};
+
+    for (int y = 0; y < image.height(); ++y) {
+        auto *line = reinterpret_cast<QRgb *>(image.scanLine(y));
+        for (int x = 0; x < image.width(); ++x) {
+            const QRgb pixel = line[x];
+            const int alpha = qAlpha(pixel);
+            if (alpha == 0) {
+                continue;
+            }
+
+            // Channels are premultiplied, so luminance is measured relative to alpha.
+            const float luminance =
+                (0.2126f * qRed(pixel) + 0.7152f * qGreen(pixel) + 0.0722f * qBlue(pixel)) /
+                static_cast<float>(alpha);
+            const float highlight = std::clamp(luminance, 0.0f, 1.0f);
+            const float keep = highlight * highlight * highlight * highlight;
+
+            const int channels[3] = {qRed(pixel), qGreen(pixel), qBlue(pixel)};
+            int out[3];
+            for (int i = 0; i < 3; ++i) {
+                const float factor = tintRgb[i] + (1.0f - tintRgb[i]) * keep;
+                out[i] = std::clamp(static_cast<int>(channels[i] * factor + 0.5f), 0, alpha);
+            }
+            line[x] = qRgba(out[0], out[1], out[2], alpha);
+        }
+    }
+}
+
 AnimationView::AnimationView(QWidget *parent) : QWidget{parent}, _videoSink{new QVideoSink{this}}
 {
     setAttribute(Qt::WA_OpaquePaintEvent, false);
@@ -503,6 +536,14 @@ void AnimationView::OnVideoFrameChanged(const QVideoFrame &frame)
         Qt::QueuedConnection);
 }
 
+void AnimationView::SetTint(std::optional<QColor> tint)
+{
+    if (_tint != tint) {
+        _tint = std::move(tint);
+        Clear();
+    }
+}
+
 void AnimationView::SetRemoveEnclosedBackground(bool enabled)
 {
     if (_removeEnclosedBackground != enabled) {
@@ -560,6 +601,9 @@ void AnimationView::PresentFrame(QImage frame)
     }
 
     Detail::KnockOutAnimationBackground(frame, _removeEnclosedBackground);
+    if (_tint.has_value()) {
+        Detail::TintAnimationFrame(frame, _tint.value());
+    }
 
     _frame = std::move(frame);
     RescaleFrame();
@@ -569,10 +613,14 @@ void AnimationView::PresentFrame(QImage frame)
 
 void AnimationView::RescaleFrame()
 {
-    const auto &source = _frame.isNull() ? _fallback : _frame;
+    QImage source = _frame.isNull() ? _fallback : _frame;
     if (source.isNull() || size().isEmpty()) {
         _scaled = {};
         return;
+    }
+    if (_frame.isNull() && _tint.has_value()) {
+        source = source.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+        Detail::TintAnimationFrame(source, _tint.value());
     }
     // Area-averaging scale; a plain painter transform would alias at this reduction ratio.
     _scaled =

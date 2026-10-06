@@ -156,6 +156,11 @@ bool AirPods::IsRightInEar() const
     return !IsRightCharging() && (IsRightBroadcasted() ? currInEar : anotInEar);
 }
 
+Color AirPods::GetColor() const
+{
+    return color;
+}
+
 AirPods AirPods::Desensitize() const
 {
     auto result = *this;

@@ -57,6 +57,8 @@ enum class Color : uint8_t {
     DarkBlue = 0xA,
     LightBlue = 0xB,
     Yellow = 0xC,
+    // Observed from a Space Gray AirPods Max (0x200A). Values for other Max colors are unknown.
+    MaxSpaceGray = 0xF,
 };
 
 struct Header {
@@ -123,6 +125,8 @@ public:
     bool IsLeftInEar() const;
     bool IsRightInEar() const;
 
+    Color GetColor() const;
+
     AirPods Desensitize() const;
 
 private:
@@ -153,7 +157,7 @@ private:
         uint8_t closed : 1;
         uint8_t unk10 : 4;
     } lid;
-    Color color; // Untested because I don't have a device other than white
+    Color color; // Verified on white AirPods 5 (0x0) and Space Gray AirPods Max (0xF)
     uint8_t unk11[1];
     uint8_t unk12[16]; // Hash or encrypted payload
 };
