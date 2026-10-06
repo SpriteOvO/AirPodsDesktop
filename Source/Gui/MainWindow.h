@@ -81,6 +81,7 @@ private:
     constexpr static int _deviceLabelMinimumPointSize = 12;
 
     Ui::MainWindow _ui;
+    QRect _podsBatteryGeometry;
 
     QPropertyAnimation _posAnimation{this, "pos"};
     Widget::AnimationView *_animationView;

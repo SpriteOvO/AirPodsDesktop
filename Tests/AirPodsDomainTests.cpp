@@ -178,6 +178,7 @@ private Q_SLOTS:
     void PresentsMainWindowLifecycleStates();
     void PresentsMainWindowDeviceState();
     void PresentsMainWindowCaseBattery();
+    void CollapsesAirPodsMaxToSingleBattery();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
 };
@@ -712,6 +713,37 @@ void AirPodsDomainTests::PresentsMainWindowCaseBattery()
 
     QVERIFY(presentation.caseBattery.visible);
     QVERIFY(!presentation.caseBattery.charging);
+}
+
+void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
+{
+    QVERIFY(Core::AirPods::HasSingleBattery(Model::AirPods_Max));
+    QVERIFY(Core::AirPods::HasSingleBattery(Model::AirPods_Max_USB_C));
+    QVERIFY(!Core::AirPods::HasSingleBattery(Model::AirPods_Pro_2));
+
+    for (const auto modelId : {uint16_t{0x200A}, uint16_t{0x201F}}) {
+        for (const auto side : {Side::Left, Side::Right}) {
+            // The broadcasting side's field carries the headset battery; the others are noise.
+            const auto left = side == Side::Left ? uint8_t{8} : uint8_t{3};
+            const auto right = side == Side::Left ? uint8_t{3} : uint8_t{8};
+            const Advertisement advertisement{
+                MakeAdvertisementData(0x1234, -45, side, left, right, 5, modelId)};
+            const auto &state = advertisement.GetAdvState();
+
+            QCOMPARE(state.pods.left.battery.Value(), 80u);
+            QCOMPARE(state.pods.right.battery.Value(), 80u);
+            QVERIFY(!state.caseBox.battery.Available());
+
+            Gui::MainWindowViewModel viewModel;
+            viewModel.UpdateState(state);
+            const auto presentation = viewModel.Present();
+            QVERIFY(presentation.singleBattery);
+            QVERIFY(presentation.leftBattery.visible);
+            QCOMPARE(presentation.leftBattery.value, 80U);
+            QVERIFY(!presentation.rightBattery.visible);
+            QVERIFY(!presentation.caseBattery.visible);
+        }
+    }
 }
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()

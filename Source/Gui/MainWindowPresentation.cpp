@@ -95,6 +95,12 @@ MainWindowPresentation MainWindowViewModel::Present() const
 
     result.title = _state->displayName;
     result.animationModel = _state->model;
+    if (Core::AirPods::HasSingleBattery(_state->model)) {
+        result.singleBattery = true;
+        result.leftBattery = PresentBattery(_state->pods.left);
+        return result;
+    }
+
     result.leftBattery = PresentBattery(_state->pods.left);
     result.rightBattery = PresentBattery(_state->pods.right);
     result.caseBattery = PresentBattery(_state->caseBox);

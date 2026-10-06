@@ -41,6 +41,7 @@ struct MainWindowPresentation {
     BatteryPresentation leftBattery;
     BatteryPresentation rightBattery;
     BatteryPresentation caseBattery;
+    bool singleBattery{false};
 
     bool operator==(const MainWindowPresentation &) const = default;
 };

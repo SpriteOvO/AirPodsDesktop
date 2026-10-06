@@ -148,6 +148,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
+    _podsBatteryGeometry = _ui.podsBatteryContainer->geometry();
 
     setFixedSize(_windowSize);
     setWindowFlags(windowFlags() | Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
@@ -485,6 +486,15 @@ void MainWindow::Repaint()
     applyBattery(_leftBattery, presentation.leftBattery);
     applyBattery(_rightBattery, presentation.rightBattery);
     applyBattery(_caseBattery, presentation.caseBattery);
+
+    // The pods container sits left of the case battery. With a single battery there is no case,
+    // so center the container under the animation instead.
+    auto podsGeometry = _podsBatteryGeometry;
+    if (presentation.singleBattery) {
+        podsGeometry.moveCenter(
+            {_ui.animationContainer->geometry().center().x(), podsGeometry.center().y()});
+    }
+    _ui.podsBatteryContainer->setGeometry(podsGeometry);
 }
 
 void MainWindow::ApplyTheme()

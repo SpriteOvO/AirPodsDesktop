@@ -67,6 +67,21 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     if (_state.caseBox.battery.Available()) {
         _state.caseBox.battery = _state.caseBox.battery.Value() * 10;
     }
+
+    if (HasSingleBattery(_state.model)) {
+        // Prefer the field for the side that sent this advertisement, then fall back to the
+        // other one. Both pod slots carry the headset battery so merging stays side-agnostic.
+        const auto &primary =
+            _state.side == Side::Left ? _state.pods.left : _state.pods.right;
+        const auto &secondary =
+            _state.side == Side::Left ? _state.pods.right : _state.pods.left;
+        const PodState headset = primary.battery.Available() ? primary : secondary;
+
+        _state.pods.left = headset;
+        _state.pods.right = headset;
+        _state.caseBox.battery = {};
+        _state.caseBox.isCharging = false;
+    }
 }
 
 int16_t Advertisement::GetRssi() const
