@@ -225,6 +225,7 @@ auto StateManager::UpdateState() -> std::optional<UpdateEvent>
     }()
 
     newState.model = PICK_SIDE(model != Model::Unknown).model;
+    newState.color = PICK_SIDE(model != Model::Unknown).color;
     newState.pods.left = std::move(PICK_SIDE(pods.left.battery.Available()).pods.left);
     newState.pods.right = std::move(PICK_SIDE(pods.right.battery.Available()).pods.right);
     newState.caseBox = std::move(PICK_SIDE(caseBox.battery.Available()).caseBox);

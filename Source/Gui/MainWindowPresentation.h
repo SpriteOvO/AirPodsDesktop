@@ -12,6 +12,7 @@
 
 #include <optional>
 
+#include <QColor>
 #include <QSize>
 #include <QRect>
 #include <QString>
@@ -41,6 +42,8 @@ struct MainWindowPresentation {
     BatteryPresentation leftBattery;
     BatteryPresentation rightBattery;
     BatteryPresentation caseBattery;
+    bool singleBattery{false};
+    std::optional<QColor> animationTint;
 
     bool operator==(const MainWindowPresentation &) const = default;
 };
@@ -71,6 +74,10 @@ private:
 };
 
 AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model);
+
+// The animations are rendered in one finish. Returns the tint that approximates the device's
+// actual color, or nothing when the stock render already matches or the color is unknown.
+std::optional<QColor> GetAnimationTint(Core::AirPods::Model model, Core::AppleCP::Color color);
 QPoint PopupPosition(const QRect &availableGeometry, QSize windowSize, QSize margin);
 
 } // namespace Gui

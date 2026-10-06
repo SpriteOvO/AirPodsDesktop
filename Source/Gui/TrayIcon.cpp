@@ -147,6 +147,17 @@ void TrayIcon::Repaint()
         const auto textCharging = QString{" (%1)"}.arg(strCharging),
                    textPlaceHolder = QString{"\n%1: %2%%3"};
 
+        if (Core::AirPods::HasSingleBattery(state.model)) {
+            if (state.pods.left.battery.Available()) {
+                const auto batteryValue = state.pods.left.battery.Value();
+                toolTipContent += textPlaceHolder.arg(tr("Battery"))
+                                      .arg(batteryValue)
+                                      .arg(state.pods.left.isCharging ? textCharging : QString{});
+                minBattery = batteryValue;
+            }
+            break;
+        }
+
         // clang-format off
         if (state.pods.left.battery.Available()) {
             const auto batteryValue = state.pods.left.battery.Value();

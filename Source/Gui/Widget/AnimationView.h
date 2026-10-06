@@ -20,6 +20,9 @@
 
 #include <mutex>
 
+#include <optional>
+
+#include <QColor>
 #include <QImage>
 #include <QWidget>
 
@@ -34,6 +37,10 @@ namespace Detail {
 // surfaces. The Max animation also supports enclosed legacy matte inside the headband.
 // Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
 void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
+
+// Recolors a light product render toward `tint` while keeping its shading and the brightest
+// specular highlights. Input must be ARGB32 premultiplied.
+void TintAnimationFrame(QImage &image, const QColor &tint);
 
 } // namespace Detail
 
@@ -61,6 +68,7 @@ public:
     void SetRemoveEnclosedBackground(bool enabled);
     void SetFallbackImage(QImage image);
     void SetPlaybackEnabled(bool enabled);
+    void SetTint(std::optional<QColor> tint);
 
 Q_SIGNALS:
     void Clicked();
@@ -82,6 +90,7 @@ private:
     bool _playbackEnabled{true};
     bool _deliveryQueued{false};
     bool _removeEnclosedBackground{false};
+    std::optional<QColor> _tint;
 
     void InvalidatePendingFrames();
     void OnVideoFrameChanged(const QVideoFrame &frame);
