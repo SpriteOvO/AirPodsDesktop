@@ -266,8 +266,8 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Підтримує аудіопристрій активним, поки AirPods підключені, щоб короткі звуки відтворювалися негайно. Це може спричинити чутне шипіння та збільшити споживання заряду.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Клацання піктограми в області сповіщень підключає вибраний пристрій замість відкриття головного вікна. Подвійне клацання, як і раніше, відкриває його.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Одне натискання на значок в області сповіщень підключає вибраний пристрій, якщо його відключено, або показує рівень заряду, якщо його підключено. Після успішного підключення інформація про заряд відкривається автоматично.</translation>
     </message>
 </context>
 <context>

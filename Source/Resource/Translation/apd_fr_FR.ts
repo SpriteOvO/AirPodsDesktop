@@ -266,8 +266,8 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
         <translation>Maintient le périphérique audio actif pendant que vos AirPods sont connectés afin que les sons courts démarrent immédiatement. Cela peut produire un souffle audible et augmenter la consommation de la batterie.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Un clic sur l&apos;icône de la zone de notification connecte l&apos;appareil sélectionné au lieu d&apos;ouvrir la fenêtre principale. Un double-clic continue de l&apos;ouvrir.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Cliquez une fois sur l’icône de la zone de notification pour connecter l’appareil sélectionné s’il est déconnecté, ou afficher le niveau de batterie s’il est connecté. Le niveau de batterie s’affiche automatiquement après une connexion réussie.</translation>
     </message>
 </context>
 <context>

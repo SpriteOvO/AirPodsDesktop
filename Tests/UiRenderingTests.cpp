@@ -131,6 +131,195 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void ConnectionSuccessOpensBatteryWindowAndDismissesNotification()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        Gui::MainWindow battery;
+        connect(&tray, &Gui::TrayIcon::ShowMainWindowRequested, &battery, &Gui::MainWindow::Show);
+        QSignalSpy opened{&tray, &Gui::TrayIcon::ShowMainWindowRequested};
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods");
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QVERIFY(card->isVisible());
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods");
+        QCOMPARE(opened.count(), 1);
+        QVERIFY(!card->isVisible());
+        QVERIFY(battery.isVisible());
+    }
+
+    void AlreadyConnectedOpensBatteryWindowWithoutNotification()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        Gui::MainWindow battery;
+        connect(&tray, &Gui::TrayIcon::ShowMainWindowRequested, &battery, &Gui::MainWindow::Show);
+        QSignalSpy opened{&tray, &Gui::TrayIcon::ShowMainWindowRequested};
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::AlreadyConnected, "AirPods");
+        QCOMPARE(opened.count(), 1);
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QVERIFY(!card->isVisible());
+        QVERIFY(battery.isVisible());
+    }
+
+    void TrayClicksActImmediatelyWithoutDoubleClickOpening()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        quickConnect.SetEnabled(true);
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        QSignalSpy opened{&tray, &Gui::TrayIcon::ShowMainWindowRequested};
+        auto *icon = tray.findChild<QSystemTrayIcon *>();
+        QVERIFY(icon != nullptr);
+        icon->activated(QSystemTrayIcon::Trigger);
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QVERIFY(card->isVisible());
+        QCOMPARE(opened.count(), 0);
+        icon->activated(QSystemTrayIcon::DoubleClick);
+        QCOMPARE(opened.count(), 0);
+        quickConnect.SetEnabled(false);
+        icon->activated(QSystemTrayIcon::Trigger);
+        QCOMPARE(opened.count(), 1);
+    }
+
+    void SettingsDescribeConnectionAndBatterySingleClickBehavior()
+    {
+        QTranslator translator;
+        QVERIFY(translator.load(
+            QLocale{"zh_CN"}, "apd", "_",
+            QCoreApplication::applicationDirPath() + "/translations"));
+        QVERIFY(QCoreApplication::installTranslator(&translator));
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::SettingsWindow settings{[] { return 0; }, quickConnect};
+        auto *description = settings.findChild<QLabel *>("lbDescTrayQuickConnect");
+        QVERIFY(description != nullptr);
+        QCOMPARE(
+            description->text(), QStringLiteral(
+                                     "单击托盘图标：未连接时连接选定的设备，已连接时显示电量信息。"
+                                     "连接成功后自动显示电量信息。"));
+        settings.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&settings));
+        auto *card = settings.findChild<QWidget *>("cardTrayQuickConnect");
+        QVERIFY(card != nullptr);
+        auto *scroll = settings.findChild<QScrollArea *>("pagesScrollArea");
+        QVERIFY(scroll != nullptr);
+        scroll->ensureWidgetVisible(card);
+        QVERIFY(QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/UiValidation")));
+        QVERIFY(
+            card->grab().save(QStringLiteral(APD_BINARY_DIR "/UiValidation/tray-setting-zh.png")));
+        QCoreApplication::removeTranslator(&translator);
+    }
+
+    void NotificationUsesCurrentLanguage()
+    {
+        QVERIFY(Gui::Theme::LoadBundledFonts());
+        Gui::Theme::ApplyApplicationTypography(QLocale{"zh_CN"});
+        QTranslator translator;
+        QVERIFY(translator.load(
+            QLocale{"zh_CN"}, "apd", "_",
+            QCoreApplication::applicationDirPath() + "/translations"));
+        QVERIFY(QCoreApplication::installTranslator(&translator));
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        theme.SetMode(Gui::Theme::Mode::Light);
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods Pro");
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QCOMPARE(
+            card->findChild<QLabel *>("notificationTitle")->text(),
+            translator.translate("Gui::TrayIcon", "Quick connect"));
+        QCOMPARE(
+            card->findChild<QLabel *>("notificationMessage")->text(),
+            translator.translate("Gui::TrayIcon", "Connecting to %1...").arg("AirPods Pro"));
+        VerifySmoothPopupCorners(card, "connection-notification-zh-light.png");
+        theme.SetMode(Gui::Theme::Mode::Dark);
+        VerifySmoothPopupCorners(card, "connection-notification-zh-dark.png");
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods Pro");
+        QVERIFY(!card->isVisible());
+        QCoreApplication::removeTranslator(&translator);
+        Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
+        theme.SetMode(originalMode);
+    }
+
+    void TrayNotificationsUseOneApplicationCard()
+    {
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        theme.SetMode(Gui::Theme::Mode::Light);
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        tray.ShowMessage("Quick connect", "Connecting...");
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QVERIFY(card->isVisible());
+        QVERIFY(card->testAttribute(Qt::WA_ShowWithoutActivating));
+        tray.ShowMessage("Quick connect", "Connected.");
+        QCOMPARE(tray.findChild<QWidget *>("connectionNotification"), card);
+        auto *message = card->findChild<QLabel *>("notificationMessage");
+        QVERIFY(message != nullptr);
+        QCOMPARE(message->text(), QStringLiteral("Connected."));
+        VerifySmoothPopupCorners(card, "connection-notification-light.png");
+        auto *close = card->findChild<QPushButton *>("notificationClose");
+        QVERIFY(close != nullptr);
+        QTest::mouseClick(close, Qt::LeftButton);
+        QVERIFY(!card->isVisible());
+        theme.SetMode(originalMode);
+    }
+
+    void QuickConnectCardTracksProgressAndResult()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        QSignalSpy opened{&tray, &Gui::TrayIcon::ShowMainWindowRequested};
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods");
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QVERIFY(card->isVisible());
+        auto *progress = card->findChild<QProgressBar *>();
+        QVERIFY(progress != nullptr);
+        QVERIFY(progress->isVisible());
+        // The old success timer must not dismiss a newly started connection.
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods");
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods");
+        QTest::qWait(3700);
+        QVERIFY(card->isVisible());
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods");
+        QVERIFY(!card->isVisible());
+        QCOMPARE(opened.count(), 2);
+    }
+
+    void NotificationAvoidsBatteryCardAndSupportsDarkTheme()
+    {
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        Gui::MainWindow battery;
+        tray.ShowMessage("Quick connect", "Connected.");
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        battery.Show();
+        QTest::qWait(700);
+        QVERIFY(!card->frameGeometry().intersects(battery.frameGeometry()));
+        theme.SetMode(Gui::Theme::Mode::Dark);
+        tray.ShowMessage("Quick connect", "Could not connect.", QSystemTrayIcon::Warning);
+        VerifySmoothPopupCorners(card, "connection-notification-dark.png");
+        QTest::qWait(3700);
+        QVERIFY(card->isVisible());
+        theme.SetMode(originalMode);
+    }
+
     void MainWindowRendersAirPods5()
     {
         Core::AirPods::State state;
@@ -711,7 +900,8 @@ private Q_SLOTS:
         };
         QVERIFY(appearanceTextFits());
 
-        for (const auto *name : {
+        for (const auto *name :
+             {
                  "cbLowAudioLatency",
                  "cbAutoEarDetection",
                  "cbTrayQuickConnectEnabled",

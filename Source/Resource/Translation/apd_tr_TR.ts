@@ -266,8 +266,8 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>AirPods&apos;unuz bağlıyken ses cihazını etkin tutar; böylece kısa sesler hemen çalar. Bu, duyulabilir dip sese ve daha fazla pil tüketimine neden olabilir.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Tepsi simgesine tıklamak ana pencereyi açmak yerine seçili cihaza bağlanır. Çift tıklamak pencereyi açmaya devam eder.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Seçili cihaz bağlı değilse bağlanmak, bağlıysa pil bilgilerini göstermek için tepsi simgesine bir kez tıklayın. Başarılı bir bağlantıdan sonra pil bilgileri otomatik olarak açılır.</translation>
     </message>
 </context>
 <context>

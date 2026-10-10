@@ -266,8 +266,8 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
         <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão conectados para que sons curtos sejam reproduzidos imediatamente. Isso pode causar chiado audível e aumentar o consumo da bateria.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Um clique no ícone da bandeja conecta o dispositivo selecionado em vez de abrir a janela principal. Um clique duplo continua abrindo-a.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Clique uma vez no ícone da bandeja para conectar o dispositivo selecionado quando estiver desconectado ou mostrar as informações da bateria quando estiver conectado. As informações da bateria aparecem automaticamente após uma conexão bem-sucedida.</translation>
     </message>
 </context>
 <context>

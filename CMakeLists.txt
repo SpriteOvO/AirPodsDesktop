@@ -350,6 +350,7 @@ set(
     "Source/Gui/AnimationPlayback.cpp"
 
     "Source/Gui/TrayIcon.cpp"
+    "Source/Gui/NotificationWindow.cpp"
     "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"

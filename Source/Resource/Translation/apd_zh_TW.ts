@@ -266,8 +266,8 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>在 AirPods 連線期間保持音訊裝置喚醒，讓短促提示音能立即播放。這可能會產生可聽見的嘶嘶聲，並增加電池消耗。</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>按一下系統匣圖示會連線選取的裝置，而不是開啟主視窗；連按兩下仍會開啟主視窗。</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>按一下系統匣圖示：未連線時連線選取的裝置，已連線時顯示電量資訊。連線成功後自動顯示電量資訊。</translation>
     </message>
 </context>
 <context>

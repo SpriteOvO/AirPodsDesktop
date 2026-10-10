@@ -266,8 +266,8 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
         <translation>Hält das Audiogerät aktiv, während deine AirPods verbunden sind, damit kurze Töne sofort wiedergegeben werden. Dies kann hörbares Rauschen verursachen und den Akkuverbrauch erhöhen.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Ein Klick auf das Symbol im Infobereich verbindet das ausgewählte Gerät, anstatt das Hauptfenster zu öffnen. Ein Doppelklick öffnet es weiterhin.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Klicken Sie einmal auf das Symbol im Infobereich, um das ausgewählte Gerät zu verbinden, wenn es nicht verbunden ist, oder den Akkustand anzuzeigen, wenn es verbunden ist. Nach erfolgreicher Verbindung wird der Akkustand automatisch angezeigt.</translation>
     </message>
 </context>
 <context>

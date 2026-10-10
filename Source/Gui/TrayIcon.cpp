@@ -32,10 +32,6 @@ TrayIcon::TrayIcon(
     : _quickConnect{quickConnect}, _settingsWindow{std::move(getCurrentLocaleIndex), quickConnect}
 {
     Theme::ConfigurePopupSurface(_menu);
-    _singleClickTimer.setSingleShot(true);
-    connect(&_singleClickTimer, &QTimer::timeout, this, [this] {
-        ExecuteTrayActivation(_trayActivationState.OnSingleClickTimeout());
-    });
 
     connect(_actionNewVersion, &QAction::triggered, this, &TrayIcon::OnNewVersionClicked);
     connect(_actionLowAudioLatency, &QAction::triggered, this, [](bool enabled) {
@@ -45,7 +41,6 @@ TrayIcon::TrayIcon(
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
     connect(_actionQuit, &QAction::triggered, qApp, &QApplication::quit, Qt::QueuedConnection);
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
-    connect(_tray, &QSystemTrayIcon::messageClicked, this, &TrayIcon::ShowMainWindowRequested);
     connect(
         &_quickConnect, &Core::QuickConnect::Controller::OutcomeChanged, this,
         &TrayIcon::OnQuickConnectOutcome);
@@ -377,21 +372,7 @@ void TrayIcon::OnAboutClicked()
 
 void TrayIcon::OnIconClicked(QSystemTrayIcon::ActivationReason reason)
 {
-    const auto result = _trayActivationState.OnActivation(reason, _quickConnect.IsEnabled());
-
-    switch (result.timer) {
-    case SingleClickTimer::Start:
-        // Read the interval each time; the user can change it in Windows while we are running.
-        _singleClickTimer.start(QApplication::doubleClickInterval());
-        break;
-    case SingleClickTimer::Stop:
-        _singleClickTimer.stop();
-        break;
-    case SingleClickTimer::Unchanged:
-        break;
-    }
-
-    ExecuteTrayActivation(result.action);
+    ExecuteTrayActivation(GetTrayActivationAction(reason, _quickConnect.IsEnabled()));
 }
 
 void TrayIcon::ExecuteTrayActivation(TrayActivationAction action)
@@ -424,13 +405,12 @@ void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const 
         icon = QSystemTrayIcon::Warning;
         break;
     case Core::QuickConnect::Outcome::AlreadyConnected:
-        text = tr("%1 is already connected.").arg(deviceName);
-        break;
+    case Core::QuickConnect::Outcome::Connected:
+        _notification->hide();
+        ShowMainWindow();
+        return;
     case Core::QuickConnect::Outcome::RequestStarted:
         text = tr("Connecting to %1...").arg(deviceName);
-        break;
-    case Core::QuickConnect::Outcome::Connected:
-        text = tr("%1 connected.").arg(deviceName);
         break;
     case Core::QuickConnect::Outcome::TimedOut:
         text = tr("Connection to %1 timed out.").arg(deviceName);
@@ -444,7 +424,17 @@ void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const 
         return;
     }
 
-    ShowMessage(tr("Quick connect"), text, icon);
+    _notification->Show(
+        tr("Quick connect"), text, icon == QSystemTrayIcon::Warning,
+        outcome == Core::QuickConnect::Outcome::RequestStarted, _tray->geometry());
+}
+
+void TrayIcon::ShowMessage(
+    const QString &title, const QString &text, QSystemTrayIcon::MessageIcon icon)
+{
+    _notification->Show(
+        title, text, icon == QSystemTrayIcon::Warning || icon == QSystemTrayIcon::Critical, false,
+        _tray->geometry());
 }
 
 void TrayIcon::OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior value)
