@@ -8,7 +8,8 @@
 
 namespace Gui {
 
-// GUI-thread owner of one visible playback session. Hidden sessions release the decoder.
+// GUI-thread owner of one visible playback session. Hidden sessions pause the video and keep it
+// loaded, so showing it again does not pay the cost of reopening the file.
 class AnimationPlayback : public QObject
 {
     Q_OBJECT
@@ -32,9 +33,12 @@ private:
     AnimationPresentation _presentation;
     bool _active{false};
     bool _attemptRunning{false};
+    bool _loaded{false};
     int _retries{0};
 
     void StartAttempt();
+    void Resume();
+    void Pause();
     void Stop();
     void Fail(const QString &reason);
 };

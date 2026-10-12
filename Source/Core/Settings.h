@@ -193,7 +193,7 @@ public:
         _isDeprecated = true;
     }
 
-    const OnApply &OnApply() const
+    const Impl::OnApply &OnApply() const
     {
         return _onApply;
     }

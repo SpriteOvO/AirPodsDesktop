@@ -75,3 +75,4 @@ Keep `README.md`, `README-CN.md`, and `README-TW.md` aligned in section order, f
 * [OpenPods](https://github.com/adolfintel/OpenPods)
 * [Discontinued Privacy: Personal Data Leaks in Apple Bluetooth-Low-Energy Continuity Protocols](https://hal.inria.fr/hal-02394619/document)
 * [MagicPods](https://magicpods.app/)
+* [Sayzx](https://github.com/Sayzx) - Linux port (BlueZ backend, Linux packaging)

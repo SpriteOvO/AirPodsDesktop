@@ -69,8 +69,9 @@ void Manager::StartScanner()
 {
     {
         std::lock_guard<std::mutex> lock{_mutex};
-        if (!_boundDevice.has_value() || !_deviceConnected) {
-            LOG(Info, "Skip Bluetooth AdvWatcher start because the bound device is disconnected.");
+        // Keep scanning while disconnected: the case lid is what makes the AirPods connect.
+        if (!_boundDevice.has_value()) {
+            LOG(Info, "Skip Bluetooth AdvWatcher start because no device is bound.");
             return;
         }
         if (_scannerWanted) {
@@ -144,7 +145,9 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     LOG(Info, "Bind a new device.");
 
     _deviceLookupThread = std::jthread{[this, address](std::stop_token stopToken) {
+#if defined APD_OS_WIN
         OS::Windows::Winrt::Initialize();
+#endif
         auto device = Bluetooth::DeviceManager::FindDevice(address);
         if (stopToken.stop_requested()) {
             return;
@@ -188,6 +191,8 @@ void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetoot
     };
 
     OnBoundDeviceConnectionStateChanged(_boundDevice->GetConnectionState());
+
+    QMetaObject::invokeMethod(this, [this] { StartScanner(); }, Qt::QueuedConnection);
 }
 
 void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
@@ -197,18 +202,6 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     bool doDisconnect = oldDeviceConnected && !newDeviceConnected;
     _deviceConnected = newDeviceConnected;
     emit DeviceConnectionChanged(newDeviceConnected);
-
-    QMetaObject::invokeMethod(
-        this,
-        [this, newDeviceConnected] {
-            if (newDeviceConnected) {
-                StartScanner();
-            }
-            else {
-                StopScanner();
-            }
-        },
-        Qt::QueuedConnection);
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
@@ -227,17 +220,23 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 
     emit StateUpdated(newState);
 
-    bool newLidOpened = newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
+    // The window follows the lid alone, so taking the pods out with the lid open keeps it up.
+    bool newLidOpened = newState.caseBox.isLidOpened;
     bool lidStateSwitched;
     if (!oldState.has_value()) {
         lidStateSwitched = newLidOpened;
     }
     else {
-        bool oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
-        lidStateSwitched = oldLidOpened != newLidOpened;
+        lidStateSwitched = oldState->caseBox.isLidOpened != newLidOpened;
     }
     if (lidStateSwitched) {
         OnLidOpened(newLidOpened);
+    }
+
+    if (oldState.has_value() && newLidOpened && oldState->caseBox.isBothPodsInCase &&
+        !newState.caseBox.isBothPodsInCase)
+    {
+        emit PodsRemovedFromCase();
     }
 
     if (oldState.has_value()) {
@@ -252,6 +251,13 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 void Manager::OnLidOpened(bool opened)
 {
     emit LidToggled(opened);
+
+    // The lid is the user's cue to use the AirPods, so connect now rather than waiting for the
+    // OS to pick them up.
+    if (opened && !_deviceConnected && _boundDevice.has_value()) {
+        LOG(Info, "Case lid opened while the bound device is disconnected. Connecting.");
+        _boundDevice->Connect();
+    }
 }
 
 void Manager::OnBothInEar(bool isBothInEar)
@@ -276,11 +282,6 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
     }
 
     Details::Advertisement adv{data};
-
-    if (!_deviceConnected) {
-        LOG(Info, "AirPods advertisement received, but device disconnected.");
-        return false;
-    }
 
     if (_boundModel != Model::Unknown && adv.GetAdvState().model != _boundModel) {
         LOG(Trace, "Ignore advertisement for a model other than the bound device.");

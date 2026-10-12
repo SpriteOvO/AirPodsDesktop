@@ -21,6 +21,7 @@
 #include <QGuiApplication>
 #include <QMessageBox>
 #include <QStyleFactory>
+#include <QSystemTrayIcon>
 
 #include <Config.h>
 #include "Logger.h"
@@ -39,11 +40,31 @@
 #include "Core/QuickConnect.h"
 #if defined APD_OS_WIN
     #include "Core/QuickConnect_win.h"
+#elif defined APD_OS_LINUX
+    #include "Core/QuickConnect_linux.h"
+    #include "Core/OS/BlueZ.h"
 #endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
 
 namespace {
+
+// `translations/` sits beside the executable in a build tree or a Windows install; a Linux
+// installation puts the executable in `bin/` and the data in `share/AirPodsDesktop/`.
+QDir TranslationFolder()
+{
+    const QDir applicationDir{QCoreApplication::applicationDirPath()};
+
+    for (const auto &candidate :
+         {applicationDir.filePath("translations"),
+          applicationDir.filePath(QString{"../share/%1/translations"}.arg(Config::ProgramName))})
+    {
+        if (QDir{candidate}.exists()) {
+            return QDir{QDir{candidate}.absolutePath()};
+        }
+    }
+    return applicationDir;
+}
 
 Gui::Theme::Mode ToThemeMode(Core::Settings::AppearanceMode mode)
 {
@@ -148,7 +169,7 @@ void ApdApplication::FirstTimeUse()
            "customize settings or quit."));
 }
 
-ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}
+ApdApplication::ApdApplication(int &argc, char *argv[]) : SingleApplication{argc, argv} {}
 
 bool ApdApplication::Prepare(int argc, char *argv[])
 {
@@ -178,6 +199,10 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     setFont(Gui::Theme::ApplicationFont(QLocale{}));
     setWindowIcon(QIcon{Config::QrcIconSvg});
+#if !defined APD_OS_WIN
+    // Lets Wayland compositors and the shell match the window to AirPodsDesktop.desktop.
+    setDesktopFileName(Config::ProgramName);
+#endif
     setQuitOnLastWindowClosed(false);
 
     connect(this, &ApdApplication::SetTranslatorSafely, this, &ApdApplication::SetTranslator);
@@ -199,6 +224,11 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
 #if defined APD_OS_WIN
     _quickConnectBackend = std::make_shared<Core::QuickConnect::WindowsBackend>();
+#elif defined APD_OS_LINUX
+    // Must exist on the GUI thread before any worker looks a device up: D-Bus signals are
+    // delivered to the thread that owns the monitor.
+    Core::OS::BlueZ::Monitor::Instance();
+    _quickConnectBackend = std::make_shared<Core::QuickConnect::LinuxBackend>();
 #else
     _quickConnectBackend = std::make_shared<Core::QuickConnect::NullBackend>();
 #endif
@@ -282,6 +312,12 @@ void ApdApplication::ConnectAirPodsManager()
             emit mainWindow->HideSafely();
         }
     });
+    // Pods taken out of the case while the lid is open: show the window and play the animation
+    // again from the start.
+    connect(manager, &Core::AirPods::Manager::PodsRemovedFromCase, mainWindow, [mainWindow] {
+        emit mainWindow->ShowSafely();
+        emit mainWindow->ReplayAnimationSafely();
+    });
 }
 
 void ApdApplication::ConnectGuiComponents()
@@ -306,10 +342,24 @@ void ApdApplication::ConnectGuiComponents()
     connect(
         _mainWindow.get(), &Gui::MainWindow::SilentUpdateAvailable, _trayIcon.get(),
         &Gui::TrayIcon::VersionUpdateAvailable);
+
+#if !defined APD_OS_WIN
+    // Launching the program again (from the application menu, say) is how a user reaches the
+    // window when the desktop has no usable tray.
+    connect(this, &SingleApplication::instanceStarted, _mainWindow.get(), &Gui::MainWindow::Show);
+#endif
 }
 
 int ApdApplication::Run()
 {
+#if !defined APD_OS_WIN
+    if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+        LOG(Warn, "No system tray available (GNOME needs the AppIndicator extension), showing the "
+                  "main window instead.");
+        _mainWindow->Show();
+    }
+#endif
+
     _airPodsManager->StartScanner();
     return exec();
 }
@@ -348,8 +398,7 @@ void ApdApplication::SetTranslator(const QLocale &locale)
 
     std::unique_ptr<QTranslator> translator;
     if (index != 0) {
-        QDir translationFolder = QCoreApplication::applicationDirPath();
-        translationFolder.cd("translations");
+        const auto translationFolder = TranslationFolder();
 
         translator = std::make_unique<QTranslator>();
         if (!translator->load(locale, "apd", "_", translationFolder.absolutePath())) {

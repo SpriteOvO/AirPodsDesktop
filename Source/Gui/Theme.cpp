@@ -30,6 +30,12 @@
 #include <QMenu>
 #include <QPainter>
 #include <QSettings>
+#include <QStyleHints>
+#if !defined APD_OS_WIN && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    #include <QDBusConnection>
+    #include <QDBusMessage>
+    #include <QDBusVariant>
+#endif
 #include <QTimer>
 #include <QWidget>
 #include <QWindow>
@@ -164,6 +170,37 @@ QColor AccessibleForeground(const QColor &background)
     return blackContrast >= whiteContrast ? QColor{Qt::black} : QColor{Qt::white};
 }
 
+#if !defined APD_OS_WIN
+bool DesktopPrefersDark()
+{
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+    #else
+    // Qt older than 6.5 cannot report the colour scheme; ask the xdg-desktop-portal that GNOME, KDE
+    // and the others implement. 0: no preference, 1: dark, 2: light.
+    auto message = QDBusMessage::createMethodCall(
+        "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+        "org.freedesktop.portal.Settings", "Read");
+    message << QStringLiteral("org.freedesktop.appearance") << QStringLiteral("color-scheme");
+
+    const auto reply = QDBusConnection::sessionBus().call(message, QDBus::Block, 500);
+    if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+        // No portal: judge by the palette the platform theme gave us before we replaced it.
+        static const bool darkPalette =
+            QGuiApplication::palette().color(QPalette::Window).lightness() < 128;
+        return darkPalette;
+    }
+
+    // Version 1 of the portal wraps the value in two variants, version 2 in one.
+    auto value = reply.arguments().first();
+    while (value.canConvert<QDBusVariant>()) {
+        value = value.value<QDBusVariant>().variant();
+    }
+    return value.toUInt() == 1;
+    #endif
+}
+#endif
+
 SystemTheme ReadSystemTheme()
 {
     SystemTheme result;
@@ -203,6 +240,21 @@ SystemTheme ReadSystemTheme()
                 (int)(colorization & 0xFF)};
         }
     }
+#else
+    // The desktop's colour scheme (GNOME/KDE/... through the xdg-desktop-portal or the platform
+    // theme). Linux has a single "dark" switch, so apps and shell follow it together.
+    const bool dark = DesktopPrefersDark();
+    result.appsDark = dark;
+    result.systemDark = dark;
+
+    // The accent is read once, before this application installs its own palette; reading it again
+    // later would feed our own derived colours back into themselves.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+    static const QColor platformAccent = QGuiApplication::palette().color(QPalette::Accent);
+#else
+    static const QColor platformAccent = QGuiApplication::palette().color(QPalette::Highlight);
+#endif
+    result.accent = platformAccent;
 #endif
 
     if (!result.accent.isValid()) {
@@ -449,6 +501,11 @@ Manager::Manager() : QObject{qApp}, _impl{std::make_unique<Impl>()}
     _impl->nativeFilter = std::make_unique<NativeFilter>(*this);
     qApp->installNativeEventFilter(_impl->nativeFilter.get());
     qApp->installEventFilter(this);
+#if !defined APD_OS_WIN && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    connect(
+        QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, this,
+        [this] { OnSystemThemeChanged(); });
+#endif
 
     LOG(Info, "Theme: appsDark: '{}', systemDark: '{}', accent: '{}'", _impl->system.appsDark,
         _impl->system.systemDark, ColorName(_impl->system.accent));
@@ -1010,6 +1067,12 @@ void Manager::OnSystemThemeChanged()
 
 bool Manager::eventFilter(QObject *watched, QEvent *event)
 {
+#if !defined APD_OS_WIN && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    // No `colorSchemeChanged` before Qt 6.5; the platform theme announces its changes like this.
+    if (event->type() == QEvent::ThemeChange && watched == qApp) {
+        OnSystemThemeChanged();
+    }
+#endif
     if (event->type() == QEvent::Show) {
         if (auto *widget = qobject_cast<QWidget *>(watched);
             widget != nullptr && widget->isWindow())

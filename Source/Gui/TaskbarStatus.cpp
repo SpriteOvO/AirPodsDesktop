@@ -22,8 +22,12 @@
 #include <QWindow>
 #include <QApplication>
 
-#include "../Core/OS/Windows.h"
+#if defined APD_OS_WIN
+    #include "../Core/OS/Windows.h"
+#endif
 #include "Theme.h"
+
+#if defined APD_OS_WIN
 
 //
 // Windows 10
@@ -122,6 +126,8 @@ std::optional<TaskBarInfo> GetTaskBarInfo()
     return result;
 }
 
+#endif // APD_OS_WIN
+
 namespace Gui {
 
 TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
@@ -130,8 +136,10 @@ TaskbarStatus::TaskbarStatus(QWidget *parent) : QDialog{parent}
 
     _ui.setupUi(this);
 
+#if defined APD_OS_WIN
     _isWin11OrGreater = Core::OS::Windows::System::Is11OrGreater();
     LOG(Info, "Is Windows 11 or greater: '{}'", _isWin11OrGreater);
+#endif
 
     connect(this, &TaskbarStatus::OnSettingsChangedSafely, this, &TaskbarStatus::OnSettingsChanged);
 
@@ -245,6 +253,7 @@ void TaskbarStatus::UpdateVisible()
     }
 }
 
+#if defined APD_OS_WIN
 bool TaskbarStatus::Enable()
 {
     const auto optInfo = GetTaskBarInfo();
@@ -312,6 +321,20 @@ void TaskbarStatus::UpdatePos(const TaskBarInfo &info, bool enable)
         }
     }
 }
+#else
+// There is no desktop-independent way to embed a widget into a Linux panel; the tray icon (with its
+// battery tooltip) is the status display there.
+bool TaskbarStatus::Enable()
+{
+    LOG(Info, "Battery on taskbar is not supported on this platform.");
+    return false;
+}
+
+bool TaskbarStatus::Disable()
+{
+    return true;
+}
+#endif
 
 void TaskbarStatus::Unavailable()
 {
@@ -406,6 +429,7 @@ void TaskbarStatus::Repaint()
     UpdateVisible();
 }
 
+#if defined APD_OS_WIN
 void TaskbarStatus::OnUpdateTimer()
 {
     const auto optInfo = GetTaskBarInfo();
@@ -434,6 +458,9 @@ void TaskbarStatus::OnUpdateTimer()
         UpdatePos(info, true);
     }
 }
+#else
+void TaskbarStatus::OnUpdateTimer() {}
+#endif
 
 void TaskbarStatus::OnSettingsChanged(TaskbarStatusBehavior value)
 {

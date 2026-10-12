@@ -183,6 +183,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::BindSafely, this, &MainWindow::Bind);
     connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
     connect(this, &MainWindow::ShowSafely, this, &MainWindow::Show);
+    connect(this, &MainWindow::ReplayAnimationSafely, this, &MainWindow::ReplayAnimation);
     connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
     connect(
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
@@ -358,6 +359,16 @@ void MainWindow::PlayAnimation()
     _animationView->show();
 }
 
+void MainWindow::ReplayAnimation()
+{
+    // A hidden window replays from the start when it is shown, so only a visible one needs this.
+    if (!isVisible()) {
+        return;
+    }
+    _playback->SetActive(false);
+    PlayAnimation();
+}
+
 void MainWindow::StopAnimation()
 {
     _animationView->hide();
@@ -378,7 +389,9 @@ void MainWindow::BindDevice()
     }
 
     _deviceQueryThread = std::jthread{[this](std::stop_token stopToken) {
+#if defined APD_OS_WIN
         Core::OS::Windows::Winrt::Initialize();
+#endif
         auto devices = Core::AirPods::GetDevices();
         if (stopToken.stop_requested()) {
             return;
@@ -397,10 +410,17 @@ void MainWindow::BindDevice()
 void MainWindow::ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices)
 {
     if (devices.empty()) {
+#if defined APD_OS_WIN
         QMessageBox::warning(
             this, Config::ProgramName,
             QMessageBox::tr("No paired device found.\n"
                             "You need to pair your AirPods in Windows Bluetooth Settings first."));
+#else
+        QMessageBox::warning(
+            this, Config::ProgramName,
+            QMessageBox::tr("No paired device found.\n"
+                            "You need to pair your AirPods in your system's Bluetooth settings first."));
+#endif
         return;
     }
 

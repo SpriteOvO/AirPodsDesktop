@@ -1,5 +1,59 @@
 # Build Instructions
 
+## Linux prerequisites
+
+AirPodsDesktop also builds for **Linux x64** and talks to the Bluetooth stack through BlueZ over D-Bus.
+You need:
+
+- CMake 3.20 or newer, and Ninja or Make.
+- GCC 13 with C++20 support (the version this was verified with).
+- Qt 6.4 or newer with the Widgets, Svg, Multimedia, and DBus modules. Qt 6.8.3 is the reference version.
+- spdlog, cxxopts, nlohmann-json, magic_enum, and Boost (stacktrace, pfr). CMake uses the system
+  packages when present and otherwise fetches them from GitHub, so the first configure needs network access.
+- A running BlueZ (`bluetooth.service`) with a Bluetooth adapter.
+
+At runtime, Qt 6.5 and later need `libxcb-cursor0` for the xcb platform plugin (Ubuntu 24.04 ships it as a separate package).
+
+## Linux configure and build
+
+```bash
+git clone --recursive https://github.com/SpriteOvO/AirPodsDesktop.git
+cd AirPodsDesktop
+cmake -S . -B Build -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_PREFIX_PATH=/path/to/Qt/6.8.3/gcc_64 \
+  -DAPD_BUILD_TESTS=ON
+cmake --build Build
+```
+
+The executable is written to `Build/Binary/AirPodsDesktop`. `cmake --install Build` installs the
+application together with the desktop entry from `Packaging/Linux/`.
+
+## Linux portable bundle
+
+`Packaging/Linux/make-bundle.sh` packages a build into a self-contained directory and a `.tar.gz`.
+The bundle includes the Qt libraries and plugins the application loads, so the target machine does
+not need Qt installed:
+
+```bash
+Packaging/Linux/make-bundle.sh Build /path/to/Qt/6.8.3/gcc_64 Dist [extra-lib-dir]
+```
+
+`extra-lib-dir` is optional and holds libraries Qt does not ship. Put `libxcb-cursor.so.0` there if
+the build machine does not have it installed, since the Qt XCB plugin needs it. The bundle's `install.sh` adds the
+application to the current user's menu without root.
+
+## Debian package
+
+`Packaging/Linux/make-deb.sh` wraps a bundle into a `.deb`. It installs the application under
+`/opt/AirPodsDesktop`, exposes `/usr/bin/AirPodsDesktop`, adds the menu entry and icon, and declares
+the system libraries it needs as dependencies:
+
+```bash
+Packaging/Linux/make-deb.sh Dist/AirPodsDesktop Dist
+sudo apt install ./Dist/airpods-desktop_<version>_amd64.deb
+```
+
 ## Windows prerequisites
 
 AirPodsDesktop uses C++20 and builds for **Windows x64** with:

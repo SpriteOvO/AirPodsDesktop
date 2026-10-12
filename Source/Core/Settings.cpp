@@ -304,12 +304,23 @@ private:
                 return;
             }
 
-            if constexpr (!std::is_enum_v<T>) {
-                _repository->Write(qstrKeyName, value);
-            }
-            else {
+            if constexpr (std::is_enum_v<T>) {
                 _repository->Write(
                     qstrKeyName, QString::fromStdString(std::string{magic_enum::enum_name(value)}));
+            }
+            else if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool> && sizeof(T) == 8) {
+                // `uint64_t` is `unsigned long` here and `unsigned long long` on Windows. QVariant
+                // has no unambiguous constructor for the former, and QSettings would store it as
+                // an opaque blob, so always go through the 64-bit types Qt knows about.
+                if constexpr (std::is_signed_v<T>) {
+                    _repository->Write(qstrKeyName, static_cast<qlonglong>(value));
+                }
+                else {
+                    _repository->Write(qstrKeyName, static_cast<qulonglong>(value));
+                }
+            }
+            else {
+                _repository->Write(qstrKeyName, value);
             }
 
             if (!isSensitive) {

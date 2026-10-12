@@ -56,7 +56,7 @@ class ApdApplication : public SingleApplication, private Core::Settings::ApplyOb
 
 public:
     static void PreConstruction();
-    ApdApplication(int argc, char *argv[]);
+    ApdApplication(int &argc, char *argv[]);
     ~ApdApplication() override;
 
     bool Prepare(int argc, char *argv[]);

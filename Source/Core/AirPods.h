@@ -204,6 +204,7 @@ Q_SIGNALS:
     void BoundDeviceUnavailable();
     void Disconnected();
     void LidToggled(bool opened);
+    void PodsRemovedFromCase();
     void ScannerAvailabilityChanged(bool available);
     void DeviceConnectionChanged(bool connected);
 };
