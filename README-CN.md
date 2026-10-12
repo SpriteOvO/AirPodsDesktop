@@ -74,3 +74,4 @@ Windows 环境要求、构建命令与测试方式请参阅[构建说明](/Docs/
 * [OpenPods](https://github.com/adolfintel/OpenPods)
 * [Discontinued Privacy: Personal Data Leaks in Apple Bluetooth-Low-Energy Continuity Protocols](https://hal.inria.fr/hal-02394619/document)
 * [MagicPods](https://magicpods.app/)
+* [Sayzx](https://github.com/Sayzx) - Linux 移植（BlueZ 后端、Linux 打包）
