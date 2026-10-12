@@ -48,17 +48,23 @@ project(
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
 )
 
-if (NOT WIN32 OR NOT MSVC)
-    message(FATAL_ERROR "AirPodsDesktop requires 64-bit Windows and MSVC 2022.")
-endif()
-if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "AirPodsDesktop no longer supports Win32. Configure with -A x64.")
-endif()
-if (NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
-    message(FATAL_ERROR "AirPodsDesktop supports the x64 ABI only; ARM64 is not supported.")
-endif()
-if (MSVC_VERSION LESS 1930)
-    message(FATAL_ERROR "AirPodsDesktop requires Visual Studio 2022 or newer.")
+if (WIN32)
+    if (NOT MSVC)
+        message(FATAL_ERROR "AirPodsDesktop requires MSVC 2022 on Windows.")
+    endif()
+    if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(FATAL_ERROR "AirPodsDesktop no longer supports Win32. Configure with -A x64.")
+    endif()
+    if (NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
+        message(FATAL_ERROR "AirPodsDesktop supports the x64 ABI only; ARM64 is not supported.")
+    endif()
+    if (MSVC_VERSION LESS 1930)
+        message(FATAL_ERROR "AirPodsDesktop requires Visual Studio 2022 or newer.")
+    endif()
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # BlueZ (D-Bus) is the only supported Bluetooth stack on Linux.
+else()
+    message(FATAL_ERROR "AirPodsDesktop supports 64-bit Windows (MSVC 2022) and Linux (BlueZ).")
 endif()
 
 include(FetchContent)
@@ -116,6 +122,15 @@ set(APD_BUILD_TESTS OFF CACHE BOOL "Build first-party tests.")
 set(APD_ENABLE_CONSOLE OFF CACHE BOOL "Enable console.")
 set(APD_GENERATE_INSTALLER OFF CACHE BOOL "Generate installer after build.")
 set(APD_QT_DEPLOY ON CACHE BOOL "Run Qt deployment tool after build")
+if (WIN32)
+    set(APD_ENABLE_UPDATER_DEFAULT ON)
+else()
+    set(APD_ENABLE_UPDATER_DEFAULT OFF)
+endif()
+set(
+    APD_ENABLE_UPDATER ${APD_ENABLE_UPDATER_DEFAULT}
+    CACHE BOOL "Link cpr and enable the in-app updater (Windows installers only)."
+)
 
 ##################################################
 
@@ -166,24 +181,40 @@ endif()
 
 # Qt
 #
+if (WIN32)
+    set(APD_QT_MIN_VERSION 6.8)
+else()
+    # The oldest Qt a mainstream Linux distribution still ships (Ubuntu 24.04: 6.4).
+    set(APD_QT_MIN_VERSION 6.4)
+endif()
 set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia LinguistTools)
-find_package(Qt6 6.8 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
+if (UNIX AND NOT APPLE)
+    list(APPEND APD_QT_COMPONENTS DBus)
+endif()
+find_package(Qt6 ${APD_QT_MIN_VERSION} COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 if (APD_BUILD_TESTS)
-    find_package(Qt6 6.8 COMPONENTS Test REQUIRED)
+    find_package(Qt6 ${APD_QT_MIN_VERSION} COMPONENTS Test REQUIRED)
 endif()
 
 # spdlog
 #
-add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+if (WIN32)
+    add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+endif()
 # 
 # TODO: Commented out since I don't how to enable `SPDLOG_WCHAR_FILENAMES` for vcpkg, I have tried
 #       `set(SPDLOG_WCHAR_FILENAMES ON)` and `add_compile_definitions(SPDLOG_WCHAR_FILENAMES)`,
 #       but still not working
 #
-# find_package(spdlog CONFIG)
+# On Linux the distribution package works as is.
+if (NOT WIN32)
+    find_package(spdlog CONFIG)
+endif()
 if (spdlog_FOUND)
     message("Found 'spdlog' (${spdlog_VERSION}).")
 else()
+    set(SPDLOG_BUILD_TESTS OFF CACHE INTERNAL "")
+    set(SPDLOG_BUILD_EXAMPLE OFF CACHE INTERNAL "")
     message("Fetching 'spdlog'...")
     FetchContent_Declare(
         spdlog
@@ -200,6 +231,9 @@ find_package(cxxopts CONFIG)
 if (cxxopts_FOUND)
     message("Found 'cxxopts' (${cxxopts_VERSION}).")
 else()
+    set(CXXOPTS_BUILD_TESTS OFF CACHE INTERNAL "")
+    set(CXXOPTS_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+    set(CXXOPTS_ENABLE_INSTALL OFF CACHE INTERNAL "")
     message("Fetching 'cxxopts'...")
     FetchContent_Declare(
         cxxopts
@@ -214,6 +248,9 @@ endif()
 
 # cpr
 #
+if (NOT APD_ENABLE_UPDATER)
+    message("Updater disabled, skipping 'cpr'.")
+else()
 find_package(cpr 1.7.2 CONFIG)
 if (cpr_FOUND)
     message("Found 'cpr' (${cpr_VERSION}).")
@@ -230,6 +267,7 @@ else()
     FetchContent_MakeAvailable(cpr)
     message("Fetch 'cpr' done.")
 endif()
+endif()
 
 # json
 #
@@ -237,6 +275,8 @@ find_package(nlohmann_json CONFIG)
 if (nlohmann_json_FOUND)
     message("Found 'nlohmann_json' (${nlohmann_json_VERSION}).")
 else()
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    set(JSON_Install OFF CACHE INTERNAL "")
     message("Fetching 'nlohmann_json'...")
     FetchContent_Declare(
         nlohmann_json
@@ -284,6 +324,8 @@ endif()
 #
 if (MSVC)
     set(APD_STACKTRACE_COMPONENT stacktrace_windbg)
+else()
+    set(APD_STACKTRACE_COMPONENT stacktrace_basic)
 endif()
 
 # Find boost-stacktrace using pkg-config or manually
@@ -295,10 +337,17 @@ find_path(BOOST_PFR_INCLUDE_DIR boost/pfr.hpp)
 include_directories(${BOOST_PFR_INCLUDE_DIR})
 
 # Create interface targets for boost libraries
-if(NOT TARGET Boost::stacktrace_windbg)
-    add_library(Boost::stacktrace_windbg INTERFACE IMPORTED)
-    set_target_properties(Boost::stacktrace_windbg PROPERTIES
+if(NOT TARGET Boost::${APD_STACKTRACE_COMPONENT})
+    add_library(Boost::${APD_STACKTRACE_COMPONENT} INTERFACE IMPORTED)
+    set_target_properties(Boost::${APD_STACKTRACE_COMPONENT} PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${BOOST_STACKTRACE_INCLUDE_DIR}")
+    if (NOT MSVC)
+        # The header-only "basic" backend resolves frames through dladdr.
+        set_property(
+            TARGET Boost::${APD_STACKTRACE_COMPONENT} PROPERTY INTERFACE_LINK_LIBRARIES
+            ${CMAKE_DL_LIBS}
+        )
+    endif()
 endif()
 
 if(NOT TARGET Boost::pfr)
@@ -366,6 +415,16 @@ set(APD_APP_CODE_FILES
 )
 
 set(ADD_EXECUTABLE_ARG)
+
+if (UNIX AND NOT APPLE)
+    list(APPEND APD_CORE_CODE_FILES
+        "Source/Core/OS/BlueZ.cpp"
+        "Source/Core/AutoStart_linux.cpp"
+        "Source/Core/Bluetooth_linux.cpp"
+        "Source/Core/GlobalMedia_linux.cpp"
+        "Source/Core/QuickConnect_linux.cpp"
+    )
+endif()
 
 if (WIN32)
     list(APPEND APD_CORE_CODE_FILES
@@ -504,7 +563,6 @@ target_link_libraries(
     PUBLIC
     apd_domain
     Qt6::Multimedia
-    cpr::cpr
     nlohmann_json::nlohmann_json
     magic_enum::magic_enum
     Boost::pfr
@@ -512,6 +570,13 @@ target_link_libraries(
 
 if (WIN32)
     target_link_libraries(apd_core PRIVATE Ole32 Uuid Ksuser)
+endif()
+if (APD_ENABLE_UPDATER)
+    target_link_libraries(apd_core PUBLIC cpr::cpr)
+    target_compile_definitions(apd_core PUBLIC APD_ENABLE_UPDATER)
+endif()
+if (UNIX AND NOT APPLE)
+    target_link_libraries(apd_core PUBLIC Qt6::DBus)
 endif()
 
 target_link_libraries(
@@ -564,6 +629,9 @@ foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
             WIN32_LEAN_AND_MEAN
             NOMINMAX
         )
+    endif()
+    if (UNIX AND NOT APPLE)
+        target_compile_definitions(${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY} APD_OS_LINUX)
     endif()
     if (MSVC)
         target_compile_definitions(${APD_TARGET} PRIVATE APD_MSVC)
@@ -619,6 +687,44 @@ add_custom_command(
         "${APD_BINARY_OUT_DIR}/licenses/NotoSansTC.txt"
     COMMENT "Deploying third-party font licenses"
 )
+
+##################################################
+# Linux install (`cmake --install`)
+#
+
+if (UNIX AND NOT APPLE)
+    include(GNUInstallDirs)
+
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(
+        FILES ${APD_QM_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/translations
+    )
+    install(
+        FILES "Packaging/Linux/AirPodsDesktop.desktop"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    install(
+        FILES "Source/Resource/Image/Icon.svg"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+        RENAME "${PROJECT_NAME}.svg"
+    )
+    install(
+        FILES "Source/Resource/Font/Inter/LICENSE.txt"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}
+        RENAME "Inter.txt"
+    )
+    install(
+        FILES "Source/Resource/Font/NotoSansTC/LICENSE.txt"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}
+        RENAME "NotoSansTC.txt"
+    )
+    install(
+        FILES "LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}
+        RENAME "LICENSE"
+    )
+endif()
 
 ##################################################
 # Installer generate

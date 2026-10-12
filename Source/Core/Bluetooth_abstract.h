@@ -47,6 +47,10 @@ public:
     virtual uint16_t GetVendorId() const = 0;
     virtual DeviceState GetConnectionState() const = 0;
 
+    // Asks the OS to connect the device without blocking. Platforms that connect on their own
+    // keep this no-op.
+    virtual void Connect() {}
+
     inline auto &CbConnectionStatusChanged()
     {
         return _cbConnectionStatusChanged;

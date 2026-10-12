@@ -31,11 +31,13 @@
 #include "Base.h"
 #include "Widget/Battery.h"
 
+#if defined APD_OS_WIN
 struct TaskBarInfo {
     bool isHorizontal;
     HWND hShellTrayWnd, hReBarWindow32, hMSTaskSwWClass;
     QRect rectReBarWindow32, rectMSTaskSwWClass, rectMSTaskSwWClassForParent;
 };
+#endif
 
 namespace Gui {
 
@@ -158,7 +160,9 @@ private:
     void UpdateVisible();
     bool Enable();
     bool Disable();
+#if defined APD_OS_WIN
     void UpdatePos(const TaskBarInfo &info, bool enable);
+#endif
     void Repaint();
 
     void OnUpdateTimer();

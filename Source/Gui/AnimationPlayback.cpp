@@ -67,10 +67,15 @@ void AnimationPlayback::SetActive(bool active)
     _active = active;
     if (active) {
         _retries = 0;
-        StartAttempt();
+        if (_loaded) {
+            Resume();
+        }
+        else {
+            StartAttempt();
+        }
     }
     else {
-        Stop();
+        Pause();
     }
 }
 
@@ -83,11 +88,33 @@ void AnimationPlayback::StartAttempt()
     _view.SetPlaybackEnabled(true);
     _watchdog.start();
     Q_EMIT AttemptStarted();
+    _loaded = true;
     _player.setSource(QUrl{_presentation.resource});
     // setSource can synchronously report a missing backend or invalid resource.
     if (_attemptRunning) {
         _player.play();
     }
+}
+
+void AnimationPlayback::Resume()
+{
+    // The source stays loaded while hidden, so showing again only rewinds and plays it. Reloading
+    // it on every show delayed the first frame.
+    _attemptRunning = true;
+    _view.SetPlaybackEnabled(true);
+    _watchdog.start();
+    Q_EMIT AttemptStarted();
+    _player.setPosition(0);
+    _player.play();
+}
+
+void AnimationPlayback::Pause()
+{
+    _attemptRunning = false;
+    _watchdog.stop();
+    _retryTimer.stop();
+    _view.SetPlaybackEnabled(false);
+    _player.pause();
 }
 
 void AnimationPlayback::Stop()
@@ -98,6 +125,7 @@ void AnimationPlayback::Stop()
     _view.SetPlaybackEnabled(false);
     _player.stop();
     _player.setSource({});
+    _loaded = false;
 }
 
 void AnimationPlayback::Fail(const QString &reason)

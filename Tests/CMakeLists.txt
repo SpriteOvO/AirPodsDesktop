@@ -95,6 +95,25 @@ foreach(scale_factor 1 1.25 1.5 2)
     )
 endforeach()
 
+if (UNIX AND NOT APPLE)
+    add_executable(LinuxPlatformTests LinuxPlatformTests.cpp)
+
+    target_link_libraries(
+        LinuxPlatformTests
+
+        PRIVATE
+        apd_core
+        Qt6::DBus
+        Qt6::Test
+    )
+
+    target_include_directories(LinuxPlatformTests PRIVATE "${CMAKE_SOURCE_DIR}")
+
+    add_test(NAME LinuxPlatformTests COMMAND LinuxPlatformTests)
+endif()
+
+# Windows resolves DLLs next to the executable; elsewhere the loader finds Qt through its RPATH.
+if (WIN32)
 foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)
     add_custom_command(
         TARGET ${test_target}
@@ -105,3 +124,4 @@ foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRe
         COMMENT "Deploying Qt Test runtime for ${test_target}"
     )
 endforeach()
+endif()

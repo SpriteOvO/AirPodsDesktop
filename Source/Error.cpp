@@ -22,7 +22,11 @@
 #include <cstdlib>
 #include <fstream>
 
+#include <cstdio>
+
 #include <QDesktopServices>
+#include <QProcess>
+#include <QStandardPaths>
 #include <QUrl>
 
 #include <boost/stacktrace.hpp>
@@ -60,16 +64,13 @@ void Initialize()
 {
     Error::Impl::WriteStackTraceFile();
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
     // Because QMessageBox does not allow calls from non-GUI threads.
     // So far, there seems to be no better way than using native APIs.
     //
 
     auto title = std::format("{} fatal error", Config::ProgramName);
 
+#if defined APD_OS_WIN
     if (report) {
         auto message = std::format(
             "An error has occurred!\n"
@@ -95,6 +96,28 @@ void Initialize()
     else {
         MessageBoxA(nullptr, content.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
     }
+#else
+    // Always reaches stderr (and the journal when launched from the desktop), then a native dialog
+    // when the desktop ships a command-line dialog tool.
+    auto message = std::format("{}\n{}", title, content);
+    if (report) {
+        message += std::format("\n\nPlease report this at {}", Config::UrlIssues);
+    }
+    std::fprintf(stderr, "%s\n", message.c_str());
+
+    for (const auto &[tool, args] : std::initializer_list<std::pair<const char *, QStringList>>{
+             {"zenity", {"--error", "--no-markup", "--title", QString::fromStdString(title),
+                         "--text", QString::fromStdString(message)}},
+             {"kdialog", {"--title", QString::fromStdString(title), "--error",
+                          QString::fromStdString(message)}},
+         })
+    {
+        if (!QStandardPaths::findExecutable(tool).isEmpty()) {
+            QProcess::execute(tool, args);
+            break;
+        }
+    }
+#endif
 
 #if defined APD_DEBUG
     Utils::Debug::BreakPoint();

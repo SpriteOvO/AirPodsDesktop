@@ -58,6 +58,13 @@ TrayIcon::TrayIcon(
     _actionNewVersion->setVisible(false);
     _actionLowAudioLatency->setCheckable(true);
 
+#if !defined APD_OS_WIN
+    // Most Linux desktops (GNOME's AppIndicator, KDE's StatusNotifier) open the menu on any click
+    // instead of reporting an activation, so the main window needs an entry of its own.
+    connect(_actionShow, &QAction::triggered, this, &TrayIcon::ShowMainWindow);
+    _menu->addAction(_actionShow);
+    _menu->addSeparator();
+#endif
     _menu->addAction(_actionNewVersion);
     _menu->addSeparator();
     _menu->addAction(_actionLowAudioLatency);

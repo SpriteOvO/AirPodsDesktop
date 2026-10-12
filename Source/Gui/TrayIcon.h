@@ -72,6 +72,7 @@ private:
 
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
+    QAction *_actionShow = new QAction{tr("Show"), this};
     QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
     QAction *_actionLowAudioLatency = new QAction{tr("Low audio latency (may cause hiss)"), this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
+#include "../Assert.h"
 #include "SettingsWindow.h"
 
 #include <QAbstractItemView>
@@ -256,6 +257,10 @@ SettingsWindow::SettingsWindow(
                 On_cbDisplayBatteryOnTrayIcon_toggled(TrayIconBatteryBehavior::Always);
             }
         });
+
+#if !defined APD_OS_WIN
+    _ui.cardTaskbarBattery->hide();
+#endif
 
     connect(
         _ui.rbDisplayBatteryOnTaskbarDisable, &QRadioButton::toggled, this, [this](bool checked) {

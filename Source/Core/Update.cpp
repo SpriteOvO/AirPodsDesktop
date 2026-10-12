@@ -29,7 +29,9 @@
 #include <QTemporaryDir>
 #include <QDesktopServices>
 
-#include <cpr/cpr.h>
+#if defined APD_ENABLE_UPDATER
+    #include <cpr/cpr.h>
+#endif
 #include <nlohmann/json.hpp>
 
 #include <Config.h>
@@ -110,6 +112,14 @@ QString ParseSha256Digest(const json &asset)
 
 } // namespace
 
+#if defined APD_OS_WIN
+constexpr auto kInstallerSystemName = CONFIG_CPACK_SYSTEM_NAME;
+#else
+// Releases only ship Windows installers and the updater is disabled elsewhere; keep the parser
+// matching them so it stays testable on every platform.
+constexpr auto kInstallerSystemName = "win64";
+#endif
+
 bool IsCompatibleInstallerAsset(const QString &fileName, const QString &systemName)
 {
     if (QFileInfo{fileName}.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
@@ -184,12 +194,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Info, "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
                 fileSize, downloadUrl);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
             // AirPodsDesktop-x.x.x-win64.exe
             //
-            if (!IsCompatibleInstallerAsset(fileName, CONFIG_CPACK_SYSTEM_NAME)) {
+            if (!IsCompatibleInstallerAsset(fileName, kInstallerSystemName)) {
                 LOG(Warn, "ParseSRResponse: Asset platform is mismatched. Continue.");
                 continue;
             }
@@ -259,6 +266,7 @@ bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256)
     return actualSha256.compare(expectedSha256, Qt::CaseInsensitive) == 0;
 }
 
+#if defined APD_ENABLE_UPDATER
 std::optional<ReleaseInfo> FetchLatestStableRelease()
 {
     const cpr::Response response = cpr::Get(
@@ -336,6 +344,8 @@ bool IsCurrentPreRelease()
     return result;
 }
 
+#endif // APD_ENABLE_UPDATER
+
 bool NeedToUpdate(const ReleaseInfo &info)
 {
     return info.version.normalized() > GetLocalVersion().normalized();
@@ -366,6 +376,9 @@ QVersionNumber GetLocalVersion()
 
 std::optional<ReleaseInfo> FetchUpdateRelease()
 {
+#if !defined APD_ENABLE_UPDATER
+    return std::nullopt;
+#else
     const auto isCurrentPreRelease = Details::IsCurrentPreRelease();
     LOG(Info, "Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
 
@@ -391,12 +404,18 @@ std::optional<ReleaseInfo> FetchUpdateRelease()
         return std::nullopt;
     }
     return optInfo;
+#endif
 }
 
 //////////////////////////////////////////////////
 
 bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback)
 {
+#if !defined APD_ENABLE_UPDATER
+    Q_UNUSED(info);
+    Q_UNUSED(progressCallback);
+    return false;
+#else
     APD_ASSERT(Details::NeedToUpdate(info));
 
     if (!info.CanAutoUpdate()) {
@@ -460,6 +479,7 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
     }
 
     return true;
+#endif
 }
 
 //////////////////////////////////////////////////

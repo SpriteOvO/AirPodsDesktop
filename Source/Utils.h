@@ -23,8 +23,12 @@
 #include <vector>
 #include <cwctype>
 
+#include <csignal>
+
+#include <QDesktopServices>
 #include <QDir>
 #include <QLocale>
+#include <QUrl>
 #include <QStandardPaths>
 
 #include "Helper.h"
@@ -69,12 +73,10 @@ namespace Debug {
 inline void BreakPoint()
 {
 #if defined APD_DEBUG
-    #if !defined APD_MSVC
-        #error "Need to port."
-    #endif
-
     #if defined APD_MSVC
     __debugbreak();
+    #else
+    std::raise(SIGTRAP);
     #endif
 #else
     LOG(Warn, "Triggered a break point.");
@@ -132,7 +134,7 @@ inline bool OpenFileLocation(const QDir &directory)
 #if defined APD_OS_WIN
     return Core::OS::Windows::File::OpenFileLocation(directory);
 #else
-    #error "Need to port."
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(directory.absolutePath()));
 #endif
 }
 } // namespace File
@@ -145,8 +147,10 @@ namespace Process {
 inline bool SingleInstance(const QString &instanceName)
 {
 #if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
+    // `SingleApplication` already guarantees a single instance everywhere else.
+    Q_UNUSED(instanceName);
+    return true;
+#else
     HANDLE mutex = CreateMutexW(
         nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
     uint32_t lastError = GetLastError();
@@ -158,14 +162,13 @@ inline bool SingleInstance(const QString &instanceName)
     // No need to close the handle
     //
     return lastError != ERROR_ALREADY_EXISTS;
+#endif
 }
 
 inline void AttachConsole()
 {
 #if defined APD_OS_WIN
     Core::OS::Windows::Process::AttachConsole();
-#else
-    #error "Need to port."
 #endif
 }
 

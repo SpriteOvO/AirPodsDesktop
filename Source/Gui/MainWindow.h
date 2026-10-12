@@ -69,6 +69,7 @@ Q_SIGNALS:
     void BindSafely();
     void UnbindSafely();
     void ShowSafely();
+    void ReplayAnimationSafely();
     void HideSafely();
     bool VersionUpdateAvailableSafely(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void SilentUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
@@ -104,6 +105,7 @@ private:
     void ChangeButtonAction(ButtonAction action);
     void SetAnimation(std::optional<Core::AirPods::Model> model);
     void PlayAnimation();
+    void ReplayAnimation();
     void StopAnimation();
     void BindDevice();
     void ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices);

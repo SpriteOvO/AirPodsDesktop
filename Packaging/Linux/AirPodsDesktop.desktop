@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=AirPods Desktop
+GenericName=AirPods battery and ear detection
+Comment=AirPods desktop user experience enhancement program
+Exec=AirPodsDesktop
+Icon=AirPodsDesktop
+Terminal=false
+Categories=AudioVideo;Audio;Utility;
+Keywords=AirPods;Bluetooth;Battery;Headphones;Earbuds;
+StartupNotify=false

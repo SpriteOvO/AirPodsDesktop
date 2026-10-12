@@ -114,7 +114,7 @@ using MemberPointerType = typename Impl::MemberPointerType<T>::Type;
 template <class T>
 inline bool IsFutureReady(const std::future<T> &future)
 {
-    return future.wait_for(0s) == std::future_status::ready;
+    return future.wait_for(std::chrono::seconds{0}) == std::future_status::ready;
 }
 
 //////////////////////////////////////////////////
