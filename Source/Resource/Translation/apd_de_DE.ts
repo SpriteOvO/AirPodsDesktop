@@ -269,6 +269,10 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
         <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
         <translation>Klicken Sie einmal auf das Symbol im Infobereich, um das ausgewählte Gerät zu verbinden, wenn es nicht verbunden ist, oder den Akkustand anzuzeigen, wenn es verbunden ist. Nach erfolgreicher Verbindung wird der Akkustand automatisch angezeigt.</translation>
     </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Verbindet das ausgewählte Gerät beim Start der Audiowiedergabe, wenn es nicht verbunden ist. Nach einem Fehler mindestens 30 Sekunden warten und die Wiedergabe erneut starten, um es noch einmal zu versuchen.</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
     <message>
         <source>Dark</source>
         <translation>Dunkel</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Beim Start der Audiowiedergabe automatisch verbinden</translation>
     </message>
 </context>
 <context>

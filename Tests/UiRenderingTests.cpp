@@ -16,6 +16,7 @@
 #include <QTest>
 #include <QTranslator>
 #include <QPlainTextEdit>
+#include <QProcess>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -26,6 +27,7 @@
 #include <QPainter>
 
 #include "Source/Core/QuickConnect.h"
+#include "Source/Core/SettingsRepository.h"
 #include "Source/Gui/MainWindow.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
@@ -131,6 +133,37 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void TrayQuitExitsWithBatteryWindowVisible()
+    {
+        QProcess child;
+        child.setProcessChannelMode(QProcess::MergedChannels);
+        child.start(QCoreApplication::applicationFilePath(), {"--tray-quit-probe"});
+        QVERIFY(child.waitForStarted());
+        if (!child.waitForFinished(5000)) {
+            child.kill();
+            child.waitForFinished();
+            QFAIL("Tray Quit left the probe process running");
+        }
+        QCOMPARE(child.exitStatus(), QProcess::NormalExit);
+        QCOMPARE(child.exitCode(), 0);
+    }
+
+    void AudioAutoConnectIsOptionalAndIndependent()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::SettingsWindow settings{[] { return 0; }, quickConnect};
+        auto *automatic = settings.findChild<QCheckBox *>("cbAudioAutoConnectEnabled");
+        QVERIFY2(automatic != nullptr, "Settings must expose optional audio playback auto-connect");
+        QVERIFY(!automatic->isChecked());
+        auto *tray = settings.findChild<QCheckBox *>("cbTrayQuickConnectEnabled");
+        QVERIFY(tray != nullptr);
+        automatic->setChecked(true);
+        QVERIFY(!tray->isChecked());
+        QVERIFY(Core::Settings::GetCurrent().audio_auto_connect_enabled);
+        automatic->setChecked(false);
+    }
+
     void ConnectionSuccessOpensBatteryWindowAndDismissesNotification()
     {
         Core::QuickConnect::Controller quickConnect{
@@ -188,6 +221,8 @@ private Q_SLOTS:
 
     void SettingsDescribeConnectionAndBatterySingleClickBehavior()
     {
+        QVERIFY(Gui::Theme::LoadBundledFonts());
+        Gui::Theme::ApplyApplicationTypography(QLocale{"zh_CN"});
         QTranslator translator;
         QVERIFY(translator.load(
             QLocale{"zh_CN"}, "apd", "_",
@@ -198,6 +233,12 @@ private Q_SLOTS:
         Gui::SettingsWindow settings{[] { return 0; }, quickConnect};
         auto *description = settings.findChild<QLabel *>("lbDescTrayQuickConnect");
         QVERIFY(description != nullptr);
+        auto *audioTitle = settings.findChild<QLabel *>("lbAudioAutoConnect");
+        QVERIFY(audioTitle != nullptr);
+        QCOMPARE(audioTitle->text(), QStringLiteral("音频开始播放时自动连接"));
+        auto *audioDescription = settings.findChild<QLabel *>("lbDescAudioAutoConnect");
+        QVERIFY(audioDescription != nullptr);
+        QVERIFY(audioDescription->text().contains(QStringLiteral("至少等待 30 秒")));
         QCOMPARE(
             description->text(), QStringLiteral(
                                      "单击托盘图标：未连接时连接选定的设备，已连接时显示电量信息。"
@@ -213,6 +254,7 @@ private Q_SLOTS:
         QVERIFY(
             card->grab().save(QStringLiteral(APD_BINARY_DIR "/UiValidation/tray-setting-zh.png")));
         QCoreApplication::removeTranslator(&translator);
+        Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     }
 
     void NotificationUsesCurrentLanguage()
@@ -1088,6 +1130,29 @@ int main(int argc, char **argv)
     // Production logging installs a Qt message handler during static initialization. Restore the
     // default handler so QTest assertion details remain visible in CTest and CI output.
     qInstallMessageHandler(nullptr);
+    // UI interactions exercise the real settings handlers without writing the user's registry.
+    Core::Settings::SetRepository(std::make_unique<Core::Settings::MemoryRepository>());
+    if (app.arguments().contains("--tray-quit-probe")) {
+        app.setQuitOnLastWindowClosed(false);
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        Gui::MainWindow battery;
+        battery.show();
+        QAction *quit = nullptr;
+        for (auto *action : tray.findChildren<QAction *>()) {
+            if (action->text() == "Quit") {
+                quit = action;
+                break;
+            }
+        }
+        if (!quit) {
+            return 3;
+        }
+        QTimer::singleShot(50, quit, &QAction::trigger);
+        QTimer::singleShot(1000, &app, [] { QCoreApplication::exit(2); });
+        return app.exec();
+    }
     Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     UiRenderingTests tests;
     return QTest::qExec(&tests, argc, argv);

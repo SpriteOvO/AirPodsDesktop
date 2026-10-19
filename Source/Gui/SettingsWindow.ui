@@ -1037,6 +1037,36 @@
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutAudioAutoConnect" stretch="1,0">
+              <property name="spacing"><number>16</number></property>
+              <item>
+               <layout class="QVBoxLayout" name="audioAutoConnectText">
+                <property name="spacing"><number>2</number></property>
+                <item>
+                 <widget class="QLabel" name="lbAudioAutoConnect">
+                  <property name="text"><string>Connect automatically when audio starts playing</string></property>
+                  <property name="wordWrap"><bool>true</bool></property>
+                  <property name="cssClass" stdset="0"><string notr="true">cardTitle</string></property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lbDescAudioAutoConnect">
+                  <property name="text"><string notr="true"/></property>
+                  <property name="wordWrap"><bool>true</bool></property>
+                  <property name="cssClass" stdset="0"><string notr="true">cardDescription</string></property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="cbAudioAutoConnectEnabled">
+                <property name="minimumSize"><size><width>32</width><height>32</height></size></property>
+                <property name="text"><string notr="true"/></property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <layout class="QHBoxLayout" name="horizontalLayoutQuickConnectDevice" stretch="1,0">
               <property name="spacing">
                <number>16</number>

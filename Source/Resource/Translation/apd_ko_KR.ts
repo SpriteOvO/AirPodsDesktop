@@ -269,6 +269,10 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
         <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
         <translation>트레이 아이콘을 한 번 클릭하면 연결되지 않은 경우 선택한 기기에 연결하고, 연결된 경우 배터리 정보를 표시합니다. 연결에 성공하면 배터리 정보가 자동으로 표시됩니다.</translation>
     </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>오디오 재생이 시작될 때 선택한 장치가 연결되어 있지 않으면 연결합니다. 실패한 경우 30초 이상 기다린 후 재생을 다시 시작하면 재시도합니다.</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>Dark</source>
         <translation>다크</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>오디오 재생이 시작되면 자동 연결</translation>
     </message>
 </context>
 <context>

@@ -5,6 +5,8 @@
 #include <vector>
 
 #include <QtTest>
+#include <QFile>
+#include <QRegularExpression>
 #include <QTemporaryFile>
 
 #include <Config.h>
@@ -47,6 +49,11 @@ public:
         quickConnectEnabled = enable;
         ++quickConnectEnabledChanges;
     }
+    void OnAudioAutoConnectEnabledChanged(bool enable) override
+    {
+        audioAutoConnectEnabled = enable;
+        ++audioAutoConnectChanges;
+    }
     void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override
     {
         quickConnectDeviceId = deviceId;
@@ -59,6 +66,8 @@ public:
     Core::Settings::AppearanceMode appearanceMode{Core::Settings::AppearanceMode::System};
     int appearanceModeChanges{0};
     bool quickConnectEnabled{false};
+    bool audioAutoConnectEnabled{false};
+    int audioAutoConnectChanges{};
     int quickConnectEnabledChanges{0};
     QString quickConnectDeviceId;
     int quickConnectDeviceChanges{0};
@@ -159,6 +168,10 @@ private Q_SLOTS:
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
+    void RejectsConflictingPeerBatteryReports();
+    void ReplacesWeakPartialReportWithStrongerCompleteReport();
+    void KeepsStrongerPartialReportWhenConflictingCompleteReportIsWeaker();
+    void ReplaysConflictingAirPods4AncBatteryCapture();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void PackagesCompatibleLowLatencySilence();
@@ -226,7 +239,8 @@ void AirPodsDomainTests::RecognizesAirPods5()
 
     StateManager manager;
     manager.OnRssiMinChanged(-80);
-    for (const auto &[side, address, packet] : {
+    for (const auto &[side, address, packet] :
+         {
              std::tuple{Side::Left, uint64_t{0x1111}, capturedLeft},
              std::tuple{Side::Right, uint64_t{0x2222}, capturedRight},
          })
@@ -356,6 +370,94 @@ void AirPodsDomainTests::MergesAdvertisementsFromBothSides()
     QCOMPARE(update->newState.caseBox.battery.Value(), 50U);
 }
 
+void AirPodsDomainTests::RejectsConflictingPeerBatteryReports()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    // Live AirPods 4 ANC reports; phone confirms ~90/90, not the weaker 40/unknown source.
+    auto left = MakeAdvertisementData(0x1111, -72, Side::Left, 4, 15, 15, 0x201B);
+    left.manufacturerDataMap.at(Core::AppleCP::VendorId)[5] = 0x22;
+    auto right = MakeAdvertisementData(0x2222, -55, Side::Right, 9, 9, 15, 0x201B);
+    right.manufacturerDataMap.at(Core::AppleCP::VendorId)[5] = 0x0B;
+    QVERIFY(manager.OnAdvReceived(Advertisement{right}).has_value());
+    QVERIFY(!manager.OnAdvReceived(Advertisement{left}).has_value());
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 90U);
+    QCOMPARE(manager.GetCurrentState()->pods.right.battery.Value(), 90U);
+    for (int i = 0; i < 5; ++i) {
+        QVERIFY(!manager.OnAdvReceived(Advertisement{left}).has_value());
+        manager.OnAdvReceived(Advertisement{right});
+        QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 90U);
+        QCOMPARE(manager.GetCurrentState()->pods.right.battery.Value(), 90U);
+    }
+
+    // Genuine changes from the selected source must continue to reach the UI.
+    right.manufacturerDataMap.at(Core::AppleCP::VendorId)[6] = 0x89;
+    manager.OnAdvReceived(Advertisement{right});
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 80U);
+}
+
+void AirPodsDomainTests::ReplacesWeakPartialReportWithStrongerCompleteReport()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    auto partial = MakeAdvertisementData(0x1111, -72, Side::Left, 4, 15, 15, 0x201B);
+    auto complete = MakeAdvertisementData(0x2222, -55, Side::Right, 9, 9, 15, 0x201B);
+    QVERIFY(manager.OnAdvReceived(Advertisement{partial}).has_value());
+    auto update = manager.OnAdvReceived(Advertisement{complete});
+    QVERIFY(update.has_value());
+    QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
+    QCOMPARE(update->newState.pods.right.battery.Value(), 90U);
+    QVERIFY(!manager.OnAdvReceived(Advertisement{partial}).has_value());
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 90U);
+}
+
+void AirPodsDomainTests::KeepsStrongerPartialReportWhenConflictingCompleteReportIsWeaker()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x1111, -45, Side::Left, 4, 15, 15, 0x201B)});
+    QVERIFY(
+        !manager
+             .OnAdvReceived(
+                 Advertisement{MakeAdvertisementData(0x2222, -65, Side::Right, 9, 9, 15, 0x201B)})
+             .has_value());
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 40U);
+}
+
+void AirPodsDomainTests::ReplaysConflictingAirPods4AncBatteryCapture()
+{
+    QFile capture{
+        QStringLiteral(APD_SOURCE_DIR "/Tests/Fixtures/AirPods4AncConflictingBattery.txt")};
+    QVERIFY(capture.open(QIODevice::ReadOnly));
+    const QRegularExpression pattern{
+        R"(ms=\d+ source=(\d+) side=([LR]) left=(\d+) right=(\d+) case=(\d+) flags=(\d+) rssi=(-?\d+))"};
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    bool selectedCompleteReport = false;
+    int packets{};
+    while (!capture.atEnd()) {
+        const auto match = pattern.match(QString::fromUtf8(capture.readLine()));
+        QVERIFY(match.hasMatch());
+        auto data = MakeAdvertisementData(
+            0x1000 + match.captured(1).toUInt(), match.captured(7).toInt(),
+            match.captured(2) == "L" ? Side::Left : Side::Right, match.captured(3).toUInt(),
+            match.captured(4).toUInt(), match.captured(5).toUInt(), 0x201B);
+        data.manufacturerDataMap.at(Core::AppleCP::VendorId)[5] = match.captured(6).toUInt();
+        manager.OnAdvReceived(Advertisement{data});
+        const auto state = manager.GetCurrentState();
+        QVERIFY(state.has_value());
+        selectedCompleteReport |= state->pods.left.battery.Value() == 90;
+        if (selectedCompleteReport) {
+            QCOMPARE(state->pods.left.battery.Value(), 90U);
+            QCOMPARE(state->pods.right.battery.Value(), 90U);
+        }
+        ++packets;
+    }
+    QVERIFY(selectedCompleteReport);
+    QVERIFY(packets > 30);
+}
+
 void AirPodsDomainTests::RejectsAdvertisementsFromDifferentModels()
 {
     StateManager manager;
@@ -461,6 +563,7 @@ void AirPodsDomainTests::PropagatesQuickConnectSettings()
     repository->Write("abi_version", Core::Settings::kFieldsAbiVersion);
     repository->Write("tray_quick_connect_enabled", true);
     repository->Write("tray_quick_connect_device_id", "{A}");
+    repository->Write("audio_auto_connect_enabled", true);
     Core::Settings::SetRepository(std::move(repository));
 
     QCOMPARE(Core::Settings::Load(), Core::Settings::LoadResult::Successful);
@@ -472,6 +575,8 @@ void AirPodsDomainTests::PropagatesQuickConnectSettings()
     QCOMPARE(observer.quickConnectEnabledChanges, 1);
     QCOMPARE(observer.quickConnectDeviceId, QString{"{A}"});
     QCOMPARE(observer.quickConnectDeviceChanges, 1);
+    QVERIFY(observer.audioAutoConnectEnabled);
+    QCOMPARE(observer.audioAutoConnectChanges, 1);
 
     Core::Settings::SetApplyObserver(nullptr);
     Core::Settings::SetRepository(Core::Settings::CreatePersistentRepository());

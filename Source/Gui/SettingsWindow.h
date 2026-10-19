@@ -99,6 +99,7 @@ private:
         _ui.cbLowAudioLatency->setAccessibleName(_ui.lbLowAudioLatency->text());
         _ui.cbAutoEarDetection->setAccessibleName(_ui.lbAutoEarDetection->text());
         _ui.cbTrayQuickConnectEnabled->setAccessibleName(_ui.lbTrayQuickConnect->text());
+        _ui.cbAudioAutoConnectEnabled->setAccessibleName(_ui.lbAudioAutoConnect->text());
         _ui.cbAppearanceMode->setAccessibleName(_ui.lbAppearance->text());
         _aboutTextTemplate = _ui.label->text();
         InitCreditsText();

@@ -269,6 +269,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
         <translation>Seçili cihaz bağlı değilse bağlanmak, bağlıysa pil bilgilerini göstermek için tepsi simgesine bir kez tıklayın. Başarılı bir bağlantıdan sonra pil bilgileri otomatik olarak açılır.</translation>
     </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Ses çalmaya başladığında seçilen cihaz bağlı değilse bağlanır. Başarısız olursa yeniden denemek için en az 30 saniye bekleyin ve oynatmayı yeniden başlatın.</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>Koyu</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Ses çalmaya başladığında otomatik bağlan</translation>
     </message>
 </context>
 <context>

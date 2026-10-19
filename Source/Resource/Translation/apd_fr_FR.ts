@@ -269,6 +269,10 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
         <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
         <translation>Cliquez une fois sur l’icône de la zone de notification pour connecter l’appareil sélectionné s’il est déconnecté, ou afficher le niveau de batterie s’il est connecté. Le niveau de batterie s’affiche automatiquement après une connexion réussie.</translation>
     </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Connecte l’appareil sélectionné au début de la lecture audio s’il est déconnecté. Après un échec, attendez au moins 30 secondes et relancez la lecture pour réessayer.</translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <message>
         <source>Dark</source>
         <translation>Sombre</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Se connecter automatiquement au début de la lecture audio</translation>
     </message>
 </context>
 <context>

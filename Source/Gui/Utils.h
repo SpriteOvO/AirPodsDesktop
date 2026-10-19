@@ -78,7 +78,9 @@ inline void Dispatch(std::function<void()> callback)
 
 inline void QuitApplicationSafely()
 {
-    QMetaObject::invokeMethod(qApp, &QApplication::quit, ::Qt::QueuedConnection);
+    // Explicit application exit must not be vetoed by a window's close-to-tray handler.
+    // Queue exit() onto the GUI thread so normal application/object teardown still runs.
+    QMetaObject::invokeMethod(qApp, [] { QCoreApplication::exit(0); }, ::Qt::QueuedConnection);
 }
 
 } // namespace Utils::Qt

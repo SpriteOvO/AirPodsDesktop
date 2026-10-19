@@ -52,6 +52,7 @@ public:
     virtual void OnDeviceAddressChanged(uint64_t address) = 0;
     virtual void OnTrayIconBatteryChanged(TrayIconBatteryBehavior behavior) = 0;
     virtual void OnTrayQuickConnectEnabledChanged(bool enable) = 0;
+    virtual void OnAudioAutoConnectEnabledChanged(bool enable) = 0;
     virtual void OnTrayQuickConnectDeviceChanged(const QString &deviceId) = 0;
     virtual void OnTaskbarBatteryChanged(TaskbarStatusBehavior behavior) = 0;
 };
@@ -89,6 +90,11 @@ void SetRepository(std::unique_ptr<Repository> repository);
             "Single-click the tray icon to connect the selected device when disconnected, "        \
             "or show battery information when connected. Battery information opens automatically " \
             "after a successful connection.")})                                                   \
+    callback(bool, audio_auto_connect_enabled, {false},                                             \
+        Impl::OnApply(&OnApply_audio_auto_connect_enabled),                                         \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject",                                                     \
+            "Connect the selected device when audio starts playing and it is disconnected. "      \
+            "After a failure, wait at least 30 seconds and start playback again to retry.")})       \
     callback(QString, tray_quick_connect_device_id, {},                                             \
         Impl::OnApply(&OnApply_tray_quick_connect_device_id),                                       \
         Impl::Sensitive{})                                                                          \
@@ -256,6 +262,7 @@ void OnApply_rssi_min(const Fields &newFields);
 void OnApply_device_address(const Fields &newFields);
 void OnApply_tray_icon_battery(const Fields &newFields);
 void OnApply_tray_quick_connect_enabled(const Fields &newFields);
+void OnApply_audio_auto_connect_enabled(const Fields &newFields);
 void OnApply_tray_quick_connect_device_id(const Fields &newFields);
 void OnApply_battery_on_taskbar(const Fields &newFields);
 

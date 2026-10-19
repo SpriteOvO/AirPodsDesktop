@@ -26,6 +26,33 @@
 using namespace std::chrono_literals;
 
 namespace Core::AirPods::Details {
+namespace {
+
+bool HasConflictingPodBatteries(const State &lhs, const State &rhs)
+{
+    const auto conflicts = [](const Battery &a, const Battery &b) {
+        // Broadcast batteries are quantized to 10% steps. Adjacent buckets can legitimately
+        // differ between pods; larger discrepancies cannot be merged as one current state.
+        return a.Available() && b.Available() &&
+               std::abs(static_cast<int>(a.Value()) - static_cast<int>(b.Value())) > 10;
+    };
+    return conflicts(lhs.pods.left.battery, rhs.pods.left.battery) ||
+           conflicts(lhs.pods.right.battery, rhs.pods.right.battery);
+}
+
+bool IsStrongerCompleteReport(const Advertisement &candidate, const Advertisement &cached)
+{
+    const auto count = [](const State &state) {
+        return static_cast<int>(state.pods.left.battery.Available()) +
+               static_cast<int>(state.pods.right.battery.Available());
+    };
+    // Recover if the first observed packet was a weaker, single-pod report from another pair.
+    // Completeness alone must not let a distant pair replace the selected nearby single pod.
+    return count(candidate.GetAdvState()) > count(cached.GetAdvState()) &&
+           candidate.GetRssi() >= cached.GetRssi() + 10;
+}
+
+} // namespace
 
 StateManager::StateManager()
 {
@@ -171,6 +198,13 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     }
 
     if (lastAnotherAdv.has_value()) {
+        if (HasConflictingPodBatteries(advState, lastAnotherAdv->first.GetAdvState())) {
+            if (IsStrongerCompleteReport(adv, lastAnotherAdv->first)) {
+                return true;
+            }
+            LOG(Trace, "Ignore conflicting battery reports from another advertisement source.");
+            return false;
+        }
         int16_t rssiDiff = std::abs(advRssi - lastAnotherAdv->first.GetRssi());
         if (rssiDiff > 50) {
             LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
@@ -187,6 +221,13 @@ void StateManager::UpdateAdv(Advertisement adv)
     _lostTimer.Reset();
 
     const auto &advState = adv.GetAdvState();
+    auto &peer = advState.side == Side::Left ? _adv.right : _adv.left;
+    if (peer.has_value() && HasConflictingPodBatteries(advState, peer->first.GetAdvState()) &&
+        IsStrongerCompleteReport(adv, peer->first))
+    {
+        // Do not keep using the discarded source for fields missing from the replacement.
+        peer.reset();
+    }
     if (advState.side == Side::Left) {
         _stateResetTimer.left.Reset();
         _adv.left = std::make_pair(std::move(adv), Clock::now());

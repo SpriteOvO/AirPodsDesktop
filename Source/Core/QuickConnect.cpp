@@ -44,8 +44,10 @@ void Backend::SetController(Controller *controller)
     Q_UNUSED(controller)
 }
 
-Controller::Controller(std::shared_ptr<Backend> backend, std::chrono::milliseconds resolveTimeout)
-    : QObject{nullptr}, _backend{std::move(backend)}
+Controller::Controller(
+    std::shared_ptr<Backend> backend, std::chrono::milliseconds resolveTimeout,
+    std::chrono::milliseconds autoRetryCooldown)
+    : QObject{nullptr}, _backend{std::move(backend)}, _autoRetryCooldown{autoRetryCooldown}
 {
     APD_ASSERT(_backend != nullptr);
 
@@ -109,6 +111,31 @@ bool Controller::IsEnabled() const
     return _enabled;
 }
 
+void Controller::SetAudioAutoConnectEnabled(bool enabled)
+{
+    _audioAutoConnectEnabled = enabled;
+    if (!enabled) {
+        _playbackActive = false;
+    }
+}
+
+bool Controller::IsBusy() const
+{
+    return _pending || _requestRunning;
+}
+
+void Controller::OnPlaybackStateChanged(bool playing)
+{
+    const bool started = playing && !_playbackActive;
+    _playbackActive = playing;
+    if (!started || !_audioAutoConnectEnabled || _deviceId.isEmpty() || _pending ||
+        _requestRunning || std::chrono::steady_clock::now() < _nextAutoRetry)
+    {
+        return;
+    }
+    Request(true);
+}
+
 void Controller::SetDeviceId(QString id)
 {
     _deviceId = std::move(id);
@@ -154,6 +181,14 @@ void Controller::RefreshDevices()
 
 Outcome Controller::Request()
 {
+    return Request(false);
+}
+
+Outcome Controller::Request(bool automatic)
+{
+    if (!automatic && IsBusy()) {
+        _manualRequestJoined = true;
+    }
     // A click while work is already under way always answers with the same outcome, whether that
     // work is the enumeration/reconnect round trip or the wait for the endpoint to come up. The
     // caller decides how loudly to report it.
@@ -167,7 +202,7 @@ Outcome Controller::Request()
         return Outcome::RequestStarted;
     }
 
-    if (!_enabled) {
+    if (!automatic && !_enabled) {
         EmitOutcome(Outcome::Disabled, {});
         return Outcome::Disabled;
     }
@@ -178,6 +213,8 @@ Outcome Controller::Request()
     }
 
     _requestRunning = true;
+    _automaticRequest = automatic;
+    _manualRequestJoined = !automatic;
     _requestingDeviceId = _deviceId;
     _connectedDuringRequest = false;
 
@@ -288,6 +325,20 @@ Outcome Controller::Complete(Outcome outcome)
 
 void Controller::EmitOutcome(Outcome outcome, const QString &deviceName)
 {
+    // An automatic check of an already connected device must not open the battery window.
+    const bool silent =
+        _automaticRequest && !_manualRequestJoined && outcome == Outcome::AlreadyConnected;
+    if (_automaticRequest && (outcome == Outcome::Failed || outcome == Outcome::TimedOut ||
+                              outcome == Outcome::DeviceUnavailable))
+    {
+        _nextAutoRetry = std::chrono::steady_clock::now() + _autoRetryCooldown;
+    }
+    if (outcome != Outcome::RequestStarted) {
+        _automaticRequest = false;
+    }
+    if (silent) {
+        return;
+    }
     emit OutcomeChanged(outcome, deviceName);
 }
 
