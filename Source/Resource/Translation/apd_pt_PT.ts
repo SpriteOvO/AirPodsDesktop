@@ -266,8 +266,12 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
         <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão ligados, para que os sons curtos sejam reproduzidos imediatamente. Isto pode produzir ruído audível e consumir mais bateria.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Um clique no ícone da área de notificação liga o dispositivo selecionado em vez de abrir a janela principal. Um duplo clique continua a abri-la.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Clique uma vez no ícone da área de notificação para ligar o dispositivo selecionado quando estiver desligado ou mostrar as informações da bateria quando estiver ligado. As informações da bateria aparecem automaticamente após uma ligação bem-sucedida.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Liga o dispositivo selecionado ao iniciar a reprodução de áudio, se estiver desligado. Após uma falha, aguarde pelo menos 30 segundos e reinicie a reprodução para tentar novamente.</translation>
     </message>
 </context>
 <context>
@@ -402,6 +406,10 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     <message>
         <source>Dark</source>
         <translation>Escuro</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Ligar automaticamente ao iniciar a reprodução de áudio</translation>
     </message>
 </context>
 <context>

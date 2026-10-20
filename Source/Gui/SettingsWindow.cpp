@@ -100,10 +100,12 @@ SettingsWindow::SettingsWindow(
         _ui.navList, &QListWidget::currentRowChanged, _ui.pages, &QStackedWidget::setCurrentIndex);
     _ui.navList->setCurrentRow(0);
 
-    for (const auto &[label, checkBox] : {
+    for (const auto &[label, checkBox] :
+         {
              std::pair{_ui.lbLowAudioLatency, _ui.cbLowAudioLatency},
              std::pair{_ui.lbAutoEarDetection, _ui.cbAutoEarDetection},
              std::pair{_ui.lbTrayQuickConnect, _ui.cbTrayQuickConnectEnabled},
+             std::pair{_ui.lbAudioAutoConnect, _ui.cbAudioAutoConnectEnabled},
          })
     {
         label->setBuddy(checkBox);
@@ -206,6 +208,11 @@ SettingsWindow::SettingsWindow(
     connect(_ui.cbTrayQuickConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
         if (_trigger) {
             On_cbTrayQuickConnectEnabled_toggled(checked);
+        }
+    });
+    connect(_ui.cbAudioAutoConnectEnabled, &QCheckBox::toggled, this, [this](bool checked) {
+        if (_trigger) {
+            ModifiableAccess()->audio_auto_connect_enabled = checked;
         }
     });
 
@@ -326,6 +333,7 @@ void SettingsWindow::UpdateDescriptions()
     _ui.lbDescLowAudioLatency->setText(constMetaFields.low_audio_latency.Description());
     _ui.lbDescAutoEarDetection->setText(constMetaFields.automatic_ear_detection.Description());
     _ui.lbDescTrayQuickConnect->setText(constMetaFields.tray_quick_connect_enabled.Description());
+    _ui.lbDescAudioAutoConnect->setText(constMetaFields.audio_auto_connect_enabled.Description());
 
     // The About text carries a hard-coded link colour inside the (translated) HTML; swap it
     // for the theme accent so it stays readable in dark mode.
@@ -463,6 +471,7 @@ void SettingsWindow::UpdateQuickConnectDevices(const Fields &fields)
     _ui.cbTrayQuickConnectDevice->setCurrentIndex(selectedIndex);
 
     _ui.cbTrayQuickConnectEnabled->setChecked(fields.tray_quick_connect_enabled);
+    _ui.cbAudioAutoConnectEnabled->setChecked(fields.audio_auto_connect_enabled);
     // Always leave the checkbox usable: a transient empty enumeration must never trap the user in
     // a state they cannot turn off.
     _ui.cbTrayQuickConnectEnabled->setEnabled(true);

@@ -266,8 +266,12 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>AirPodsが接続されている間、オーディオデバイスを起動状態に保ち、短い音声をすぐに再生できるようにします。聞こえる程度のノイズが発生したり、バッテリー消費が増えたりする場合があります。</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>通知領域のアイコンをクリックすると、メインウィンドウを開かずに選択したデバイスへ接続します。ダブルクリックすると、引き続きメインウィンドウが開きます。</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>トレイアイコンをシングルクリックすると、未接続の場合は選択したデバイスに接続し、接続済みの場合はバッテリー情報を表示します。接続に成功すると、バッテリー情報が自動的に表示されます。</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>音声の再生開始時に、選択したデバイスが未接続の場合は接続します。失敗した場合は、30 秒以上待ってから再生を開始すると再試行します。</translation>
     </message>
 </context>
 <context>
@@ -402,6 +406,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>ダーク</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>音声の再生開始時に自動接続する</translation>
     </message>
 </context>
 <context>

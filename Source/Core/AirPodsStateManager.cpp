@@ -26,6 +26,30 @@
 using namespace std::chrono_literals;
 
 namespace Core::AirPods::Details {
+namespace {
+
+bool HasConflictingPodBatteries(const State &lhs, const State &rhs)
+{
+    const auto conflicts = [](const Battery &a, const Battery &b) {
+        // Broadcast batteries are quantized to 10% steps. Adjacent buckets can legitimately
+        // differ between pods; larger discrepancies cannot be merged as one current state.
+        return a.Available() && b.Available() &&
+               std::abs(static_cast<int>(a.Value()) - static_cast<int>(b.Value())) > 10;
+    };
+    return conflicts(lhs.pods.left.battery, rhs.pods.left.battery) ||
+           conflicts(lhs.pods.right.battery, rhs.pods.right.battery);
+}
+
+bool IsStrongerCompleteReport(const Advertisement &candidate, const Advertisement &cached)
+{
+    const auto &state = candidate.GetAdvState();
+    // The first packet can come from a weaker source even when both pods are reported.
+    // Require both pod readings and a clear signal advantage before replacing that source.
+    return state.pods.left.battery.Available() && state.pods.right.battery.Available() &&
+           candidate.GetRssi() >= cached.GetRssi() + 10;
+}
+
+} // namespace
 
 StateManager::StateManager()
 {
@@ -133,6 +157,19 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
         const auto &lastAdvState = lastAdv->first.GetAdvState();
 
+        // A different source must not erase a selected pod reading while that source is
+        // still fresh. Otherwise a partial report can bypass the peer conflict check and
+        // let an unrelated pod replace the selected pair. Same-source updates and the
+        // existing advertisement expiry still allow genuine single-pod transitions.
+        if ((lastAdvState.pods.left.battery.Available() &&
+             !advState.pods.left.battery.Available()) ||
+            (lastAdvState.pods.right.battery.Available() &&
+             !advState.pods.right.battery.Available()))
+        {
+            LOG(Trace, "Ignore another source that would erase a selected pod battery.");
+            return false;
+        }
+
         Battery::ValueType leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
         using SignedBatteryValue = std::make_signed_t<Battery::ValueType>;
 
@@ -153,7 +190,11 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
                 static_cast<SignedBatteryValue>(lastAdvState.caseBox.battery.Value()));
         }
 
-        if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
+        // Values have already been scaled to percentages, so one broadcast bucket is 10.
+        // A clearly stronger complete source can also recover from a wrong startup choice.
+        if ((leftBatteryDiff > 10 || rightBatteryDiff > 10 || caseBatteryDiff > 10) &&
+            !IsStrongerCompleteReport(adv, lastAdv->first))
+        {
             LOG(Warn,
                 "IsPossibleDesiredAdv returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                 leftBatteryDiff, rightBatteryDiff, caseBatteryDiff);
@@ -171,6 +212,13 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     }
 
     if (lastAnotherAdv.has_value()) {
+        if (HasConflictingPodBatteries(advState, lastAnotherAdv->first.GetAdvState())) {
+            if (IsStrongerCompleteReport(adv, lastAnotherAdv->first)) {
+                return true;
+            }
+            LOG(Trace, "Ignore conflicting battery reports from another advertisement source.");
+            return false;
+        }
         int16_t rssiDiff = std::abs(advRssi - lastAnotherAdv->first.GetRssi());
         if (rssiDiff > 50) {
             LOG(Warn, "IsPossibleDesiredAdv returns false. Reason: Another side rssiDiff '{}'",
@@ -187,6 +235,13 @@ void StateManager::UpdateAdv(Advertisement adv)
     _lostTimer.Reset();
 
     const auto &advState = adv.GetAdvState();
+    auto &peer = advState.side == Side::Left ? _adv.right : _adv.left;
+    if (peer.has_value() && HasConflictingPodBatteries(advState, peer->first.GetAdvState()) &&
+        IsStrongerCompleteReport(adv, peer->first))
+    {
+        // Do not keep using the discarded source for fields missing from the replacement.
+        peer.reset();
+    }
     if (advState.side == Side::Left) {
         _stateResetTimer.left.Reset();
         _adv.left = std::make_pair(std::move(adv), Clock::now());

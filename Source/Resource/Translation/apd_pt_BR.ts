@@ -266,8 +266,12 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
         <translation>Mantém o dispositivo de áudio ativo enquanto os AirPods estão conectados para que sons curtos sejam reproduzidos imediatamente. Isso pode causar chiado audível e aumentar o consumo da bateria.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Um clique no ícone da bandeja conecta o dispositivo selecionado em vez de abrir a janela principal. Um clique duplo continua abrindo-a.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Clique uma vez no ícone da bandeja para conectar o dispositivo selecionado quando estiver desconectado ou mostrar as informações da bateria quando estiver conectado. As informações da bateria aparecem automaticamente após uma conexão bem-sucedida.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Conecta o dispositivo selecionado quando o áudio começa a tocar, se estiver desconectado. Após uma falha, aguarde pelo menos 30 segundos e reinicie a reprodução para tentar novamente.</translation>
     </message>
 </context>
 <context>
@@ -402,6 +406,10 @@ Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Window
     <message>
         <source>Dark</source>
         <translation>Escuro</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Conectar automaticamente quando o áudio começar a tocar</translation>
     </message>
 </context>
 <context>

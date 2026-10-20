@@ -89,6 +89,7 @@ class Controller final : public QObject
 public:
     // How long to wait for the endpoint to come up after Windows accepted the reconnect request.
     static constexpr std::chrono::milliseconds kDefaultResolveTimeout{10'000};
+    static constexpr std::chrono::milliseconds kAutoRetryCooldown{30'000};
 
     // The backend is shared rather than borrowed because a reconnect request can still be inside a
     // blocking driver call when the Controller goes away; that worker is detached and keeps the
@@ -98,11 +99,15 @@ public:
     // timeout slot by hand.
     explicit Controller(
         std::shared_ptr<Backend> backend,
-        std::chrono::milliseconds resolveTimeout = kDefaultResolveTimeout);
+        std::chrono::milliseconds resolveTimeout = kDefaultResolveTimeout,
+        std::chrono::milliseconds autoRetryCooldown = kAutoRetryCooldown);
     ~Controller() override;
 
     void SetEnabled(bool enabled);
     bool IsEnabled() const;
+    bool IsBusy() const;
+    void SetAudioAutoConnectEnabled(bool enabled);
+    void OnPlaybackStateChanged(bool playing);
     void SetDeviceId(QString id);
     std::vector<Device> Devices();
     void RefreshDevices();
@@ -126,6 +131,12 @@ private:
     std::shared_ptr<Backend> _backend;
     std::shared_ptr<Link> _link{std::make_shared<Link>()};
     bool _enabled{};
+    bool _audioAutoConnectEnabled{};
+    bool _playbackActive{};
+    bool _automaticRequest{};
+    bool _manualRequestJoined{};
+    std::chrono::milliseconds _autoRetryCooldown;
+    std::chrono::steady_clock::time_point _nextAutoRetry{};
     bool _pending{};
     QString _deviceId;
     QString _pendingDeviceId;
@@ -144,6 +155,7 @@ private:
     PostToController(const std::shared_ptr<Link> &link, std::function<void(Controller &)> work);
 
     QString DeviceNameFor(const QString &id) const;
+    Outcome Request(bool automatic);
     Outcome Complete(Outcome outcome);
     void EmitOutcome(Outcome outcome, const QString &deviceName);
 };

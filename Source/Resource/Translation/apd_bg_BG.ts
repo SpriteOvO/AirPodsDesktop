@@ -266,8 +266,12 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>Поддържа аудиоустройството активно, докато AirPods са свързани, така че кратките звуци да започват веднага. Това може да причини доловим шум и да изразходва повече батерия.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Щракването върху иконата в системната област свързва избраното устройство, вместо да отваря главния прозорец. Двукратното щракване продължава да го отваря.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Щракнете веднъж върху иконата в системната област, за да свържете избраното устройство, ако не е свързано, или да покажете информацията за батерията, ако е свързано. След успешно свързване информацията за батерията се показва автоматично.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Свързва избраното устройство при започване на възпроизвеждане на звук, ако не е свързано. След неуспех изчакайте поне 30 секунди и стартирайте възпроизвеждането отново за нов опит.</translation>
     </message>
 </context>
 <context>
@@ -402,6 +406,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>Тъмна</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Автоматично свързване при започване на възпроизвеждане на звук</translation>
     </message>
 </context>
 <context>

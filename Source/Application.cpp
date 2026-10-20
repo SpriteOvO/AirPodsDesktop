@@ -37,6 +37,7 @@
 #include "Core/GlobalMedia.h"
 #include "Core/LowAudioLatency.h"
 #include "Core/QuickConnect.h"
+#include "Core/PlaybackMonitor.h"
 #if defined APD_OS_WIN
     #include "Core/QuickConnect_win.h"
 #endif
@@ -203,6 +204,10 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     _quickConnectBackend = std::make_shared<Core::QuickConnect::NullBackend>();
 #endif
     _quickConnect = std::make_unique<Core::QuickConnect::Controller>(_quickConnectBackend);
+    _playbackMonitor = std::make_unique<Core::GlobalMedia::PlaybackMonitor>();
+    connect(
+        _playbackMonitor.get(), &Core::GlobalMedia::PlaybackMonitor::PlaybackChanged,
+        _quickConnect.get(), &Core::QuickConnect::Controller::OnPlaybackStateChanged);
 
     _trayIcon = std::make_unique<Gui::TrayIcon>(
         [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
@@ -457,6 +462,12 @@ void ApdApplication::OnTrayQuickConnectEnabledChanged(bool enable)
 void ApdApplication::OnTrayQuickConnectDeviceChanged(const QString &deviceId)
 {
     _quickConnect->SetDeviceId(deviceId);
+}
+
+void ApdApplication::OnAudioAutoConnectEnabledChanged(bool enable)
+{
+    _quickConnect->SetAudioAutoConnectEnabled(enable);
+    _playbackMonitor->SetEnabled(enable);
 }
 
 void ApdApplication::OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior)
