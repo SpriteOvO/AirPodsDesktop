@@ -172,6 +172,14 @@ private Q_SLOTS:
     void ReplacesWeakPartialReportWithStrongerCompleteReport();
     void KeepsStrongerPartialReportWhenConflictingCompleteReportIsWeaker();
     void ReplaysConflictingAirPods4AncBatteryCapture();
+    void ReplaysConflictingAirPods4AncBatteryCapture_data();
+    void AcceptsPartialReportFromSelectedSource();
+    void AcceptsPartialReplacementAfterSelectedSourceExpires();
+    void RecoversFromWeakerStartupSource_data();
+    void RecoversFromWeakerStartupSource();
+    void AcceptsAdjacentBatteryBucketsAfterAddressRotation();
+    void RejectsConflictingSameSideSourceWithoutStrongerSignal();
+    void PreservesCompatiblePeerCaseReport();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void PackagesCompatibleLowLatencySilence();
@@ -427,8 +435,8 @@ void AirPodsDomainTests::KeepsStrongerPartialReportWhenConflictingCompleteReport
 
 void AirPodsDomainTests::ReplaysConflictingAirPods4AncBatteryCapture()
 {
-    QFile capture{
-        QStringLiteral(APD_SOURCE_DIR "/Tests/Fixtures/AirPods4AncConflictingBattery.txt")};
+    QFETCH(QByteArray, fixture);
+    QFile capture{QStringLiteral(APD_SOURCE_DIR "/Tests/Fixtures/") + QString::fromUtf8(fixture)};
     QVERIFY(capture.open(QIODevice::ReadOnly));
     const QRegularExpression pattern{
         R"(ms=\d+ source=(\d+) side=([LR]) left=(\d+) right=(\d+) case=(\d+) flags=(\d+) rssi=(-?\d+))"};
@@ -447,8 +455,10 @@ void AirPodsDomainTests::ReplaysConflictingAirPods4AncBatteryCapture()
         manager.OnAdvReceived(Advertisement{data});
         const auto state = manager.GetCurrentState();
         QVERIFY(state.has_value());
-        selectedCompleteReport |= state->pods.left.battery.Value() == 90;
+        selectedCompleteReport |=
+            state->pods.left.battery.Available() && state->pods.left.battery.Value() == 90;
         if (selectedCompleteReport) {
+            QVERIFY(state->pods.left.battery.Available());
             QCOMPARE(state->pods.left.battery.Value(), 90U);
             QCOMPARE(state->pods.right.battery.Value(), 90U);
         }
@@ -456,6 +466,138 @@ void AirPodsDomainTests::ReplaysConflictingAirPods4AncBatteryCapture()
     }
     QVERIFY(selectedCompleteReport);
     QVERIFY(packets > 30);
+}
+
+void AirPodsDomainTests::ReplaysConflictingAirPods4AncBatteryCapture_data()
+{
+    QTest::addColumn<QByteArray>("fixture");
+    QTest::newRow("two-sources") << QByteArray{"AirPods4AncConflictingBattery.txt"};
+    QTest::newRow("three-sources") << QByteArray{"AirPods4AncThreeSources.txt"};
+}
+
+void AirPodsDomainTests::AcceptsPartialReportFromSelectedSource()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -50, Side::Right, 9, 9, 15, 0x201B)});
+    const auto update = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -50, Side::Right, 15, 8, 15, 0x201B)});
+    QVERIFY(update.has_value());
+    QVERIFY(!update->newState.pods.left.battery.Available());
+    QCOMPARE(update->newState.pods.right.battery.Value(), 80U);
+}
+
+void AirPodsDomainTests::AcceptsPartialReplacementAfterSelectedSourceExpires()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -50, Side::Right, 9, 9, 15, 0x201B)});
+    const Advertisement partial{MakeAdvertisementData(0x1111, -70, Side::Right, 15, 9, 15, 0x201B)};
+    QVERIFY(!manager.OnAdvReceived(partial).has_value());
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 90U);
+
+    // Rejected sources must not keep the selected advertisement alive indefinitely.
+    QTest::qWait(11000);
+    const auto update = manager.OnAdvReceived(partial);
+    QVERIFY(update.has_value());
+    QVERIFY(!update->newState.pods.left.battery.Available());
+    QCOMPARE(update->newState.pods.right.battery.Value(), 90U);
+}
+
+void AirPodsDomainTests::RecoversFromWeakerStartupSource_data()
+{
+    QTest::addColumn<bool>("sameSide");
+    QTest::addColumn<bool>("completeFirst");
+    QTest::newRow("same-side-partial") << true << false;
+    QTest::newRow("same-side-complete") << true << true;
+    QTest::newRow("peer-partial") << false << false;
+    QTest::newRow("peer-complete") << false << true;
+}
+
+void AirPodsDomainTests::RecoversFromWeakerStartupSource()
+{
+    QFETCH(bool, sameSide);
+    QFETCH(bool, completeFirst);
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    auto initial = MakeAdvertisementData(
+        0x1111, -72, sameSide ? Side::Right : Side::Left, completeFirst ? 1 : 15, 2, 3, 0x201B);
+    auto desired = MakeAdvertisementData(0x2222, -50, Side::Right, 9, 9, 5, 0x201B);
+    // Exercise charging alongside battery selection: all three charge flags must follow
+    // the replacement report, rather than the source that happened to arrive first.
+    desired.manufacturerDataMap.at(Core::AppleCP::VendorId)[7] |= 0x70;
+    QVERIFY(manager.OnAdvReceived(Advertisement{initial}).has_value());
+    const auto update = manager.OnAdvReceived(Advertisement{desired});
+    QVERIFY(update.has_value());
+    QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
+    QCOMPARE(update->newState.pods.right.battery.Value(), 90U);
+    QCOMPARE(update->newState.caseBox.battery.Value(), 50U);
+    QVERIFY(update->newState.pods.left.isCharging);
+    QVERIFY(update->newState.pods.right.isCharging);
+    QVERIFY(update->newState.caseBox.isCharging);
+    for (int i = 0; i < 5; ++i) {
+        QVERIFY(!manager.OnAdvReceived(Advertisement{initial}).has_value());
+        QVERIFY(!manager.OnAdvReceived(Advertisement{desired}).has_value());
+        QVERIFY(manager.GetCurrentState()->pods.left.isCharging);
+        QVERIFY(manager.GetCurrentState()->pods.right.isCharging);
+        QVERIFY(manager.GetCurrentState()->caseBox.isCharging);
+    }
+}
+
+void AirPodsDomainTests::AcceptsAdjacentBatteryBucketsAfterAddressRotation()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1111, -50, Side::Right, 8, 7, 5)});
+    auto rotated = MakeAdvertisementData(0x2222, -51, Side::Right, 9, 8, 6);
+    rotated.manufacturerDataMap.at(Core::AppleCP::VendorId)[7] |= 0x70;
+    const auto update = manager.OnAdvReceived(Advertisement{rotated});
+    QVERIFY(update.has_value());
+    QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
+    QCOMPARE(update->newState.pods.right.battery.Value(), 80U);
+    QCOMPARE(update->newState.caseBox.battery.Value(), 60U);
+    QVERIFY(update->newState.pods.left.isCharging);
+    QVERIFY(update->newState.pods.right.isCharging);
+    QVERIFY(update->newState.caseBox.isCharging);
+}
+
+void AirPodsDomainTests::RejectsConflictingSameSideSourceWithoutStrongerSignal()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1111, -50, Side::Right, 9, 9, 5)});
+    QVERIFY(
+        !manager
+             .OnAdvReceived(Advertisement{MakeAdvertisementData(0x2222, -51, Side::Right, 1, 2, 3)})
+             .has_value());
+    QCOMPARE(manager.GetCurrentState()->pods.left.battery.Value(), 90U);
+    QCOMPARE(manager.GetCurrentState()->pods.right.battery.Value(), 90U);
+}
+
+void AirPodsDomainTests::PreservesCompatiblePeerCaseReport()
+{
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    auto initial = MakeAdvertisementData(0x1111, -65, Side::Left, 9, 9, 5);
+    initial.manufacturerDataMap.at(Core::AppleCP::VendorId)[7] |= 0x70;
+    manager.OnAdvReceived(Advertisement{initial});
+    const auto update = manager.OnAdvReceived(
+        Advertisement{MakeAdvertisementData(0x2222, -50, Side::Right, 9, 9, 15)});
+    QVERIFY(update.has_value());
+    QCOMPARE(update->newState.pods.left.battery.Value(), 90U);
+    QCOMPARE(update->newState.pods.right.battery.Value(), 90U);
+    QVERIFY(!update->newState.pods.left.isCharging);
+    QVERIFY(!update->newState.pods.right.isCharging);
+    QVERIFY(update->newState.caseBox.battery.Available());
+    QCOMPARE(update->newState.caseBox.battery.Value(), 50U);
+    QVERIFY(update->newState.caseBox.isCharging);
+    // Compatible peer reports must keep contributing complementary case data.
+    initial.manufacturerDataMap.at(Core::AppleCP::VendorId)[7] = 6;
+    QVERIFY(manager.OnAdvReceived(Advertisement{initial}).has_value());
+    QCOMPARE(manager.GetCurrentState()->caseBox.battery.Value(), 60U);
+    QVERIFY(!manager.GetCurrentState()->caseBox.isCharging);
 }
 
 void AirPodsDomainTests::RejectsAdvertisementsFromDifferentModels()

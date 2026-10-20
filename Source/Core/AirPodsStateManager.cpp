@@ -42,13 +42,10 @@ bool HasConflictingPodBatteries(const State &lhs, const State &rhs)
 
 bool IsStrongerCompleteReport(const Advertisement &candidate, const Advertisement &cached)
 {
-    const auto count = [](const State &state) {
-        return static_cast<int>(state.pods.left.battery.Available()) +
-               static_cast<int>(state.pods.right.battery.Available());
-    };
-    // Recover if the first observed packet was a weaker, single-pod report from another pair.
-    // Completeness alone must not let a distant pair replace the selected nearby single pod.
-    return count(candidate.GetAdvState()) > count(cached.GetAdvState()) &&
+    const auto &state = candidate.GetAdvState();
+    // The first packet can come from a weaker source even when both pods are reported.
+    // Require both pod readings and a clear signal advantage before replacing that source.
+    return state.pods.left.battery.Available() && state.pods.right.battery.Available() &&
            candidate.GetRssi() >= cached.GetRssi() + 10;
 }
 
@@ -160,6 +157,19 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
     if (lastAdv.has_value() && lastAdv->first.GetAddress() != adv.GetAddress()) {
         const auto &lastAdvState = lastAdv->first.GetAdvState();
 
+        // A different source must not erase a selected pod reading while that source is
+        // still fresh. Otherwise a partial report can bypass the peer conflict check and
+        // let an unrelated pod replace the selected pair. Same-source updates and the
+        // existing advertisement expiry still allow genuine single-pod transitions.
+        if ((lastAdvState.pods.left.battery.Available() &&
+             !advState.pods.left.battery.Available()) ||
+            (lastAdvState.pods.right.battery.Available() &&
+             !advState.pods.right.battery.Available()))
+        {
+            LOG(Trace, "Ignore another source that would erase a selected pod battery.");
+            return false;
+        }
+
         Battery::ValueType leftBatteryDiff = 0, rightBatteryDiff = 0, caseBatteryDiff = 0;
         using SignedBatteryValue = std::make_signed_t<Battery::ValueType>;
 
@@ -180,7 +190,11 @@ bool StateManager::IsPossibleDesiredAdv(const Advertisement &adv) const
                 static_cast<SignedBatteryValue>(lastAdvState.caseBox.battery.Value()));
         }
 
-        if (leftBatteryDiff > 1 || rightBatteryDiff > 1 || caseBatteryDiff > 1) {
+        // Values have already been scaled to percentages, so one broadcast bucket is 10.
+        // A clearly stronger complete source can also recover from a wrong startup choice.
+        if ((leftBatteryDiff > 10 || rightBatteryDiff > 10 || caseBatteryDiff > 10) &&
+            !IsStrongerCompleteReport(adv, lastAdv->first))
+        {
             LOG(Warn,
                 "IsPossibleDesiredAdv returns false. Reason: BatteryDiff l='{}' r='{}' c='{}'",
                 leftBatteryDiff, rightBatteryDiff, caseBatteryDiff);
