@@ -25,7 +25,7 @@ Tools/convert_ios_animation.py
 Tools/__pycache__/
 
 # Local one-time release and performance notes
-Docs/ReleaseNotes/0.6.0.md
+Docs/ReleaseNotes/
 Docs/Performance.md
 
 build_release.ps1
