@@ -1,8 +1,12 @@
 # Release Process
 
 GitHub Actions builds and tests every push to `main` and every pull request. A tag matching
-`v*.*.*` additionally creates a draft GitHub Release containing the NSIS installer and a portable
-ZIP. Review and test the draft assets before publishing the release manually.
+`v*.*.*` additionally signs the installer when credentials are configured and uploads the NSIS
+installer, its `win32-bridge` alias, and a portable ZIP as a workflow artifact kept for 30 days.
+
+CI does not create the GitHub Release. The maintainer creates the draft locally with `gh`, so the
+release is authored by the maintainer's account instead of `github-actions[bot]`. Review and test
+the draft assets before publishing the release manually.
 
 The updater defaults to `SpriteOvO/AirPodsDesktop`. GitHub Actions overrides the owner and repository
 with the repository running the workflow, so a fork build checks that fork for test releases. For a
@@ -44,37 +48,75 @@ installer, signs it when credentials are configured, then copies that exact inst
 `win64` name. The bridge installer checks for AMD64 Windows 10 build 17763 or newer before replacing
 the legacy installation.
 
-## Verify a Release
+## Download the Release Assets
 
-Confirm that the workflow completed successfully, then download both installer assets and verify
-that their SHA-256 values match:
+Run these from the repository root after pushing the tag. `$repo` is the repository the tag was
+pushed to; `Build/` is ignored by Git, so the assets never end up in a commit.
 
 ```powershell
-$win64Hash = (Get-FileHash .\AirPodsDesktop-0.6.0-win64.exe -Algorithm SHA256).Hash
-$bridgeHash = (Get-FileHash .\AirPodsDesktop-0.6.0-win32-bridge.exe -Algorithm SHA256).Hash
+$version = '0.6.2'
+$repo = 'SpriteOvO/AirPodsDesktop'
+$runId = gh run list --repo $repo --workflow windows.yml --branch "v$version" --event push `
+  --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $runId --repo $repo --exit-status
+$sha = git rev-list -n 1 "v$version"
+$assets = "Build/Release-v$version"
+gh run download $runId --repo $repo --name "AirPodsDesktop-$version-$sha" --dir $assets
+```
+
+Select the run by `--branch "v$version"`. The push to `main` that preceded the tag builds the same
+commit and uploads an artifact with the same name, but only the tag run signs the installer. If
+`$runId` is empty, the tag run has not started yet; run `gh run list` again. The artifact expires
+after 30 days; after that, re-run the tag workflow to produce a new one.
+
+## Verify the Assets
+
+Confirm that both installer assets are the same file:
+
+```powershell
+$win64Hash = (Get-FileHash "$assets/AirPodsDesktop-$version-win64.exe" -Algorithm SHA256).Hash
+$bridgeHash = (Get-FileHash "$assets/AirPodsDesktop-$version-win32-bridge.exe" -Algorithm SHA256).Hash
 if ($win64Hash -ne $bridgeHash) { throw 'Installer hashes do not match.' }
 ```
 
-The automated workflow always creates a draft. Keep it unpublished until the release notes, packaged
-files, checksums, installer upgrade, and portable application have passed manual acceptance testing.
-After downloading the draft assets, replace the local release-note checksum placeholders with values
-calculated from those assets, then apply the reviewed body with `gh release edit --notes-file`. No
-separate checksum asset is uploaded.
-
 The two installer hashes must match because the bridge is an alternate release name for the same
-NSIS payload, whether signed or unsigned. Test an upgrade from the latest public Win32 release
-before publishing.
+NSIS payload, whether signed or unsigned.
+
+Replace the checksum placeholders in `Docs/ReleaseNotes/$version.md` with values calculated from
+these downloaded files; GitHub stores uploaded assets byte-for-byte, so the published checksums
+match. No separate checksum asset is uploaded:
+
+```powershell
+Get-FileHash "$assets/*" -Algorithm SHA256 | Format-Table Hash, Path -AutoSize
+```
+
+## Create the Draft Release
+
+```powershell
+gh release create "v$version" `
+  "$assets/AirPodsDesktop-$version-win64.exe" `
+  "$assets/AirPodsDesktop-$version-win64-portable.zip" `
+  "$assets/AirPodsDesktop-$version-win32-bridge.exe" `
+  --repo $repo --draft --verify-tag `
+  --title "AirPodsDesktop v$version" `
+  --notes-file "Docs/ReleaseNotes/$version.md"
+```
+
+Keep the draft unpublished until the release notes, packaged files, checksums, installer upgrade,
+and portable application have passed manual acceptance testing. Test an upgrade from the latest
+public Win32 release before publishing. To revise the notes, edit the local file and apply it with
+`gh release edit "v$version" --repo $repo --notes-file "Docs/ReleaseNotes/$version.md"`.
 
 ## Optional Code-Signing Secrets
 
 Qt 6.8.3 is installed from the public package feed and does not require Qt account credentials.
 When both code-signing secrets below are configured, the workflow signs the installer before creating
-the bridge alias. Calculate checksums from the completed draft assets:
+the bridge alias:
 
 - `WINDOWS_SIGNING_CERTIFICATE_BASE64`: Base64-encoded PFX certificate.
 - `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`: Password for the PFX certificate.
 
-When neither secret is configured, the workflow still creates a draft release, but both installer
-assets are unsigned and may trigger a Windows SmartScreen warning. If only one secret is configured,
-the workflow fails to prevent a partially configured release. The temporary certificate is deleted
-after `signtool` signs and verifies the installer.
+When neither secret is configured, the workflow still uploads the release artifact, but both
+installer assets are unsigned and may trigger a Windows SmartScreen warning. If only one secret is
+configured, the workflow fails to prevent a partially configured release. The temporary certificate
+is deleted after `signtool` signs and verifies the installer.
