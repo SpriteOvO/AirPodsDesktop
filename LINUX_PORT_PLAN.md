@@ -26,7 +26,7 @@ As of 2026-11-13, the Linux port builds and runs, with the main desktop features
       Bluetooth adapters and desktop environments. Earlier Off and repeated Adaptive requests timed
       out; their causes were not established. Off may require enabling Off Listening Mode on an Apple
       device, but a timeout alone does not establish that this is the cause.
-- [ ] Verify Wayland and measure low-latency/codec behavior on Linux.
+- [ ] Verify Wayland on Linux.
 - [ ] Decide on Linux release assets; the updater is disabled on Linux until suitable assets exist.
       Local RelWithDebInfo DEB and tarball builds succeeded and their extracted payloads matched;
       dependencies resolved on the build host. A Release build, clean-machine installation and
@@ -289,7 +289,6 @@ These checkboxes indicate implementation, not comprehensive hardware verificatio
 - [x] Media playback control through MPRIS
 - [x] Quick Connect through BlueZ
 - [x] Quick disconnect for the selected Quick Connect device (verified on AirPods Pro 3)
-- [ ] Low-latency audio behavior verified
 - [x] Auto-start on boot
 - [x] Tray icon with menu
 - [x] Settings persistence
