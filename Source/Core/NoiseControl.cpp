@@ -130,12 +130,16 @@ CycleResult RunCycle(Confirmation &confirmation, std::optional<Request> command,
     return CycleResult::Ok;
 }
 
-Controller::Controller(std::shared_ptr<Backend> backend, QObject *parent, int retryBaseMs)
-    : QObject{parent}, _backend{std::move(backend)}, _retryBaseMs{std::max(1, retryBaseMs)}
+Controller::Controller(std::shared_ptr<Backend> backend, QObject *parent, int retryBaseMs,
+                       int disconnectGraceMs)
+    : QObject{parent}, _backend{std::move(backend)}, _retryBaseMs{std::max(1, retryBaseMs)},
+      _disconnectGraceMs{std::max(1, disconnectGraceMs)}
 {
     _link->controller = this;
     _retryTimer.setSingleShot(true);
     connect(&_retryTimer, &QTimer::timeout, this, &Controller::Restart);
+    _disconnectGraceTimer.setSingleShot(true);
+    connect(&_disconnectGraceTimer, &QTimer::timeout, this, &Controller::FlushPendingError);
 }
 
 Controller::~Controller()
@@ -153,6 +157,27 @@ void Controller::Stop()
     _session.reset();
     _available = false;
     _mode.reset();
+    CancelPendingError();
+}
+
+void Controller::CancelPendingError()
+{
+    if (!_pendingError) return;
+    LOG(Trace, "Noise control: dropping held error '{}' after a disconnect or binding change",
+        _pendingError->toStdString());
+    _pendingError.reset();
+    _disconnectGraceTimer.stop();
+}
+
+void Controller::FlushPendingError()
+{
+    if (!_pendingError) return;
+    auto message = std::exchange(_pendingError, std::nullopt);
+    if (_errorReported) return;
+    LOG(Trace, "Noise control: device remained connected; reporting held error '{}'",
+        message->toStdString());
+    _errorReported = true;
+    emit Error(*message);
 }
 
 void Controller::Bind(uint64_t address, uint64_t generation)
@@ -222,9 +247,14 @@ void Controller::Restart()
                     self->_available = false;
                     self->_mode.reset();
                     emit self->Changed();
-                    if (!self->_errorReported) {
-                        self->_errorReported = true;
-                        emit self->Error(error);
+                    // The AAP socket can close before BlueZ reports the bound-device disconnect.
+                    // Hold the notification briefly so that a coinciding disconnect stays silent
+                    // while a failure with the device still connected still surfaces once.
+                    if (!self->_errorReported && !self->_pendingError) {
+                        LOG(Trace, "Noise control: holding error '{}' for {} ms pending a disconnect",
+                            error.toStdString(), self->_disconnectGraceMs);
+                        self->_pendingError = error;
+                        self->_disconnectGraceTimer.start(self->_disconnectGraceMs);
                     }
                 } else {
                     self->_available = true;

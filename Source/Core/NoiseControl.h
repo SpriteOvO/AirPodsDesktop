@@ -77,8 +77,12 @@ class Controller : public QObject
 {
     Q_OBJECT
 public:
+    // Errors are cleared from the presentation immediately but their notification is held for
+    // disconnectGraceMs, because the AAP socket usually notices a bound-device disconnect before
+    // BlueZ reports it. If the device disconnects (or the binding changes) inside that window the
+    // notification is dropped; otherwise it surfaces once as before.
     explicit Controller(std::shared_ptr<Backend> backend, QObject *parent = nullptr,
-                        int retryBaseMs = 1000);
+                        int retryBaseMs = 1000, int disconnectGraceMs = 2000);
     ~Controller() override;
     void Bind(uint64_t address, uint64_t generation = 0);
     void SetConnected(bool connected);
@@ -99,6 +103,8 @@ private:
     void SetBoundModel(uint64_t address, AirPods::Model model);
     void Restart();
     void Stop();
+    void CancelPendingError();
+    void FlushPendingError();
     std::shared_ptr<Backend> _backend;
     std::shared_ptr<Link> _link{std::make_shared<Link>()};
     std::shared_ptr<Session> _session;
@@ -111,8 +117,11 @@ private:
     bool _available{};
     bool _workerRunning{};
     int _retryBaseMs;
+    int _disconnectGraceMs;
     unsigned _retryAttempt{};
     QTimer _retryTimer{this};
+    QTimer _disconnectGraceTimer{this};
+    std::optional<QString> _pendingError;
     AirPods::Model _model{AirPods::Model::Unknown};
     std::optional<Mode> _mode;
 };

@@ -17,6 +17,11 @@ As of 2026-11-13, the Linux port builds and runs, with the main desktop features
 - [x] On AirPods Pro 3, the user reported Noise Cancellation, Transparency, Adaptive and Off working.
       Device reports in the trace independently confirmed Noise Cancellation and Adaptive; the later
       Transparency and Off selections were not captured in that trace.
+- [x] On 2026-11-16 the Quick disconnect tray action was verified on AirPods Pro 3: the device
+      disconnected and the state cleared; the AirPods reconnected by themselves about 45 seconds
+      later. The first test showed a spurious noise-control "AAP connection closed" warning, because
+      the control socket notices the link drop before BlueZ reports it. Error notifications are now
+      held briefly and dropped if the device disconnects; a re-test on 2026-11-17 produced no warning.
 - [ ] Verify noise control and the rest of the port across additional AirPods models, firmware,
       Bluetooth adapters and desktop environments. Earlier Off and repeated Adaptive requests timed
       out; their causes were not established. Off may require enabling Off Listening Mode on an Apple
@@ -283,7 +288,7 @@ These checkboxes indicate implementation, not comprehensive hardware verificatio
 - [x] Connection status indicator
 - [x] Media playback control through MPRIS
 - [x] Quick Connect through BlueZ
-- [x] Quick disconnect for the selected Quick Connect device (hardware verification pending)
+- [x] Quick disconnect for the selected Quick Connect device (verified on AirPods Pro 3)
 - [ ] Low-latency audio behavior verified
 - [x] Auto-start on boot
 - [x] Tray icon with menu

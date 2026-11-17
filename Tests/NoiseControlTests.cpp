@@ -311,7 +311,7 @@ private slots:
     void AutomaticFailuresAreDeduplicated()
     {
         auto backend = std::make_shared<FakeBackend>();
-        Controller controller{backend, nullptr, 10};
+        Controller controller{backend, nullptr, 10, 10};
         QSignalSpy errors{&controller, &Controller::Error};
         controller.Bind(123, 1);
         controller.SetBoundDetails(123, 1, Model::AirPods_Pro_2, true);
@@ -342,6 +342,81 @@ private slots:
         QTRY_COMPARE(errors.count(), 4);
         controller.SetConnected(false);
         backend->Finish(3);
+    }
+    // The AAP socket usually notices a disconnect before BlueZ delivers Connected=false. The
+    // closure report must clear availability/mode without surfacing an error notification.
+    void ClosureBeforeDisconnectIsSilent()
+    {
+        auto backend = std::make_shared<FakeBackend>();
+        Controller controller{backend, nullptr, 20, 30};
+        QSignalSpy errors{&controller, &Controller::Error};
+        controller.Bind(123, 1);
+        controller.SetBoundDetails(123, 1, Model::AirPods_Pro_2, true);
+        QTRY_COMPARE(backend->Count(), size_t{1});
+        backend->Report(0, Mode::Anc);
+        QTRY_VERIFY(controller.Available());
+
+        backend->Report(0, {}, QStringLiteral("AAP connection closed")); // closure wins the race
+        QCoreApplication::processEvents();
+        QVERIFY(!controller.Available());
+        QVERIFY(!controller.ReportedMode());
+        controller.SetConnected(false); // BlueZ disconnect arrives inside the grace window
+        QTest::qWait(80);
+        QCOMPARE(errors.count(), 0);
+
+        backend->Finish(0);
+        QTest::qWait(30);
+        // Reconnecting restarts the session.
+        controller.SetConnected(true);
+        QTRY_COMPARE(backend->Count(), size_t{2});
+        backend->Report(1, Mode::Off);
+        QTRY_VERIFY(controller.Available());
+        QVERIFY(controller.ReportedMode() == Mode::Off);
+        controller.SetConnected(false);
+        backend->Finish(1);
+    }
+    // A failure with the device still connected (no disconnect follows) must still notify once.
+    void HeldFailureNotifiesWhenStillConnected()
+    {
+        auto backend = std::make_shared<FakeBackend>();
+        Controller controller{backend, nullptr, 20, 30};
+        QSignalSpy errors{&controller, &Controller::Error};
+        controller.Bind(123, 1);
+        controller.SetBoundDetails(123, 1, Model::AirPods_Pro_2, true);
+        QTRY_COMPARE(backend->Count(), size_t{1});
+
+        backend->Report(0, {}, QStringLiteral("AAP connection closed"));
+        QTRY_VERIFY(!controller.Available());
+        QTRY_COMPARE(errors.count(), 1);
+        QCOMPARE(errors.front().at(0).toString(), QStringLiteral("AAP connection closed"));
+
+        // Retained dedup: another failure in the same episode stays silent.
+        backend->Report(0, {}, QStringLiteral("AAP connection closed again"));
+        QTest::qWait(80);
+        QCOMPARE(errors.count(), 1);
+        backend->Finish(0);
+        controller.SetConnected(false);
+    }
+    // A genuine connect failure also notifies once; the grace window must not swallow it.
+    void GenuineConnectFailureStillNotifies()
+    {
+        auto backend = std::make_shared<FakeBackend>();
+        Controller controller{backend, nullptr, 20, 30};
+        QSignalSpy errors{&controller, &Controller::Error};
+        controller.Bind(123, 1);
+        controller.SetBoundDetails(123, 1, Model::AirPods_Pro_2, true);
+        QTRY_COMPARE(backend->Count(), size_t{1});
+
+        backend->Report(0, {}, QStringLiteral("AAP connection failed"));
+        QTRY_VERIFY(!controller.Available());
+        QTRY_COMPARE(errors.count(), 1);
+        QCOMPARE(errors.front().at(0).toString(), QStringLiteral("AAP connection failed"));
+
+        backend->Report(0, {}, QStringLiteral("AAP connection failed again"));
+        QTest::qWait(80);
+        QCOMPARE(errors.count(), 1);
+        backend->Finish(0);
+        controller.SetConnected(false);
     }
     void ShutdownIgnoresLateCallbacks()
     {
