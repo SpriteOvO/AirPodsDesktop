@@ -60,6 +60,11 @@ Enjoy it all.</source>
         <source>Please select your AirPods device below.</source>
         <translation>Пожалуйста, выберите свои AirPods ниже.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -156,12 +161,80 @@ Enjoy it all.</source>
         <translation>Время ожидания подключения к %1 истекло.</translation>
     </message>
     <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>Не удалось подключиться к %1 в Windows.</translation>
-    </message>
-    <message>
         <source>Quick connect</source>
         <translation>Быстрое подключение</translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation>Управление шумом</translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation>Шумоподавление</translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation>Прозрачность</translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation>Адаптивный режим</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Выкл.</translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation>Управление шумом недоступно: %1</translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation>Управление шумом (не поддерживается или неизвестно)</translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -232,15 +305,6 @@ Enjoy it all.</source>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>Информация об AirPodsDesktop</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Сопряженное устройство не найдено.
-Сначала вам необходимо выполнить сопряжение AirPods в настройках Bluetooth Windows.</translation>
     </message>
 </context>
 <context>

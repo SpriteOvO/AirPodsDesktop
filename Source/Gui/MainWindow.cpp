@@ -378,7 +378,9 @@ void MainWindow::BindDevice()
     }
 
     _deviceQueryThread = std::jthread{[this](std::stop_token stopToken) {
+#if defined APD_OS_WIN
         Core::OS::Windows::Winrt::Initialize();
+#endif
         auto devices = Core::AirPods::GetDevices();
         if (stopToken.stop_requested()) {
             return;
@@ -399,8 +401,8 @@ void MainWindow::ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices
     if (devices.empty()) {
         QMessageBox::warning(
             this, Config::ProgramName,
-            QMessageBox::tr("No paired device found.\n"
-                            "You need to pair your AirPods in Windows Bluetooth Settings first."));
+            tr("No paired device found.\n"
+               "You need to pair your AirPods in the system Bluetooth settings first."));
         return;
     }
 

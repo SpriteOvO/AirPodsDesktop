@@ -305,7 +305,13 @@ private:
             }
 
             if constexpr (!std::is_enum_v<T>) {
-                _repository->Write(qstrKeyName, value);
+                if constexpr (std::is_same_v<T, uint64_t>) {
+                    // QVariant has no single unambiguous 64-bit unsigned constructor on LP64.
+                    _repository->Write(qstrKeyName, static_cast<qulonglong>(value));
+                }
+                else {
+                    _repository->Write(qstrKeyName, value);
+                }
             }
             else {
                 _repository->Write(
@@ -335,7 +341,7 @@ private:
         LOG(Info, "ApplyWithoutLock");
 
         pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
-            fieldMeta.OnApply().Invoke(std::cref(_fields));
+            fieldMeta.GetOnApply().Invoke(std::cref(_fields));
         });
     }
 
@@ -346,7 +352,7 @@ private:
         pfr::for_each_field(_fieldsMeta, [&](const auto &fieldMeta) {
             if (fieldMeta.GetValue(oldFields) != fieldMeta.GetValue(_fields)) {
                 LOG(Info, "Changed field: {}", fieldMeta.GetName());
-                fieldMeta.OnApply().Invoke(std::cref(_fields));
+                fieldMeta.GetOnApply().Invoke(std::cref(_fields));
             }
         });
     }

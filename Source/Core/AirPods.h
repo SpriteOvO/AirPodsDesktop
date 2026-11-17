@@ -125,7 +125,7 @@ public:
         State newState;
     };
 
-    StateManager();
+    explicit StateManager(std::chrono::milliseconds advTimeout = std::chrono::seconds{10});
     ~StateManager();
 
     void SetOnDiscardState(std::function<void()> callback);
@@ -172,7 +172,7 @@ public:
 
     void OnRssiMinChanged(int16_t rssiMin);
     void OnAutomaticEarDetectionChanged(bool enable);
-    void OnBoundDeviceAddressChanged(uint64_t address);
+    void OnBoundDeviceAddressChanged(uint64_t address, uint64_t generation = 0);
 
 private:
     std::mutex _mutex;
@@ -180,17 +180,22 @@ private:
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
     Model _boundModel{Model::Unknown};
+#if defined APD_OS_LINUX
+    Model _boundNoiseModel{Model::Unknown};
+#endif
     bool _deviceConnected{false};
     bool _scannerWanted{false};
     bool _automaticEarDetection{false};
     uint64_t _requestedDeviceAddress{0};
+    uint64_t _bindingGeneration{0};
     std::jthread _deviceLookupThread;
 
     // Declared last so that it is destroyed first: its destructor stops the watcher and waits
     // for in-flight callbacks, which reach `_stateMgr` and `_mutex` above.
     Bluetooth::AdvertisementWatcher _adWatcher;
 
-    void CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetooth::Device> device);
+    void CompleteBoundDeviceLookup(uint64_t address, uint64_t generation,
+                                   std::optional<Bluetooth::Device> device);
     void OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state);
     void OnStateChanged(Details::StateManager::UpdateEvent updateEvent);
     void OnLidOpened(bool opened);
@@ -206,6 +211,9 @@ Q_SIGNALS:
     void LidToggled(bool opened);
     void ScannerAvailabilityChanged(bool available);
     void DeviceConnectionChanged(bool connected);
+#if defined APD_OS_LINUX
+    void BoundDeviceDetailsChanged(quint64 address, quint64 generation, quint32 model, bool connected);
+#endif
 };
 
 std::vector<Core::Bluetooth::Device> GetDevices();

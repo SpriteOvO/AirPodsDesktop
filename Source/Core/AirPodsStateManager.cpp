@@ -27,9 +27,9 @@ using namespace std::chrono_literals;
 
 namespace Core::AirPods::Details {
 
-StateManager::StateManager()
+StateManager::StateManager(std::chrono::milliseconds advTimeout)
 {
-    _lostTimer.Start(10s, [this] {
+    _lostTimer.Start(advTimeout, [this] {
         std::function<void()> onDiscardState;
         {
             std::lock_guard<std::mutex> lock{_mutex};
@@ -40,12 +40,12 @@ StateManager::StateManager()
         }
     });
 
-    _stateResetTimer.left.Start(10s, [this] {
+    _stateResetTimer.left.Start(advTimeout, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Left);
     });
 
-    _stateResetTimer.right.Start(10s, [this] {
+    _stateResetTimer.right.Start(advTimeout, [this] {
         std::lock_guard<std::mutex> lock{_mutex};
         DoStateReset(Side::Right);
     });

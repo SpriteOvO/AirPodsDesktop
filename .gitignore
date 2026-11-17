@@ -29,3 +29,8 @@ Docs/ReleaseNotes/0.6.0.md
 Docs/Performance.md
 
 build_release.ps1
+
+# Linux build directory
+Build-linux/
+# aqtinstall output from setting up the Linux toolchain
+aqtinstall.log

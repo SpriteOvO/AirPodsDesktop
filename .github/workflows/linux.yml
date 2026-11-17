@@ -1,0 +1,154 @@
+name: Linux
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: RelWithDebInfo
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Python for aqtinstall
+        uses: actions/setup-python@v6
+        with:
+          # The action otherwise installs aqtinstall under the newest Python in the tool cache
+          # (3.15 at the time of writing), which its pinned dependencies do not support yet.
+          python-version: '3.12'
+
+      - name: Install Qt 6.8.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: linux_gcc_64
+          # qtsvg and qttools are part of the base Linux desktop package; naming them as
+          # modules makes aqtinstall fail with "requested modules were not located".
+          modules: 'qtmultimedia'
+          cache: true
+          setup-python: false
+
+      - name: Install system packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential \
+            desktop-file-utils \
+            dpkg-dev \
+            libbluetooth-dev \
+            libboost-dev \
+            libdbus-1-dev \
+            libegl-dev \
+            libflac12t64 \
+            libfontconfig1 \
+            libfreetype6 \
+            libgl-dev \
+            libgl1-mesa-dri \
+            libglib2.0-dev \
+            libglvnd-dev \
+            libglx-dev \
+            libmp3lame0 \
+            libmpg123-0t64 \
+            libogg0 \
+            libopengl-dev \
+            libopus0 \
+            libpipewire-0.3-dev \
+            libpulse-dev \
+            libsndfile1 \
+            libssl-dev \
+            libvorbis0a \
+            libvorbisenc2 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-shape0 \
+            libxkbcommon-x11-0 \
+            xvfb \
+            zlib1g-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B Build \
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DAPD_BUILD_TESTS=ON \
+            -DAPD_GITHUB_OWNER="${{ github.repository_owner }}" \
+            -DAPD_GITHUB_REPOSITORY="${{ github.event.repository.name }}" \
+            -DAPD_BUILD_GIT_HASH="${{ github.sha }}"
+
+      - name: Build
+        run: cmake --build Build --parallel 2
+
+      - name: Test
+        run: |
+          set +e
+          xvfb-run -a ctest --test-dir Build --output-on-failure 2>&1 | tee ctest.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            # Job logs need repository access; a check annotation is readable through the public
+            # API, so publish the tail that names the failing tests.
+            body=$(tail -n 150 ctest.log | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=CTest failure details::${body}"
+          fi
+          exit "$status"
+
+      - name: Package
+        run: cd Build && cpack
+
+      - name: Verify the package
+        run: |
+          desktop-file-validate Packaging/AirPodsDesktop.desktop
+
+          package=$(ls Build/Installer/*.deb | head -n 1)
+          dpkg-deb -c "$package" > package-contents.txt
+          archive=$(ls Build/Installer/*.tar.gz | head -n 1)
+          tar -tzf "$archive" > archive-contents.txt
+
+          while read -r path; do
+            grep -qF " $path" package-contents.txt ||
+              { echo "Missing from the package: $path"; exit 1; }
+            grep -qxF "${path#./}" archive-contents.txt ||
+              { echo "Missing from the archive: $path"; exit 1; }
+          done <<'PATHS'
+          ./usr/bin/airpodsdesktop
+          ./usr/lib/airpodsdesktop/AirPodsDesktop
+          ./usr/lib/airpodsdesktop/qt.conf
+          ./usr/lib/airpodsdesktop/lib/libQt6Core.so.6
+          ./usr/lib/airpodsdesktop/plugins/platforms/libqxcb.so
+          ./usr/share/applications/AirPodsDesktop.desktop
+          ./usr/share/icons/hicolor/scalable/apps/AirPodsDesktop.svg
+          PATHS
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: AirPodsDesktop-${{ github.sha }}-linux
+          path: |
+            Build/Installer/*.deb
+            Build/Installer/*.tar.gz
+          if-no-files-found: error
+          retention-days: 30

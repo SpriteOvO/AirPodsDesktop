@@ -1,0 +1,5 @@
+#!/bin/sh
+# Launcher installed beside the bundle so the package works under any install prefix:
+# the executable lives in ../lib/airpodsdesktop next to its Qt runtime.
+self=$(readlink -f -- "$0")
+exec "$(dirname -- "$self")/../lib/airpodsdesktop/AirPodsDesktop" "$@"

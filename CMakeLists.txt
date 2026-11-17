@@ -48,17 +48,27 @@ project(
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
 )
 
-if (NOT WIN32 OR NOT MSVC)
-    message(FATAL_ERROR "AirPodsDesktop requires 64-bit Windows and MSVC 2022.")
-endif()
-if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "AirPodsDesktop no longer supports Win32. Configure with -A x64.")
-endif()
-if (NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
-    message(FATAL_ERROR "AirPodsDesktop supports the x64 ABI only; ARM64 is not supported.")
-endif()
-if (MSVC_VERSION LESS 1930)
-    message(FATAL_ERROR "AirPodsDesktop requires Visual Studio 2022 or newer.")
+if (WIN32)
+    if (NOT MSVC)
+        message(FATAL_ERROR "AirPodsDesktop requires MSVC 2022 or newer on Windows.")
+    endif()
+    if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(FATAL_ERROR "AirPodsDesktop no longer supports Win32. Configure with -A x64.")
+    endif()
+    if (NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "x64")
+        message(FATAL_ERROR "AirPodsDesktop supports the x64 ABI only; ARM64 is not supported.")
+    endif()
+    if (MSVC_VERSION LESS 1930)
+        message(FATAL_ERROR "AirPodsDesktop requires Visual Studio 2022 or newer.")
+    endif()
+    set(APD_OS_WIN TRUE)
+elseif (UNIX AND NOT APPLE)
+    if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(FATAL_ERROR "AirPodsDesktop supports 64-bit Linux only.")
+    endif()
+    set(APD_OS_LINUX TRUE)
+else()
+    message(FATAL_ERROR "AirPodsDesktop supports Windows x64 and Linux x64 only.")
 endif()
 
 include(FetchContent)
@@ -167,6 +177,9 @@ endif()
 # Qt
 #
 set(APD_QT_COMPONENTS Core Gui Widgets Svg Multimedia LinguistTools)
+if (APD_OS_LINUX)
+    list(APPEND APD_QT_COMPONENTS DBus)
+endif()
 find_package(Qt6 6.8 COMPONENTS ${APD_QT_COMPONENTS} REQUIRED)
 if (APD_BUILD_TESTS)
     find_package(Qt6 6.8 COMPONENTS Test REQUIRED)
@@ -174,7 +187,9 @@ endif()
 
 # spdlog
 #
-add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+if (WIN32)
+    add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_FILENAMES)
+endif()
 # 
 # TODO: Commented out since I don't how to enable `SPDLOG_WCHAR_FILENAMES` for vcpkg, I have tried
 #       `set(SPDLOG_WCHAR_FILENAMES ON)` and `add_compile_definitions(SPDLOG_WCHAR_FILENAMES)`,
@@ -206,6 +221,11 @@ else()
         GIT_REPOSITORY "https://github.com/jarro2783/cxxopts.git"
         GIT_TAG "302302b30839505703d37fb82f536c53cf9172fa" # v2.2.1
     )
+    # Upstream defaults its test suite on, and its add_test entries point at an executable the
+    # shared output directory moves elsewhere, so they register as failing CTest cases.
+    # It declares cmake_minimum_required(VERSION 3.1), so CMP0077 is OLD and its option()
+    # discards a plain variable of the same name; the cache entry is what it actually reads.
+    set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "Build cxxopts tests" FORCE)
     FetchContent_MakeAvailable(cxxopts)
     message("Fetch 'cxxopts' done.")
 
@@ -284,6 +304,8 @@ endif()
 #
 if (MSVC)
     set(APD_STACKTRACE_COMPONENT stacktrace_windbg)
+elseif (APD_OS_LINUX)
+    set(APD_STACKTRACE_COMPONENT stacktrace_backtrace)
 endif()
 
 # Find boost-stacktrace using pkg-config or manually
@@ -295,10 +317,19 @@ find_path(BOOST_PFR_INCLUDE_DIR boost/pfr.hpp)
 include_directories(${BOOST_PFR_INCLUDE_DIR})
 
 # Create interface targets for boost libraries
-if(NOT TARGET Boost::stacktrace_windbg)
-    add_library(Boost::stacktrace_windbg INTERFACE IMPORTED)
-    set_target_properties(Boost::stacktrace_windbg PROPERTIES
+if(NOT TARGET Boost::${APD_STACKTRACE_COMPONENT})
+    add_library(Boost::${APD_STACKTRACE_COMPONENT} INTERFACE IMPORTED)
+    set_target_properties(Boost::${APD_STACKTRACE_COMPONENT} PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${BOOST_STACKTRACE_INCLUDE_DIR}")
+endif()
+
+if (APD_OS_LINUX)
+    # Boost.Stacktrace is header-only. The addr2line backend needs only libdl, unlike the
+    # libbacktrace backend which requires an extra library that is not commonly packaged.
+    set_target_properties(Boost::${APD_STACKTRACE_COMPONENT} PROPERTIES
+        INTERFACE_COMPILE_DEFINITIONS BOOST_STACKTRACE_USE_ADDR2LINE
+        INTERFACE_LINK_LIBRARIES dl)
+    find_package(Threads REQUIRED)
 endif()
 
 if(NOT TARGET Boost::pfr)
@@ -350,7 +381,6 @@ set(
     "Source/Gui/AnimationPlayback.cpp"
 
     "Source/Gui/TrayIcon.cpp"
-    "Source/Gui/TaskbarStatus.cpp"
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/UpdateWindow.cpp"
@@ -374,6 +404,9 @@ if (WIN32)
         "Source/Core/GlobalMedia_win.cpp"
         "Source/Core/QuickConnect_win.cpp"
     )
+    list(APPEND APD_GUI_CODE_FILES
+        "Source/Gui/TaskbarStatus.cpp"
+    )
     list(APPEND APD_APP_CODE_FILES
         "Source/Resource/Application.manifest"
         "Source/Resource/Resource.rc"
@@ -385,6 +418,26 @@ if (WIN32)
     # Workaround for: "_MSC_VER" is undefined in .rc files
     #
     set_source_files_properties("Source/Resource/Resource.rc" PROPERTIES COMPILE_FLAGS "/d_MSC_VER")
+elseif (APD_OS_LINUX)
+    set(
+        APD_LINUX_PLATFORM_CODE_FILES
+        "Source/Core/AutoStart_linux.cpp"
+        "Source/Core/Bluetooth_linux.cpp"
+        "Source/Core/GlobalMedia_linux.cpp"
+        "Source/Core/QuickConnect_linux.cpp"
+        "Source/Core/NoiseControl.cpp"
+        "Source/Core/NoiseControl.h"
+        "Source/Core/NoiseControl_linux.cpp"
+    )
+    # The port adds these incrementally; pick up each one as soon as it lands.
+    foreach (APD_FILE ${APD_LINUX_PLATFORM_CODE_FILES})
+        if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${APD_FILE}")
+            list(APPEND APD_CORE_CODE_FILES "${APD_FILE}")
+        endif()
+    endforeach()
+
+    # Header-only on Linux, but listed so AUTOMOC generates its meta-object.
+    list(APPEND APD_GUI_CODE_FILES "Source/Gui/TaskbarStatus.h")
 endif()
 
 ##################################################
@@ -514,6 +567,11 @@ if (WIN32)
     target_link_libraries(apd_core PRIVATE Ole32 Uuid Ksuser)
 endif()
 
+if (APD_OS_LINUX)
+    target_link_libraries(apd_support PUBLIC Threads::Threads)
+    target_link_libraries(apd_core PUBLIC Qt6::DBus Threads::Threads)
+endif()
+
 target_link_libraries(
     apd_presentation
 
@@ -564,6 +622,8 @@ foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
             WIN32_LEAN_AND_MEAN
             NOMINMAX
         )
+    elseif (APD_OS_LINUX)
+        target_compile_definitions(${APD_TARGET} ${APD_HEADER_DEFINITION_VISIBILITY} APD_OS_LINUX)
     endif()
     if (MSVC)
         target_compile_definitions(${APD_TARGET} PRIVATE APD_MSVC)
@@ -603,6 +663,161 @@ if (MSVC)
             )
         endforeach()
     endif()
+elseif (APD_OS_LINUX)
+    # Qt 6 does not deploy runtime dependencies on Linux, so the install tree carries its own Qt.
+    # The executable lives in lib/airpodsdesktop with a relative RUNPATH; the plugins and libraries
+    # keep the `$ORIGIN`-relative runpaths they were built with, and qt.conf points the plugin
+    # loader at the `plugins` directory beside the executable.
+    set(APD_LINUX_APP_DIR "lib/airpodsdesktop")
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+
+    install(
+        TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION "${APD_LINUX_APP_DIR}"
+        COMPONENT ${PROJECT_NAME}
+    )
+    if (CMAKE_STRIP AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        # The build tree keeps the unstripped binary for debugging; packages ship it stripped the
+        # way distributions do, because debug information would dominate the package size.
+        install(
+            CODE
+                "execute_process(COMMAND \"${CMAKE_STRIP}\" \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${APD_LINUX_APP_DIR}/AirPodsDesktop\")"
+            COMPONENT ${PROJECT_NAME}
+        )
+    endif()
+    install(
+        PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/airpodsdesktop"
+        DESTINATION bin
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/qt.conf"
+        DESTINATION "${APD_LINUX_APP_DIR}"
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/AirPodsDesktop.desktop"
+        DESTINATION share/applications
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Image/Icon.svg"
+        DESTINATION share/icons/hicolor/scalable/apps
+        RENAME AirPodsDesktop.svg
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES ${APD_QM_FILES}
+        DESTINATION share/airpodsdesktop/translations
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
+        DESTINATION share/airpodsdesktop/licenses
+        RENAME LICENSE.txt
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Docs/NoiseControl-Licenses.txt"
+        DESTINATION share/airpodsdesktop/licenses
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Font/Inter/LICENSE.txt"
+        DESTINATION share/airpodsdesktop/licenses
+        RENAME Inter.txt
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Source/Resource/Font/NotoSansTC/LICENSE.txt"
+        DESTINATION share/airpodsdesktop/licenses
+        RENAME NotoSansTC.txt
+        COMPONENT ${PROJECT_NAME}
+    )
+
+    # Bundle the Qt runtime closure of the executable and the selected plugins instead of every
+    # module in the Qt installation: unrelated modules can depend on libraries the installation
+    # does not even carry (Quick3D, for example).
+    get_target_property(_apd_qt_core_location Qt6::Core LOCATION)
+    get_filename_component(APD_QT_LIB_DIR "${_apd_qt_core_location}" DIRECTORY)
+    if (TARGET Qt6::QXcbIntegrationPlugin)
+        get_target_property(_apd_qxcb_plugin_location Qt6::QXcbIntegrationPlugin LOCATION)
+        get_filename_component(APD_QT_PLUGINS_DIR "${_apd_qxcb_plugin_location}" DIRECTORY)
+        get_filename_component(APD_QT_PLUGINS_DIR "${APD_QT_PLUGINS_DIR}" DIRECTORY)
+    else()
+        get_filename_component(_apd_qt_prefix "${APD_QT_LIB_DIR}" DIRECTORY)
+        set(APD_QT_PLUGINS_DIR "${_apd_qt_prefix}/plugins")
+    endif()
+    set(APD_QT_BUNDLE_DIR "${CMAKE_BINARY_DIR}/BundleQt")
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND
+            ${CMAKE_COMMAND} "-DAPD_QT_LIB_DIR=${APD_QT_LIB_DIR}"
+            "-DAPD_QT_PLUGINS_DIR=${APD_QT_PLUGINS_DIR}"
+            "-DAPD_BINARY_OUT_DIR=${APD_BINARY_OUT_DIR}" "-DOUTPUT_DIR=${APD_QT_BUNDLE_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/CMake/BundleLinuxRuntime.cmake"
+        COMMENT "Bundling the Qt runtime for installation"
+        VERBATIM
+    )
+    install(
+        DIRECTORY "${APD_QT_BUNDLE_DIR}/"
+        DESTINATION "${APD_LINUX_APP_DIR}/lib"
+        COMPONENT ${PROJECT_NAME}
+    )
+
+    # Libraries built from fetched sources (cpr, its curl and spdlog) are linked dynamically and
+    # live in the build directory. cpr needs a `$ORIGIN` runpath to find its curl beside itself;
+    # the others only use system libraries. Their linker line carries an empty rpath, which the
+    # linker drops, so CMake must be told not to rewrite it at install time.
+    if (TARGET cpr)
+        set_target_properties(cpr PROPERTIES INSTALL_RPATH "$ORIGIN")
+    endif()
+    foreach(_apd_dep_target IN ITEMS libcurl spdlog)
+        if (TARGET ${_apd_dep_target})
+            set_target_properties(
+                ${_apd_dep_target}
+                PROPERTIES BUILD_WITH_INSTALL_RPATH ON INSTALL_RPATH ""
+            )
+        endif()
+    endforeach()
+    foreach(_apd_dep_target IN ITEMS cpr libcurl spdlog)
+        if (TARGET ${_apd_dep_target})
+            install(
+                TARGETS ${_apd_dep_target}
+                LIBRARY DESTINATION "${APD_LINUX_APP_DIR}/lib"
+                COMPONENT ${PROJECT_NAME}
+            )
+        endif()
+    endforeach()
+
+    # Plugin directories the application can need: platform integrations, SVG icons, the FFmpeg
+    # multimedia backend, input methods, theme integration, TLS and Wayland shells.
+    foreach(
+        _apd_plugin_dir
+        IN ITEMS
+            platforms
+            xcbglintegrations
+            iconengines
+            imageformats
+            multimedia
+            platforminputcontexts
+            platformthemes
+            tls
+            networkinformation
+            wayland-decoration-client
+            wayland-graphics-integration-client
+            wayland-shell-integration
+    )
+        if (IS_DIRECTORY "${APD_QT_PLUGINS_DIR}/${_apd_plugin_dir}")
+            install(
+                DIRECTORY "${APD_QT_PLUGINS_DIR}/${_apd_plugin_dir}"
+                DESTINATION "${APD_LINUX_APP_DIR}/plugins"
+                COMPONENT ${PROJECT_NAME}
+            )
+        endif()
+    endforeach()
 endif()
 
 add_custom_command(
@@ -623,6 +838,54 @@ add_custom_command(
 ##################################################
 # Installer generate
 #
+
+if (APD_GENERATE_INSTALLER AND NOT MSVC AND NOT APD_OS_LINUX)
+    message(
+        WARNING "APD_GENERATE_INSTALLER is only implemented for Windows/NSIS and Linux/DEB; disabling."
+    )
+    set(APD_GENERATE_INSTALLER OFF)
+endif()
+
+if (APD_OS_LINUX)
+    # The install rules above already produce a relocatable bundle, so packaging is a plain CPack
+    # run: `cpack` works on its own, and APD_GENERATE_INSTALLER additionally reruns it after every
+    # build.
+    set(CPACK_PACKAGE_NAME "airpodsdesktop")
+    set(CPACK_PACKAGE_VENDOR ${PROJECT_NAME})
+    set(CPACK_PACKAGE_CONTACT "Türker Tercan <turker.tercan2024@gmail.com>")
+    set(
+        CPACK_PACKAGE_DESCRIPTION_SUMMARY
+        "AirPods battery monitor with ear detection and quick connect for the Linux desktop"
+    )
+    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/Installer")
+    set(CPACK_PACKAGE_VERSION_MAJOR ${AirPodsDesktop_VERSION_MAJOR})
+    set(CPACK_PACKAGE_VERSION_MINOR ${AirPodsDesktop_VERSION_MINOR})
+    set(CPACK_PACKAGE_VERSION_PATCH ${AirPodsDesktop_VERSION_PATCH})
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+    set(CPACK_GENERATOR "DEB;TGZ")
+
+    set(CPACK_DEBIAN_PACKAGE_NAME "airpodsdesktop")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Türker Tercan <turker.tercan2024@gmail.com>")
+    # Component packaging appends the component name to both the package and the file name, which
+    # would produce airpodsdesktop-airpodsdesktop; pin the Debian names instead.
+    string(TOUPPER ${PROJECT_NAME} APD_COMPONENT_UPPER)
+    set(CPACK_DEBIAN_${APD_COMPONENT_UPPER}_PACKAGE_NAME "airpodsdesktop")
+    set(CPACK_DEBIAN_${APD_COMPONENT_UPPER}_FILE_NAME "DEB-DEFAULT")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+    # The Qt runtime is bundled, so only system libraries remain as dependencies. The executable
+    # and its plugins resolve Qt through relative RUNPATHs, which dpkg-shlibdeps follows.
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+    # Fetched third-party projects contribute their own install rules; package only our component.
+    set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
+    set(CPACK_DEB_COMPONENT_INSTALL ON)
+    set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+    set(
+        CPACK_ARCHIVE_${APD_COMPONENT_UPPER}_FILE_NAME
+        "airpodsdesktop-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-${CMAKE_SYSTEM_NAME}"
+    )
+endif()
 
 if (APD_GENERATE_INSTALLER)
     set(CPACK_PACKAGE_VENDOR ${PROJECT_NAME})
@@ -675,33 +938,35 @@ if (APD_GENERATE_INSTALLER)
         )
     endif()
 
-    # Prevent CMake from adding "include" and "lib" directories
-    #
-    install(
-        DIRECTORY "${APD_BINARY_OUT_DIR}/"
-        DESTINATION "./"
-        COMPONENT ${PROJECT_NAME}
-        PATTERN "*.ilk" EXCLUDE
-        PATTERN "*.exp" EXCLUDE
-        PATTERN "*.lib" EXCLUDE
-        PATTERN "*.pdb" EXCLUDE
-        # Release CI configures with APD_BUILD_TESTS=ON. Keep every automated-test, simulator,
-        # mock, harness, fixture, and validation artifact out of production packages.
-        PATTERN "*Test*" EXCLUDE
-        PATTERN "*test*" EXCLUDE
-        PATTERN "*Simulator*" EXCLUDE
-        PATTERN "*simulator*" EXCLUDE
-        PATTERN "*Simulation*" EXCLUDE
-        PATTERN "*simulation*" EXCLUDE
-        PATTERN "*Mock*" EXCLUDE
-        PATTERN "*mock*" EXCLUDE
-        PATTERN "*Fixture*" EXCLUDE
-        PATTERN "*fixture*" EXCLUDE
-        PATTERN "*Harness*" EXCLUDE
-        PATTERN "*harness*" EXCLUDE
-        PATTERN "*Validation*" EXCLUDE
-        PATTERN "*validation*" EXCLUDE
-    )
+    if (MSVC)
+        # Prevent CMake from adding "include" and "lib" directories
+        #
+        install(
+            DIRECTORY "${APD_BINARY_OUT_DIR}/"
+            DESTINATION "./"
+            COMPONENT ${PROJECT_NAME}
+            PATTERN "*.ilk" EXCLUDE
+            PATTERN "*.exp" EXCLUDE
+            PATTERN "*.lib" EXCLUDE
+            PATTERN "*.pdb" EXCLUDE
+            # Release CI configures with APD_BUILD_TESTS=ON. Keep every automated-test, simulator,
+            # mock, harness, fixture, and validation artifact out of production packages.
+            PATTERN "*Test*" EXCLUDE
+            PATTERN "*test*" EXCLUDE
+            PATTERN "*Simulator*" EXCLUDE
+            PATTERN "*simulator*" EXCLUDE
+            PATTERN "*Simulation*" EXCLUDE
+            PATTERN "*simulation*" EXCLUDE
+            PATTERN "*Mock*" EXCLUDE
+            PATTERN "*mock*" EXCLUDE
+            PATTERN "*Fixture*" EXCLUDE
+            PATTERN "*fixture*" EXCLUDE
+            PATTERN "*Harness*" EXCLUDE
+            PATTERN "*harness*" EXCLUDE
+            PATTERN "*Validation*" EXCLUDE
+            PATTERN "*validation*" EXCLUDE
+        )
+    endif()
     set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 
     add_custom_command(
@@ -735,6 +1000,9 @@ target_link_libraries(
 
 if (APD_BUILD_TESTS)
     include(CTest)
+    # A fetched dependency (cxxopts) also declares BUILD_TESTING and can cache it OFF before
+    # include(CTest) runs, which would silently skip enable_testing() and register no tests.
+    enable_testing()
     add_subdirectory(Tests)
 endif()
 

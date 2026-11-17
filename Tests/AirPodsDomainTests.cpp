@@ -1,4 +1,6 @@
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <tuple>
@@ -159,6 +161,7 @@ private Q_SLOTS:
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
+    void HonorsConfiguredAdvertisementTimeout();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void PackagesCompatibleLowLatencySilence();
@@ -256,6 +259,19 @@ void AirPodsDomainTests::RecognizesAirPods5()
         }
     }
     QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_5);
+}
+
+void AirPodsDomainTests::HonorsConfiguredAdvertisementTimeout()
+{
+    StateManager manager{std::chrono::milliseconds{80}};
+    manager.OnRssiMinChanged(-80);
+    std::atomic<int> discards{0};
+    manager.SetOnDiscardState([&discards] { discards.fetch_add(1); });
+
+    manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1234, -45, Side::Left)});
+    QVERIFY(manager.GetCurrentState().has_value());
+    QTRY_VERIFY_WITH_TIMEOUT(discards.load() > 0, 2000);
+    QVERIFY(!manager.GetCurrentState().has_value());
 }
 
 void AirPodsDomainTests::ResolvesAirPods5DisplayName()
@@ -516,13 +532,20 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
 
     QVERIFY(release.has_value());
     QCOMPARE(release->version, QVersionNumber(0, 5, 0));
+    QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
+#if defined APD_OS_WIN
     QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win64.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
     QCOMPARE(
         release->sha256,
         QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
-    QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
     QVERIFY(release->CanAutoUpdate());
+#else
+    // The fixture asset is a Windows installer, and the updater only accepts assets built for
+    // the platform it runs on.
+    QVERIFY(release->fileName.isEmpty());
+    QVERIFY(!release->CanAutoUpdate());
+#endif
     QVERIFY(!release->isPreRelease);
 
     const auto generatedNotes = QString{R"json({

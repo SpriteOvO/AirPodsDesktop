@@ -27,6 +27,12 @@
 #include <QLocale>
 #include <QStandardPaths>
 
+#if !defined APD_OS_WIN
+    #include <QDesktopServices>
+    #include <QLockFile>
+    #include <QUrl>
+#endif
+
 #include "Helper.h"
 #include "Logger.h"
 #include "Error.h"
@@ -69,12 +75,12 @@ namespace Debug {
 inline void BreakPoint()
 {
 #if defined APD_DEBUG
-    #if !defined APD_MSVC
-        #error "Need to port."
-    #endif
-
     #if defined APD_MSVC
     __debugbreak();
+    #elif defined(__GNUC__) || defined(__clang__)
+    __builtin_trap();
+    #else
+        #error "Need to port."
     #endif
 #else
     LOG(Warn, "Triggered a break point.");
@@ -132,7 +138,7 @@ inline bool OpenFileLocation(const QDir &directory)
 #if defined APD_OS_WIN
     return Core::OS::Windows::File::OpenFileLocation(directory);
 #else
-    #error "Need to port."
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(directory.absolutePath()));
 #endif
 }
 } // namespace File
@@ -144,9 +150,7 @@ namespace Process {
 //
 inline bool SingleInstance(const QString &instanceName)
 {
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
+#if defined APD_OS_WIN
     HANDLE mutex = CreateMutexW(
         nullptr, false, ("Global\\" + instanceName + "_InstanceMutex").toStdWString().c_str());
     uint32_t lastError = GetLastError();
@@ -158,6 +162,14 @@ inline bool SingleInstance(const QString &instanceName)
     // No need to close the handle
     //
     return lastError != ERROR_ALREADY_EXISTS;
+#else
+    // SingleApplication enforces single-instance later; this legacy guard only has to be
+    // consistent with it.
+    static QLockFile lock{
+        QDir::temp().filePath(instanceName + QStringLiteral("_InstanceMutex.lock"))};
+    lock.setStaleLockTime(0);
+    return lock.tryLock();
+#endif
 }
 
 inline void AttachConsole()
@@ -165,7 +177,7 @@ inline void AttachConsole()
 #if defined APD_OS_WIN
     Core::OS::Windows::Process::AttachConsole();
 #else
-    #error "Need to port."
+    // A process started from a terminal already has one.
 #endif
 }
 

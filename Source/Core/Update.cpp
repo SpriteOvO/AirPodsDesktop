@@ -184,9 +184,6 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Info, "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
                 fileSize, downloadUrl);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
             // AirPodsDesktop-x.x.x-win64.exe
             //
             if (!IsCompatibleInstallerAsset(fileName, CONFIG_CPACK_SYSTEM_NAME)) {
@@ -473,9 +470,16 @@ AsyncChecker::~AsyncChecker()
 
 void AsyncChecker::Start()
 {
+#if defined APD_OS_WIN
     // clang-format off
     _timer.Start(kInterval, [this] { Checker(); }, true);
     // clang-format on
+#else
+    // Published releases only carry Windows installers, which `IsCompatibleInstallerAsset` filters
+    // out on every other platform. Checking would send an hourly request that can never produce an
+    // update, so stay quiet here until comparable packages are published.
+    LOG(Info, "Update checks are disabled on this platform.");
+#endif
 }
 
 void AsyncChecker::Stop()
