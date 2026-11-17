@@ -38,10 +38,20 @@ cmake --build Build -j"$(nproc)"
 
 The Linux platform files are added to `apd_core` automatically as they appear in the source tree.
 Current Linux status: the application builds and starts, scans BLE advertisements through BlueZ,
-shows battery status in the tray, controls MPRIS players for ear detection, reconnects the bound
-AirPods through BlueZ for Quick Connect, and writes an XDG autostart entry. Update checks are
+shows battery status in the tray, controls MPRIS players for ear detection, connects or disconnects
+the device explicitly selected for Quick Connect through BlueZ, and writes an XDG autostart entry.
+The Linux tray menu has separate Connect and Disconnect selected device actions; enable Quick Connect
+and select a paired audio device in Settings first. This selection is independent of the AirPods
+binding used for battery display and noise control. Disconnect calls BlueZ Device1.Disconnect, which
+can disconnect all profiles for that device. Update checks are
 disabled because releases only carry Windows installers, and the taskbar battery dock is
 Windows-only. See [Package for Linux](#package-for-linux) to build a `.deb` or `.tar.gz`.
+
+Linux noise control uses the bound classic Bluetooth device and requires BlueZ to expose a
+recognized product ID through that device's `Modalias`. If that optional property is absent or
+unrecognized, the tray shows noise control as unsupported or unknown and does not open an AAP
+socket. BLE advertisements are not used to guess the bound device's model. AAP support and
+handshake behavior still require real-device verification.
 
 ## Windows prerequisites
 

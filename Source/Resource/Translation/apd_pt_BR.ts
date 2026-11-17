@@ -60,6 +60,11 @@ Aproveite.</translation>
         <source>Please select your AirPods device below.</source>
         <translation>Selecione seu dispositivo AirPods abaixo.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -152,16 +157,84 @@ Aproveite.</translation>
         <translation>O tempo de conexão com %1 se esgotou.</translation>
     </message>
     <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>O Windows não conseguiu se conectar a %1.</translation>
-    </message>
-    <message>
         <source>Quick connect</source>
         <translation>Conexão rápida</translation>
     </message>
     <message>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Baixa latência de áudio (pode causar chiado)</translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation>Controle de ruído</translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation>Cancelamento de ruído</translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation>Transparência</translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation>Adaptativo</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Desativado</translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation>Controle de ruído indisponível: %1</translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation>Controle de ruído (não suportado ou desconhecido)</translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -232,15 +305,6 @@ Aproveite.</translation>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>Informações do AirPodsDesktop</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Nenhum dispositivo emparelhado encontrado.
-Você precisa emparelhar seus AirPods nas Configurações de Bluetooth do Windows primeiro.</translation>
     </message>
 </context>
 <context>

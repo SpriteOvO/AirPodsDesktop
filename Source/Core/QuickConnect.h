@@ -45,7 +45,12 @@ enum class Outcome : uint32_t {
     RequestStarted,
     Failed,
     Connected,
-    TimedOut
+    TimedOut,
+    AlreadyDisconnected,
+    DisconnectStarted,
+    Disconnected,
+    DisconnectFailed,
+    DisconnectTimedOut
 };
 
 struct Device {
@@ -62,6 +67,8 @@ public:
     virtual void SetController(Controller *controller);
     virtual std::vector<Device> ListDevices(std::stop_token stopToken) = 0;
     virtual bool RequestReconnect(const QString &id, std::stop_token stopToken) = 0;
+    // Disconnect is supported by the Linux backend; Windows retains connect-only behavior.
+    virtual bool RequestDisconnect(const QString &, std::stop_token) { return false; }
 
     // Called once the Controller stops caring about endpoint-state changes for the device it last
     // asked to reconnect. A backend that arms system notifications must disarm them here, otherwise
@@ -107,6 +114,7 @@ public:
     std::vector<Device> Devices();
     void RefreshDevices();
     Outcome Request();
+    Outcome RequestDisconnect();
     Outcome OnEndpointStateChanged(const QString &id, bool connected);
     Outcome ResolveTimedOut();
 
@@ -131,7 +139,8 @@ private:
     QString _pendingDeviceId;
     QString _pendingDeviceName;
     QString _requestingDeviceId;
-    bool _connectedDuringRequest{};
+    bool _disconnectRequest{};
+    bool _targetStateDuringRequest{};
     std::vector<Device> _devices;
     std::atomic<bool> _deviceRefreshRunning{};
     std::atomic<bool> _requestRunning{};
@@ -143,6 +152,7 @@ private:
     static void
     PostToController(const std::shared_ptr<Link> &link, std::function<void(Controller &)> work);
 
+    Outcome StartRequest(bool disconnect);
     QString DeviceNameFor(const QString &id) const;
     Outcome Complete(Outcome outcome);
     void EmitOutcome(Outcome outcome, const QString &deviceName);

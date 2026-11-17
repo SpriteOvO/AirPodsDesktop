@@ -814,6 +814,87 @@ private Q_SLOTS:
         Gui::Theme::ApplyApplicationTypography(QLocale{"en_US"});
     }
 
+#if defined APD_OS_LINUX
+    void TrayDisconnectTargetsQuickConnectSelection()
+    {
+        class FakeBackend final : public Core::QuickConnect::Backend {
+        public:
+            std::vector<Core::QuickConnect::Device> ListDevices(std::stop_token) override
+            {
+                return {{"selected", "Selected headset", true}};
+            }
+            bool RequestReconnect(const QString &, std::stop_token) override { return false; }
+            bool RequestDisconnect(const QString &id, std::stop_token) override
+            {
+                return id == "selected";
+            }
+        };
+        auto backend = std::make_shared<FakeBackend>();
+        Core::QuickConnect::Controller quickConnect{backend};
+        quickConnect.SetEnabled(true);
+        quickConnect.SetDeviceId("selected");
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        auto *connectAction = tray.findChild<QAction *>("quickConnectAction");
+        auto *disconnectAction = tray.findChild<QAction *>("quickDisconnectAction");
+        QVERIFY(connectAction && disconnectAction);
+        QCOMPARE(connectAction->text(), QStringLiteral("Connect selected device"));
+        QCOMPARE(disconnectAction->text(), QStringLiteral("Disconnect selected device"));
+        QSignalSpy spy{&quickConnect, &Core::QuickConnect::Controller::OutcomeChanged};
+        disconnectAction->trigger();
+        QTRY_COMPARE(spy.count(), 1);
+        QCOMPARE(spy.last().at(0).value<Core::QuickConnect::Outcome>(),
+                 Core::QuickConnect::Outcome::DisconnectStarted);
+        quickConnect.OnEndpointStateChanged("selected", false);
+        QCOMPARE(spy.last().at(0).value<Core::QuickConnect::Outcome>(),
+                 Core::QuickConnect::Outcome::Disconnected);
+    }
+
+    void TrayNoiseControlReflectsReportedMode()
+    {
+        class FakeBackend final : public Core::NoiseControl::Backend {
+        public:
+            void Run(uint64_t, std::shared_ptr<Core::NoiseControl::Session> session,
+                     std::function<void(std::optional<Core::NoiseControl::Mode>, QString,
+                                        std::optional<Core::NoiseControl::Request>)> report) override
+            {
+                report(Core::NoiseControl::Mode::Transparency, {}, {});
+                while (!session->stopped) std::this_thread::sleep_for(std::chrono::milliseconds{10});
+            }
+        };
+        QVERIFY(Gui::TrayIcon::NoiseControlTimeoutMessage(Core::NoiseControl::Mode::Off)
+                    .contains(QStringLiteral("Apple device")));
+        QVERIFY(!Gui::TrayIcon::NoiseControlTimeoutMessage(Core::NoiseControl::Mode::Anc)
+                     .contains(QStringLiteral("Apple device")));
+        auto quickBackend = std::make_shared<Core::QuickConnect::NullBackend>();
+        Core::QuickConnect::Controller quickConnect{quickBackend};
+        Core::NoiseControl::Controller noise{std::make_shared<FakeBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        tray.SetNoiseControl(&noise);
+        auto *menu = tray.findChild<QMenu *>("noiseControlMenu");
+        QVERIFY(menu);
+        QVERIFY(!menu->menuAction()->isVisible());
+        noise.Bind(0x112233445566);
+        noise.SetBoundDetails(0x112233445566, 0, Core::AirPods::Model::Unknown, true);
+        QVERIFY(menu->menuAction()->isVisible());
+        QVERIFY(!menu->isEnabled());
+        QCOMPARE(menu->title(), QStringLiteral("Noise Control (unsupported or unknown)"));
+        noise.SetBoundDetails(0x112233445566, 0, Core::AirPods::Model::AirPods_Pro, true);
+        QTRY_VERIFY(noise.Available());
+        QVERIFY(menu->menuAction()->isVisible());
+        auto *anc = menu->findChild<QAction *>("noiseControlMode2");
+        auto *transparency = menu->findChild<QAction *>("noiseControlMode3");
+        auto *adaptive = menu->findChild<QAction *>("noiseControlMode4");
+        QVERIFY(anc && transparency && adaptive);
+        QVERIFY(!adaptive->isVisible());
+        QVERIFY(transparency->isChecked());
+        anc->trigger();
+        QVERIFY(!anc->isChecked());
+        QVERIFY(transparency->isChecked());
+        noise.SetConnected(false);
+        QVERIFY(!menu->isEnabled());
+    }
+#endif
+
     void TrayMenuHasSmoothCorners()
     {
         auto backend = std::make_shared<Core::QuickConnect::NullBackend>();

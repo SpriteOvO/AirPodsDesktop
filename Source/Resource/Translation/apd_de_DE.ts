@@ -60,6 +60,11 @@ Genieße es.</translation>
         <source>Please select your AirPods device below.</source>
         <translation>Bitte wähle unten deine AirPods aus.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -156,12 +161,80 @@ Genieße es.</translation>
         <translation>Zeitüberschreitung beim Verbinden mit %1.</translation>
     </message>
     <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>Windows konnte keine Verbindung mit %1 herstellen.</translation>
-    </message>
-    <message>
         <source>Quick connect</source>
         <translation>Schnellverbindung</translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation>Geräuschkontrolle</translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation>Geräuschunterdrückung</translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation>Transparenz</translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation>Adaptiv</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Aus</translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation>Geräuschkontrolle nicht verfügbar: %1</translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation>Geräuschkontrolle (nicht unterstützt oder unbekannt)</translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -232,15 +305,6 @@ Genieße es.</translation>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>Informationen zu AirPodsDesktop</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Kein gekoppeltes Gerät gefunden.
-Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation>
     </message>
 </context>
 <context>

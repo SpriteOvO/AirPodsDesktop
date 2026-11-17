@@ -42,6 +42,7 @@
     #include "Core/QuickConnect_win.h"
 #elif defined APD_OS_LINUX
     #include "Core/QuickConnect_linux.h"
+    #include "Core/NoiseControl.h"
 #endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
@@ -208,9 +209,15 @@ bool ApdApplication::Prepare(int argc, char *argv[])
     _quickConnectBackend = std::make_shared<Core::QuickConnect::NullBackend>();
 #endif
     _quickConnect = std::make_unique<Core::QuickConnect::Controller>(_quickConnectBackend);
+#if defined APD_OS_LINUX
+    _noiseControl = std::make_unique<Core::NoiseControl::Controller>(Core::NoiseControl::CreateLinuxBackend());
+#endif
 
     _trayIcon = std::make_unique<Gui::TrayIcon>(
         [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
+#if defined APD_OS_LINUX
+    _trayIcon->SetNoiseControl(_noiseControl.get());
+#endif
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _mainWindow->StartUpdateChecks();
@@ -238,6 +245,13 @@ void ApdApplication::ConnectAirPodsManager()
 {
     auto *manager = _airPodsManager.get();
     auto *mainWindow = _mainWindow.get();
+#if defined APD_OS_LINUX
+    connect(manager, &Core::AirPods::Manager::BoundDeviceDetailsChanged, _noiseControl.get(),
+            [this](quint64 address, quint64 generation, quint32 model, bool connected) {
+                if (generation != _noiseBindingGeneration.load()) return;
+                _noiseControl->SetBoundDetails(address, generation, static_cast<Core::AirPods::Model>(model), connected);
+            });
+#endif
 
     connect(
         manager, &Core::AirPods::Manager::BoundDeviceUnavailable, this,
@@ -439,6 +453,13 @@ void ApdApplication::OnRssiMinChanged(int16_t rssiMin)
 
 void ApdApplication::OnDeviceAddressChanged(uint64_t address)
 {
+    uint64_t generation = 0;
+#if defined APD_OS_LINUX
+    generation = ++_noiseBindingGeneration;
+    QMetaObject::invokeMethod(_noiseControl.get(), [controller = _noiseControl.get(), address, generation] {
+        controller->Bind(address, generation);
+    }, Qt::AutoConnection);
+#endif
     if (address == 0) {
         emit _mainWindow->UnbindSafely();
         _trayIcon->Unbind();
@@ -456,8 +477,8 @@ void ApdApplication::OnDeviceAddressChanged(uint64_t address)
     // and stall every other thread touching settings.
     QMetaObject::invokeMethod(
         _airPodsManager.get(),
-        [manager = _airPodsManager.get(), address] {
-            manager->OnBoundDeviceAddressChanged(address);
+        [manager = _airPodsManager.get(), address, generation] {
+            manager->OnBoundDeviceAddressChanged(address, generation);
         },
         Qt::QueuedConnection);
 }

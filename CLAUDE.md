@@ -53,7 +53,8 @@ Binaries and deployed Qt files land in `Build/Binary/`.
 With `APD_BUILD_TESTS=ON`, CTest registers `AirPodsDomainTests`, `QuickConnectTests`,
 `AnimationViewTests`, and `UiRenderingTests`, plus `MainWindowRenderingScale*` and
 `AirPods5RenderingScale*` variants that rerun two `UiRenderingTests` slots at `QT_SCALE_FACTOR`
-1, 1.25, 1.5, and 2. Linux additionally builds and registers `GlobalMediaTests`.
+1, 1.25, 1.5, and 2. Linux additionally builds and registers `GlobalMediaTests` and
+`NoiseControlTests`.
 `Tests/CMakeLists.txt` is the source of truth. CMake calls `enable_testing()` explicitly because
 the fetched cxxopts can cache `BUILD_TESTING` off before `include(CTest)` runs.
 
@@ -96,7 +97,7 @@ apd_support ──▶ apd_domain ──┬──▶ apd_core ──────�
 |---|---|---|
 | `apd_support` | `Opts`, `Logger`, `Assert`, `Error` | Qt Core/Gui, spdlog, cxxopts, magic_enum, boost::stacktrace |
 | `apd_domain` | `AirPodsAdvertisement`, `AirPodsStateManager`, `AppleCP` — pure protocol/state logic | `apd_support` only |
-| `apd_core` | `AirPods::Manager`, `QuickConnect`, `Settings`, `SettingsRepository`, `Update`, `LowAudioLatency`, `AutoStart`, `Debug`, and the `_win.cpp`/`_linux.cpp` platform impls | `apd_domain`, Qt Multimedia, Qt DBus (Linux), cpr, nlohmann_json, boost::pfr |
+| `apd_core` | `AirPods::Manager`, `QuickConnect`, Linux `NoiseControl`, `Settings`, `SettingsRepository`, `Update`, `LowAudioLatency`, `AutoStart`, `Debug`, and the `_win.cpp`/`_linux.cpp` platform impls | `apd_domain`, Qt Multimedia, Qt DBus (Linux), cpr, nlohmann_json, boost::pfr |
 | `apd_presentation` | `MainWindowPresentation` view models — plain state→struct mapping, no widgets | `apd_domain` only |
 | `apd_gui` | `MainWindow`, `TrayIcon`, `TaskbarStatus`, `SelectWindow`, `UpdateWindow`, `SettingsWindow`, `Theme`, `AnimationPlayback`, `Widget::Battery`, `Widget::AnimationView` | `apd_core` + `apd_presentation`, Qt Widgets/Svg/Multimedia |
 | `AirPodsDesktop` | `Main.cpp`, `Application.cpp`, resources | `apd_gui` + SingleApplication |
@@ -117,7 +118,9 @@ AUTOMOC.
    manufacturer data must carry Apple's vendor id `76` and pass `AppleCP::AirPods::IsValid`.
 3. `Details::Advertisement` parses the fixed 27-byte `ProximityPairing` packet into an `AdvState`.
 4. `Details::StateManager::OnAdvReceived` merges the two sides, applies the `rssi_min` floor, and
-   arms 10s "lost" / per-side reset timers. It emits an `UpdateEvent { oldState, newState }`.
+   arms the "lost" / per-side reset timers (10 s on Windows, 60 s on Linux, where BlueZ reports
+   device-property changes far less often than WinRT delivers advertisements). It emits an
+   `UpdateEvent { oldState, newState }`.
 5. `Manager` raises Qt signals — `StateUpdated`, `Disconnected`, `LidToggled`,
    `ScannerAvailabilityChanged`, `BoundDeviceUnavailable`.
 6. `ApdApplication::ConnectAirPodsManager()` is the single fan-out point: it wires those signals to
@@ -149,6 +152,27 @@ through a mutex-protected `Link` rather than touching `Controller` directly. The
 can sit in a blocking driver/D-Bus call, so `~Controller` detaches it instead of joining; anything
 it still needs is held by `shared_ptr`. An expected outcome is a normal signal
 (`OutcomeChanged`), not an exception or a dialog.
+
+### Linux noise control
+
+`Core::NoiseControl::Controller` owns the Linux tray menu's listening-mode state and uses the
+bound classic Bluetooth address and resolved model, not the random BLE advertisement address or
+Quick Connect's independently selected device. `ApdApplication` forwards bound-device lifecycle
+updates with a binding generation; unknown or unsupported models do not start a control session.
+
+`NoiseControl_linux.cpp` uses a nonblocking L2CAP socket (PSM `0x1001`) and the reverse-engineered
+Apple Accessory Protocol. The controller runs the backend on a worker, rejects stale callbacks,
+serializes replacement sessions and retries failures with bounded backoff. The tray checks a mode
+only after a device report, not on a successful write. A request times out after eight seconds
+without closing the session; a later report still updates the displayed mode. AAP reports carry no
+request ID, so they cannot prove which request caused a report. Off Listening Mode may need enabling
+on an Apple device; the app does not silently change that separate setting. See `Docs/Build.md` and
+`Docs/NoiseControl-Licenses.txt` for limitations and protocol-reference attribution.
+
+`NoiseControlTests` covers protocol packets, receive ordering, timeouts and controller lifecycle
+with fakes; it cannot prove a particular AirPods model or firmware works. Trace-level noise-control
+diagnostics record modes, timing and request serials without raw packets or device addresses, but
+other application trace messages can contain Bluetooth-related identifiers and advertisement data.
 
 ### Theme, autostart, updater, and other platform behaviour
 
@@ -250,10 +274,11 @@ Platform code is isolated by a consistent file convention:
 
 Used by `Bluetooth`, `GlobalMedia`, `QuickConnect`, `AutoStart`, and `Theme` (theme is a single
 class with platform branches). `QuickConnect` declares its `Backend` interface in `QuickConnect.h`
-and exposes `WindowsBackend` / `CreateLinuxBackend()` from the platform headers. `AutoStart` uses a
-`CreateAutoStartService()` factory. Windows `_win.cpp` files are listed explicitly under `if (WIN32)`
-in `CMakeLists.txt`. Linux collects the four names in `APD_LINUX_PLATFORM_CODE_FILES` when they
-exist, so porting those needs no CMake edit, but a new Linux platform file must be added to that
+and exposes `WindowsBackend` / `CreateLinuxBackend()` from the platform headers. Linux-only
+`NoiseControl` declares its backend in `NoiseControl.h`; its controller and implementation are
+compiled only on Linux. `AutoStart` uses a `CreateAutoStartService()` factory. Windows `_win.cpp`
+files are listed explicitly under `if (WIN32)` in `CMakeLists.txt`. Linux collects the names in
+`APD_LINUX_PLATFORM_CODE_FILES` when they exist; a new Linux platform file must be added to that
 list. `TaskbarStatus` uses the inverse pattern: a real Windows implementation plus a no-op header
 on other platforms.
 
@@ -304,11 +329,15 @@ not start with `v`, `APD_RELEASE_TAG_PREFIX`. Full process is in `Docs/Release.m
 ## Linux port status
 
 `LINUX_PORT_PLAN.md` is the original plan and status log. Working today: build/startup, BLE scanning
-through BlueZ, tray battery display, MPRIS ear detection, BlueZ quick connect, and XDG autostart.
-Known gaps: hardware verification with real AirPods, GNOME's tray needing the AppIndicator
-extension, no Linux release assets so updates are disabled, and the taskbar battery dock being
-Windows-only. Treat changes to `Source/Core/*_linux.cpp` as needing a Linux build and, where
-possible, a real adapter.
+through BlueZ, tray battery display, MPRIS ear detection, BlueZ quick connect, XDG autostart, and
+Linux noise control from the tray. On 2026-11-13, Noise Cancellation and Adaptive requests were
+confirmed by device reports on AirPods Pro 3; the user also reported Transparency and Off working,
+but those two later selections were not corroborated in the trace. Earlier Off and repeat-Adaptive
+requests timed out, so broader hardware and firmware verification is still needed.
+
+Known gaps include GNOME's tray needing the AppIndicator extension, no Linux release assets so
+updates are disabled, and the taskbar battery dock being Windows-only. Treat changes to
+`Source/Core/*_linux.cpp` as needing a Linux build and, where possible, a real adapter.
 
 ## Adding an AirPods Model
 

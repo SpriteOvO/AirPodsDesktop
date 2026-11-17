@@ -171,7 +171,7 @@ class LinuxBackend final : public QObject, public Backend, protected QDBusContex
     Q_OBJECT
 
 public:
-    LinuxBackend()
+    explicit LinuxBackend(Details::Transport transport) : _transport{std::move(transport)}
     {
         const auto connected = QDBusConnection::systemBus().connect(
             Core::Bluez::kService, QString(), "org.freedesktop.DBus.Properties", "PropertiesChanged",
@@ -205,7 +205,7 @@ public:
             return {};
         }
 
-        const auto objects = Core::Bluez::GetManagedObjects();
+        const auto objects = _transport.managedObjects();
         std::vector<Device> devices;
         for (auto &info : Details::ParseManagedObjects(objects)) {
             if (stopToken.stop_requested()) {
@@ -222,11 +222,21 @@ public:
 
     bool RequestReconnect(const QString &id, std::stop_token stopToken) override
     {
+        return RequestOperation(id, stopToken, false);
+    }
+
+    bool RequestDisconnect(const QString &id, std::stop_token stopToken) override
+    {
+        return RequestOperation(id, stopToken, true);
+    }
+
+    bool RequestOperation(const QString &id, std::stop_token stopToken, bool disconnect)
+    {
         if (stopToken.stop_requested()) {
             return false;
         }
 
-        const auto objects = Core::Bluez::GetManagedObjects();
+        const auto objects = _transport.managedObjects();
         const auto objectPath = Details::FindObjectPathById(objects, id);
         if (!objectPath.has_value()) {
             LOG(Warn, "Quick connect: device {} is not known to BlueZ.",
@@ -244,24 +254,31 @@ public:
             _observation = std::make_shared<const Observation>(Observation{id, *objectPath});
         }
 
+        const auto method = disconnect ? QStringLiteral("Disconnect") : QStringLiteral("Connect");
         const auto message = QDBusMessage::createMethodCall(
-            Core::Bluez::kService, *objectPath, Core::Bluez::kDeviceInterface, QStringLiteral("Connect"));
-        const auto reply =
-            QDBusConnection::systemBus().call(message, QDBus::Block, kConnectTimeoutMs);
+            Core::Bluez::kService, *objectPath, Core::Bluez::kDeviceInterface, method);
+        const auto reply = _transport.call(message);
 
         if (reply.type() != QDBusMessage::ErrorMessage) {
+            return true;
+        }
+
+        // The device may disconnect between enumeration and the method call. BlueZ's
+        // NotConnected error confirms the desired state even if we missed its signal.
+        if (disconnect && reply.errorName() == QLatin1String("org.bluez.Error.NotConnected")) {
+            QueueEndpointState(id, false);
             return true;
         }
 
         // A request that ran out of time can still bring the link up later; keep observing instead
         // of reporting a failure the device may still recover from.
         if (reply.errorName() == QLatin1String("org.freedesktop.DBus.Error.NoReply")) {
-            LOG(Warn, "Quick connect: Device1.Connect did not reply in time for {}.",
-                Details::MaskDeviceId(id).toStdString());
+            LOG(Warn, "Quick connect: Device1.{} did not reply in time for {}.",
+                method.toStdString(), Details::MaskDeviceId(id).toStdString());
             return true;
         }
 
-        LOG(Warn, "Quick connect: Device1.Connect failed for {}: {}",
+        LOG(Warn, "Quick connect: Device1.{} failed for {}: {}", method.toStdString(),
             Details::MaskDeviceId(id).toStdString(), reply.errorMessage().toStdString());
         StopObserving();
         return false;
@@ -298,6 +315,7 @@ private:
         QString path;
     };
 
+    Details::Transport _transport;
     std::mutex _controllerMutex;
     Controller *_controller{};
 
@@ -325,7 +343,16 @@ private:
 
 std::shared_ptr<Backend> CreateLinuxBackend()
 {
-    return std::make_shared<LinuxBackend>();
+    return CreateLinuxBackend(Details::Transport{
+        [] { return Core::Bluez::GetManagedObjects(); },
+        [](const QDBusMessage &message) {
+            return QDBusConnection::systemBus().call(message, QDBus::Block, kConnectTimeoutMs);
+        }});
+}
+
+std::shared_ptr<Backend> CreateLinuxBackend(Details::Transport transport)
+{
+    return std::make_shared<LinuxBackend>(std::move(transport));
 }
 
 } // namespace Core::QuickConnect

@@ -48,6 +48,9 @@ public:
     Controller *controller{};
     std::atomic<int> listCalls{};
     std::atomic<int> reconnectCalls{};
+    std::atomic<int> disconnectCalls{};
+    bool disconnectResult{true};
+    QString disconnectedId;
     std::atomic<int> setControllerCalls{};
     std::atomic<int> stopObservingCalls{};
 
@@ -67,6 +70,13 @@ public:
     {
         ++reconnectCalls;
         return id == "{A}";
+    }
+
+    bool RequestDisconnect(const QString &id, std::stop_token) override
+    {
+        disconnectedId = id;
+        ++disconnectCalls;
+        return disconnectResult;
     }
 
     void StopObserving() override
@@ -142,8 +152,12 @@ private slots:
     void resolveTimerFiresOnItsOwn();
     void completionStopsBackendObservation();
     void controllerDetachesBackendOnDestruction();
+    void disconnectOutcomes();
+    void disconnectCompletionAndTimeout();
 #if defined APD_OS_LINUX
     void parsesBluezManagedObjects();
+    void linuxBackendDisconnectMethod();
+    void linuxDisconnectAlreadyGone();
 #endif
 
     // Threading
@@ -353,6 +367,57 @@ void QuickConnectTests::controllerDetachesBackendOnDestruction()
     QCOMPARE(backend->setControllerCalls.load(), 2);
 }
 
+void QuickConnectTests::disconnectOutcomes()
+{
+    auto backend = std::make_shared<FakeBackend>();
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
+    QCOMPARE(controller.RequestDisconnect(), Outcome::Disabled);
+    controller.SetEnabled(true);
+    QCOMPARE(controller.RequestDisconnect(), Outcome::NoDevice);
+    controller.SetDeviceId("missing");
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 3, 2000);
+    QCOMPARE(spy.last().at(0).value<Outcome>(), Outcome::DeviceUnavailable);
+    controller.SetDeviceId("{A}");
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 4, 2000);
+    QCOMPARE(spy.last().at(0).value<Outcome>(), Outcome::AlreadyDisconnected);
+    QCOMPARE(backend->disconnectCalls.load(), 0);
+    backend->devices = {{"{A}", "AirPods", true}};
+    backend->disconnectResult = false;
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 5, 2000);
+    QCOMPARE(spy.last().at(0).value<Outcome>(), Outcome::DisconnectFailed);
+    QCOMPARE(backend->disconnectCalls.load(), 1);
+}
+
+void QuickConnectTests::disconnectCompletionAndTimeout()
+{
+    auto backend = std::make_shared<FakeBackend>();
+    backend->devices = {{"{A}", "AirPods", true}, {"{B}", "Other", true}};
+    Controller controller{backend, kTestResolveTimeout};
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
+    controller.SetEnabled(true);
+    controller.SetDeviceId("{A}");
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QCOMPARE(controller.Request(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(backend->disconnectCalls.load(), 1, 2000);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 2, 2000);
+    controller.SetDeviceId("{B}");
+    QCOMPARE(controller.OnEndpointStateChanged("{B}", false), Outcome::DisconnectStarted);
+    QCOMPARE(controller.OnEndpointStateChanged("{A}", true), Outcome::DisconnectStarted);
+    QCOMPARE(controller.OnEndpointStateChanged("a", false), Outcome::Disconnected);
+    QCOMPARE(spy.last().at(0).value<Outcome>(), Outcome::Disconnected);
+    QCOMPARE(spy.last().at(1).toString(), QString{"AirPods"});
+    QCOMPARE(backend->disconnectedId, QString{"{A}"});
+    QCOMPARE(backend->stopObservingCalls.load(), 1);
+    controller.SetDeviceId("{A}");
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.last().at(0).value<Outcome>(), Outcome::DisconnectTimedOut, 2000);
+    QCOMPARE(backend->stopObservingCalls.load(), 2);
+}
+
 #if defined APD_OS_LINUX
 
 namespace {
@@ -436,6 +501,63 @@ void QuickConnectTests::parsesBluezManagedObjects()
     // The mask keeps the last four characters, which for a MAC address ends mid-octet.
     QCOMPARE(MaskDeviceId("A4:C1:38:00:00:01"), QString{"***0:01"});
     QCOMPARE(MaskDeviceId(""), QString{"<empty>"});
+}
+
+void QuickConnectTests::linuxBackendDisconnectMethod()
+{
+    using namespace Core::QuickConnect;
+    QVariantMap objects;
+    const QString path = "/org/bluez/hci0/dev_A4_C1_38_00_00_01";
+    objects.insert(path, DeviceObject("A4:C1:38:00:00:01", {{"Class", 0x240404u}, {"Connected", true}}));
+    QDBusMessage sent;
+    int calls = 0;
+    QString errorName;
+    auto backend = CreateLinuxBackend(Details::Transport{
+        [&] { return objects; },
+        [&](const QDBusMessage &message) {
+            sent = message;
+            ++calls;
+            return errorName.isEmpty() ? message.createReply()
+                                       : message.createErrorReply(errorName, "failed");
+        }});
+    QVERIFY(backend->RequestDisconnect("a4:c1:38:00:00:01", {}));
+    QCOMPARE(calls, 1);
+    QCOMPARE(sent.service(), QString{"org.bluez"});
+    QCOMPARE(sent.path(), path);
+    QCOMPARE(sent.interface(), QString{"org.bluez.Device1"});
+    QCOMPARE(sent.member(), QString{"Disconnect"});
+    backend->StopObserving();
+    errorName = "org.freedesktop.DBus.Error.NoReply";
+    QVERIFY(backend->RequestDisconnect("A4:C1:38:00:00:01", {}));
+    backend->StopObserving();
+    errorName = "org.bluez.Error.Failed";
+    QVERIFY(!backend->RequestDisconnect("A4:C1:38:00:00:01", {}));
+    QVERIFY(!backend->RequestDisconnect("missing", {}));
+    QCOMPARE(calls, 3);
+    std::stop_source stop;
+    stop.request_stop();
+    QVERIFY(!backend->RequestDisconnect("A4:C1:38:00:00:01", stop.get_token()));
+    QCOMPARE(calls, 3);
+}
+
+void QuickConnectTests::linuxDisconnectAlreadyGone()
+{
+    using namespace Core::QuickConnect;
+    QVariantMap objects;
+    objects.insert("/org/bluez/hci0/dev_A4_C1_38_00_00_01",
+                   DeviceObject("A4:C1:38:00:00:01", {{"Class", 0x240404u}, {"Connected", true}}));
+    auto backend = CreateLinuxBackend(Details::Transport{
+        [objects] { return objects; },
+        [](const QDBusMessage &message) {
+            return message.createErrorReply("org.bluez.Error.NotConnected", "not connected");
+        }});
+    Controller controller{backend, kTestResolveTimeout};
+    controller.SetEnabled(true);
+    controller.SetDeviceId("A4:C1:38:00:00:01");
+    QSignalSpy spy{&controller, &Controller::OutcomeChanged};
+    QCOMPARE(controller.RequestDisconnect(), Outcome::DisconnectStarted);
+    QTRY_COMPARE_WITH_TIMEOUT(spy.count(), 1, 2000);
+    QCOMPARE(spy.last().at(0).value<Outcome>(), Outcome::Disconnected);
 }
 
 #endif

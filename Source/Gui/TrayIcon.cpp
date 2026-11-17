@@ -66,6 +66,29 @@ TrayIcon::TrayIcon(
     _menu->addSeparator();
     _menu->addAction(_actionNewVersion);
     _menu->addAction(_actionLowAudioLatency);
+#if defined APD_OS_LINUX
+    _actionQuickConnect->setObjectName("quickConnectAction");
+    _actionQuickDisconnect->setObjectName("quickDisconnectAction");
+    _actionQuickConnect->setText(tr("Connect selected device"));
+    _actionQuickDisconnect->setText(tr("Disconnect selected device"));
+    connect(_actionQuickConnect, &QAction::triggered, this, [this] { _quickConnect.Request(); });
+    connect(_actionQuickDisconnect, &QAction::triggered, this, [this] { _quickConnect.RequestDisconnect(); });
+    _menu->addAction(_actionQuickConnect);
+    _menu->addAction(_actionQuickDisconnect);
+    _noiseMenu = _menu->addMenu(tr("Noise Control"));
+    _noiseMenu->setObjectName("noiseControlMenu");
+    _noiseMenu->menuAction()->setVisible(false);
+    for (int value : {2, 3, 4, 1}) {
+        auto *action = _noiseMenu->addAction(QString{});
+        action->setObjectName(QStringLiteral("noiseControlMode%1").arg(value));
+        action->setCheckable(true);
+        _noiseActions.push_back(action);
+        connect(action, &QAction::triggered, this, [this, value] {
+            if (_noiseControl) _noiseControl->Request(static_cast<Core::NoiseControl::Mode>(value));
+            UpdateNoiseControl(); // A click is not confirmation from the device.
+        });
+    }
+#endif
     _menu->addAction(_actionSettings);
     _menu->addSeparator();
     _menu->addAction(_actionAbout);
@@ -127,8 +150,54 @@ void TrayIcon::ShowContextMenu(const QPoint &position)
     _menu->popup(position);
 }
 
+#if defined APD_OS_LINUX
+void TrayIcon::SetNoiseControl(Core::NoiseControl::Controller *controller)
+{
+    _noiseControl = controller;
+    connect(controller, &Core::NoiseControl::Controller::Changed, this, &TrayIcon::UpdateNoiseControl);
+    connect(controller, &Core::NoiseControl::Controller::Error, this, [this](const QString &error) {
+        ShowMessage(tr("Noise Control"), tr("Noise control unavailable: %1").arg(error),
+                    QSystemTrayIcon::Warning);
+    });
+    connect(controller, &Core::NoiseControl::Controller::RequestTimedOut, this,
+            [this](Core::NoiseControl::Mode mode) {
+        ShowMessage(tr("Noise Control"), NoiseControlTimeoutMessage(mode), QSystemTrayIcon::Warning);
+    });
+    UpdateNoiseControl();
+}
+
+QString TrayIcon::NoiseControlTimeoutMessage(Core::NoiseControl::Mode mode)
+{
+    return mode == Core::NoiseControl::Mode::Off
+        ? tr("Off was not confirmed. You may need to enable Off on an Apple device first.")
+        : tr("The requested noise control mode was not confirmed.");
+}
+
+void TrayIcon::UpdateNoiseControl()
+{
+    using Core::NoiseControl::Mode;
+    const Mode modes[]{Mode::Anc, Mode::Transparency, Mode::Adaptive, Mode::Off};
+    const QString names[]{tr("Noise Cancellation"), tr("Transparency"), tr("Adaptive"), tr("Off")};
+    const bool supported = _noiseControl && Core::NoiseControl::Supports(_noiseControl->Model(), Mode::Anc);
+    _noiseMenu->setTitle(supported ? tr("Noise Control") : tr("Noise Control (unsupported or unknown)"));
+    _noiseMenu->menuAction()->setVisible(_noiseControl && _noiseControl->HasBinding());
+    _noiseMenu->setEnabled(supported && _noiseControl->Available());
+    for (size_t i = 0; i < _noiseActions.size(); ++i) {
+        auto *action = _noiseActions[i];
+        action->setText(names[i]);
+        action->setVisible(supported && Core::NoiseControl::Supports(_noiseControl->Model(), modes[i]));
+        action->setChecked(supported && _noiseControl->ReportedMode() == modes[i]);
+    }
+}
+#endif
+
 void TrayIcon::Repaint()
 {
+#if defined APD_OS_LINUX
+    _actionQuickConnect->setText(tr("Connect selected device"));
+    _actionQuickDisconnect->setText(tr("Disconnect selected device"));
+    UpdateNoiseControl();
+#endif
     QString toolTipContent;
     Core::AirPods::Battery minBattery;
 
@@ -443,6 +512,23 @@ void TrayIcon::OnQuickConnectOutcome(Core::QuickConnect::Outcome outcome, const 
         break;
     case Core::QuickConnect::Outcome::Failed:
         text = tr("Could not connect to %1.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::AlreadyDisconnected:
+        text = tr("%1 is already disconnected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::DisconnectStarted:
+        text = tr("Disconnecting from %1...").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::Disconnected:
+        text = tr("%1 disconnected.").arg(deviceName);
+        break;
+    case Core::QuickConnect::Outcome::DisconnectFailed:
+        text = tr("Could not disconnect from %1.").arg(deviceName);
+        icon = QSystemTrayIcon::Warning;
+        break;
+    case Core::QuickConnect::Outcome::DisconnectTimedOut:
+        text = tr("Disconnection from %1 timed out.").arg(deviceName);
         icon = QSystemTrayIcon::Warning;
         break;
     default:

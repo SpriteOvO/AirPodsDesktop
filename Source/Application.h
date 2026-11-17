@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 #include <SingleApplication>
 
 #include <QLocale>
@@ -43,6 +44,12 @@ namespace Core::QuickConnect {
 class Backend;
 class Controller;
 } // namespace Core::QuickConnect
+
+#if defined APD_OS_LINUX
+namespace Core::NoiseControl {
+class Controller;
+}
+#endif
 
 namespace Gui {
 class MainWindow;
@@ -89,6 +96,10 @@ private:
     // in reverse declaration order.
     std::shared_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
     std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
+#if defined APD_OS_LINUX
+    std::unique_ptr<Core::NoiseControl::Controller> _noiseControl;
+    std::atomic_uint64_t _noiseBindingGeneration{};
+#endif
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;

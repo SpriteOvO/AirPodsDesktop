@@ -425,6 +425,9 @@ elseif (APD_OS_LINUX)
         "Source/Core/Bluetooth_linux.cpp"
         "Source/Core/GlobalMedia_linux.cpp"
         "Source/Core/QuickConnect_linux.cpp"
+        "Source/Core/NoiseControl.cpp"
+        "Source/Core/NoiseControl.h"
+        "Source/Core/NoiseControl_linux.cpp"
     )
     # The port adds these incrementally; pick up each one as soon as it lands.
     foreach (APD_FILE ${APD_LINUX_PLATFORM_CODE_FILES})
@@ -713,6 +716,11 @@ elseif (APD_OS_LINUX)
         FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
         DESTINATION share/airpodsdesktop/licenses
         RENAME LICENSE.txt
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${CMAKE_CURRENT_SOURCE_DIR}/Docs/NoiseControl-Licenses.txt"
+        DESTINATION share/airpodsdesktop/licenses
         COMPONENT ${PROJECT_NAME}
     )
     install(

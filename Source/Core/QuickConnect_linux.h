@@ -26,6 +26,7 @@
 #include <optional>
 #include <vector>
 
+#include <QDBusMessage>
 #include <QString>
 #include <QVariantMap>
 
@@ -51,10 +52,17 @@ std::optional<QString> FindObjectPathById(const QVariantMap &objects, const QStr
 
 QString MaskDeviceId(const QString &id);
 
+// Injectable transport lets tests exercise BlueZ method selection without a real adapter.
+struct Transport {
+    std::function<QVariantMap()> managedObjects;
+    std::function<QDBusMessage(const QDBusMessage &)> call;
+};
+
 } // namespace Details
 
 // Lists paired audio devices through the BlueZ ObjectManager and reconnects one by calling
 // Device1.Connect, watching its PropertiesChanged for the link to come up.
 std::shared_ptr<Backend> CreateLinuxBackend();
+std::shared_ptr<Backend> CreateLinuxBackend(Details::Transport transport);
 
 } // namespace Core::QuickConnect

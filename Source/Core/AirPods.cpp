@@ -19,6 +19,7 @@
 #include "AirPods.h"
 
 #include <algorithm>
+#include <chrono>
 #include <utility>
 
 #include "GlobalMedia.h"
@@ -27,6 +28,19 @@
 #include "../Logger.h"
 
 namespace Core::AirPods {
+
+namespace {
+
+#if defined APD_OS_LINUX
+// BlueZ surfaces a Device1 property update only when the advertised payload changes, RSSI is
+// throttled to steps of 8 dB, and duplicate advertising reports are filtered below it, so an idle
+// pair can go tens of seconds between updates. WinRT delivers every advertisement instead.
+constexpr auto kAdvTimeout = std::chrono::seconds{60};
+#else
+constexpr auto kAdvTimeout = std::chrono::seconds{10};
+#endif
+
+} // namespace
 
 QString Details::ResolveDisplayName(QString deviceName, Model model)
 {
@@ -38,7 +52,7 @@ QString Details::ResolveDisplayName(QString deviceName, Model model)
     return deviceName.isEmpty() || isDefaultModelName ? Helper::ToString(model) : deviceName;
 }
 
-Manager::Manager(QObject *parent) : QObject{parent}
+Manager::Manager(QObject *parent) : QObject{parent}, _stateMgr{kAdvTimeout}
 {
     _stateMgr.SetOnDiscardState([this] {
         QMetaObject::invokeMethod(this, [this] { emit Disconnected(); }, Qt::QueuedConnection);
@@ -119,7 +133,7 @@ void Manager::OnAutomaticEarDetectionChanged(bool enable)
     _automaticEarDetection = enable;
 }
 
-void Manager::OnBoundDeviceAddressChanged(uint64_t address)
+void Manager::OnBoundDeviceAddressChanged(uint64_t address, uint64_t generation)
 {
     _deviceLookupThread.request_stop();
     if (_deviceLookupThread.joinable()) {
@@ -129,8 +143,12 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     std::lock_guard<std::mutex> lock{_mutex};
 
     _requestedDeviceAddress = address;
+    _bindingGeneration = generation;
     _boundDevice.reset();
     _boundModel = Model::Unknown;
+#if defined APD_OS_LINUX
+    _boundNoiseModel = Model::Unknown;
+#endif
     _deviceConnected = false;
     _stateMgr.Disconnect();
     emit DeviceConnectionChanged(false);
@@ -143,7 +161,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
     LOG(Info, "Bind a new device.");
 
-    _deviceLookupThread = std::jthread{[this, address](std::stop_token stopToken) {
+    _deviceLookupThread = std::jthread{[this, address, generation](std::stop_token stopToken) {
 #if defined APD_OS_WIN
         OS::Windows::Winrt::Initialize();
 #endif
@@ -154,18 +172,19 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
 
         QMetaObject::invokeMethod(
             this,
-            [this, address, device = std::move(device)]() mutable {
-                CompleteBoundDeviceLookup(address, std::move(device));
+            [this, address, generation, device = std::move(device)]() mutable {
+                CompleteBoundDeviceLookup(address, generation, std::move(device));
             },
             Qt::QueuedConnection);
     }};
 }
 
-void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetooth::Device> device)
+void Manager::CompleteBoundDeviceLookup(
+    uint64_t address, uint64_t generation, std::optional<Bluetooth::Device> device)
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
-    if (address != _requestedDeviceAddress) {
+    if (address != _requestedDeviceAddress || generation != _bindingGeneration) {
         LOG(Info, "Ignore a stale bound-device lookup result.");
         return;
     }
@@ -178,14 +197,19 @@ void Manager::CompleteBoundDeviceLookup(uint64_t address, std::optional<Bluetoot
 
     _boundDevice = std::move(device);
     _boundModel = AppleCP::AirPods::GetModel(_boundDevice->GetProductId());
+#if defined APD_OS_LINUX
+    _boundNoiseModel = _boundDevice->GetVendorId() == AppleCP::VendorId
+        ? _boundModel : Model::Unknown;
+#endif
 
     _deviceName = QString::fromStdString([&] {
         auto name = _boundDevice->GetName();
         return name.find("Bluetooth") != std::string::npos ? std::string{} : name;
     }());
 
-    _boundDevice->CbConnectionStatusChanged() += [this](auto &&...args) {
+    _boundDevice->CbConnectionStatusChanged() += [this, generation](auto &&...args) {
         std::lock_guard<std::mutex> lock{_mutex};
+        if (generation != _bindingGeneration) return;
         OnBoundDeviceConnectionStateChanged(std::forward<decltype(args)>(args)...);
     };
 
@@ -199,6 +223,10 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
     bool doDisconnect = oldDeviceConnected && !newDeviceConnected;
     _deviceConnected = newDeviceConnected;
     emit DeviceConnectionChanged(newDeviceConnected);
+#if defined APD_OS_LINUX
+    emit BoundDeviceDetailsChanged(_requestedDeviceAddress, _bindingGeneration,
+                                   static_cast<quint32>(_boundNoiseModel), newDeviceConnected);
+#endif
 
     QMetaObject::invokeMethod(
         this,

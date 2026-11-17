@@ -1,4 +1,6 @@
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <tuple>
@@ -159,6 +161,7 @@ private Q_SLOTS:
     void ParsesAdvertisementState();
     void FiltersDuplicateAndWeakAdvertisements();
     void MergesAdvertisementsFromBothSides();
+    void HonorsConfiguredAdvertisementTimeout();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void PackagesCompatibleLowLatencySilence();
@@ -256,6 +259,19 @@ void AirPodsDomainTests::RecognizesAirPods5()
         }
     }
     QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_5);
+}
+
+void AirPodsDomainTests::HonorsConfiguredAdvertisementTimeout()
+{
+    StateManager manager{std::chrono::milliseconds{80}};
+    manager.OnRssiMinChanged(-80);
+    std::atomic<int> discards{0};
+    manager.SetOnDiscardState([&discards] { discards.fetch_add(1); });
+
+    manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1234, -45, Side::Left)});
+    QVERIFY(manager.GetCurrentState().has_value());
+    QTRY_VERIFY_WITH_TIMEOUT(discards.load() > 0, 2000);
+    QVERIFY(!manager.GetCurrentState().has_value());
 }
 
 void AirPodsDomainTests::ResolvesAirPods5DisplayName()

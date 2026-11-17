@@ -2,24 +2,46 @@
 
 ## Status
 
-- [x] **Phase 1.1 — CMake platform support.** Windows-only gate split into `WIN32` / Linux
-      (`APD_OS_LINUX`), Windows-only flags and libraries guarded, Linux platform sources collected
-      automatically, Linux Qt deployment via `qt_generate_deploy_app_script`.
-- [x] **Phase 1.2 — Toolchain.** Qt 6.8.3 (aqtinstall), Boost 1.83 headers, BlueZ/D-Bus headers,
-      OpenGL dev headers.
-- [x] **Phase 2 — Bluetooth.** `Bluetooth_linux.{h,cpp}` implements `Device`, `DeviceManager` and
-      `AdvertisementWatcher` on BlueZ via QtDBus (`SetDiscoveryFilter` with `Transport=le` and
-      `DuplicateData=true`, `PropertiesChanged`/`InterfacesAdded` parsing, Apple vendor id 76).
-      `GlobalMedia_linux` drives MPRIS, `AutoStart_linux` writes an XDG autostart entry.
-- [x] **Build and startup verified.** `Build-linux/Binary/AirPodsDesktop` links and runs headlessly;
-      startup log is clean apart from the updater (no network, no Linux release assets).
-- [x] **Intermittent startup segfault fixed.** `ApdApplication` took `argc` by value, so the reference
-      `QCoreApplicationPrivate` keeps to it dangled once the constructor returned. Qt's XCB
-      integration later called `QCoreApplication::arguments()` (via `wmClass()`), walked a garbage
-      argument count, and crashed. `argc` is now taken by reference and binds to `main()`'s copy.
-- [ ] **Hardware verification.** Pair AirPods, bind them in the UI, confirm battery/ear detection.
-- [ ] **Remaining gaps.** Quick Connect null backend, GNOME tray needs AppIndicator extension,
-      system dark-mode detection, updater has no Linux assets.
+As of 2026-11-13, the Linux port builds and runs, with the main desktop features implemented:
+
+- [x] Linux CMake build, bundled runtime, DEB and tarball packaging.
+- [x] BlueZ Bluetooth discovery, AirPods binding and battery/connection display.
+- [x] MPRIS ear-detection playback control, BlueZ Quick Connect, XDG autostart, tray and settings.
+- [x] System theme detection through the desktop portal, with a Qt fallback.
+- [x] Linux tray noise control for supported models, using the bound classic Bluetooth device.
+- [x] Linux automated suite: 14 of 14 CTest entries passed in the latest run, including noise-control,
+      media, domain and UI tests. These tests do not replace hardware validation.
+
+### Hardware observations and remaining work
+
+- [x] On AirPods Pro 3, the user reported Noise Cancellation, Transparency, Adaptive and Off working.
+      Device reports in the trace independently confirmed Noise Cancellation and Adaptive; the later
+      Transparency and Off selections were not captured in that trace.
+- [x] On 2026-11-16 the Quick disconnect tray action was verified on AirPods Pro 3: the device
+      disconnected and the state cleared; the AirPods reconnected by themselves about 45 seconds
+      later. The first test showed a spurious noise-control "AAP connection closed" warning, because
+      the control socket notices the link drop before BlueZ reports it. Error notifications are now
+      held briefly and dropped if the device disconnects; a re-test on 2026-11-17 produced no warning.
+- [ ] Verify noise control and the rest of the port across additional AirPods models, firmware,
+      Bluetooth adapters and desktop environments. Earlier Off and repeated Adaptive requests timed
+      out; their causes were not established. Off may require enabling Off Listening Mode on an Apple
+      device, but a timeout alone does not establish that this is the cause.
+- [ ] Verify Wayland on Linux.
+- [ ] Decide on Linux release assets; the updater is disabled on Linux until suitable assets exist.
+      Local RelWithDebInfo DEB and tarball builds succeeded and their extracted payloads matched;
+      dependencies resolved on the build host. A Release build, clean-machine installation and
+      packaged application startup have not yet been verified.
+
+GNOME requires an AppIndicator extension for the tray. The taskbar battery dock is Windows-only.
+See `Docs/Build.md` for build, packaging and noise-control limitations.
+
+## Original plan (historical)
+
+The phases, examples and estimates below record the original proposal, not the current
+implementation or remaining work. The feature parity checklist is updated separately. In particular,
+the Bluetooth packet and scanning examples are
+illustrative and should not be used as protocol or implementation references; consult the source and
+`Docs/Build.md` instead. Current status is tracked above.
 
 ## Executive Summary
 AirPodsDesktop uses Qt with platform-specific subsystems for Bluetooth, media control, auto-start, and audio management. The codebase has well-structured abstract interfaces, making it suitable for a Linux port. Estimated effort: **2-3 months** for a complete port with full feature parity, or **3-4 weeks** for a minimal viable port (Bluetooth + battery display only).
@@ -259,14 +281,18 @@ Optional: Provide systemd user service for background operation.
 - **Wayland/X11**: Test both display servers
 
 ### 7.2 Feature Parity Checklist
-- [ ] AirPods battery level display
-- [ ] Connection status indicator
-- [ ] Media playback control
-- [ ] Quick connect/disconnect
-- [ ] Low-latency audio mode
-- [ ] Auto-start on boot
-- [ ] Tray icon with menu
-- [ ] Settings persistence
+
+These checkboxes indicate implementation, not comprehensive hardware verification.
+
+- [x] AirPods battery level display
+- [x] Connection status indicator
+- [x] Media playback control through MPRIS
+- [x] Quick Connect through BlueZ
+- [x] Quick disconnect for the selected Quick Connect device (verified on AirPods Pro 3)
+- [x] Auto-start on boot
+- [x] Tray icon with menu
+- [x] Settings persistence
+- [x] Noise control for supported models (see hardware observations above)
 
 ---
 
