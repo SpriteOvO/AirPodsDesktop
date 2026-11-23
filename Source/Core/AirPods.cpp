@@ -28,6 +28,24 @@
 
 namespace Core::AirPods {
 
+namespace {
+
+// Some third-party AirPods Pro clones report the AirPods Pro product id (0x200E) over classic
+// Bluetooth but advertise the AirPods Pro 2 model id (0x2014) over BLE. Treat the two as the same
+// model when matching advertisements against the bound device so those clones still work.
+bool IsCompatibleWithBoundModel(Model boundModel, Model advModel)
+{
+    if (boundModel == advModel) {
+        return true;
+    }
+    const auto isProFamily = [](Model model) {
+        return model == Model::AirPods_Pro || model == Model::AirPods_Pro_2;
+    };
+    return isProFamily(boundModel) && isProFamily(advModel);
+}
+
+} // namespace
+
 QString Details::ResolveDisplayName(QString deviceName, Model model)
 {
     deviceName.remove(" - Find My");
@@ -307,8 +325,14 @@ bool Manager::OnAdvertisementReceived(const Bluetooth::AdvertisementWatcher::Rec
         return false;
     }
 
-    if (_boundModel != Model::Unknown && adv.GetAdvState().model != _boundModel) {
-        LOG(Trace, "Ignore advertisement for a model other than the bound device.");
+    if (_boundModel != Model::Unknown &&
+        !IsCompatibleWithBoundModel(_boundModel, adv.GetAdvState().model))
+    {
+        LOG(Trace,
+            "Ignore advertisement for a model other than the bound device. Bound: {}, "
+            "advertised: {}, Data: {}, RSSI: {}",
+            Helper::ToString(_boundModel), Helper::ToString(adv.GetAdvState().model),
+            Helper::ToString(adv.GetDesensitizedData()), data.rssi);
         return false;
     }
 
