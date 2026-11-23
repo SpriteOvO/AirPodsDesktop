@@ -164,6 +164,10 @@ Divertiti.</translation>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Bassa latenza audio (potrebbe causare fruscii)</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Batteria</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

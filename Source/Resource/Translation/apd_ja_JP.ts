@@ -163,6 +163,10 @@ Enjoy it all.</source>
         <source>Quick connect</source>
         <translation>クイック接続</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>バッテリー</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

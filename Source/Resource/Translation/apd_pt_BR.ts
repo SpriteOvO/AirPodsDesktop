@@ -163,6 +163,10 @@ Aproveite.</translation>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Baixa latência de áudio (pode causar chiado)</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Bateria</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

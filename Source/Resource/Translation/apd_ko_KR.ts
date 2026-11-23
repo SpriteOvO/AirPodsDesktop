@@ -163,6 +163,10 @@ Enjoy it all.</source>
         <source>Low audio latency (may cause hiss)</source>
         <translation>오디오 지연 최소화(잡음이 발생할 수 있음)</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>배터리</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
