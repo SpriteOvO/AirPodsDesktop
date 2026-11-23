@@ -163,6 +163,10 @@ Selamat menikmati.</translation>
         <source>Quick connect</source>
         <translation>Koneksi cepat</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Baterai</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

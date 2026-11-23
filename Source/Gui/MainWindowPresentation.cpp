@@ -208,9 +208,10 @@ std::optional<QColor> GetAnimationTint(Core::AirPods::Model model, Core::AppleCP
         return std::nullopt;
     }
 
+    // Only colors observed on a real AirPods Max are mapped. `Color::SpaceGray` (0x9) comes from
+    // the earbud color table and has never been seen from a Max, so it stays untinted.
     switch (color) {
     case Color::MaxSpaceGray:
-    case Color::SpaceGray:
         return QColor{0x6E, 0x70, 0x75};
     default:
         return std::nullopt;

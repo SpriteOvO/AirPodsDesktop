@@ -163,6 +163,10 @@ Keyfini çıkarın.</translation>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Düşük ses gecikmesi (dip sese neden olabilir)</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Pil</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

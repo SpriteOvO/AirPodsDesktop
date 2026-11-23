@@ -163,6 +163,10 @@ Enjoy it all.</source>
         <source>Low audio latency (may cause hiss)</source>
         <translation>Ниска латентност на звука (може да причини шум)</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Батерия</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

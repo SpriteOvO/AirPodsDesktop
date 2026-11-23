@@ -163,6 +163,10 @@ Miłego słuchania!</translation>
         <source>Quick connect</source>
         <translation>Szybkie łączenie</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Bateria</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>

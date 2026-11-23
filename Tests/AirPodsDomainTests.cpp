@@ -1294,6 +1294,8 @@ void AirPodsDomainTests::ParsesCapturedSpaceGrayAirPodsMax()
     QVERIFY(presentation.animationTint.has_value());
 
     QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Max, Core::AppleCP::Color::White).has_value());
+    QVERIFY(
+        !Gui::GetAnimationTint(Model::AirPods_Max, Core::AppleCP::Color::SpaceGray).has_value());
     QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Pro_2, Core::AppleCP::Color::MaxSpaceGray)
                  .has_value());
 }
