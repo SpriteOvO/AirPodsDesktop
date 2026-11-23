@@ -14,6 +14,9 @@
 #include "Source/Core/Update.h"
 #include "Source/Gui/MainWindowPresentation.h"
 #include "Source/Gui/TaskbarGeometry.h"
+#include "Source/Utils.h"
+
+#include <sddl.h>
 
 namespace {
 
@@ -180,6 +183,7 @@ private Q_SLOTS:
     void PresentsMainWindowCaseBattery();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
+    void TreatsInaccessibleInstanceMutexAsRunning();
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -274,6 +278,7 @@ void AirPodsDomainTests::ResolvesAirPods5DisplayName()
 void AirPodsDomainTests::RecognizesAirPodsMaxUsbC()
 {
     QCOMPARE(Core::AppleCP::AirPods::GetModel(0x201F), Model::AirPods_Max_USB_C);
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x202D), Model::AirPods_Max_USB_C);
     QCOMPARE(Helper::ToString(Model::AirPods_Max_USB_C), QString{"AirPods Max (USB-C)"});
 }
 
@@ -771,6 +776,36 @@ void AirPodsDomainTests::ConvertsTaskbarGeometryAcrossDpiBoundaries()
         Gui::TaskbarGeometry::CalculateLayout(QSize{50, 1440}, QRect{0, 120, 50, 1270}, 120, false);
     QCOMPARE(vertical.statusLogical, QRect(0, 1112, 40, 40));
     QCOMPARE(vertical.taskButtonsNative, QRect(0, 120, 50, 1270));
+}
+
+void AirPodsDomainTests::TreatsInaccessibleInstanceMutexAsRunning()
+{
+    const auto pid = QCoreApplication::applicationPid();
+
+    // A fresh name is the first instance; opening it again reports the running one.
+    const auto freeName = QString{"AirPodsDesktopTests_Free_%1"}.arg(pid);
+    QVERIFY(Utils::Process::SingleInstance(freeName));
+    QVERIFY(!Utils::Process::SingleInstance(freeName));
+
+    // Reproduces issues #50, #158, #164 and #247: the running instance was started elevated, so a
+    // non-elevated launch may not open its mutex and gets ERROR_ACCESS_DENIED instead of
+    // ERROR_ALREADY_EXISTS. A DACL that only grants SYSTEM access stands in for that here.
+    const auto deniedName = QString{"AirPodsDesktopTests_Denied_%1"}.arg(pid);
+    const auto deniedMutexName = ("Global\\" + deniedName + "_InstanceMutex").toStdWString();
+
+    PSECURITY_DESCRIPTOR descriptor = nullptr;
+    QVERIFY(ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        L"D:P(A;;GA;;;SY)", SDDL_REVISION_1, &descriptor, nullptr));
+    SECURITY_ATTRIBUTES attributes{sizeof(attributes), descriptor, FALSE};
+    HANDLE owner = CreateMutexW(&attributes, FALSE, deniedMutexName.c_str());
+    LocalFree(descriptor);
+    QVERIFY(owner != nullptr);
+
+    QVERIFY(CreateMutexW(nullptr, FALSE, deniedMutexName.c_str()) == nullptr);
+    QCOMPARE(GetLastError(), static_cast<DWORD>(ERROR_ACCESS_DENIED));
+    QVERIFY(!Utils::Process::SingleInstance(deniedName));
+
+    CloseHandle(owner);
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)
