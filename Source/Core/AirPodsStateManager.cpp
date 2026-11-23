@@ -267,23 +267,28 @@ void StateManager::DoStateReset(Side side)
     }
 }
 
-bool LidTracker::Update(std::optional<bool> oldLidOpened, bool newLidOpened, Timestamp now)
+std::optional<bool> LidTracker::Update(std::optional<Lid> oldLid, Lid newLid, Timestamp now)
 {
     std::lock_guard<std::mutex> lock{_mutex};
 
-    bool switched;
-    if (oldLidOpened.has_value()) {
-        switched = oldLidOpened.value() != newLidOpened;
+    std::optional<Lid> previous = oldLid;
+    if (!previous.has_value() && _lastLid.has_value() && _lostAt.has_value() &&
+        now - *_lostAt <= kMemory)
+    {
+        previous = _lastLid;
     }
-    else if (_lastLidOpened.has_value() && _lostAt.has_value() && now - *_lostAt <= kMemory) {
-        switched = _lastLidOpened.value() != newLidOpened;
-    }
-    else {
-        switched = newLidOpened;
-    }
-    _lastLidOpened = newLidOpened;
+    _lastLid = newLid;
     _lostAt.reset();
-    return switched;
+
+    if (newLid == Lid::Opened && previous != Lid::Opened) {
+        return true;
+    }
+    // A closed lid is only reported against a known earlier state, so that the first state
+    // after binding doesn't hide a popup opened from the tray.
+    if (newLid == Lid::Closed && previous.has_value() && previous != Lid::Closed) {
+        return false;
+    }
+    return std::nullopt;
 }
 
 void LidTracker::OnLost(Timestamp now)
@@ -295,7 +300,7 @@ void LidTracker::OnLost(Timestamp now)
 void LidTracker::Reset()
 {
     std::lock_guard<std::mutex> lock{_mutex};
-    _lastLidOpened.reset();
+    _lastLid.reset();
     _lostAt.reset();
 }
 

@@ -233,15 +233,21 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 
     emit StateUpdated(newState);
 
-    bool newLidOpened = newState.caseBox.isLidOpened && newState.caseBox.isBothPodsInCase;
-    std::optional<bool> oldLidOpened;
+    using Lid = Details::LidTracker::Lid;
+    const auto lidOf = [](const State &state) {
+        if (!state.caseBox.isBothPodsInCase) {
+            return Lid::Unobservable;
+        }
+        return state.caseBox.isLidOpened ? Lid::Opened : Lid::Closed;
+    };
+    std::optional<Lid> oldLid;
     if (oldState.has_value()) {
-        oldLidOpened = oldState->caseBox.isLidOpened && oldState->caseBox.isBothPodsInCase;
+        oldLid = lidOf(*oldState);
     }
-    bool lidStateSwitched =
-        _lidTracker.Update(oldLidOpened, newLidOpened, Details::LidTracker::Clock::now());
-    if (lidStateSwitched) {
-        OnLidOpened(newLidOpened);
+    const auto lidOpened =
+        _lidTracker.Update(oldLid, lidOf(newState), Details::LidTracker::Clock::now());
+    if (lidOpened.has_value()) {
+        OnLidOpened(*lidOpened);
     }
 
     if (oldState.has_value()) {

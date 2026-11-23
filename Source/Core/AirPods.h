@@ -167,24 +167,33 @@ private:
 // from a real opening. It is reset when the Bluetooth connection drops or another device is
 // bound, because the lid can close without being advertised then.
 //
+// The lid is only advertised while both pods sit in the case. Taking the pods out is neither an
+// opening nor a closing, so the popup that came up for an opened case stays while they come out.
+//
 class LidTracker
 {
 public:
     using Clock = std::chrono::steady_clock;
     using Timestamp = std::chrono::time_point<Clock>;
 
+    enum class Lid : uint8_t {
+        Opened,
+        Closed,
+        Unobservable, // At least one pod is out of the case.
+    };
+
     // How long the last seen lid state is trusted after the device was lost.
     static constexpr std::chrono::seconds kMemory{60};
 
-    // Returns true when the lid state switched. `oldLidOpened` is empty for the first state
-    // after the device was lost or bound.
-    bool Update(std::optional<bool> oldLidOpened, bool newLidOpened, Timestamp now);
+    // Returns true when the lid was seen opening, false when it was seen closing, and nothing
+    // otherwise. `oldLid` is empty for the first state after the device was lost or bound.
+    std::optional<bool> Update(std::optional<Lid> oldLid, Lid newLid, Timestamp now);
     void OnLost(Timestamp now);
     void Reset();
 
 private:
     mutable std::mutex _mutex;
-    std::optional<bool> _lastLidOpened;
+    std::optional<Lid> _lastLid;
     std::optional<Timestamp> _lostAt;
 };
 } // namespace Details

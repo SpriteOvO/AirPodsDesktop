@@ -166,6 +166,7 @@ private Q_SLOTS:
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
     void TracksLidAcrossShortGaps();
+    void TracksLidWhilePodsAreOut();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void MigratesLegacySettingsRepository();
@@ -398,31 +399,60 @@ void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
 void AirPodsDomainTests::TracksLidAcrossShortGaps()
 {
     using namespace std::chrono_literals;
+    using Lid = LidTracker::Lid;
 
     const LidTracker::Timestamp start{};
     LidTracker tracker;
 
     // The first state ever seen with the lid open is a real opening.
-    QVERIFY(tracker.Update(std::nullopt, true, start));
-    QVERIFY(!tracker.Update(true, true, start + 1s));
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start), std::optional<bool>{true});
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Opened, start + 1s), std::nullopt);
 
     // The device is lost while the lid stays open and comes back later (#233).
     tracker.OnLost(start + 40s);
-    QVERIFY(!tracker.Update(std::nullopt, true, start + 70s));
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 70s), std::nullopt);
 
     // The lid is seen closed, the device goes quiet, then the lid opens again.
-    QVERIFY(tracker.Update(true, false, start + 80s));
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Closed, start + 80s), std::optional<bool>{false});
     tracker.OnLost(start + 90s);
-    QVERIFY(tracker.Update(std::nullopt, true, start + 95s));
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 95s), std::optional<bool>{true});
 
     // After a long gap the last lid state is no longer trusted.
     tracker.OnLost(start + 100s);
-    QVERIFY(tracker.Update(std::nullopt, true, start + 101s + LidTracker::kMemory));
+    QCOMPARE(
+        tracker.Update(std::nullopt, Lid::Opened, start + 101s + LidTracker::kMemory),
+        std::optional<bool>{true});
 
     // Binding another device forgets the last lid state.
     tracker.OnLost(start + 200s);
     tracker.Reset();
-    QVERIFY(tracker.Update(std::nullopt, true, start + 201s));
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 201s), std::optional<bool>{true});
+}
+
+void AirPodsDomainTests::TracksLidWhilePodsAreOut()
+{
+    using namespace std::chrono_literals;
+    using Lid = LidTracker::Lid;
+
+    const LidTracker::Timestamp start{};
+    LidTracker tracker;
+
+    // Taking the pods out of the opened case is not a closing.
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start), std::optional<bool>{true});
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Unobservable, start + 1s), std::nullopt);
+    QCOMPARE(tracker.Update(Lid::Unobservable, Lid::Unobservable, start + 2s), std::nullopt);
+
+    // Putting them back into a closed case is.
+    QCOMPARE(
+        tracker.Update(Lid::Unobservable, Lid::Closed, start + 3s), std::optional<bool>{false});
+
+    // Putting them back into an open case is an opening.
+    QCOMPARE(tracker.Update(Lid::Closed, Lid::Unobservable, start + 4s), std::nullopt);
+    QCOMPARE(tracker.Update(Lid::Unobservable, Lid::Opened, start + 5s), std::optional<bool>{true});
+
+    // A closed lid with nothing to compare against is not reported.
+    tracker.Reset();
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Closed, start + 6s), std::nullopt);
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()
