@@ -21,6 +21,7 @@
 #include <atomic>
 #include <chrono>
 #include <map>
+#include <optional>
 #include <thread>
 
 #include <QDialog>
@@ -57,6 +58,8 @@ public:
     void StartUpdateChecks();
     void Show();
     void ShowWithoutActivating();
+    // Called by the mouse hook when the user clicks outside the popup.
+    void HideOnOutsideClick();
 
     void UpdateState(const Core::AirPods::State &state);
     void Available();
@@ -142,6 +145,11 @@ private:
     bool _holdForOpenLid{false};
     // The last `start` passed to ControlAutoHideTimer: false while hidden, hovered or activated.
     bool _autoHideRequested{false};
+    // Whether a click outside the popup hides it (#126). Set while the popup is shown.
+    bool _closeOnOutsideClick{false};
+    std::optional<std::chrono::steady_clock::time_point> _hiddenOnOutsideClickAt;
+
+    void SetCloseOnOutsideClick(bool enable);
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
@@ -174,11 +182,8 @@ private:
     void showEvent(QShowEvent *event) override;
     void hideEvent(QHideEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
     UTILS_QT_DISABLE_ESC_QUIT(QDialog);
-    UTILS_QT_REGISTER_LANGUAGECHANGE(QDialog, [this] {
-        _ui.retranslateUi(this);
-        Repaint();
-    });
 };
 } // namespace Gui
