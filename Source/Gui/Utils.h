@@ -76,9 +76,13 @@ inline void Dispatch(std::function<void()> callback)
     QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
 }
 
+// Qt 6's `QGuiApplication::quit()` first sends a close event to every visible top-level window and
+// cancels the quit if any of them ignores it. `MainWindow::closeEvent` always ignores it (closing
+// only hides the popup), so `quit()` did nothing while the popup was shown. `exit()` leaves the
+// event loop unconditionally; `aboutToQuit` is still emitted.
 inline void QuitApplicationSafely()
 {
-    QMetaObject::invokeMethod(qApp, &QApplication::quit, ::Qt::QueuedConnection);
+    QMetaObject::invokeMethod(qApp, [] { QCoreApplication::exit(0); }, ::Qt::QueuedConnection);
 }
 
 } // namespace Utils::Qt
