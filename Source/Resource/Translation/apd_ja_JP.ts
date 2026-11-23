@@ -269,6 +269,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>通知領域のアイコンをクリックすると、メインウィンドウを開かずに選択したデバイスへ接続します。ダブルクリックすると、引き続きメインウィンドウが開きます。</translation>
     </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>ダーク</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

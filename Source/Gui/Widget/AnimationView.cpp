@@ -433,6 +433,22 @@ void AnimationView::SetFallbackImage(QImage image)
     Clear();
 }
 
+QImage AnimationView::LastFrame() const
+{
+    return _frame;
+}
+
+void AnimationView::SetOpacity(qreal opacity)
+{
+    _opacity = std::clamp(opacity, 0.0, 1.0);
+    update();
+}
+
+qreal AnimationView::Opacity() const
+{
+    return _opacity;
+}
+
 void AnimationView::SetPlaybackEnabled(bool enabled)
 {
     {
@@ -522,6 +538,7 @@ void AnimationView::paintEvent(QPaintEvent *event)
 
     QPainter painter{this};
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setOpacity(_opacity);
 
     const auto target = QRect{QPoint{}, _scaled.size() / _scaled.devicePixelRatio()};
     painter.drawImage(

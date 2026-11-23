@@ -57,6 +57,13 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     _state.caseBox.isCharging = _protocol.IsCaseCharging();
     _state.caseBox.isBothPodsInCase = _protocol.IsBothPodsInCase();
     _state.caseBox.isLidOpened = _protocol.IsLidOpened();
+    // The advertisement only says "both in case"; a pod that charges while the other does not
+    // is the one still sitting in the case.
+    const auto inCase = [&](const PodState &pod) {
+        return _state.caseBox.isBothPodsInCase || (pod.isCharging && !pod.isInEar);
+    };
+    _state.pods.left.isInCase = inCase(_state.pods.left);
+    _state.pods.right.isInCase = inCase(_state.pods.right);
 
     if (_state.pods.left.battery.Available()) {
         _state.pods.left.battery = _state.pods.left.battery.Value() * 10;

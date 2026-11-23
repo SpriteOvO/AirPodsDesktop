@@ -41,8 +41,10 @@ public:
 
     int frameCount{0};
     int framesWithOpaqueBackgroundSamples{0};
+    int framesTouchingRightEdge{0};
     int representativeOpaquePixels{0};
     QImage representativeFrame;
+    QImage fallbackFrame;
     QImage failedInput;
     QImage failedOutput;
     qint64 failedTime{-1};
@@ -66,6 +68,15 @@ private:
                 failedOutput = image;
                 failedTime = frame.startTime();
             }
+        }
+        for (int y = 0; y < image.height(); ++y) {
+            if (qAlpha(image.pixel(image.width() - 1, y)) != 0) {
+                ++framesTouchingRightEdge;
+                break;
+            }
+        }
+        if (fallbackFrame.isNull() && frame.startTime() >= 500'000) {
+            fallbackFrame = image;
         }
         int opaquePixels = 0;
         for (int y = 0; y < image.height(); y += 4) {
@@ -224,6 +235,14 @@ private Q_SLOTS:
         QCOMPARE(sink.framesWithOpaqueBackgroundSamples, 0);
         QVERIFY(!sink.representativeFrame.isNull());
         SaveComposites(QFileInfo{video}.completeBaseName(), sink.representativeFrame);
+        QVERIFY(!sink.fallbackFrame.isNull());
+        const auto fallbackPath = QStringLiteral(APD_BINARY_DIR "/AnimationValidation/") +
+                                  QFileInfo{video}.completeBaseName() +
+                                  QStringLiteral("-fallback.png");
+        QVERIFY2(sink.fallbackFrame.save(fallbackPath), "fallback save failed");
+        if (video == QStringLiteral("AirPods_Pro.avi")) {
+            QCOMPARE(sink.framesTouchingRightEdge, 0);
+        }
 
         player.setVideoSink(nullptr);
         player.setSource({});

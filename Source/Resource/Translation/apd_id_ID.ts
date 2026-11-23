@@ -269,6 +269,10 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Klik pada ikon tray akan menghubungkan perangkat yang dipilih, bukan membuka jendela utama. Klik dua kali tetap membukanya.</translation>
     </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
     <message>
         <source>Dark</source>
         <translation>Gelap</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

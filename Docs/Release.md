@@ -65,6 +65,11 @@ The two installer hashes must match because the bridge is an alternate release n
 NSIS payload, whether signed or unsigned. Test an upgrade from the latest public Win32 release
 before publishing.
 
+Also run the new installer while the previous release is still open in the tray. Setup must offer
+to close it, replace `AirPodsDesktop.exe`, and launch the new version from its finish page. A copy
+left running locks the old files and keeps the instance mutex, so without this step users keep the
+old build after an apparently successful install.
+
 ## Optional Code-Signing Secrets
 
 Qt 6.8.3 is installed from the public package feed and does not require Qt account credentials.
