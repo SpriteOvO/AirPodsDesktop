@@ -128,7 +128,14 @@ public:
         State newState;
     };
 
-    StateManager();
+    // How long a side may stay silent before its cached advertisement is dropped, and how long
+    // the whole device may stay silent before it is reported lost. Tests shorten them.
+    struct Intervals {
+        std::chrono::milliseconds lost{std::chrono::seconds{10}};
+        std::chrono::milliseconds stateReset{std::chrono::seconds{10}};
+    };
+
+    explicit StateManager(Intervals intervals = {});
     ~StateManager();
 
     void SetOnDiscardState(std::function<void()> callback);
@@ -149,10 +156,14 @@ private:
     Helper::Timer _lostTimer;
     Helper::Sides<Helper::Timer> _stateResetTimer;
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
+    // Outlives `_adv`: a side that goes quiet loses its cached advertisement after
+    // `Intervals::stateReset`, but its address stays valid until the device disconnects.
+    Helper::Sides<std::optional<Advertisement::AddressType>> _knownAddress;
     std::optional<State> _cachedState;
     int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
 
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
+    bool IsKnownAddress(Advertisement::AddressType address) const;
     void UpdateAdv(Advertisement adv);
     std::optional<UpdateEvent> UpdateState();
     std::function<void()> ResetAll();
@@ -199,6 +210,19 @@ private:
     std::optional<Lid> _lastLid;
     std::optional<Timestamp> _lostAt;
 };
+
+// Remembers the last "both pods in ear" value across state updates so that a transition is still
+// detected after `StateManager` has dropped and re-created its cached state (issue #86).
+//
+class EarDetectionTracker
+{
+public:
+    std::optional<bool> Update(const State &state);
+    void Reset();
+
+private:
+    std::optional<bool> _lastBothInEar;
+};
 } // namespace Details
 
 class Manager : public QObject
@@ -220,6 +244,7 @@ private:
     std::mutex _mutex;
     Details::StateManager _stateMgr;
     Details::LidTracker _lidTracker;
+    Details::EarDetectionTracker _earDetection;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
     Model _boundModel{Model::Unknown};
