@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <atomic>
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -263,6 +264,20 @@ private Q_SLOTS:
         window.Disconnect();
         QVERIFY(autoHide->isActive());
         QVERIFY(!lidSafety->isActive());
+
+        // While the user has the popup activated, a lid change starts no timer.
+        emit qApp->applicationStateChanged(Qt::ApplicationActive);
+        QVERIFY(!autoHide->isActive());
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+        emit qApp->applicationStateChanged(Qt::ApplicationInactive);
+        QVERIFY(autoHide->isActive());
     }
 
     void UpdateTextHasAntialiasedEdges_data()

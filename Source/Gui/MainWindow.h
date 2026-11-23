@@ -104,6 +104,8 @@ private:
     // Set when the lid opens with both pods inside; the popup then stays (also while the pods are
     // out) until the lid is seen closed, the device disconnects or the safety cap fires.
     bool _holdForOpenLid{false};
+    // The last `start` passed to ControlAutoHideTimer: false while hidden, hovered or activated.
+    bool _autoHideRequested{false};
     std::atomic<bool> _deviceQueryRunning{false};
     std::jthread _deviceQueryThread;
 
@@ -113,6 +115,7 @@ private:
     void StopAnimation();
     void BindDevice();
     void ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices);
+    void SetHoldForOpenLid(bool hold);
     void ControlAutoHideTimer(bool start);
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo, bool silent);
     void Repaint();

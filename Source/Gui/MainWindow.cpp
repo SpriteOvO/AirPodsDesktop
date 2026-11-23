@@ -234,9 +234,8 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
     if (state.caseBox.isBothPodsInCase) {
         lidOpened = state.caseBox.isLidOpened;
     }
-    if (lidOpened.has_value() && *lidOpened != _holdForOpenLid) {
-        _holdForOpenLid = *lidOpened;
-        ControlAutoHideTimer(_isVisible);
+    if (lidOpened.has_value()) {
+        SetHoldForOpenLid(*lidOpened);
     }
 }
 
@@ -254,8 +253,7 @@ void MainWindow::Unavailable()
 
     _viewModel.Unavailable();
     Repaint();
-    _holdForOpenLid = false;
-    ControlAutoHideTimer(_isVisible);
+    SetHoldForOpenLid(false);
 }
 
 void MainWindow::Disconnect()
@@ -264,8 +262,7 @@ void MainWindow::Disconnect()
 
     _viewModel.Disconnect();
     Repaint();
-    _holdForOpenLid = false;
-    ControlAutoHideTimer(_isVisible);
+    SetHoldForOpenLid(false);
 }
 
 void MainWindow::Bind()
@@ -460,9 +457,22 @@ void MainWindow::ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 }
 
+void MainWindow::SetHoldForOpenLid(bool hold)
+{
+    if (hold == _holdForOpenLid) {
+        return;
+    }
+    _holdForOpenLid = hold;
+    // Re-apply the last request rather than forcing a start, so a popup the user is hovering or
+    // has activated keeps no timer running.
+    ControlAutoHideTimer(_autoHideRequested);
+}
+
 void MainWindow::ControlAutoHideTimer(bool start)
 {
     LOG(Trace, "ControlAutoHideTimer: start == '{}', _isVisible == '{}'", start, _isVisible);
+
+    _autoHideRequested = start;
 
     if (start && _isVisible && _holdForOpenLid) {
         // Like iOS: the sheet stays while the case sits open, even as pods are taken out; the
