@@ -157,6 +157,36 @@ private:
     std::function<void()> DoLost();
     void DoStateReset(Side side);
 };
+
+// Decides whether the case lid opened or closed between two states.
+//
+// StateManager drops its state after 10 seconds without advertisements, and that also happens
+// while the lid stays open. The first state after such a gap has no previous state to compare
+// with, so it used to count as a fresh "lid opened" every time and reopened the popup (#233).
+// Remembering the last lid state for a while after the device is lost tells those gaps apart
+// from a real opening. It is reset when the Bluetooth connection drops or another device is
+// bound, because the lid can close without being advertised then.
+//
+class LidTracker
+{
+public:
+    using Clock = std::chrono::steady_clock;
+    using Timestamp = std::chrono::time_point<Clock>;
+
+    // How long the last seen lid state is trusted after the device was lost.
+    static constexpr std::chrono::seconds kMemory{60};
+
+    // Returns true when the lid state switched. `oldLidOpened` is empty for the first state
+    // after the device was lost or bound.
+    bool Update(std::optional<bool> oldLidOpened, bool newLidOpened, Timestamp now);
+    void OnLost(Timestamp now);
+    void Reset();
+
+private:
+    mutable std::mutex _mutex;
+    std::optional<bool> _lastLidOpened;
+    std::optional<Timestamp> _lostAt;
+};
 } // namespace Details
 
 class Manager : public QObject
@@ -177,6 +207,7 @@ public:
 private:
     std::mutex _mutex;
     Details::StateManager _stateMgr;
+    Details::LidTracker _lidTracker;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
     Model _boundModel{Model::Unknown};
