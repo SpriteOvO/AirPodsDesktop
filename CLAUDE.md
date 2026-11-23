@@ -34,9 +34,10 @@ Windows multimedia backend. Qt runtime DLLs must be deployed beside the executab
 | `APD_GITHUB_OWNER` / `APD_GITHUB_REPOSITORY` | `SpriteOvO` / `AirPodsDesktop` | Repository the updater checks; set these for fork builds |
 | `APD_BUILD_GIT_HASH` | — | Stamps the build hash into the log banner |
 
-Compiler quirks baked into `CMakeLists.txt`: `CMAKE_CXX_STANDARD 20` is remapped to `/std:c++latest`
-because MSVC's `<format>` is not available under `/std:c++20`, and `/await` is forced globally as a
-workaround for cppwinrt under C++20. Both are load-bearing — the code uses `std::format` and WinRT.
+Compiler quirk baked into `CMakeLists.txt`: `CMAKE_CXX_STANDARD 20` is remapped to `/std:c++latest`
+because MSVC's `<format>` is not available under `/std:c++20`. It is load-bearing — the code uses
+`std::format`. Do not reintroduce the legacy `/await` option: the Windows SDK's C++/WinRT uses standard
+C++20 coroutines, and MSVC 14.51 (Visual Studio 2026) rejects `/await` with error STL1011.
 
 `Source/Config.h` is generated from `Config.h.in` into `${PROJECT_BINARY_DIR}/Source` and is included
 as `<Config.h>` (angle brackets), not a relative path.
