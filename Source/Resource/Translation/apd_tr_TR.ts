@@ -168,63 +168,63 @@ Keyfini çıkarın.</translation>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuruluma hazır. %1 sürümünü kullanıyorsunuz.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme indiriliyor</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellenemiyor</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>Otomatik güncelleme durduruldu</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sürüm türü</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni sürüm</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Önizleme sürümü</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Kararlı sürüm</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sürüm için sürüm notu yok</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otomatik güncelleme tamamlanamadı. Lütfen yeni sürümü manuel olarak indirip kurun veya AirPodsDesktop&apos;u kullanmaya devam etmek için bu pencereyi kapatın.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirme boyutu bekleniyor...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 indirildi</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuruluma hazırlanıyor...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>İndiriliyor...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -271,7 +271,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kutuyu açtığınızda, kullandığınız uygulamanın odağını almadan pil penceresini gösterir. Kapalıyken sistem tepsisi simgesinden açabilirsiniz.</translation>
     </message>
 </context>
 <context>
@@ -409,14 +409,14 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>Kutu açıldığında pili göster</translation>
     </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Yazılım Güncellemesi</translation>
     </message>
     <message>
         <source>View release</source>
@@ -444,11 +444,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirme yavaşsa güncellemeyi manuel olarak indirebilirsiniz. Manuel indirmeye geçtiğinizde AirPodsDesktop kapanacaktır.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Yenilikler</translation>
     </message>
 </context>
 </TS>

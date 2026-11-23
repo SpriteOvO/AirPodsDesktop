@@ -271,7 +271,7 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetla okno z poziomem baterii po otwarciu etui, nie odbierając fokusu używanej aplikacji. Gdy opcja jest wyłączona, otwórz je z ikony w zasobniku systemowym.</translation>
     </message>
 </context>
 <context>
@@ -409,7 +409,7 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuj poziom baterii po otwarciu etui</translation>
     </message>
 </context>
 <context>

@@ -271,7 +271,7 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muestra la ventana de batería al abrir el estuche, sin quitar el foco a la aplicación que estás usando. Si está desactivado, ábrela desde el icono de la bandeja.</translation>
     </message>
 </context>
 <context>
@@ -409,7 +409,7 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostrar batería al abrir el estuche</translation>
     </message>
 </context>
 <context>
