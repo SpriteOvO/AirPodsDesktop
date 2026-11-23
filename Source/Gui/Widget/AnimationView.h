@@ -70,6 +70,13 @@ public:
     void SetPlaybackEnabled(bool enabled);
     void SetTint(std::optional<QColor> tint);
 
+    // The last decoded frame (keyed, source resolution), for a hand-over to a still view.
+    QImage LastFrame() const;
+
+    // Whole-view opacity, so the video can fade while it keeps playing.
+    void SetOpacity(qreal opacity);
+    qreal Opacity() const;
+
 Q_SIGNALS:
     void Clicked();
     void FramePresented();
@@ -91,6 +98,7 @@ private:
     bool _deliveryQueued{false};
     bool _removeEnclosedBackground{false};
     std::optional<QColor> _tint;
+    qreal _opacity{1.0};
 
     void InvalidatePendingFrames();
     void OnVideoFrameChanged(const QVideoFrame &frame);

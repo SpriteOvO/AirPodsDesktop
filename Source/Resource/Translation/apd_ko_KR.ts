@@ -168,63 +168,63 @@ Enjoy it all.</source>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>설치할 준비가 되었습니다. 현재 %1 버전을 사용 중입니다.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 다운로드 중</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트할 수 없음</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>자동 업데이트가 중단되었습니다</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>릴리스 유형</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>새 버전</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>미리 보기 릴리스</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>안정 릴리스</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>이 버전에 대한 릴리스 노트가 없습니다</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>자동 업데이트를 완료할 수 없습니다. 새 버전을 직접 다운로드하여 설치하거나, 이 창을 닫고 AirPodsDesktop을 계속 사용하세요.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>다운로드 크기를 확인하는 중...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 다운로드됨</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>설치 준비 중...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>다운로드 중...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -268,6 +268,10 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>트레이 아이콘을 클릭하면 기본 창을 여는 대신 선택한 기기에 연결합니다. 두 번 클릭하면 기본 창이 열립니다.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>충전 케이스를 열면 사용 중인 앱의 포커스를 빼앗지 않고 배터리 창을 표시합니다. 끄면 트레이 아이콘에서 열 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -403,12 +407,16 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
         <source>Dark</source>
         <translation>다크</translation>
     </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>충전 케이스를 열면 배터리 표시</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>소프트웨어 업데이트</translation>
     </message>
     <message>
         <source>View release</source>
@@ -436,11 +444,11 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>다운로드가 느리면 업데이트를 수동으로 다운로드할 수 있습니다. 수동 다운로드로 전환하면 AirPodsDesktop이 종료됩니다.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>새로운 기능</translation>
     </message>
 </context>
 </TS>

@@ -169,63 +169,63 @@ Divertiti.</translation>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pronto per l&apos;installazione. Stai usando la versione %1.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Download dell&apos;aggiornamento in corso</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;aggiornamento automatico è stato interrotto</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di versione</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuova versione</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione di anteprima</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione stabile</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna nota di rilascio per questa versione</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è stato possibile completare l&apos;aggiornamento automatico. Scarica e installa manualmente la nuova versione, oppure chiudi questa finestra per continuare a usare AirPodsDesktop.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>In attesa della dimensione del download...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 scaricati</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Preparazione dell&apos;installazione...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Download in corso...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 di %3</translation>
     </message>
 </context>
 <context>
@@ -269,6 +269,10 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Un clic sull&apos;icona nell&apos;area di notifica connette il dispositivo selezionato invece di aprire la finestra principale. Un doppio clic continua ad aprirla.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Mostra la finestra della batteria quando apri la custodia, senza togliere il focus all&apos;app in uso. Se disattivato, aprila dall&apos;icona nell&apos;area di notifica.</translation>
     </message>
 </context>
 <context>
@@ -404,12 +408,16 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
         <source>Dark</source>
         <translation>Scuro</translation>
     </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Mostra la batteria all&apos;apertura della custodia</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento software</translation>
     </message>
     <message>
         <source>View release</source>
@@ -437,11 +445,11 @@ Devi prima abbinare le tue AirPods nelle impostazioni Bluetooth di Windows.</tra
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se il download è lento, puoi scaricare l&apos;aggiornamento manualmente. AirPodsDesktop verrà chiuso quando passi al download manuale.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Novità</translation>
     </message>
 </context>
 </TS>

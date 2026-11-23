@@ -168,63 +168,63 @@ Aproveite.</translation>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pronto para instalar. Está a utilizar a versão %1.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>A descarregar a atualização</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível atualizar</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>A atualização automática foi interrompida</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo de versão</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Nova versão</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versão de pré-visualização</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versão estável</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Sem notas de versão para esta versão</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível concluir a atualização automática. Descarregue e instale a nova versão manualmente ou feche esta janela para continuar a utilizar o AirPodsDesktop.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>A aguardar o tamanho da transferência...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 descarregados</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>A preparar a instalação...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>A descarregar...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 de %3</translation>
     </message>
 </context>
 <context>
@@ -268,6 +268,10 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Um clique no ícone da área de notificação liga o dispositivo selecionado em vez de abrir a janela principal. Um duplo clique continua a abri-la.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Mostra a janela da bateria ao abrir a caixa, sem retirar o foco da aplicação em uso. Quando desativado, abra-a a partir do ícone da barra.</translation>
     </message>
 </context>
 <context>
@@ -403,12 +407,16 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
         <source>Dark</source>
         <translation>Escuro</translation>
     </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Mostrar bateria ao abrir a caixa</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Atualização de software</translation>
     </message>
     <message>
         <source>View release</source>
@@ -436,11 +444,11 @@ Precisa primeiro de emparelhar os seus AirPods nas definições de Bluetooth do 
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se a transferência estiver lenta, pode descarregar a atualização manualmente. O AirPodsDesktop será fechado quando mudar para a transferência manual.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Novidades</translation>
     </message>
 </context>
 </TS>

@@ -1,0 +1,44 @@
+; Close a running @PROJECT_NAME@ before its files are replaced or removed. A running copy locks
+; @PROJECT_NAME@.exe and its DLLs, so the old build would survive an upgrade, and its instance mutex
+; would make the freshly installed build exit as soon as it starts. Every release since v0.2.0
+; creates this mutex, so it also finds older and portable copies.
+StrCpy $R1 0
+
+apd_close_check:
+System::Call 'kernel32::OpenMutexW(i 0x00100000, i 0, w "Global\@PROJECT_NAME@_InstanceMutex") p.R0 ?e'
+Pop $R2
+StrCmp $R0 0 0 apd_close_found
+; ERROR_ACCESS_DENIED still means another process owns the mutex.
+StrCmp $R2 5 apd_close_running apd_close_done
+
+apd_close_found:
+System::Call 'kernel32::CloseHandle(p R0)'
+
+apd_close_running:
+IntCmp $R1 0 0 apd_close_wait apd_close_wait
+MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
+  "@PROJECT_NAME@ is running. Setup will close it to continue." \
+  /SD IDOK IDOK apd_close_kill
+Abort
+
+apd_close_kill:
+nsExec::Exec '"$SYSDIR\taskkill.exe" /F /IM "@PROJECT_NAME@.exe"'
+Pop $R2
+
+apd_close_wait:
+IntOp $R1 $R1 + 1
+IntCmp $R1 20 apd_close_failed 0 apd_close_failed
+Sleep 250
+Goto apd_close_check
+
+apd_close_failed:
+MessageBox MB_RETRYCANCEL|MB_ICONSTOP \
+  "@PROJECT_NAME@ could not be closed. Exit it from its tray icon, then click Retry." \
+  /SD IDCANCEL IDRETRY apd_close_retry
+Abort
+
+apd_close_retry:
+StrCpy $R1 0
+Goto apd_close_check
+
+apd_close_done:
