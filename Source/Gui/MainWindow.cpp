@@ -215,8 +215,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
                 SetMediaOpacity(_shownView, opacity); // the incoming view
             }
             if (_fadeBatteries) {
-                const qreal remaining =
-                    _fadeFrom < 1.0 ? (1.0 - opacity) / (1.0 - _fadeFrom) : 0.0;
+                const qreal remaining = _fadeFrom < 1.0 ? (1.0 - opacity) / (1.0 - _fadeFrom) : 0.0;
                 _batteryFade->SetCoverOpacity(remaining);
                 _batteryFade->SetSnapshotOpacity(remaining); // only set when a fade-in was resumed
             }
@@ -266,7 +265,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     // For getting the correct initial height of `_deviceImage` later
     _ui.layoutAnimation->activate();
     _deviceImage->show();
-
 }
 
 void MainWindow::StartUpdateChecks()
@@ -490,8 +488,8 @@ void MainWindow::StartSceneFade(FadePhase phase)
     const bool resumed = _sceneFade.state() == QAbstractAnimation::Running;
     _sceneFade.stop();
     const qreal from = _fadeMedia ? MediaOpacity(_shownView)
-                       : resumed ? _sceneFade.currentValue().toReal()
-                                 : (outgoing ? 1.0 : 0.0);
+                       : resumed  ? _sceneFade.currentValue().toReal()
+                                  : (outgoing ? 1.0 : 0.0);
     _fadeFrom = from;
     _sceneFade.setStartValue(from);
     _sceneFade.setEndValue(outgoing ? 0.0 : 1.0);
@@ -657,12 +655,11 @@ void MainWindow::Repaint()
 
     const bool wasRotating = _rotating;
     const auto wasArrangement = _pendingArrangement;
-    const bool batteriesChanged =
-        _lastPresentation.has_value() &&
-        (_lastPresentation->leftBattery != presentation.leftBattery ||
-         _lastPresentation->rightBattery != presentation.rightBattery ||
-         _lastPresentation->caseBattery != presentation.caseBattery ||
-         _lastPresentation->scene != presentation.scene);
+    const bool batteriesChanged = _lastPresentation.has_value() &&
+                                  (_lastPresentation->leftBattery != presentation.leftBattery ||
+                                   _lastPresentation->rightBattery != presentation.rightBattery ||
+                                   _lastPresentation->caseBattery != presentation.caseBattery ||
+                                   _lastPresentation->scene != presentation.scene);
 
     // Snapshot the battery row before anything moves; the old look then leaves together with
     // the old picture, and the new row arrives together with the new one.
@@ -671,7 +668,8 @@ void MainWindow::Repaint()
         _podsRowGeometry.height()};
     QPixmap before;
     if (_isVisible && _lastPresentation.has_value() &&
-        (batteriesChanged || _batteryFade->IsRunning())) {
+        (batteriesChanged || _batteryFade->IsRunning()))
+    {
         // Taken with any running overlay still in place: the fade resumes from exactly what
         // is on screen right now.
         before = grab(batteryRow);
@@ -734,7 +732,8 @@ void MainWindow::Repaint()
         break;
     case FadePhase::Out:
         if (_fadeMedia && _shownView == _rotating &&
-            (_rotating || _deviceImage->GetArrangement() == _pendingArrangement)) {
+            (_rotating || _deviceImage->GetArrangement() == _pendingArrangement))
+        {
             // Target flipped back to what is currently fading out: fade it in again.
             StartSceneFade(FadePhase::In);
             break;

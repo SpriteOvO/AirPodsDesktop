@@ -108,7 +108,8 @@ MainWindowPresentation MainWindowViewModel::Present() const
     result.title = _state->displayName;
     result.animationModel = _state->model;
 
-    const int podsInCase = (_state->pods.left.isInCase ? 1 : 0) + (_state->pods.right.isInCase ? 1 : 0);
+    const int podsInCase =
+        (_state->pods.left.isInCase ? 1 : 0) + (_state->pods.right.isInCase ? 1 : 0);
     if (podsInCase == 2) {
         result.scene = Scene::PodsInCase;
     }

@@ -225,8 +225,9 @@ private Q_SLOTS:
     {
         const QImage source{":/Resource/Image/Animation/AirPods_Pro_2.png"};
         QVERIFY(!source.isNull());
-        const auto slices = Gui::Widget::Detail::SliceByTransparentGaps(
-            source, (std::max)(source.width() / 50, 4)).slices;
+        const auto slices =
+            Gui::Widget::Detail::SliceByTransparentGaps(source, (std::max)(source.width() / 50, 4))
+                .slices;
         QCOMPARE(slices.size(), size_t{3}); // left pod, right pod, case
 
         Gui::Widget::DeviceImage image;
@@ -370,7 +371,8 @@ private Q_SLOTS:
         QCOMPARE(visible, 2);
 
         const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
-        VerifySmoothPopupCorners(&window, QString{"main-window-battery-rings-scale%1.png"}.arg(scale));
+        VerifySmoothPopupCorners(
+            &window, QString{"main-window-battery-rings-scale%1.png"}.arg(scale));
     }
 
     void UpdateTextHasAntialiasedEdges_data()

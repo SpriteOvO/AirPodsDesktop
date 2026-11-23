@@ -34,8 +34,9 @@ ImageSlices SliceByTransparentGaps(const QImage &image, int minGap)
         return result;
     }
 
-    const QImage argb =
-        image.format() == QImage::Format_ARGB32 ? image : image.convertToFormat(QImage::Format_ARGB32);
+    const QImage argb = image.format() == QImage::Format_ARGB32
+                            ? image
+                            : image.convertToFormat(QImage::Format_ARGB32);
     const int width = argb.width();
     const int height = argb.height();
 
@@ -109,11 +110,13 @@ void DeviceImage::SetSource(QImage image)
             const auto &right = slices[1];
             Parts parts;
             parts.leftPod = _source.copy(left.left, 0, left.right - left.left, _source.height());
-            parts.rightPod = _source.copy(right.left, 0, right.right - right.left, _source.height());
+            parts.rightPod =
+                _source.copy(right.left, 0, right.right - right.left, _source.height());
             QImage rest = _source.copy();
             QPainter eraser{&rest};
             eraser.setCompositionMode(QPainter::CompositionMode_Clear);
-            eraser.fillRect(left.left, 0, right.right - left.left, _source.height(), Qt::transparent);
+            eraser.fillRect(
+                left.left, 0, right.right - left.left, _source.height(), Qt::transparent);
             eraser.end();
             parts.rest = rest;
             parts.leftPodPos = {left.left, 0};

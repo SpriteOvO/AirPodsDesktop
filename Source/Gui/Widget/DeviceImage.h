@@ -104,7 +104,8 @@ private:
 
     void Recompose(bool animate);
     QImage Compose(Arrangement arrangement) const;
-    void DrawFitted(QPainter &painter, const QImage &image, QImage &scaledCache, qreal opacity) const;
+    void
+    DrawFitted(QPainter &painter, const QImage &image, QImage &scaledCache, qreal opacity) const;
     void resizeEvent(QResizeEvent *event) override;
 };
 

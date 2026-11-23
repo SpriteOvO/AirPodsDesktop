@@ -632,8 +632,10 @@ void Battery::updateFixedSize()
     else {
         QFontMetrics fontMetrics{this->fontMetrics()};
         setFixedSize(
-            qRound(_batterySize.width() + getChargingIconWidth() + getHeadWidth() + ChargingPadding),
-            qRound(_batterySize.height() + (_isShowText ? (fontMetrics.height() + _textPadding) : 0)));
+            qRound(
+                _batterySize.width() + getChargingIconWidth() + getHeadWidth() + ChargingPadding),
+            qRound(
+                _batterySize.height() + (_isShowText ? (fontMetrics.height() + _textPadding) : 0)));
     }
     update();
 }
