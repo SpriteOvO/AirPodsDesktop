@@ -1,6 +1,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <tuple>
 #include <vector>
 
 #include <QtTest>
@@ -13,12 +14,16 @@
 #include "Source/Core/Update.h"
 #include "Source/Gui/MainWindowPresentation.h"
 #include "Source/Gui/TaskbarGeometry.h"
+#include "Source/Utils.h"
+
+#include <sddl.h>
 
 namespace {
 
 using Core::AirPods::Model;
 using Core::AirPods::Side;
 using Core::AirPods::Details::Advertisement;
+using Core::AirPods::Details::LidTracker;
 using Core::AirPods::Details::StateManager;
 using ReceivedData = Core::Bluetooth::AdvertisementWatcher::ReceivedData;
 
@@ -151,6 +156,8 @@ class AirPodsDomainTests : public QObject
 
 private Q_SLOTS:
     void RejectsMalformedPackets();
+    void RecognizesAirPods5();
+    void ResolvesAirPods5DisplayName();
     void RecognizesAirPodsMaxUsbC();
     void ResolvesAirPodsMaxUsbCDisplayName();
     void ParsesAdvertisementState();
@@ -158,6 +165,8 @@ private Q_SLOTS:
     void MergesAdvertisementsFromBothSides();
     void RejectsAdvertisementsFromDifferentModels();
     void AcceptsKnownModelAfterUnknownAdvertisement();
+    void TracksLidAcrossShortGaps();
+    void TracksLidWhilePodsAreOut();
     void PackagesCompatibleLowLatencySilence();
     void LoadsSettingsThroughRepository();
     void MigratesLegacySettingsRepository();
@@ -177,6 +186,7 @@ private Q_SLOTS:
     void PresentsMainWindowCaseBattery();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
+    void TreatsInaccessibleInstanceMutexAsRunning();
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -195,9 +205,83 @@ void AirPodsDomainTests::RejectsMalformedPackets()
     QVERIFY(!Core::AppleCP::AirPods::IsValid(packet));
 }
 
+void AirPodsDomainTests::RecognizesAirPods5()
+{
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x2030), Model::AirPods_5);
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x2036), Model::AirPods_5);
+    QCOMPARE(Helper::ToString(Model::AirPods_5), QString{"AirPods 5"});
+
+    for (const auto modelId : {uint16_t{0x2030}, uint16_t{0x2036}}) {
+        const Advertisement advertisement{
+            MakeAdvertisementData(0x1234, -45, Side::Left, 8, 7, 5, modelId)};
+        QCOMPARE(advertisement.GetAdvState().model, Model::AirPods_5);
+        QCOMPARE(advertisement.GetAdvState().pods.left.battery.Value(), 80u);
+        QCOMPARE(advertisement.GetAdvState().pods.right.battery.Value(), 70u);
+        QCOMPARE(advertisement.GetAdvState().caseBox.battery.Value(), 50u);
+    }
+
+    // Sanitized captures from an AirPods 5 with Wireless Charging Case. Bytes 11-26 are
+    // intentionally zeroed because the protocol's trailing payload may identify the device.
+    constexpr std::array<uint8_t, 27> capturedLeft{
+        0x07, 0x19, 0x01, 0x30, 0x20, 0x35, 0xaa, 0xba, 0x32, 0x00, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    constexpr std::array<uint8_t, 27> capturedRight{
+        0x07, 0x19, 0x01, 0x30, 0x20, 0x55, 0xaa, 0xba, 0x32, 0x00, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+
+    StateManager manager;
+    manager.OnRssiMinChanged(-80);
+    for (const auto &[side, address, packet] : {
+             std::tuple{Side::Left, uint64_t{0x1111}, capturedLeft},
+             std::tuple{Side::Right, uint64_t{0x2222}, capturedRight},
+         })
+    {
+        ReceivedData data;
+        data.address = address;
+        data.rssi = -60;
+        data.manufacturerDataMap.emplace(
+            Core::AppleCP::VendorId, std::vector<uint8_t>{packet.cbegin(), packet.cend()});
+        const Advertisement captured{data};
+        const auto &state = captured.GetAdvState();
+        QCOMPARE(state.model, Model::AirPods_5);
+        QCOMPARE(state.side, side);
+        QCOMPARE(state.pods.left.battery.Value(), 100u);
+        QCOMPARE(state.pods.right.battery.Value(), 100u);
+        QCOMPARE(state.caseBox.battery.Value(), 100u);
+        QVERIFY(state.pods.left.isCharging);
+        QVERIFY(state.pods.right.isCharging);
+        QVERIFY(!state.caseBox.isCharging);
+        QVERIFY(!state.pods.left.isInEar);
+        QVERIFY(!state.pods.right.isInEar);
+        QVERIFY(state.caseBox.isBothPodsInCase);
+        QVERIFY(state.caseBox.isLidOpened);
+        const auto update = manager.OnAdvReceived(captured);
+        if (side == Side::Left) {
+            QVERIFY(update.has_value());
+        }
+    }
+    QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_5);
+}
+
+void AirPodsDomainTests::ResolvesAirPods5DisplayName()
+{
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName("AirPods", Model::AirPods_5),
+        QString{"AirPods 5"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName(
+            "Kashionz's AirPods - Find My", Model::AirPods_5),
+        QString{"Kashionz's AirPods"});
+    QCOMPARE(
+        Core::AirPods::Details::ResolveDisplayName({}, Model::AirPods_5), QString{"AirPods 5"});
+}
+
 void AirPodsDomainTests::RecognizesAirPodsMaxUsbC()
 {
     QCOMPARE(Core::AppleCP::AirPods::GetModel(0x201F), Model::AirPods_Max_USB_C);
+    QCOMPARE(Core::AppleCP::AirPods::GetModel(0x202D), Model::AirPods_Max_USB_C);
     QCOMPARE(Helper::ToString(Model::AirPods_Max_USB_C), QString{"AirPods Max (USB-C)"});
 }
 
@@ -310,6 +394,65 @@ void AirPodsDomainTests::AcceptsKnownModelAfterUnknownAdvertisement()
         manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x2222, -46, Side::Right)});
     QVERIFY(known.has_value());
     QCOMPARE(known->newState.model, Model::AirPods_Pro_2);
+}
+
+void AirPodsDomainTests::TracksLidAcrossShortGaps()
+{
+    using namespace std::chrono_literals;
+    using Lid = LidTracker::Lid;
+
+    const LidTracker::Timestamp start{};
+    LidTracker tracker;
+
+    // The first state ever seen with the lid open is a real opening.
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start), std::optional<bool>{true});
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Opened, start + 1s), std::nullopt);
+
+    // The device is lost while the lid stays open and comes back later (#233).
+    tracker.OnLost(start + 40s);
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 70s), std::nullopt);
+
+    // The lid is seen closed, the device goes quiet, then the lid opens again.
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Closed, start + 80s), std::optional<bool>{false});
+    tracker.OnLost(start + 90s);
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 95s), std::optional<bool>{true});
+
+    // After a long gap the last lid state is no longer trusted.
+    tracker.OnLost(start + 100s);
+    QCOMPARE(
+        tracker.Update(std::nullopt, Lid::Opened, start + 101s + LidTracker::kMemory),
+        std::optional<bool>{true});
+
+    // Binding another device forgets the last lid state.
+    tracker.OnLost(start + 200s);
+    tracker.Reset();
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start + 201s), std::optional<bool>{true});
+}
+
+void AirPodsDomainTests::TracksLidWhilePodsAreOut()
+{
+    using namespace std::chrono_literals;
+    using Lid = LidTracker::Lid;
+
+    const LidTracker::Timestamp start{};
+    LidTracker tracker;
+
+    // Taking the pods out of the opened case is not a closing.
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Opened, start), std::optional<bool>{true});
+    QCOMPARE(tracker.Update(Lid::Opened, Lid::Unobservable, start + 1s), std::nullopt);
+    QCOMPARE(tracker.Update(Lid::Unobservable, Lid::Unobservable, start + 2s), std::nullopt);
+
+    // Putting them back into a closed case is.
+    QCOMPARE(
+        tracker.Update(Lid::Unobservable, Lid::Closed, start + 3s), std::optional<bool>{false});
+
+    // Putting them back into an open case is an opening.
+    QCOMPARE(tracker.Update(Lid::Closed, Lid::Unobservable, start + 4s), std::nullopt);
+    QCOMPARE(tracker.Update(Lid::Unobservable, Lid::Opened, start + 5s), std::optional<bool>{true});
+
+    // A closed lid with nothing to compare against is not reported.
+    tracker.Reset();
+    QCOMPARE(tracker.Update(std::nullopt, Lid::Closed, start + 6s), std::nullopt);
 }
 
 void AirPodsDomainTests::LoadsSettingsThroughRepository()
@@ -640,6 +783,10 @@ void AirPodsDomainTests::PresentsMainWindowCaseBattery()
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
 {
+    const auto airPods5 = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_5);
+    QCOMPARE(airPods5.resource, QString{"qrc:/Resource/Video/AirPods_4_ANC.avi"});
+    QCOMPARE(airPods5.sourceSize, QSize(900, 450));
+
     const auto pro = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Pro_2_USB_C);
     QCOMPARE(pro.resource, QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
     QCOMPARE(pro.sourceSize, QSize(900, 450));
@@ -691,6 +838,36 @@ void AirPodsDomainTests::ConvertsTaskbarGeometryAcrossDpiBoundaries()
         Gui::TaskbarGeometry::CalculateLayout(QSize{50, 1440}, QRect{0, 120, 50, 1270}, 120, false);
     QCOMPARE(vertical.statusLogical, QRect(0, 1112, 40, 40));
     QCOMPARE(vertical.taskButtonsNative, QRect(0, 120, 50, 1270));
+}
+
+void AirPodsDomainTests::TreatsInaccessibleInstanceMutexAsRunning()
+{
+    const auto pid = QCoreApplication::applicationPid();
+
+    // A fresh name is the first instance; opening it again reports the running one.
+    const auto freeName = QString{"AirPodsDesktopTests_Free_%1"}.arg(pid);
+    QVERIFY(Utils::Process::SingleInstance(freeName));
+    QVERIFY(!Utils::Process::SingleInstance(freeName));
+
+    // Reproduces issues #50, #158, #164 and #247: the running instance was started elevated, so a
+    // non-elevated launch may not open its mutex and gets ERROR_ACCESS_DENIED instead of
+    // ERROR_ALREADY_EXISTS. A DACL that only grants SYSTEM access stands in for that here.
+    const auto deniedName = QString{"AirPodsDesktopTests_Denied_%1"}.arg(pid);
+    const auto deniedMutexName = ("Global\\" + deniedName + "_InstanceMutex").toStdWString();
+
+    PSECURITY_DESCRIPTOR descriptor = nullptr;
+    QVERIFY(ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        L"D:P(A;;GA;;;SY)", SDDL_REVISION_1, &descriptor, nullptr));
+    SECURITY_ATTRIBUTES attributes{sizeof(attributes), descriptor, FALSE};
+    HANDLE owner = CreateMutexW(&attributes, FALSE, deniedMutexName.c_str());
+    LocalFree(descriptor);
+    QVERIFY(owner != nullptr);
+
+    QVERIFY(CreateMutexW(nullptr, FALSE, deniedMutexName.c_str()) == nullptr);
+    QCOMPARE(GetLastError(), static_cast<DWORD>(ERROR_ACCESS_DENIED));
+    QVERIFY(!Utils::Process::SingleInstance(deniedName));
+
+    CloseHandle(owner);
 }
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)

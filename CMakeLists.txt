@@ -42,7 +42,7 @@ set(
 
 project(
     AirPodsDesktop
-    VERSION 0.6.0 # Don't forget to bump the version in `vcpkg.json` as well
+    VERSION 0.6.1 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
@@ -153,10 +153,6 @@ if (MSVC)
     
     add_compile_options(
         "/MP"           # Multi-processor compilation
-
-        "/await"        # Enable the legacy pre-C++20 coroutine.
-                        # Workaround for cppwinrt v2.0.200609.3 in C++20.
-                        # For more information, see https://github.com/microsoft/cppwinrt/issues/866
     )
 endif()
 
@@ -409,7 +405,7 @@ set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 #           https://stackoverflow.com/a/60848939
 #
 
-set(APD_TRANSLATION_LOCALES bg_BG de_DE fr_FR it_IT ja_JP ko_KR pt_BR pt_PT ru_RU tr_TR uk_UA zh_CN zh_TW)
+set(APD_TRANSLATION_LOCALES bg_BG de_DE es_ES fr_FR it_IT ja_JP ko_KR pl_PL pt_BR pt_PT ru_RU tr_TR uk_UA zh_CN zh_TW)
 set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
 set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 

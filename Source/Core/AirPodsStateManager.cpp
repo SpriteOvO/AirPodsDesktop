@@ -267,4 +267,41 @@ void StateManager::DoStateReset(Side side)
     }
 }
 
+std::optional<bool> LidTracker::Update(std::optional<Lid> oldLid, Lid newLid, Timestamp now)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+
+    std::optional<Lid> previous = oldLid;
+    if (!previous.has_value() && _lastLid.has_value() && _lostAt.has_value() &&
+        now - *_lostAt <= kMemory)
+    {
+        previous = _lastLid;
+    }
+    _lastLid = newLid;
+    _lostAt.reset();
+
+    if (newLid == Lid::Opened && previous != Lid::Opened) {
+        return true;
+    }
+    // A closed lid is only reported against a known earlier state, so that the first state
+    // after binding doesn't hide a popup opened from the tray.
+    if (newLid == Lid::Closed && previous.has_value() && previous != Lid::Closed) {
+        return false;
+    }
+    return std::nullopt;
+}
+
+void LidTracker::OnLost(Timestamp now)
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _lostAt = now;
+}
+
+void LidTracker::Reset()
+{
+    std::lock_guard<std::mutex> lock{_mutex};
+    _lastLid.reset();
+    _lostAt.reset();
+}
+
 } // namespace Core::AirPods::Details

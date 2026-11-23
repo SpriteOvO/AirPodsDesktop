@@ -32,14 +32,16 @@ QString Details::ResolveDisplayName(QString deviceName, Model model)
 {
     deviceName.remove(" - Find My");
 
-    const bool isDefaultUsbCMaxName =
-        model == Model::AirPods_Max_USB_C && deviceName == "AirPods Max";
-    return deviceName.isEmpty() || isDefaultUsbCMaxName ? Helper::ToString(model) : deviceName;
+    const bool isDefaultModelName =
+        (model == Model::AirPods_Max_USB_C && deviceName == "AirPods Max") ||
+        (model == Model::AirPods_5 && deviceName == "AirPods");
+    return deviceName.isEmpty() || isDefaultModelName ? Helper::ToString(model) : deviceName;
 }
 
 Manager::Manager(QObject *parent) : QObject{parent}
 {
     _stateMgr.SetOnDiscardState([this] {
+        _lidTracker.OnLost(Details::LidTracker::Clock::now());
         QMetaObject::invokeMethod(this, [this] { emit Disconnected(); }, Qt::QueuedConnection);
     });
 
@@ -132,6 +134,7 @@ void Manager::OnBoundDeviceAddressChanged(uint64_t address)
     _boundModel = Model::Unknown;
     _deviceConnected = false;
     _stateMgr.Disconnect();
+    _lidTracker.Reset();
     emit DeviceConnectionChanged(false);
     QMetaObject::invokeMethod(this, [this] { StopScanner(); }, Qt::QueuedConnection);
 
@@ -211,6 +214,10 @@ void Manager::OnBoundDeviceConnectionStateChanged(Bluetooth::DeviceState state)
 
     if (doDisconnect) {
         _stateMgr.Disconnect();
+        // The AirPods drop the Bluetooth connection when the lid closes, and the scanner stops
+        // before the closed lid is advertised. Forget the last lid state so that the next
+        // opening always shows the popup.
+        _lidTracker.Reset();
     }
 
     LOG(Info, "The device we bound is updated. current: {}, new: {}", oldDeviceConnected,
@@ -226,21 +233,21 @@ void Manager::OnStateChanged(Details::StateManager::UpdateEvent updateEvent)
 
     emit StateUpdated(newState);
 
-    // The lid is only observable while both pods are inside. Report "opened" on that edge and
-    // "closed" only when actually seen closed; taking the pods out is neither.
-    const auto lidOpened = [](const State &state) {
-        return state.caseBox.isBothPodsInCase && state.caseBox.isLidOpened;
+    using Lid = Details::LidTracker::Lid;
+    const auto lidOf = [](const State &state) {
+        if (!state.caseBox.isBothPodsInCase) {
+            return Lid::Unobservable;
+        }
+        return state.caseBox.isLidOpened ? Lid::Opened : Lid::Closed;
     };
-    const auto lidClosed = [](const State &state) {
-        return state.caseBox.isBothPodsInCase && !state.caseBox.isLidOpened;
-    };
-    const bool oldLidOpened = oldState.has_value() && lidOpened(*oldState);
-    const bool oldLidClosed = oldState.has_value() && lidClosed(*oldState);
-    if (lidOpened(newState) && !oldLidOpened) {
-        OnLidOpened(true);
+    std::optional<Lid> oldLid;
+    if (oldState.has_value()) {
+        oldLid = lidOf(*oldState);
     }
-    else if (lidClosed(newState) && !oldLidClosed) {
-        OnLidOpened(false);
+    const auto lidOpened =
+        _lidTracker.Update(oldLid, lidOf(newState), Details::LidTracker::Clock::now());
+    if (lidOpened.has_value()) {
+        OnLidOpened(*lidOpened);
     }
 
     if (oldState.has_value()) {
