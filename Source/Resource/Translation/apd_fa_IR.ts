@@ -82,11 +82,11 @@ Enjoy it all.</source>
     </message>
     <message>
         <source>Restore Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>بازگرداندن تنظیمات پیش‌فرض</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>بستن</translation>
     </message>
 </context>
 <context>
@@ -168,63 +168,63 @@ Enjoy it all.</source>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>آماده نصبه. الان از نسخه %1 استفاده می‌کنی.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>در حال دانلود به‌روزرسانی</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>به‌روزرسانی انجام نشد</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>به‌روزرسانی خودکار متوقف شد</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>نوع نسخه</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>نسخه جدید</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>نسخه پیش‌نمایش</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>نسخه پایدار</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>برای این نسخه یادداشت انتشاری وجود نداره</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>به‌روزرسانی خودکار کامل نشد. لطفاً نسخه جدید رو دستی دانلود و نصب کن، یا این پنجره رو ببند تا به استفاده از AirPodsDesktop ادامه بدی.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>در انتظار مشخص‌شدن حجم دانلود...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 دانلود شد</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>در حال آماده‌سازی برای نصب...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>در حال دانلود...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1٪ - %2 از %3</translation>
     </message>
 </context>
 <context>
@@ -271,7 +271,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>وقتی در کیس شارژ رو باز می‌کنی، پنجره باتری رو نشون می‌ده، بدون اینکه برنامه‌ای که داری باهاش کار می‌کنی از حالت فعال خارج بشه. اگه خاموش باشه، از آیکن ناحیه اعلان بازش کن.</translation>
     </message>
 </context>
 <context>
@@ -381,74 +381,74 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Forget the bound AirPods so that another pair can be bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>ایرپادی که به برنامه وصل شده رو فراموش می‌کنه تا بتونی یه ایرپاد دیگه رو وصل کنی.</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>عیب‌یابی</translation>
     </message>
     <message>
         <source>Log files help when reporting an issue.</source>
-        <translation type="unfinished"></translation>
+        <translation>فایل‌های لاگ موقع گزارش مشکل به درد می‌خورن.</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>حالت نمایش</translation>
     </message>
     <message>
         <source>Use system setting</source>
-        <translation type="unfinished"></translation>
+        <translation>مطابق تنظیمات سیستم</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>روشن</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>تیره</translation>
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>نمایش باتری با باز شدن کیس شارژ</translation>
     </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>به‌روزرسانی نرم‌افزار</translation>
     </message>
     <message>
         <source>Update now</source>
-        <translation type="unfinished">الان به‌روزرسانی کن</translation>
+        <translation>الان به‌روزرسانی کن</translation>
     </message>
     <message>
         <source>Download Manually</source>
-        <translation type="unfinished">دانلود به‌صورت دستی</translation>
+        <translation>دانلود به‌صورت دستی</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>تغییرات جدید</translation>
     </message>
     <message>
         <source>View release</source>
-        <translation type="unfinished">مشاهده صفحه این نسخه</translation>
+        <translation>مشاهده صفحه این نسخه</translation>
     </message>
     <message>
         <source>Skip this version</source>
-        <translation type="unfinished">این نسخه رو رد کن</translation>
+        <translation>این نسخه رو رد کن</translation>
     </message>
     <message>
         <source>Remind me later</source>
-        <translation type="unfinished">بعداً یادآوری کن</translation>
+        <translation>بعداً یادآوری کن</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>بستن</translation>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>اگه دانلود کنده، می‌تونی به‌روزرسانی رو دستی دانلود کنی. وقتی دانلود دستی رو انتخاب کنی، AirPodsDesktop بسته می‌شه.</translation>
     </message>
 </context>
 </TS>
