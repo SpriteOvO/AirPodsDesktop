@@ -51,45 +51,7 @@ Enjoy it all.</source>
     </message>
 </context>
 <context>
-    <name>DownloadWindow</name>
-    <message>
-        <source>Download new version</source>
-        <translation>دانلود نسخه جدید</translation>
-    </message>
-    <message>
-        <source>Download Manually</source>
-        <translation>دانلود به‌صورت دستی</translation>
-    </message>
-    <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>اگه دانلود کُند بود یا انجام نشد، می‌تونی:</translation>
-    </message>
-</context>
-<context>
-    <name>Gui::DownloadWindow</name>
-    <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>اوه! موقع به‌روزرسانی خودکار مشکلی پیش اومد.
-لطفاً نسخه جدید رو به‌صورت دستی دانلود و نصب کن.</translation>
-    </message>
-</context>
-<context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>فهرست تغییرات:</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>هی! یه نسخه جدید پیدا کردم!
-
-نسخه‌ای که داری: %1
-جدیدترین نسخه: %2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>اتصال ایرپاد به برنامه</translation>
@@ -104,8 +66,7 @@ Latest version: %2%3</source>
     <message>
         <source>|</source>
         <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
-        <translatorcomment>Black Angel</translatorcomment>
-        <translation>|</translation>
+        <translation>Black Angel</translation>
     </message>
     <message>
         <source>Translation Contributors:</source>
@@ -118,6 +79,14 @@ Latest version: %2%3</source>
     <message>
         <source>Saved device (not available)</source>
         <translation>دستگاه ذخیره‌شده (در دسترس نیست)</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -196,6 +165,69 @@ Latest version: %2%3</source>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Ready to install. You are using %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update was stopped</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stable release</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No release notes for this version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -204,22 +236,6 @@ Latest version: %2%3</source>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Update now</source>
-        <translation>الان به‌روزرسانی کن</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>این نسخه رو رد کن</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>مشاهده صفحه این نسخه</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>بعداً یادآوری کن</translation>
-    </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
@@ -252,6 +268,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>با یک‌بار کلیک روی آیکن ناحیه اعلان، به‌جای بازشدن پنجره اصلی، دستگاه انتخاب‌شده وصل می‌شه. دوبار کلیک همچنان پنجره اصلی رو باز می‌کنه.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -358,6 +378,77 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>دستگاه صوتی بلوتوثی که با کلیک روی آیکن ناحیه اعلان بهش وصل می‌شی.</translation>
+    </message>
+    <message>
+        <source>Forget the bound AirPods so that another pair can be bound.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log files help when reporting an issue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use system setting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UpdateWindow</name>
+    <message>
+        <source>Software Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update now</source>
+        <translation type="unfinished">الان به‌روزرسانی کن</translation>
+    </message>
+    <message>
+        <source>Download Manually</source>
+        <translation type="unfinished">دانلود به‌صورت دستی</translation>
+    </message>
+    <message>
+        <source>What&apos;s new</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>View release</source>
+        <translation type="unfinished">مشاهده صفحه این نسخه</translation>
+    </message>
+    <message>
+        <source>Skip this version</source>
+        <translation type="unfinished">این نسخه رو رد کن</translation>
+    </message>
+    <message>
+        <source>Remind me later</source>
+        <translation type="unfinished">بعداً یادآوری کن</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
