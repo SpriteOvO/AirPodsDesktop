@@ -373,7 +373,9 @@ void TaskbarStatus::Repaint()
             _battery.left->hide();
         }
 
-        if (state.pods.right.battery.Available()) {
+        if (state.pods.right.battery.Available() &&
+            !Core::AirPods::HasSingleBattery(state.model))
+        {
             const auto batteryValue = state.pods.right.battery.Value();
 
             _ui.labelRight->setText(QString{"%1%"}.arg(batteryValue));

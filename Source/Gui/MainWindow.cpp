@@ -524,14 +524,17 @@ void MainWindow::ApplyScene(Scene scene)
     }
 
     _pendingArrangement = scene == Scene::PodsOnly ? Arrangement::PodsOnly : Arrangement::Spread;
-    _rotating = scene == Scene::PodsInCase || scene == Scene::BothPodsOut;
+    _rotating =
+        scene == Scene::PodsInCase || scene == Scene::BothPodsOut || scene == Scene::Headset;
 
-    // Pods only: the single ring takes the whole row so it sits under the centred pair.
+    // Pods only and headsets: the single ring takes the whole row so it sits under the centred
+    // device.
     const QRect podsRow = _ui.podsBatteryContainer->geometry();
     const QRect centredRow{
         _podsRowGeometry.x(), _podsRowGeometry.y(), width() - 2 * _podsRowGeometry.x(),
         _podsRowGeometry.height()};
-    const QRect fullRow = scene == Scene::PodsOnly ? centredRow : _podsRowGeometry;
+    const bool singleRing = scene == Scene::PodsOnly || scene == Scene::Headset;
+    const QRect fullRow = singleRing ? centredRow : _podsRowGeometry;
     if (podsRow != fullRow) {
         _ui.podsBatteryContainer->setGeometry(fullRow);
     }
@@ -689,6 +692,7 @@ void MainWindow::Repaint()
     FitDeviceLabelFont(presentation.title);
     ChangeButtonAction(presentation.buttonAction);
     SetAnimation(presentation.animationModel);
+    _animationView->SetTint(presentation.animationTint);
     ApplyScene(presentation.scene);
 
     const auto applyBattery = [](Widget::Battery *widget, const BatteryPresentation &battery) {

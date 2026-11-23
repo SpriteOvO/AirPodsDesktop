@@ -12,6 +12,7 @@
 
 #include <optional>
 
+#include <QColor>
 #include <QSize>
 #include <QRect>
 #include <QString>
@@ -38,11 +39,13 @@ enum class BatteryBadge : uint32_t {
 //   OnePodOut    one pod taken out: still render, L/R rings + case ring
 //   BothPodsOut  both taken out: keeps turning for a while
 //   PodsOnly     after that: pods without the case, still, a single ring for the pair
+//   Headset      over-ear models with one battery and no case: turntable render, a single ring
 enum class Scene : uint32_t {
     PodsInCase,
     OnePodOut,
     BothPodsOut,
     PodsOnly,
+    Headset,
 };
 
 struct BatteryPresentation {
@@ -62,6 +65,7 @@ struct MainWindowPresentation {
     BatteryPresentation leftBattery;
     BatteryPresentation rightBattery;
     BatteryPresentation caseBattery;
+    std::optional<QColor> animationTint;
 
     bool operator==(const MainWindowPresentation &) const = default;
 };
@@ -96,6 +100,10 @@ private:
 };
 
 AnimationPresentation GetAnimationPresentation(Core::AirPods::Model model);
+
+// The animations are rendered in one finish. Returns the tint that approximates the device's
+// actual color, or nothing when the stock render already matches or the color is unknown.
+std::optional<QColor> GetAnimationTint(Core::AirPods::Model model, Core::AppleCP::Color color);
 QPoint PopupPosition(const QRect &availableGeometry, QSize windowSize, QSize margin);
 
 } // namespace Gui

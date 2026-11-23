@@ -86,6 +86,20 @@ enum class Model : uint32_t {
 
 enum class Side : uint32_t { Left, Right };
 
+// Over-ear models have a single battery and no charging case, but their advertisements still
+// carry left, right, and case battery fields.
+inline bool HasSingleBattery(Model model)
+{
+    switch (model) {
+    case Model::AirPods_Max:
+    case Model::AirPods_Max_USB_C:
+    case Model::Beats_Solo3:
+        return true;
+    default:
+        return false;
+    }
+}
+
 } // namespace Core::AirPods
 
 template <>
