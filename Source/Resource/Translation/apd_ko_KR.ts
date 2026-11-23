@@ -269,6 +269,10 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>트레이 아이콘을 클릭하면 기본 창을 여는 대신 선택한 기기에 연결합니다. 두 번 클릭하면 기본 창이 열립니다.</translation>
     </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Windows의 Bluetooth 설정에서 AirPods을 페어링해야 합니다.</transla
     <message>
         <source>Dark</source>
         <translation>다크</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

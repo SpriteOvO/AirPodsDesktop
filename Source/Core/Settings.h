@@ -90,7 +90,9 @@ void SetRepository(std::unique_ptr<Repository> repository);
         Impl::OnApply(&OnApply_tray_quick_connect_device_id),                                       \
         Impl::Sensitive{})                                                                          \
     callback(TaskbarStatusBehavior, battery_on_taskbar, {TaskbarStatusBehavior::Disable},          \
-        Impl::OnApply(&OnApply_battery_on_taskbar))
+        Impl::OnApply(&OnApply_battery_on_taskbar))                                                \
+    callback(bool, popup_on_lid_open, {true},                                                      \
+        Impl::Desc{QT_TRANSLATE_NOOP("QObject", "Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.")})
 // clang-format on
 
 struct Fields {

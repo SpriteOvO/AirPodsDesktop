@@ -269,6 +269,10 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Ein Klick auf das Symbol im Infobereich verbindet das ausgewählte Gerät, anstatt das Hauptfenster zu öffnen. Ein Doppelklick öffnet es weiterhin.</translation>
     </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Kopple deine AirPods zuerst in den Windows Bluetooth-Einstellungen.</translation
     <message>
         <source>Dark</source>
         <translation>Dunkel</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

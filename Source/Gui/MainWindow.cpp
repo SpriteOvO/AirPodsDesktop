@@ -182,13 +182,18 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(this, &MainWindow::DisconnectSafely, this, &MainWindow::Disconnect);
     connect(this, &MainWindow::BindSafely, this, &MainWindow::Bind);
     connect(this, &MainWindow::UnbindSafely, this, &MainWindow::Unbind);
-    connect(this, &MainWindow::ShowSafely, this, &MainWindow::Show);
+    connect(
+        this, &MainWindow::ShowWithoutActivatingSafely, this, &MainWindow::ShowWithoutActivating);
     connect(this, &MainWindow::HideSafely, this, &MainWindow::DoHide);
     connect(
         this, &MainWindow::VersionUpdateAvailableSafely, this, &MainWindow::VersionUpdateAvailable);
 
     _posAnimation.setDuration(500);
+    _autoHideTimer->setObjectName("autoHideTimer");
     _autoHideTimer->callOnTimeout([this] { DoHide(); });
+    _lidSafetyTimer->setObjectName("lidSafetyTimer");
+    _lidSafetyTimer->setSingleShot(true);
+    _lidSafetyTimer->callOnTimeout([this] { DoHide(); });
 
     _ui.layoutAnimation->addWidget(_animationView);
     _ui.layoutPods->addWidget(_leftBattery);
@@ -222,6 +227,16 @@ void MainWindow::UpdateState(const Core::AirPods::State &state)
 
     _viewModel.UpdateState(state);
     Repaint();
+
+    // Lid state is only reported while the pods sit in the case, so with the pods out the last
+    // decision stands: an opened case keeps the popup, a closed one released it.
+    std::optional<bool> lidOpened;
+    if (state.caseBox.isBothPodsInCase) {
+        lidOpened = state.caseBox.isLidOpened;
+    }
+    if (lidOpened.has_value()) {
+        SetHoldForOpenLid(*lidOpened);
+    }
 }
 
 void MainWindow::Available()
@@ -238,6 +253,7 @@ void MainWindow::Unavailable()
 
     _viewModel.Unavailable();
     Repaint();
+    SetHoldForOpenLid(false);
 }
 
 void MainWindow::Disconnect()
@@ -246,6 +262,7 @@ void MainWindow::Disconnect()
 
     _viewModel.Disconnect();
     Repaint();
+    SetHoldForOpenLid(false);
 }
 
 void MainWindow::Bind()
@@ -440,14 +457,37 @@ void MainWindow::ShowDeviceSelector(std::vector<Core::Bluetooth::Device> devices
     Core::Settings::ModifiableAccess()->device_address = selectedDevice.GetAddress();
 }
 
+void MainWindow::SetHoldForOpenLid(bool hold)
+{
+    if (hold == _holdForOpenLid) {
+        return;
+    }
+    _holdForOpenLid = hold;
+    // Re-apply the last request rather than forcing a start, so a popup the user is hovering or
+    // has activated keeps no timer running.
+    ControlAutoHideTimer(_autoHideRequested);
+}
+
 void MainWindow::ControlAutoHideTimer(bool start)
 {
     LOG(Trace, "ControlAutoHideTimer: start == '{}', _isVisible == '{}'", start, _isVisible);
 
-    if (start && _isVisible) {
+    _autoHideRequested = start;
+
+    if (start && _isVisible && _holdForOpenLid) {
+        // Like iOS: the sheet stays while the case sits open, even as pods are taken out; the
+        // safety timer only guards against a lid close we never get to see.
+        _autoHideTimer->stop();
+        if (!_lidSafetyTimer->isActive()) {
+            _lidSafetyTimer->start(90s);
+        }
+    }
+    else if (start && _isVisible) {
+        _lidSafetyTimer->stop();
         _autoHideTimer->start(10s);
     }
     else {
+        _lidSafetyTimer->stop();
         _autoHideTimer->stop();
     }
 }
@@ -620,6 +660,16 @@ void MainWindow::Show()
     else {
         QDialog::show();
     }
+}
+
+// Used when the popup opens by itself (the case lid opened), so it doesn't pull focus away from
+// the app in use, e.g. a full-screen game.
+//
+void MainWindow::ShowWithoutActivating()
+{
+    setAttribute(Qt::WA_ShowWithoutActivating, true);
+    Show();
+    setAttribute(Qt::WA_ShowWithoutActivating, false);
 }
 
 void MainWindow::BeginShow(bool fromHidden)

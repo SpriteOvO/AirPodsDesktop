@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <atomic>
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -131,6 +132,53 @@ class UiRenderingTests : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void MainWindowRendersAirPods5()
+    {
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_5;
+        state.displayName = QStringLiteral("AirPods 5");
+        state.pods.left.battery = 80;
+        state.pods.right.battery = 70;
+        state.caseBox.battery = 50;
+
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        const auto outputDir = QStringLiteral(APD_BINARY_DIR "/UiValidation");
+        QVERIFY(QDir{}.mkpath(outputDir));
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            Gui::MainWindow window;
+            window.UpdateState(state);
+            window.Show();
+            QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+            auto *label = window.findChild<QLabel *>("deviceLabel");
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QVERIFY(label != nullptr);
+            QVERIFY(animation != nullptr);
+            QCOMPARE(label->text(), state.displayName);
+            QTRY_VERIFY(animation->isVisible());
+            QCOMPARE(animation->width(), animation->height() * 2);
+
+            const auto animationImage = animation->grab().toImage();
+            int visiblePixels = 0;
+            for (int y = 0; y < animationImage.height(); y += 2) {
+                for (int x = 0; x < animationImage.width(); x += 2) {
+                    visiblePixels += qAlpha(animationImage.pixel(x, y)) != 0;
+                }
+            }
+            QVERIFY(visiblePixels > 100);
+
+            const auto suffix =
+                QString{"airpods-5-%1-scale%2.png"}.arg(theme.IsDark() ? "dark" : "light", scale);
+            QVERIFY(window.grab().save(outputDir + '/' + suffix));
+            window.close();
+        }
+        theme.SetMode(originalMode);
+    }
+
     void MainWindowElidesLongDeviceNames()
     {
         Gui::MainWindow window;
@@ -164,6 +212,72 @@ private Q_SLOTS:
         const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
         VerifySmoothPopupCorners(
             &window, QString{"main-window-long-device-name-scale%1.png"}.arg(scale));
+    }
+
+    void MainWindowStaysWhileLidIsOpen()
+    {
+        Gui::MainWindow window;
+        auto *autoHide = window.findChild<QTimer *>("autoHideTimer");
+        auto *lidSafety = window.findChild<QTimer *>("lidSafetyTimer");
+        QVERIFY(autoHide != nullptr);
+        QVERIFY(lidSafety != nullptr);
+
+        Core::AirPods::State state;
+        state.model = Core::AirPods::Model::AirPods_Pro_2;
+        state.displayName = QStringLiteral("AirPods Pro");
+        state.pods.left.battery = Core::AirPods::Battery{90};
+        state.pods.right.battery = Core::AirPods::Battery{90};
+        state.caseBox.battery = Core::AirPods::Battery{80};
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+
+        // Lid open: no 10 s auto-hide, only the safety cap.
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+
+        // Pods taken out (one, then both): the case is still open, the popup stays.
+        state.pods.right.isInEar = true;
+        state.caseBox.isBothPodsInCase = false;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(lidSafety->isActive());
+        state.pods.left.isInEar = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+
+        // Pods back in and the lid closed: back to the usual auto-hide.
+        state.pods.left.isInEar = state.pods.right.isInEar = false;
+        state.caseBox.isBothPodsInCase = true;
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+
+        // Disconnect while the lid was open also releases the popup.
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        window.Disconnect();
+        QVERIFY(autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+
+        // While the user has the popup activated, a lid change starts no timer.
+        emit qApp->applicationStateChanged(Qt::ApplicationActive);
+        QVERIFY(!autoHide->isActive());
+        state.caseBox.isLidOpened = true;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+        state.caseBox.isLidOpened = false;
+        window.UpdateState(state);
+        QVERIFY(!autoHide->isActive());
+        QVERIFY(!lidSafety->isActive());
+        emit qApp->applicationStateChanged(Qt::ApplicationInactive);
+        QVERIFY(autoHide->isActive());
     }
 
     void UpdateTextHasAntialiasedEdges_data()
@@ -667,6 +781,7 @@ private Q_SLOTS:
         for (const auto *name : {
                  "cbLowAudioLatency",
                  "cbAutoEarDetection",
+                 "cbLidPopup",
                  "cbTrayQuickConnectEnabled",
              })
         {
