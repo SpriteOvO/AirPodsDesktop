@@ -51,6 +51,9 @@ struct BasicState {
 
 struct PodState : Details::BasicState {
     bool isInEar{false};
+    // The advertisement only says "both in case"; a pod that charges while the other does not
+    // is the one still sitting in the case (see `Advertisement`).
+    bool isInCase{false};
 
     bool operator==(const PodState &rhs) const = default;
 };
