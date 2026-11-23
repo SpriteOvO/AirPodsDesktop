@@ -271,7 +271,7 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menampilkan jendela baterai saat Anda membuka case, tanpa mengambil fokus dari aplikasi yang sedang digunakan. Jika dinonaktifkan, buka dari ikon tray.</translation>
     </message>
 </context>
 <context>
@@ -409,7 +409,7 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>Tampilkan baterai saat case dibuka</translation>
     </message>
 </context>
 <context>

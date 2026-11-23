@@ -271,7 +271,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟充電盒時顯示電量視窗，且不會搶走目前應用程式的焦點。關閉此選項後，可從系統匣圖示開啟。</translation>
     </message>
 </context>
 <context>
@@ -409,7 +409,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟充電盒時顯示電量</translation>
     </message>
 </context>
 <context>

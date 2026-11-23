@@ -168,63 +168,63 @@ Enjoy it all.</source>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>已准备好安装，当前版本 %1</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>正在下载更新</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>无法完成更新</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>自动更新已中止</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>发布类型</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>新版本</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>预览版</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>正式版</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>此版本没有发行说明</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法完成自动更新。请手动下载并安装新版本，或关闭此窗口以继续使用 AirPodsDesktop。</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在获取下载大小…</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>已下载 %1</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在准备安装…</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在下载…</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% · %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -271,7 +271,7 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开电池仓时显示电量窗口，且不会抢占当前应用的焦点。关闭此选项后，可从系统托盘图标打开。</translation>
     </message>
 </context>
 <context>
@@ -409,14 +409,14 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>Show battery when the case opens</source>
-        <translation type="unfinished"></translation>
+        <translation>打开电池仓时显示电量</translation>
     </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>软件更新</translation>
     </message>
     <message>
         <source>View release</source>
@@ -444,11 +444,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果下载缓慢，您可以改为手动下载。切换到手动下载时，AirPodsDesktop 将会关闭。</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>更新内容</translation>
     </message>
 </context>
 </TS>
