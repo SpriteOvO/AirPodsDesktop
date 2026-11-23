@@ -269,6 +269,10 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Un clic en el icono de la bandeja conecta el dispositivo seleccionado en lugar de abrir la ventana principal. El doble clic sigue abriéndola.</translation>
     </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SelectWindow</name>
@@ -402,6 +406,10 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>El dispositivo de audio Bluetooth emparejado que se conecta al hacer clic en el icono de la bandeja.</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

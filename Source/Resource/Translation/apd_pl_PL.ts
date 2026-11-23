@@ -11,7 +11,7 @@
         <source>Hello, welcome to %1!
 
 This seems to be your first time using this program.
-Let's configure something together.</source>
+Let&apos;s configure something together.</source>
         <translation>Witaj w %1!
 
 Wygląda na to, że korzystasz z programu po raz pierwszy.
@@ -20,13 +20,13 @@ Zacznijmy od kilku ustawień.</translation>
     <message>
         <source>Do you want this program to launch when the system starts?
 
-If you frequently use AirPods with this computer, it is recommended that you click "Yes".</source>
+If you frequently use AirPods with this computer, it is recommended that you click &quot;Yes&quot;.</source>
         <translation>Czy uruchamiać program przy starcie systemu?
 
 Jeśli często używasz słuchawek AirPods z tym komputerem, wybierz „Tak”.</translation>
     </message>
     <message>
-        <source>Do you want to enable the "low audio latency" feature?
+        <source>Do you want to enable the &quot;low audio latency&quot; feature?
 
 %1</source>
         <translation>Czy włączyć funkcję „Niskie opóźnienie dźwięku”?
@@ -51,45 +51,7 @@ Miłego słuchania!</translation>
     </message>
 </context>
 <context>
-    <name>DownloadWindow</name>
-    <message>
-        <source>Download new version</source>
-        <translation>Pobierz nową wersję</translation>
-    </message>
-    <message>
-        <source>Download Manually</source>
-        <translation>Pobierz ręcznie</translation>
-    </message>
-    <message>
-        <source>If the download is slow or fails, you can:</source>
-        <translation>Jeśli pobieranie jest wolne lub się nie powiedzie, możesz:</translation>
-    </message>
-</context>
-<context>
-    <name>Gui::DownloadWindow</name>
-    <message>
-        <source>Oops, an error occurred during the automatic update.
-Please download and install the new version manually.</source>
-        <translation>Wystąpił błąd podczas automatycznej aktualizacji.
-Pobierz i zainstaluj nową wersję ręcznie.</translation>
-    </message>
-</context>
-<context>
     <name>Gui::MainWindow</name>
-    <message>
-        <source>Change log:</source>
-        <translation>Lista zmian:</translation>
-    </message>
-    <message>
-        <source>Hey! I found a new version available!
-
-Current version: %1
-Latest version: %2%3</source>
-        <translation>Dostępna jest nowa wersja!
-
-Obecna wersja: %1
-Najnowsza wersja: %2%3</translation>
-    </message>
     <message>
         <source>Bind to AirPods</source>
         <translation>Przypisz słuchawki AirPods</translation>
@@ -103,7 +65,7 @@ Najnowsza wersja: %2%3</translation>
     <name>Gui::SettingsWindow</name>
     <message>
         <source>|</source>
-        <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by "|" character, only single "|" for empty)</extracomment>
+        <extracomment>To credit translators, you can leave your name here if you wish. (Sorted by time added, separated by &quot;|&quot; character, only single &quot;|&quot; for empty)</extracomment>
         <translation>Piteriuz</translation>
     </message>
     <message>
@@ -203,6 +165,69 @@ Najnowsza wersja: %2%3</translation>
     </message>
 </context>
 <context>
+    <name>Gui::UpdateWindow</name>
+    <message>
+        <source>Ready to install. You are using %1.</source>
+        <translation>Aktualizacja jest gotowa do instalacji. Używasz wersji %1.</translation>
+    </message>
+    <message>
+        <source>Downloading update</source>
+        <translation>Pobieranie aktualizacji</translation>
+    </message>
+    <message>
+        <source>Unable to update</source>
+        <translation>Nie można zaktualizować programu</translation>
+    </message>
+    <message>
+        <source>The automatic update was stopped</source>
+        <translation>Automatyczna aktualizacja została zatrzymana</translation>
+    </message>
+    <message>
+        <source>Release type</source>
+        <translation>Rodzaj wydania</translation>
+    </message>
+    <message>
+        <source>New version</source>
+        <translation>Nowa wersja</translation>
+    </message>
+    <message>
+        <source>Preview release</source>
+        <translation>Wersja testowa</translation>
+    </message>
+    <message>
+        <source>Stable release</source>
+        <translation>Wersja stabilna</translation>
+    </message>
+    <message>
+        <source>No release notes for this version</source>
+        <translation>Brak informacji o zmianach w tej wersji</translation>
+    </message>
+    <message>
+        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
+        <translation>Nie udało się ukończyć automatycznej aktualizacji. Pobierz i zainstaluj nową wersję ręcznie lub zamknij to okno, aby dalej korzystać z AirPodsDesktop.</translation>
+    </message>
+    <message>
+        <source>Waiting for download size...</source>
+        <translation>Oczekiwanie na informację o rozmiarze pliku...</translation>
+    </message>
+    <message>
+        <source>%1 downloaded</source>
+        <translation>Pobrano %1</translation>
+    </message>
+    <message>
+        <source>Preparing to install...</source>
+        <translation>Przygotowywanie do instalacji...</translation>
+    </message>
+    <message>
+        <source>Downloading...</source>
+        <translation>Pobieranie...</translation>
+    </message>
+    <message>
+        <source>%1% - %2 of %3</source>
+        <translation>%1% - %2 z %3</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <source>AirPodsDesktop information</source>
@@ -211,22 +236,6 @@ Najnowsza wersja: %2%3</translation>
 </context>
 <context>
     <name>QMessageBox</name>
-    <message>
-        <source>Update now</source>
-        <translation>Aktualizuj teraz</translation>
-    </message>
-    <message>
-        <source>Skip this version</source>
-        <translation>Pomiń tę wersję</translation>
-    </message>
-    <message>
-        <source>View release</source>
-        <translation>Zobacz informacje o wydaniu</translation>
-    </message>
-    <message>
-        <source>Remind me later</source>
-        <translation>Przypomnij później</translation>
-    </message>
     <message>
         <source>No paired device found.
 You need to pair your AirPods in Windows Bluetooth Settings first.</source>
@@ -259,6 +268,10 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
     <message>
         <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
         <translation>Kliknięcie ikony w zasobniku systemowym łączy z wybranym urządzeniem zamiast otwierać okno główne. Aby otworzyć okno, kliknij ikonę dwukrotnie.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -347,8 +360,8 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
         <translation>O programie</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href="https://github.com/SpriteOvO/AirPodsDesktop"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;Kod źródłowy&lt;/span&gt;&lt;/a&gt; dostępny na licencji &lt;a href="https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE"&gt;&lt;span style=" text-decoration: underline; color:#0000ff;"&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open source &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;repository&lt;/span&gt;&lt;/a&gt; and licensed under &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Kod źródłowy&lt;/span&gt;&lt;/a&gt; dostępny na licencji &lt;a href=&quot;https://github.com/SpriteOvO/AirPodsDesktop/blob/main/LICENSE&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;GPLv3&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copyright © 2021-2022 SpriteOvO. All rights reserved.</source>
@@ -394,68 +407,9 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
         <source>Dark</source>
         <translation>Ciemny</translation>
     </message>
-</context>
-<context>
-    <name>Gui::UpdateWindow</name>
     <message>
-        <source>Ready to install. You are using %1.</source>
-        <translation>Aktualizacja jest gotowa do instalacji. Używasz wersji %1.</translation>
-    </message>
-    <message>
-        <source>Downloading update</source>
-        <translation>Pobieranie aktualizacji</translation>
-    </message>
-    <message>
-        <source>Unable to update</source>
-        <translation>Nie można zaktualizować programu</translation>
-    </message>
-    <message>
-        <source>The automatic update was stopped</source>
-        <translation>Automatyczna aktualizacja została zatrzymana</translation>
-    </message>
-    <message>
-        <source>Release type</source>
-        <translation>Rodzaj wydania</translation>
-    </message>
-    <message>
-        <source>New version</source>
-        <translation>Nowa wersja</translation>
-    </message>
-    <message>
-        <source>Preview release</source>
-        <translation>Wersja testowa</translation>
-    </message>
-    <message>
-        <source>Stable release</source>
-        <translation>Wersja stabilna</translation>
-    </message>
-    <message>
-        <source>No release notes for this version</source>
-        <translation>Brak informacji o zmianach w tej wersji</translation>
-    </message>
-    <message>
-        <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation>Nie udało się ukończyć automatycznej aktualizacji. Pobierz i zainstaluj nową wersję ręcznie lub zamknij to okno, aby dalej korzystać z AirPodsDesktop.</translation>
-    </message>
-    <message>
-        <source>Waiting for download size...</source>
-        <translation>Oczekiwanie na informację o rozmiarze pliku...</translation>
-    </message>
-    <message>
-        <source>%1 downloaded</source>
-        <translation>Pobrano %1</translation>
-    </message>
-    <message>
-        <source>Preparing to install...</source>
-        <translation>Przygotowywanie do instalacji...</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>Pobieranie...</translation>
-    </message>
-    <message>
-        <source>%1% - %2 of %3</source>
-        <translation>%1% - %2 z %3</translation>
+        <source>Show battery when the case opens</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -493,7 +447,7 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
         <translation>Jeśli pobieranie jest wolne, możesz pobrać aktualizację ręcznie. Po wybraniu pobierania ręcznego program AirPodsDesktop zostanie zamknięty.</translation>
     </message>
     <message>
-        <source>What's new</source>
+        <source>What&apos;s new</source>
         <translation>Co nowego</translation>
     </message>
 </context>
