@@ -46,7 +46,7 @@ class CloseButton : public QWidget
 public:
     CloseButton(QWidget *parent = nullptr)
     {
-        setFixedSize(25, 25);
+        setFixedSize(24, 24);
     }
 
 Q_SIGNALS:
@@ -126,7 +126,7 @@ protected:
 
             QSize size = this->size();
 
-            constexpr int margin = 8;
+            constexpr int margin = 7;
 
             painter.drawLine(margin, margin, size.width() - margin, size.height() - margin);
 
@@ -145,7 +145,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 
     _animationView = new Widget::AnimationView{this};
     _playback = new AnimationPlayback{*_animationView, this};
-    _deviceImage = new Widget::DeviceImage{this};
     _closeButton = new CloseButton{this};
 
     _ui.setupUi(this);
@@ -162,10 +161,12 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.pushButton->setProperty("cssClass", "accent");
 
     auto titleFont = _ui.deviceLabel->font();
-    titleFont.setWeight(QFont::DemiBold);
+    titleFont.setWeight(QFont::Bold);
     _ui.deviceLabel->setFont(titleFont);
     _ui.deviceLabel->setTextFormat(Qt::PlainText);
-    _ui.deviceLabel->setWordWrap(false);
+    // A long name wraps onto a second line like the iOS sheet; see `FitDeviceLabelFont`.
+    _ui.deviceLabel->setWordWrap(true);
+    _ui.deviceLabel->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
     _ui.deviceLabel->setProperty("fontRole", "display");
 
     ApplyTheme();
@@ -174,7 +175,6 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(qApp, &QGuiApplication::applicationStateChanged, this, &MainWindow::OnAppStateChanged);
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
-    connect(_deviceImage, &Widget::DeviceImage::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_animationView, &Widget::AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
     connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
 
@@ -197,62 +197,36 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _lidSafetyTimer->setSingleShot(true);
     _lidSafetyTimer->callOnTimeout([this] { DoHide(); });
     _podsRowGeometry = _ui.podsBatteryContainer->geometry();
+    _caseRowGeometry = _ui.caseBatteryContainer->geometry();
     _sceneFade.setDuration(500);
     _sceneFade.setEasingCurve(QEasingCurve::InOutSine);
     connect(&_sceneFade, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         const qreal opacity = value.toReal();
         if (_fadePhase == FadePhase::Out) {
-            if (_fadeMedia) {
-                SetMediaOpacity(_shownView, opacity); // the outgoing view, still playing
-            }
-            if (_fadeBatteries) {
-                // The snapshot is what was on screen when this phase began; it leaves in step
-                // with the picture, however far along the picture already was.
-                _batteryFade->SetSnapshotOpacity(_fadeFrom > 0.0 ? opacity / _fadeFrom : 0.0);
-            }
+            // The snapshot is what was on screen when this phase began; it leaves at the same
+            // pace however far along a reversed fade already was.
+            _batteryFade->SetSnapshotOpacity(_fadeFrom > 0.0 ? opacity / _fadeFrom : 0.0);
         }
         else if (_fadePhase == FadePhase::In) {
-            if (_fadeMedia) {
-                SetMediaOpacity(_shownView, opacity); // the incoming view
-            }
-            if (_fadeBatteries) {
-                const qreal remaining = _fadeFrom < 1.0 ? (1.0 - opacity) / (1.0 - _fadeFrom) : 0.0;
-                _batteryFade->SetCoverOpacity(remaining);
-                _batteryFade->SetSnapshotOpacity(remaining); // only set when a fade-in was resumed
-            }
+            const qreal remaining = _fadeFrom < 1.0 ? (1.0 - opacity) / (1.0 - _fadeFrom) : 0.0;
+            _batteryFade->SetCoverOpacity(remaining);
+            _batteryFade->SetSnapshotOpacity(remaining); // only set when a fade-in was resumed
         }
     });
     connect(&_sceneFade, &QVariantAnimation::finished, this, [this] {
         if (_fadePhase == FadePhase::Out) {
-            // Everything old is gone: swap the picture, then bring the new scene in together.
-            if (_fadeMedia) {
-                _deviceImage->SetArrangement(_pendingArrangement, false);
-                ShowMedia(_rotating);
-                SetMediaOpacity(_shownView, 0.0);
-            }
-            if (_fadeBatteries) {
-                _batteryFade->DropSnapshot();
-            }
+            // The old row is gone: bring the new one in.
+            _batteryFade->DropSnapshot();
             StartSceneFade(FadePhase::In);
         }
         else {
             _fadePhase = FadePhase::Idle;
-            if (_fadeBatteries) {
-                _batteryFade->Finish();
-            }
-            _fadeMedia = _fadeBatteries = false;
+            _batteryFade->Finish();
         }
     });
-    _podsOnlyTimer->setObjectName("podsOnlyTimer");
-    _podsOnlyTimer->setSingleShot(true);
-    _podsOnlyTimer->callOnTimeout([this] {
-        _viewModel.SetPodsOnly(true);
-        Repaint();
-    });
 
-    _ui.layoutAnimation->addWidget(_animationView);
-    _ui.layoutAnimation->addWidget(_deviceImage);
-    _animationView->hide();
+    // Centred horizontally so the battery rows can be placed under it without a layout pass.
+    _ui.layoutAnimation->addWidget(_animationView, 0, 0, Qt::AlignHCenter);
     for (auto *battery : {_leftBattery, _rightBattery, _caseBattery}) {
         battery->setShape(Widget::Battery::Shape::Ring);
         battery->setTextPadding(4);
@@ -263,9 +237,10 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     _ui.layoutCase->addWidget(_caseBattery);
     _ui.layoutClose->addWidget(_closeButton);
 
-    // For getting the correct initial height of `_deviceImage` later
+    // Lay the view out once so `SetAnimation` can size it from its height; it stays hidden until
+    // there is a device to show.
     _ui.layoutAnimation->activate();
-    _deviceImage->show();
+    _animationView->hide();
 }
 
 void MainWindow::StartUpdateChecks()
@@ -322,8 +297,6 @@ void MainWindow::Disconnect()
 {
     LOG(Info, "MainWindow::Disconnect");
 
-    _viewModel.SetPodsOnly(false);
-    _podsOnlyTimer->stop();
     _viewModel.Disconnect();
     Repaint();
     SetHoldForOpenLid(false);
@@ -403,27 +376,27 @@ void MainWindow::ChangeButtonAction(ButtonAction action)
     _ui.pushButton->show();
 }
 
-void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
+void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model, Core::AppleCP::Color color)
 {
-    if (model == _cacheModel) {
+    if (model == _cacheModel && (!model.has_value() || color == _cacheColor)) {
         return;
     }
 
     if (!model.has_value()) {
         StopAnimation();
         _playback->SetAnimation({});
-        _deviceImage->SetSource({});
+        _podsCenter = 0.5;
+        _caseCenter.reset();
     }
     else {
-        const auto presentation = GetAnimationPresentation(model.value());
+        const auto presentation = GetAnimationPresentation(model.value(), color);
 
-        auto aspectRatio =
-            (float)presentation.sourceSize.width() / (float)presentation.sourceSize.height();
-        auto widgetWidth = _deviceImage->height() * aspectRatio;
-        _deviceImage->setFixedWidth(widgetWidth);
-        _animationView->setFixedWidth(widgetWidth);
+        const auto shown = presentation.ShownSize();
+        const qreal aspectRatio = shown.width() / shown.height();
+        _animationView->setFixedWidth(qRound(_animationView->height() * aspectRatio));
         _playback->SetAnimation(presentation);
-        _deviceImage->SetSource(QImage{presentation.FallbackResource()});
+        _podsCenter = presentation.podsCenter;
+        _caseCenter = presentation.caseCenter;
 
         if (_isVisible) {
             PlayAnimation();
@@ -434,60 +407,29 @@ void MainWindow::SetAnimation(std::optional<Core::AirPods::Model> model)
     }
 
     _cacheModel = model;
+    _cacheColor = color;
 }
 
 void MainWindow::PlayAnimation()
 {
     _sceneFade.stop();
     _fadePhase = FadePhase::Idle;
-    _fadeMedia = _fadeBatteries = false;
     _batteryFade->Finish();
-    _animationView->SetOpacity(1.0);
-    _deviceImage->SetOpacity(1.0);
-    _deviceImage->SetArrangement(_pendingArrangement, false);
-    ShowMedia(_rotating);
-}
-
-void MainWindow::ShowMedia(bool rotating)
-{
-    _shownView = rotating;
-    if (rotating) {
-        _deviceImage->hide();
-        _animationView->show();
-        _playback->SetActive(true);
-    }
-    else {
-        _playback->SetActive(false);
-        _animationView->hide();
-        _deviceImage->show();
-    }
-}
-
-void MainWindow::SetMediaOpacity(bool rotatingView, qreal opacity)
-{
-    if (rotatingView) {
-        _animationView->SetOpacity(opacity);
-    }
-    else {
-        _deviceImage->SetOpacity(opacity);
-    }
-}
-
-qreal MainWindow::MediaOpacity(bool rotatingView) const
-{
-    return rotatingView ? _animationView->Opacity() : _deviceImage->Opacity();
+    _animationView->show();
+    // Place it now rather than on the next layout pass, so its first frame is not drawn at the
+    // previous model's position.
+    _ui.layoutAnimation->activate();
+    _playback->SetActive(true);
 }
 
 void MainWindow::StartSceneFade(FadePhase phase)
 {
     _fadePhase = phase;
-    // Pick up from wherever the picture currently is, so a reversed hand-over never jumps.
+    // Pick up from wherever the row currently is, so a reversed hand-over never jumps.
     const bool outgoing = phase == FadePhase::Out;
     const bool resumed = _sceneFade.state() == QAbstractAnimation::Running;
     _sceneFade.stop();
-    const qreal from = _fadeMedia ? MediaOpacity(_shownView)
-                       : resumed  ? _sceneFade.currentValue().toReal()
-                                  : (outgoing ? 1.0 : 0.0);
+    const qreal from = resumed ? _sceneFade.currentValue().toReal() : (outgoing ? 1.0 : 0.0);
     _fadeFrom = from;
     _sceneFade.setStartValue(from);
     _sceneFade.setEndValue(outgoing ? 0.0 : 1.0);
@@ -499,44 +441,39 @@ void MainWindow::StopAnimation()
 {
     _playback->SetActive(false);
     _animationView->hide();
-    _deviceImage->hide();
 }
 
-void MainWindow::ApplyScene(Scene scene)
+QRect MainWindow::BatteryRowRect() const
 {
-    using Arrangement = Widget::DeviceImage::Arrangement;
+    const int top = (std::min)(_podsRowGeometry.y(), _caseRowGeometry.y());
+    const int bottom = (std::max)(_podsRowGeometry.bottom(), _caseRowGeometry.bottom());
+    return {0, top, width(), bottom - top + 1};
+}
 
-    switch (scene) {
-    case Scene::BothPodsOut:
-        if (!_podsOnlyTimer->isActive()) {
-            _podsOnlyTimer->start(15s);
-        }
-        break;
-    case Scene::PodsOnly:
-        _podsOnlyTimer->stop();
-        break;
-    default:
-        _podsOnlyTimer->stop();
-        if (_viewModel.IsPodsOnly()) {
-            _viewModel.SetPodsOnly(false);
-        }
-        break;
+void MainWindow::LayoutBatteryRows()
+{
+    // Like iOS, each ring sits under the object it describes: the pods' ring(s) under the pods,
+    // the case ring under the case, a headset's ring under the headset. The view is centred in
+    // its cell, so its position follows from its width without waiting for a layout pass.
+    const QRect cell =
+        _ui.animationContainer->geometry().marginsRemoved(_ui.layoutAnimation->contentsMargins());
+    const int viewWidth = (std::min)(cell.width(), _animationView->maximumWidth());
+    const qreal viewLeft = cell.x() + (cell.width() - viewWidth) / 2.0;
+
+    const auto centredUnder = [&](QRect row, qreal fraction) {
+        const int left = qRound(viewLeft + fraction * viewWidth - row.width() / 2.0);
+        row.moveLeft(std::clamp(left, 0, width() - row.width()));
+        return row;
+    };
+
+    const QRect podsRow = centredUnder(_podsRowGeometry, _podsCenter);
+    if (_ui.podsBatteryContainer->geometry() != podsRow) {
+        _ui.podsBatteryContainer->setGeometry(podsRow);
     }
-
-    _pendingArrangement = scene == Scene::PodsOnly ? Arrangement::PodsOnly : Arrangement::Spread;
-    _rotating =
-        scene == Scene::PodsInCase || scene == Scene::BothPodsOut || scene == Scene::Headset;
-
-    // Pods only and headsets: the single ring takes the whole row so it sits under the centred
-    // device.
-    const QRect podsRow = _ui.podsBatteryContainer->geometry();
-    const QRect centredRow{
-        _podsRowGeometry.x(), _podsRowGeometry.y(), width() - 2 * _podsRowGeometry.x(),
-        _podsRowGeometry.height()};
-    const bool singleRing = scene == Scene::PodsOnly || scene == Scene::Headset;
-    const QRect fullRow = singleRing ? centredRow : _podsRowGeometry;
-    if (podsRow != fullRow) {
-        _ui.podsBatteryContainer->setGeometry(fullRow);
+    const QRect caseRow =
+        _caseCenter.has_value() ? centredUnder(_caseRowGeometry, *_caseCenter) : _caseRowGeometry;
+    if (_ui.caseBatteryContainer->geometry() != caseRow) {
+        _ui.caseBatteryContainer->setGeometry(caseRow);
     }
 }
 
@@ -667,19 +604,17 @@ void MainWindow::Repaint()
 {
     const auto presentation = _viewModel.Present();
 
-    const bool wasRotating = _rotating;
-    const auto wasArrangement = _pendingArrangement;
-    const bool batteriesChanged = _lastPresentation.has_value() &&
-                                  (_lastPresentation->leftBattery != presentation.leftBattery ||
-                                   _lastPresentation->rightBattery != presentation.rightBattery ||
-                                   _lastPresentation->caseBattery != presentation.caseBattery ||
-                                   _lastPresentation->scene != presentation.scene);
+    const bool batteriesChanged =
+        _lastPresentation.has_value() &&
+        (_lastPresentation->leftBattery != presentation.leftBattery ||
+         _lastPresentation->rightBattery != presentation.rightBattery ||
+         _lastPresentation->caseBattery != presentation.caseBattery ||
+         _lastPresentation->scene != presentation.scene ||
+         _lastPresentation->animationModel != presentation.animationModel);
 
-    // Snapshot the battery row before anything moves; the old look then leaves together with
-    // the old picture, and the new row arrives together with the new one.
-    const QRect batteryRow{
-        _podsRowGeometry.x(), _podsRowGeometry.y(), width() - 2 * _podsRowGeometry.x(),
-        _podsRowGeometry.height()};
+    // Snapshot the battery row before anything moves; the old row then fades out and the new
+    // one fades in, while the video keeps turning above them.
+    const QRect batteryRow = BatteryRowRect();
     QPixmap before;
     if (_isVisible && _lastPresentation.has_value() &&
         (batteriesChanged || _batteryFade->IsRunning()))
@@ -691,9 +626,8 @@ void MainWindow::Repaint()
 
     FitDeviceLabelFont(presentation.title);
     ChangeButtonAction(presentation.buttonAction);
-    SetAnimation(presentation.animationModel);
-    _animationView->SetTint(presentation.animationTint);
-    ApplyScene(presentation.scene);
+    SetAnimation(presentation.animationModel, presentation.animationColor);
+    LayoutBatteryRows();
 
     const auto applyBattery = [](Widget::Battery *widget, const BatteryPresentation &battery) {
         if (!battery.visible) {
@@ -715,48 +649,17 @@ void MainWindow::Repaint()
     applyBattery(_caseBattery, presentation.caseBattery);
     _lastPresentation = presentation;
 
-    const bool mediaChanged = wasRotating != _rotating || wasArrangement != _pendingArrangement;
-    if (!_isVisible) {
-        if (mediaChanged) {
-            _deviceImage->SetArrangement(_pendingArrangement, false);
-        }
-        return;
-    }
-    if (!mediaChanged && before.isNull()) {
+    if (before.isNull()) {
         return;
     }
 
-    if (!before.isNull()) {
-        _ui.podsBatteryContainer->layout()->activate();
-        _ui.caseBatteryContainer->layout()->activate();
-        _batteryFade->Begin(before, batteryRow);
-        _fadeBatteries = true;
-    }
-    _fadeMedia = _fadeMedia || mediaChanged;
+    _ui.podsBatteryContainer->layout()->activate();
+    _ui.caseBatteryContainer->layout()->activate();
+    _batteryFade->Begin(before, batteryRow);
 
-    // Whatever is on screen keeps doing its thing (the video keeps turning) while it fades out;
-    // only then does the new scene fade in. A change caught mid-fade continues from where the
-    // previous one got to.
-    switch (_fadePhase) {
-    case FadePhase::Idle:
-        StartSceneFade(FadePhase::Out);
-        break;
-    case FadePhase::In:
-        // The half-arrived scene goes back out, from wherever it is now.
-        StartSceneFade(FadePhase::Out);
-        break;
-    case FadePhase::Out:
-        if (_fadeMedia && _shownView == _rotating &&
-            (_rotating || _deviceImage->GetArrangement() == _pendingArrangement))
-        {
-            // Target flipped back to what is currently fading out: fade it in again.
-            StartSceneFade(FadePhase::In);
-            break;
-        }
-        // Restart the fade-out from the current opacity so a fresh snapshot leaves in step.
-        StartSceneFade(FadePhase::Out);
-        break;
-    }
+    // The old row fades out, then the new one fades in. A change caught mid-fade restarts the
+    // fade-out from the current opacity so the fresh snapshot leaves in step.
+    StartSceneFade(FadePhase::Out);
 }
 
 void MainWindow::ApplyTheme()
@@ -777,6 +680,9 @@ void MainWindow::ApplyTheme()
         Utils::Qt::SetPaletteColor(battery, QPalette::WindowText, colors.mainText);
     }
 
+    // Restyling can put back the title's font from before it was fitted; fit it again.
+    FitDeviceLabelFont(_ui.deviceLabel->accessibleName());
+
     _closeButton->update();
     update();
 }
@@ -794,21 +700,50 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
 void MainWindow::FitDeviceLabelFont(const QString &text)
 {
-    auto font = _ui.deviceLabel->font();
-    font.setPointSize(_deviceLabelMaximumPointSize);
+    // Laid out like the iOS sheet: the title is centred on the window with its first line at
+    // the measured height, and a name too long for one line wraps onto a second before the
+    // font shrinks.
+    const int availableWidth = _titleMaximumWidth;
+    const int left = (width() - availableWidth) / 2;
 
-    const auto availableWidth = _ui.deviceLabel->contentsRect().width();
-    while (font.pointSize() > _deviceLabelMinimumPointSize &&
-           QFontMetrics{font}.horizontalAdvance(text) > availableWidth)
-    {
-        font.setPointSize(font.pointSize() - 1);
+    // Line heights come from the laid-out text, not the primary font alone: CJK names are drawn
+    // with a taller fallback font.
+    const auto lineHeight = [](const QFontMetrics &metrics, const QString &line) {
+        return metrics
+            .boundingRect(QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX}, Qt::TextSingleLine, line)
+            .height();
+    };
+
+    auto font = _ui.deviceLabel->font();
+    QString displayText = text;
+    int firstLineHeight = 0;
+    int textHeight = 0;
+    for (int size = _deviceLabelMaximumPointSize;; --size) {
+        font.setPointSize(size);
+        const QFontMetrics metrics{font};
+        firstLineHeight = lineHeight(metrics, text);
+        if (metrics.horizontalAdvance(text) <= availableWidth) {
+            textHeight = firstLineHeight;
+            break;
+        }
+        const auto wrapped = metrics.boundingRect(
+            QRect{0, 0, availableWidth, QWIDGETSIZE_MAX}, Qt::AlignHCenter | Qt::TextWordWrap,
+            text);
+        // At most two lines; a third would run into the picture.
+        if (wrapped.width() <= availableWidth && wrapped.height() < firstLineHeight * 5 / 2) {
+            textHeight = wrapped.height();
+            break;
+        }
+        if (size <= _deviceLabelMinimumPointSize) {
+            displayText = metrics.elidedText(text, Qt::ElideMiddle, availableWidth);
+            firstLineHeight = textHeight = lineHeight(metrics, displayText);
+            break;
+        }
     }
 
+    const int top = qRound(_titleFirstLineCentreY - firstLineHeight / 2.0);
     _ui.deviceLabel->setFont(font);
-    const QFontMetrics metrics{font};
-    const auto displayText = metrics.horizontalAdvance(text) > availableWidth
-                                 ? metrics.elidedText(text, Qt::ElideMiddle, availableWidth)
-                                 : text;
+    _ui.deviceLabel->setGeometry(left, top, availableWidth, textHeight);
     _ui.deviceLabel->setText(displayText);
     _ui.deviceLabel->setAccessibleName(text);
     _ui.deviceLabel->setToolTip(displayText == text ? QString{} : text);
@@ -835,7 +770,7 @@ void MainWindow::OnAnimationClicked()
     static Model next = Model::AirPods_1;
 
     _ui.deviceLabel->setText(Helper::ToString(next));
-    SetAnimation(next);
+    SetAnimation(next, Core::AppleCP::Color::White);
 
     next = static_cast<Model>(Helper::ToUnderlying(next) + 1);
     if (next >= Model::_Max) {
@@ -883,6 +818,10 @@ void MainWindow::DoHide()
 void MainWindow::showEvent(QShowEvent *event)
 {
     QDialog::showEvent(event);
+    // The popup is created at startup but polished only when first shown, and that polish puts
+    // back the title colour it had before any theme switch in between (e.g. Windows turning
+    // light in the morning). Re-apply the current colours now that polishing is done.
+    ApplyTheme();
     BeginShow(true);
 }
 

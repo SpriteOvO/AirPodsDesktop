@@ -100,6 +100,19 @@ inline bool HasSingleBattery(Model model)
     }
 }
 
+// Neckband earphones have two earbuds but no charging case; any case field they advertise is
+// meaningless.
+inline bool HasChargingCase(Model model)
+{
+    switch (model) {
+    case Model::Powerbeats_3:
+    case Model::Beats_X:
+        return false;
+    default:
+        return !HasSingleBattery(model);
+    }
+}
+
 } // namespace Core::AirPods
 
 template <>

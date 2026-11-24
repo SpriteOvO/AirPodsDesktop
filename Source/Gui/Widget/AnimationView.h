@@ -20,10 +20,8 @@
 
 #include <mutex>
 
-#include <optional>
-
-#include <QColor>
 #include <QImage>
+#include <QRectF>
 #include <QWidget>
 
 class QVideoFrame;
@@ -37,10 +35,6 @@ namespace Detail {
 // surfaces. The Max animation also supports enclosed legacy matte inside the headband.
 // Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
 void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
-
-// Recolors a light product render toward `tint` while keeping its shading and the brightest
-// specular highlights. Input must be ARGB32 premultiplied.
-void TintAnimationFrame(QImage &image, const QColor &tint);
 
 } // namespace Detail
 
@@ -68,14 +62,9 @@ public:
     void SetRemoveEnclosedBackground(bool enabled);
     void SetFallbackImage(QImage image);
     void SetPlaybackEnabled(bool enabled);
-    void SetTint(std::optional<QColor> tint);
-
-    // The last decoded frame (keyed, source resolution), for a hand-over to a still view.
-    QImage LastFrame() const;
-
-    // Whole-view opacity, so the video can fade while it keeps playing.
-    void SetOpacity(qreal opacity);
-    qreal Opacity() const;
+    // The part of each frame to show, as fractions of the frame. Renders with wide empty margins
+    // are cropped after keying, so the product fills the view.
+    void SetContentRect(QRectF rect);
 
 Q_SIGNALS:
     void Clicked();
@@ -97,9 +86,9 @@ private:
     bool _playbackEnabled{true};
     bool _deliveryQueued{false};
     bool _removeEnclosedBackground{false};
-    std::optional<QColor> _tint;
-    qreal _opacity{1.0};
+    QRectF _contentRect{0.0, 0.0, 1.0, 1.0};
 
+    QImage CropToContent(const QImage &image) const;
     void InvalidatePendingFrames();
     void OnVideoFrameChanged(const QVideoFrame &frame);
     void PresentFrame(QImage frame);

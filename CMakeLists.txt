@@ -354,7 +354,6 @@ set(
     "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
     "Source/Gui/Widget/Battery.cpp"
-    "Source/Gui/Widget/DeviceImage.cpp"
     "Source/Gui/Widget/FadeOverlay.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
     "Source/Gui/Theme.cpp"
@@ -395,6 +394,29 @@ endif()
 # Resource
 
 set(APD_QRC_FILE "Source/Resource/Resource.qrc")
+
+# The device animations (one per model and color) are well over 100 MB. Through AUTORCC they
+# would become a C++ array of almost a gigabyte per target; BIG_RESOURCES writes them straight
+# into an object file instead. Animation.qrc stays the list of what ships.
+set(APD_ANIMATION_QRC_FILE "${CMAKE_SOURCE_DIR}/Source/Resource/Animation.qrc")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${APD_ANIMATION_QRC_FILE}")
+file(READ "${APD_ANIMATION_QRC_FILE}" APD_ANIMATION_QRC)
+string(REGEX MATCHALL "<file>[^<]+</file>" APD_ANIMATION_ENTRIES "${APD_ANIMATION_QRC}")
+set(APD_ANIMATION_FILES)
+foreach (APD_ANIMATION_ENTRY ${APD_ANIMATION_ENTRIES})
+    string(REGEX REPLACE "</?file>" "" APD_ANIMATION_ENTRY "${APD_ANIMATION_ENTRY}")
+    list(APPEND APD_ANIMATION_FILES "${CMAKE_SOURCE_DIR}/Source/Resource/${APD_ANIMATION_ENTRY}")
+endforeach()
+
+function(apd_add_animation_resources target)
+    qt_add_resources(
+        ${target} ${target}_animations
+        PREFIX "/Resource"
+        BASE "${CMAKE_SOURCE_DIR}/Source/Resource"
+        BIG_RESOURCES
+        FILES ${APD_ANIMATION_FILES}
+    )
+endfunction()
 
 #
 # Translation
@@ -542,6 +564,8 @@ add_executable(
     ${APD_APP_CODE_FILES}
     ${APD_QRC_FILE}
 )
+
+apd_add_animation_resources(${PROJECT_NAME})
 
 add_dependencies(${PROJECT_NAME} apd_translations)
 

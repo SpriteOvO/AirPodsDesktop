@@ -25,6 +25,7 @@
 
 #include <QPainter>
 #include <QThread>
+#include <QtMath>
 #include <QVideoFrame>
 #include <QVideoSink>
 
@@ -78,6 +79,25 @@ bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette, int tolerance)
     return qAlpha(pixel) != 0 && MatteDistance(pixel, palette) <= tolerance;
 }
 
+// Spill pulls a pixel toward the chroma matte: the matte's strong channels rise above its weak
+// ones. Renders of pink or purple products use a green matte instead of magenta, so the test
+// follows whichever matte the frame carries rather than assuming one.
+bool IsChromaSpill(QRgb pixel, QRgb matte)
+{
+    const int channels[]{qRed(pixel), qGreen(pixel), qBlue(pixel)};
+    const int matteChannels[]{qRed(matte), qGreen(matte), qBlue(matte)};
+    int strongMinimum = 255, weakMaximum = 0;
+    for (int i = 0; i < 3; ++i) {
+        if (matteChannels[i] >= 128) {
+            strongMinimum = (std::min)(strongMinimum, channels[i]);
+        }
+        else {
+            weakMaximum = (std::max)(weakMaximum, channels[i]);
+        }
+    }
+    return strongMinimum - weakMaximum >= kChromaSpill;
+}
+
 //
 // Clears matte-coloured pixels connected to the frame corners. Some animations crop white device
 // artwork against the right edge, so seeding every border pixel would erase that foreground too.
@@ -113,11 +133,13 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
     addMatte(at(0, height - 1));
     addMatte(at(width - 1, height - 1));
 
-    const bool chromaMatte =
-        std::any_of(mattePalette.cbegin(), mattePalette.cend(), [](QRgb matte) {
+    const auto chromaMatteIt =
+        std::find_if(mattePalette.cbegin(), mattePalette.cend(), [](QRgb matte) {
             const auto [minimum, maximum] = std::minmax({qRed(matte), qGreen(matte), qBlue(matte)});
             return maximum - minimum >= kChromaRange;
         });
+    const bool chromaMatte = chromaMatteIt != mattePalette.cend();
+    const QRgb chromaMatteColor = chromaMatte ? *chromaMatteIt : QRgb{};
     const int matteTolerance = chromaMatte ? kChromaMatteDistance : kMatteDistance;
 
     std::vector<std::pair<int, int>> stack;
@@ -267,9 +289,7 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
                 continue;
             }
             const auto distance = MatteDistance(pixel, mattePalette);
-            const bool chromaContaminated = chromaMatte &&
-                                            qRed(pixel) - qGreen(pixel) >= kChromaSpill &&
-                                            qBlue(pixel) - qGreen(pixel) >= kChromaSpill;
+            const bool chromaContaminated = chromaMatte && IsChromaSpill(pixel, chromaMatteColor);
             if (chromaMatte && !chromaContaminated) {
                 continue;
             }
@@ -335,10 +355,9 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
             int outputBlue = qBlue(foreground);
             const auto [minimumChannel, maximumChannel] =
                 std::minmax({outputRed, outputGreen, outputBlue});
-            const bool foregroundHasMagentaSpill =
-                outputRed - outputGreen >= kChromaSpill && outputBlue - outputGreen >= kChromaSpill;
-            if (chromaMatte && (maximumChannel - minimumChannel < 64 || foregroundHasMagentaSpill))
-            {
+            const bool foregroundHasSpill =
+                chromaMatte && IsChromaSpill(foreground, chromaMatteColor);
+            if (chromaMatte && (maximumChannel - minimumChannel < 64 || foregroundHasSpill)) {
                 // Chroma subsampling can tint otherwise neutral AirPods/Beats edges. Their nearby
                 // opaque foreground is the reliable colour reference, so neutralise only that
                 // low-saturation reference while preserving coloured LEDs and logos.
@@ -397,39 +416,6 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
 
 //////////////////////////////////////////////////
 
-void Detail::TintAnimationFrame(QImage &image, const QColor &tint)
-{
-    const float tintRgb[3] = {
-        static_cast<float>(tint.redF()), static_cast<float>(tint.greenF()),
-        static_cast<float>(tint.blueF())};
-
-    for (int y = 0; y < image.height(); ++y) {
-        auto *line = reinterpret_cast<QRgb *>(image.scanLine(y));
-        for (int x = 0; x < image.width(); ++x) {
-            const QRgb pixel = line[x];
-            const int alpha = qAlpha(pixel);
-            if (alpha == 0) {
-                continue;
-            }
-
-            // Channels are premultiplied, so luminance is measured relative to alpha.
-            const float luminance =
-                (0.2126f * qRed(pixel) + 0.7152f * qGreen(pixel) + 0.0722f * qBlue(pixel)) /
-                static_cast<float>(alpha);
-            const float highlight = std::clamp(luminance, 0.0f, 1.0f);
-            const float keep = highlight * highlight * highlight * highlight;
-
-            const int channels[3] = {qRed(pixel), qGreen(pixel), qBlue(pixel)};
-            int out[3];
-            for (int i = 0; i < 3; ++i) {
-                const float factor = tintRgb[i] + (1.0f - tintRgb[i]) * keep;
-                out[i] = std::clamp(static_cast<int>(channels[i] * factor + 0.5f), 0, alpha);
-            }
-            line[x] = qRgba(out[0], out[1], out[2], alpha);
-        }
-    }
-}
-
 AnimationView::AnimationView(QWidget *parent) : QWidget{parent}, _videoSink{new QVideoSink{this}}
 {
     setAttribute(Qt::WA_OpaquePaintEvent, false);
@@ -464,22 +450,6 @@ void AnimationView::SetFallbackImage(QImage image)
 {
     _fallback = std::move(image);
     Clear();
-}
-
-QImage AnimationView::LastFrame() const
-{
-    return _frame;
-}
-
-void AnimationView::SetOpacity(qreal opacity)
-{
-    _opacity = std::clamp(opacity, 0.0, 1.0);
-    update();
-}
-
-qreal AnimationView::Opacity() const
-{
-    return _opacity;
 }
 
 void AnimationView::SetPlaybackEnabled(bool enabled)
@@ -552,12 +522,30 @@ void AnimationView::OnVideoFrameChanged(const QVideoFrame &frame)
         Qt::QueuedConnection);
 }
 
-void AnimationView::SetTint(std::optional<QColor> tint)
+void AnimationView::SetContentRect(QRectF rect)
 {
-    if (_tint != tint) {
-        _tint = std::move(tint);
+    rect = rect.intersected(QRectF{0.0, 0.0, 1.0, 1.0});
+    if (rect.isEmpty()) {
+        rect = QRectF{0.0, 0.0, 1.0, 1.0};
+    }
+    if (_contentRect != rect) {
+        _contentRect = rect;
         Clear();
     }
+}
+
+QImage AnimationView::CropToContent(const QImage &image) const
+{
+    if (image.isNull() || _contentRect == QRectF{0.0, 0.0, 1.0, 1.0}) {
+        return image;
+    }
+    const QRect pixels =
+        QRect{
+            qRound(_contentRect.x() * image.width()), qRound(_contentRect.y() * image.height()),
+            qRound(_contentRect.width() * image.width()),
+            qRound(_contentRect.height() * image.height())}
+            .intersected(image.rect());
+    return image.copy(pixels);
 }
 
 void AnimationView::SetRemoveEnclosedBackground(bool enabled)
@@ -579,7 +567,6 @@ void AnimationView::paintEvent(QPaintEvent *event)
 
     QPainter painter{this};
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
-    painter.setOpacity(_opacity);
 
     const auto target = QRect{QPoint{}, _scaled.size() / _scaled.devicePixelRatio()};
     painter.drawImage(
@@ -605,6 +592,10 @@ void AnimationView::PresentFrame(QImage frame)
     if (processingSize.isEmpty()) {
         processingSize = QSize{520, 244};
     }
+    // The cropped part, not the whole frame, has to reach that size.
+    processingSize = QSize{
+        qCeil(processingSize.width() / _contentRect.width()),
+        qCeil(processingSize.height() / _contentRect.height())};
     if (frame.width() > processingSize.width() || frame.height() > processingSize.height()) {
         frame = frame.scaled(processingSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
@@ -617,10 +608,9 @@ void AnimationView::PresentFrame(QImage frame)
         frame.detach();
     }
 
+    // Key the whole frame (its corners are the guaranteed background), then crop.
     Detail::KnockOutAnimationBackground(frame, _removeEnclosedBackground);
-    if (_tint.has_value()) {
-        Detail::TintAnimationFrame(frame, _tint.value());
-    }
+    frame = CropToContent(frame);
 
     _frame = std::move(frame);
     RescaleFrame();
@@ -630,14 +620,10 @@ void AnimationView::PresentFrame(QImage frame)
 
 void AnimationView::RescaleFrame()
 {
-    QImage source = _frame.isNull() ? _fallback : _frame;
+    QImage source = _frame.isNull() ? CropToContent(_fallback) : _frame;
     if (source.isNull() || size().isEmpty()) {
         _scaled = {};
         return;
-    }
-    if (_frame.isNull() && _tint.has_value()) {
-        source = source.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-        Detail::TintAnimationFrame(source, _tint.value());
     }
     // Area-averaging scale; a plain painter transform would alias at this reduction ratio.
     _scaled =

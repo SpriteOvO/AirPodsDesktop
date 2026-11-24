@@ -188,16 +188,30 @@ in `vcpkg.json`; a `v*.*.*` tag must match both. CI fails the build otherwise. F
 1. Add the enum value to `Core::AirPods::Model` and a case to `Helper::ToString<Model>` — both in
    `Source/Core/Base.h`.
 2. Map the BLE model id in `AppleCP::AirPods::GetModel(uint16_t)` in `Source/Core/AppleCP.cpp`.
-3. Add the animation case to `GetAnimationPresentation` in `Source/Gui/MainWindowPresentation.cpp`.
+3. Add the animation in `Source/Gui/MainWindowPresentation.cpp`: a `GetAnimationPresentation` case
+   for a white-only model, or a `ColorRenderTable` entry for a model sold in several colors.
    A model with no artwork of its own can borrow the nearest existing one instead.
-4. Add the `.avi` under `Source/Resource/Video/` **and** register it in `Source/Resource/Resource.qrc`.
-   `MapsMainWindowAnimationResources` walks every enumerator and fails if a mapping names a resource
-   the qrc does not list or that is missing from disk, so an unregistered file is caught.
+4. Add the `.avi` (and its still `.png` under `Image/Animation/`) under `Source/Resource/Video/`
+   **and** register both in `Source/Resource/Animation.qrc`. Color renders live in a folder per
+   model, one `<code>.avi` per color. `MapsMainWindowAnimationResources` walks every model and color
+   and fails if a mapping names a resource the qrc does not list or that is missing from disk.
 5. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
+
+Color codes are the advertised color byte (`AppleCP::Color`, read as a raw byte). They match the
+`CL` field of Apple's SharingDeviceAssets catalog, so each catalog variant maps to its code; a code
+without a render falls back to the model's default color, which is listed first.
+
+Renders carry a chroma matte that `AnimationView` keys out from the frame corners: magenta by
+default, green for pink and purple products, whose surfaces would otherwise read as magenta spill
+and be bleached. The spill test follows whichever matte the frame carries.
+
+`Animation.qrc` is compiled with `BIG_RESOURCES` through `apd_add_animation_resources()` in
+`CMakeLists.txt`; AUTORCC would turn it into a near-gigabyte C++ array per target. Any target that
+shows the popup (the app, `UiRenderingTests`) must call that function.
 
 Keep animation source material and conversion tooling outside the repository. Commit only the
 generated `.avi` runtime asset needed by the application, then register and test it as described
-above. The ten current animations are 360 frames at 60 fps.
+above. All animations are 360 frames at 60 fps.
 
 Note that `AirPods_4.avi` and `AirPods_4_ANC.avi` are currently byte-identical, so one conversion
 ran against the wrong source. Regenerating the ANC one needs the original `AirPods1,5-v2` asset.

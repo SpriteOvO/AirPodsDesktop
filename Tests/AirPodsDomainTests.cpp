@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -7,6 +8,7 @@
 
 #include <QtTest>
 #include <QFile>
+#include <QImage>
 #include <QRegularExpression>
 #include <QTemporaryFile>
 
@@ -1437,7 +1439,7 @@ void AirPodsDomainTests::PresentsScenesFromPodPlacement()
     QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
     QCOMPARE(presentation.caseBattery.badge, Gui::BatteryBadge::None);
 
-    // One pod out: still render, both rings labelled, case ring labelled.
+    // One pod out: both rings labelled, case ring labelled.
     state.pods.right.isInCase = false;
     state.caseBox.isBothPodsInCase = false;
     viewModel.UpdateState(state);
@@ -1446,25 +1448,22 @@ void AirPodsDomainTests::PresentsScenesFromPodPlacement()
     QVERIFY(presentation.leftBattery.visible && presentation.rightBattery.visible);
     QCOMPARE(presentation.caseBattery.badge, Gui::BatteryBadge::Case);
 
-    // Both out: keeps turning until the window says otherwise.
+    // Both out: like iOS the case stays in the picture with its ring, and the pods keep their
+    // own labelled rings while they differ.
     state.pods.left.isInCase = false;
     viewModel.UpdateState(state);
-    QCOMPARE(viewModel.Present().scene, Gui::Scene::BothPodsOut);
-
-    viewModel.SetPodsOnly(true);
     presentation = viewModel.Present();
-    QCOMPARE(presentation.scene, Gui::Scene::PodsOnly);
-    QVERIFY(!presentation.leftBattery.visible);
-    QVERIFY(presentation.rightBattery.visible);
-    QCOMPARE(presentation.rightBattery.value, 60U); // the weaker pod
-    QVERIFY(!presentation.rightBattery.charging);   // only one of them is
-    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
-    QVERIFY(!presentation.caseBattery.visible);
+    QCOMPARE(presentation.scene, Gui::Scene::BothPodsOut);
+    QVERIFY(presentation.leftBattery.visible && presentation.rightBattery.visible);
+    QCOMPARE(presentation.leftBattery.badge, Gui::BatteryBadge::Left);
+    QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::Right);
+    QVERIFY(presentation.caseBattery.visible);
+    QCOMPARE(presentation.caseBattery.value, 99U);
 
-    // Ear state does not change the pods-only scene.
+    // Ear state does not change the scene.
     state.pods.left.isInEar = state.pods.right.isInEar = true;
     viewModel.UpdateState(state);
-    QCOMPARE(viewModel.Present().scene, Gui::Scene::PodsOnly);
+    QCOMPARE(viewModel.Present(), presentation);
 }
 
 void AirPodsDomainTests::PresentsMainWindowCaseBattery()
@@ -1500,6 +1499,25 @@ void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
     QVERIFY(Core::AirPods::HasSingleBattery(Model::AirPods_Max));
     QVERIFY(Core::AirPods::HasSingleBattery(Model::AirPods_Max_USB_C));
     QVERIFY(!Core::AirPods::HasSingleBattery(Model::AirPods_Pro_2));
+    QVERIFY(!Core::AirPods::HasChargingCase(Model::AirPods_Max));
+    QVERIFY(Core::AirPods::HasChargingCase(Model::AirPods_Pro_2));
+
+    // Neckband earphones keep their two earbud rings but never show a case ring.
+    for (const auto model : {Model::Powerbeats_3, Model::Beats_X}) {
+        QVERIFY(!Core::AirPods::HasSingleBattery(model));
+        QVERIFY(!Core::AirPods::HasChargingCase(model));
+        Core::AirPods::State neckband;
+        neckband.model = model;
+        neckband.pods.left.battery = Core::AirPods::Battery{80};
+        neckband.pods.right.battery = Core::AirPods::Battery{60};
+        neckband.caseBox.battery = Core::AirPods::Battery{90};
+        Gui::MainWindowViewModel viewModel;
+        viewModel.UpdateState(neckband);
+        const auto presentation = viewModel.Present();
+        QVERIFY(presentation.leftBattery.visible);
+        QVERIFY(presentation.rightBattery.visible);
+        QVERIFY(!presentation.caseBattery.visible);
+    }
 
     for (const auto modelId : {uint16_t{0x200A}, uint16_t{0x201F}}) {
         for (const auto side : {Side::Left, Side::Right}) {
@@ -1524,13 +1542,11 @@ void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
             QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
             QVERIFY(!presentation.caseBattery.visible);
 
-            // A charging headset reads as "in the case", and the window may still ask for the
-            // pods-only scene; neither applies to a headset.
+            // A charging headset reads as "in the case", which does not apply to a headset.
             auto charging = state;
             charging.pods.left.isInCase = charging.pods.right.isInCase = true;
             charging.caseBox.isBothPodsInCase = true;
             viewModel.UpdateState(charging);
-            viewModel.SetPodsOnly(true);
             QCOMPARE(viewModel.Present().scene, Gui::Scene::Headset);
             QCOMPARE(viewModel.Present().rightBattery, presentation.rightBattery);
         }
@@ -1564,13 +1580,22 @@ void AirPodsDomainTests::ParsesCapturedSpaceGrayAirPodsMax()
     const auto presentation = viewModel.Present();
     QCOMPARE(presentation.scene, Gui::Scene::Headset);
     QCOMPARE(presentation.rightBattery.value, 40U);
-    QVERIFY(presentation.animationTint.has_value());
+    QCOMPARE(presentation.animationColor, Core::AppleCP::Color::MaxSpaceGray);
 
-    QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Max, Core::AppleCP::Color::White).has_value());
-    QVERIFY(
-        !Gui::GetAnimationTint(Model::AirPods_Max, Core::AppleCP::Color::SpaceGray).has_value());
-    QVERIFY(!Gui::GetAnimationTint(Model::AirPods_Pro_2, Core::AppleCP::Color::MaxSpaceGray)
-                 .has_value());
+    // 0x0F is the catalog code of the Space Gray ("Dark Grey") Max render, so the capture picks
+    // the device's own color rather than a tinted stand-in.
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Model::AirPods_Max, presentation.animationColor).resource,
+        QString{"qrc:/Resource/Video/AirPods_Max/15.avi"});
+    // A code without a render of its own shows the model's default color; the AirPods, which
+    // only come in white, ignore the code.
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Model::AirPods_Max, Core::AppleCP::Color::White).resource,
+        QString{"qrc:/Resource/Video/AirPods_Max/16.avi"});
+    QCOMPARE(
+        Gui::GetAnimationPresentation(Model::AirPods_Pro_2, Core::AppleCP::Color::MaxSpaceGray)
+            .resource,
+        QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
 }
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
@@ -1583,30 +1608,148 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
     QCOMPARE(pro.resource, QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
     QCOMPARE(pro.sourceSize, QSize(900, 450));
 
+    // A device without a render in its advertised color shows the model's default color.
     const auto maxUsbC = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_Max_USB_C);
-    QCOMPARE(maxUsbC.resource, QString{"qrc:/Resource/Video/AirPods_Max.avi"});
-    QCOMPARE(maxUsbC.sourceSize, QSize(600, 650));
+    QCOMPARE(maxUsbC.resource, QString{"qrc:/Resource/Video/AirPods_Max_USB_C/19.avi"});
+    QCOMPARE(
+        Gui::GetAnimationPresentation(
+            Core::AirPods::Model::Beats_Fit_Pro, static_cast<Core::AppleCP::Color>(4))
+            .resource,
+        QString{"qrc:/Resource/Video/Beats_Fit_Pro/4.avi"});
+    QCOMPARE(
+        Gui::GetAnimationPresentation(
+            Core::AirPods::Model::Beats_Fit_Pro, static_cast<Core::AppleCP::Color>(200))
+            .resource,
+        QString{"qrc:/Resource/Video/Beats_Fit_Pro/1.avi"});
 
     const auto fallback = Gui::GetAnimationPresentation(Core::AirPods::Model::Unknown);
     QCOMPARE(fallback.resource, QString{"qrc:/Resource/Video/AirPods_1.avi"});
     QCOMPARE(fallback.sourceSize, QSize(800, 400));
 
+    // Every model with color renders carries all of the catalog's colors for it.
+    const std::vector<std::pair<Core::AirPods::Model, size_t>> colorCounts{
+        {Core::AirPods::Model::AirPods_Max, 5},    {Core::AirPods::Model::AirPods_Max_USB_C, 5},
+        {Core::AirPods::Model::Beats_Fit_Pro, 14}, {Core::AirPods::Model::Beats_Solo3, 28},
+        {Core::AirPods::Model::Powerbeats_3, 15},  {Core::AirPods::Model::Beats_X, 9},
+    };
+    for (const auto &[model, count] : colorCounts) {
+        QCOMPARE(Gui::GetAnimationColors(model).size(), count);
+    }
+
     // The qrc is linked into the application, not into this binary, so read it from the source
     // tree: a mapping naming a resource the qrc does not carry would ship a blank animation.
-    QFile qrc{QString{APD_SOURCE_DIR} + "/Source/Resource/Resource.qrc"};
+    QFile qrc{QString{APD_SOURCE_DIR} + "/Source/Resource/Animation.qrc"};
     QVERIFY(qrc.open(QIODevice::ReadOnly | QIODevice::Text));
     const auto qrcContents = QString::fromUtf8(qrc.readAll());
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(Core::AirPods::Model::_Max); ++i) {
-        const auto resource =
-            Gui::GetAnimationPresentation(static_cast<Core::AirPods::Model>(i)).resource;
-        const auto entry = QString{resource}.replace("qrc:/Resource/", "");
-        QVERIFY2(
-            qrcContents.contains("<file>" + entry + "</file>"),
-            qPrintable(QString{"animation not listed in Resource.qrc: %1"}.arg(resource)));
-        QVERIFY2(
-            QFile::exists(QString{APD_SOURCE_DIR} + "/Source/Resource/" + entry),
-            qPrintable(QString{"animation file missing: %1"}.arg(entry)));
+        const auto model = static_cast<Core::AirPods::Model>(i);
+        for (const auto color : Gui::GetAnimationColors(model)) {
+            const auto presentation = Gui::GetAnimationPresentation(model, color);
+            for (const auto &resource : {
+                     QString{presentation.resource}.replace("qrc:/Resource/", ""),
+                     QString{presentation.FallbackResource()}.replace(":/Resource/", ""),
+                 })
+            {
+                QVERIFY2(
+                    qrcContents.contains("<file>" + resource + "</file>"),
+                    qPrintable(QString{"resource not listed in Animation.qrc: %1"}.arg(resource)));
+                QVERIFY2(
+                    QFile::exists(QString{APD_SOURCE_DIR} + "/Source/Resource/" + resource),
+                    qPrintable(QString{"resource file missing: %1"}.arg(resource)));
+            }
+
+            // The source size carries the render's aspect ratio, which sizes the view.
+            const QImage still{
+                QString{APD_SOURCE_DIR} + "/Source/Resource/" +
+                QString{presentation.FallbackResource()}.replace(":/Resource/", "")};
+            QVERIFY2(!still.isNull(), qPrintable(presentation.resource));
+            QVERIFY2(
+                std::abs(
+                    (qreal)presentation.sourceSize.width() / presentation.sourceSize.height() -
+                    (qreal)still.width() / still.height()) < 0.01,
+                qPrintable(presentation.resource));
+
+            // A device without a case fills most of the height but stops well above the ring.
+            if (!presentation.caseCenter.has_value()) {
+                int top = still.height(), bottom = -1;
+                for (int y = 0; y < still.height(); ++y) {
+                    for (int x = 0; x < still.width(); ++x) {
+                        if (qAlpha(still.pixel(x, y)) > 16) {
+                            top = (std::min)(top, y);
+                            bottom = (std::max)(bottom, y);
+                        }
+                    }
+                }
+                QVERIFY2(bottom >= top, qPrintable(presentation.resource));
+                QVERIFY2(
+                    bottom - top + 1 >= still.height() * 0.6, qPrintable(presentation.resource));
+                QVERIFY2(bottom < still.height() * 0.92, qPrintable(presentation.resource));
+            }
+        }
+    }
+
+    // The battery rings sit under the pods and the case, so the centres must match the render.
+    // The still render is the turntable's front frame; the pods' axis may drift from it a little.
+    for (uint32_t i = 1; i < static_cast<uint32_t>(Core::AirPods::Model::_Max); ++i) {
+        const auto model = static_cast<Core::AirPods::Model>(i);
+        for (const auto color : Gui::GetAnimationColors(model)) {
+            const auto presentation = Gui::GetAnimationPresentation(model, color);
+            const auto name = QString{"%1 color %2"}
+                                  .arg(Helper::ToString(model))
+                                  .arg(Helper::ToUnderlying(color));
+            // Over-ear headsets and the neckband earphones have no case to put a ring under.
+            const bool withoutCase = Core::AirPods::HasSingleBattery(model) ||
+                                     model == Core::AirPods::Model::Powerbeats_3 ||
+                                     model == Core::AirPods::Model::Beats_X;
+            if (withoutCase) {
+                QVERIFY2(!presentation.caseCenter.has_value(), qPrintable(name));
+                QCOMPARE(presentation.podsCenter, 0.5);
+                continue;
+            }
+            QVERIFY2(presentation.caseCenter.has_value(), qPrintable(name));
+
+            const QImage still{
+                QString{APD_SOURCE_DIR} + "/Source/Resource/" +
+                QString{presentation.FallbackResource()}.replace(":/Resource/", "")};
+            QVERIFY2(!still.isNull(), qPrintable(name));
+            // Columns holding any product, split at the widest empty run: pods left, case right.
+            std::vector<bool> used(still.width(), false);
+            for (int y = 0; y < still.height(); ++y) {
+                for (int x = 0; x < still.width(); ++x) {
+                    used[x] = used[x] || qAlpha(still.pixel(x, y)) > 16;
+                }
+            }
+            const auto first = std::find(used.begin(), used.end(), true) - used.begin();
+            const auto last = std::find(used.rbegin(), used.rend(), true).base() - used.begin() - 1;
+            int gapStart = 0, gapEnd = 0;
+            for (int x = static_cast<int>(first); x <= last;) {
+                if (used[x]) {
+                    ++x;
+                    continue;
+                }
+                const int start = x;
+                while (x <= last && !used[x]) {
+                    ++x;
+                }
+                if (x - start > gapEnd - gapStart) {
+                    gapStart = start;
+                    gapEnd = x;
+                }
+            }
+            const qreal pods = (first + gapStart) / 2.0 / still.width();
+            const qreal caseBox = (gapEnd + last) / 2.0 / still.width();
+            QVERIFY2(
+                std::abs(presentation.podsCenter - pods) <= 0.04,
+                qPrintable(
+                    QString{"%1 pods %2 vs %3"}.arg(name).arg(presentation.podsCenter).arg(pods)));
+            QVERIFY2(
+                std::abs(*presentation.caseCenter - caseBox) <= 0.04,
+                qPrintable(QString{"%1 case %2 vs %3"}
+                               .arg(name)
+                               .arg(*presentation.caseCenter)
+                               .arg(caseBox)));
+        }
     }
 }
 

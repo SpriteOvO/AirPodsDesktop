@@ -53,6 +53,7 @@ void AnimationPlayback::SetAnimation(const AnimationPresentation &presentation)
     _presentation = presentation;
     _retries = 0;
     _view.SetRemoveEnclosedBackground(presentation.removeEnclosedBackground);
+    _view.SetContentRect(presentation.contentRect);
     _view.SetFallbackImage(QImage{presentation.FallbackResource()});
     if (_active) {
         StartAttempt();
