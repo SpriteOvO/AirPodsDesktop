@@ -90,6 +90,19 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
         _state.caseBox.battery = {};
         _state.caseBox.isCharging = false;
     }
+
+    if (!HasChargingCase(_state.model)) {
+        // Without a case there is no lid to open and nothing to rest in, so stray case bits must
+        // neither pop the battery card up nor change its scene.
+        _state.caseBox.isBothPodsInCase = false;
+        _state.caseBox.isLidOpened = false;
+        _state.pods.left.isInCase = false;
+        _state.pods.right.isInCase = false;
+    }
+    if (!HasEarDetection(_state.model)) {
+        _state.pods.left.isInEar = false;
+        _state.pods.right.isInEar = false;
+    }
 }
 
 int16_t Advertisement::GetRssi() const

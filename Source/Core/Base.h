@@ -86,13 +86,16 @@ enum class Model : uint32_t {
 
 enum class Side : uint32_t { Left, Right };
 
-// Over-ear models have a single battery and no charging case, but their advertisements still
-// carry left, right, and case battery fields.
+// Over-ear headsets and the neckband earphones run on one battery and have no charging case, but
+// their advertisements still carry left, right, and case battery fields. Like iOS, they show a
+// single battery level.
 inline bool HasSingleBattery(Model model)
 {
     switch (model) {
     case Model::AirPods_Max:
     case Model::AirPods_Max_USB_C:
+    case Model::Powerbeats_3:
+    case Model::Beats_X:
     case Model::Beats_Solo3:
         return true;
     default:
@@ -100,16 +103,24 @@ inline bool HasSingleBattery(Model model)
     }
 }
 
-// Neckband earphones have two earbuds but no charging case; any case field they advertise is
+// Only the single-battery models come without a case; any case or lid field they advertise is
 // meaningless.
 inline bool HasChargingCase(Model model)
+{
+    return !HasSingleBattery(model);
+}
+
+// The W1 Beats have no in-ear or on-head sensor, so their in-ear bits carry nothing and must not
+// play or pause media.
+inline bool HasEarDetection(Model model)
 {
     switch (model) {
     case Model::Powerbeats_3:
     case Model::Beats_X:
+    case Model::Beats_Solo3:
         return false;
     default:
-        return !HasSingleBattery(model);
+        return true;
     }
 }
 
@@ -148,7 +159,7 @@ inline QString Helper::ToString<Core::AirPods::Model>(const Core::AirPods::Model
     case Core::AirPods::Model::Beats_X:
         return "BeatsX";
     case Core::AirPods::Model::Beats_Solo3:
-        return "BeatsSolo3";
+        return "Beats Solo3";
     case Core::AirPods::Model::Beats_Fit_Pro:
         return "Beats Fit Pro";
     default:

@@ -276,6 +276,7 @@ private Q_SLOTS:
     void CollapsesAirPodsMaxToSingleBattery();
     void ParsesCapturedSpaceGrayAirPodsMax();
     void ShowsTheAdvertisedColorRender();
+    void RecognisesW1Beats();
     void MergesMatchingPodBatteries();
     void PresentsScenesFromPodPlacement();
     void MapsMainWindowAnimationResources();
@@ -1503,20 +1504,21 @@ void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
     QVERIFY(!Core::AirPods::HasChargingCase(Model::AirPods_Max));
     QVERIFY(Core::AirPods::HasChargingCase(Model::AirPods_Pro_2));
 
-    // Neckband earphones keep their two earbud rings but never show a case ring.
+    // Neckband earphones run on one battery too: one unlabelled ring, never a case ring.
     for (const auto model : {Model::Powerbeats_3, Model::Beats_X}) {
-        QVERIFY(!Core::AirPods::HasSingleBattery(model));
+        QVERIFY(Core::AirPods::HasSingleBattery(model));
         QVERIFY(!Core::AirPods::HasChargingCase(model));
         Core::AirPods::State neckband;
         neckband.model = model;
         neckband.pods.left.battery = Core::AirPods::Battery{80};
-        neckband.pods.right.battery = Core::AirPods::Battery{60};
-        neckband.caseBox.battery = Core::AirPods::Battery{90};
+        neckband.pods.right.battery = Core::AirPods::Battery{80};
         Gui::MainWindowViewModel viewModel;
         viewModel.UpdateState(neckband);
         const auto presentation = viewModel.Present();
-        QVERIFY(presentation.leftBattery.visible);
+        QCOMPARE(presentation.scene, Gui::Scene::Headset);
+        QVERIFY(!presentation.leftBattery.visible);
         QVERIFY(presentation.rightBattery.visible);
+        QCOMPARE(presentation.rightBattery.badge, Gui::BatteryBadge::None);
         QVERIFY(!presentation.caseBattery.visible);
     }
 
@@ -1668,6 +1670,66 @@ void AirPodsDomainTests::ShowsTheAdvertisedColorRender()
     QVERIFY(checkedColorModels > 0);
 }
 
+void AirPodsDomainTests::RecognisesW1Beats()
+{
+    const std::vector<std::tuple<uint16_t, Model, QString>> beats{
+        {0x2003, Model::Powerbeats_3, "Powerbeats 3"},
+        {0x2005, Model::Beats_X, "BeatsX"},
+        {0x2006, Model::Beats_Solo3, "Beats Solo3"},
+    };
+    for (const auto &[modelId, model, name] : beats) {
+        // The same id names the model in the advertisement and the paired device's product id,
+        // which is what lets the device be offered for binding at all.
+        QCOMPARE(Core::AppleCP::AirPods::GetModel(modelId), model);
+        QCOMPARE(Helper::ToString(model), name);
+        QVERIFY(Core::AirPods::HasSingleBattery(model));
+        QVERIFY(!Core::AirPods::HasChargingCase(model));
+        QVERIFY(!Core::AirPods::HasEarDetection(model));
+
+        for (const auto side : {Side::Left, Side::Right}) {
+            // The one battery may arrive in either pod field; the other reads unavailable.
+            const auto left = side == Side::Left ? uint8_t{6} : uint8_t{15};
+            const auto right = side == Side::Left ? uint8_t{15} : uint8_t{6};
+            // Stray case, lid, and in-ear bits: `MakePacket` sets "both in case", an open lid,
+            // and both in-ear flags.
+            auto data = MakeAdvertisementData(0x1234, -45, side, left, right, 9, modelId);
+            data.manufacturerDataMap.at(Core::AppleCP::VendorId)[7] |= 0x10; // "charging"
+            const Advertisement advertisement{data};
+            const auto &state = advertisement.GetAdvState();
+            const auto label = QString{"%1 from the %2 side"}.arg(name, Helper::ToString(side));
+
+            QVERIFY2(state.model == model, qPrintable(label));
+            QVERIFY2(state.pods.left.battery.Value() == 60u, qPrintable(label));
+            QVERIFY2(state.pods.right.battery.Value() == 60u, qPrintable(label));
+            QVERIFY2(!state.caseBox.battery.Available(), qPrintable(label));
+            QVERIFY2(!state.caseBox.isBothPodsInCase, qPrintable(label));
+            QVERIFY2(!state.caseBox.isLidOpened, qPrintable(label));
+            QVERIFY2(!state.pods.left.isInCase && !state.pods.right.isInCase, qPrintable(label));
+            QVERIFY2(!state.pods.left.isInEar && !state.pods.right.isInEar, qPrintable(label));
+
+            // One unlabelled ring and no case ring, whichever field carried the battery.
+            Gui::MainWindowViewModel viewModel;
+            viewModel.UpdateState(state);
+            const auto presentation = viewModel.Present();
+            QVERIFY2(presentation.scene == Gui::Scene::Headset, qPrintable(label));
+            QVERIFY2(presentation.rightBattery.value == 60u, qPrintable(label));
+            QVERIFY2(!presentation.leftBattery.visible, qPrintable(label));
+            QVERIFY2(!presentation.caseBattery.visible, qPrintable(label));
+            QVERIFY2(presentation.animationModel == model, qPrintable(label));
+        }
+
+        // The in-ear bits flipping must never play or pause media.
+        EarDetectionTracker tracker;
+        for (const bool inEar : {false, true, false, true}) {
+            auto data = MakeAdvertisementData(0x1234, -45, Side::Left, 6, 15, 9, modelId);
+            auto &status = data.manufacturerDataMap.at(Core::AppleCP::VendorId)[5];
+            status = inEar ? (status | 0x0A) : (status & ~0x0A);
+            const Advertisement advertisement{data};
+            QVERIFY2(!tracker.Update(advertisement.GetAdvState()).has_value(), qPrintable(name));
+        }
+    }
+}
+
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
 {
     const auto airPods5 = Gui::GetAnimationPresentation(Core::AirPods::Model::AirPods_5);
@@ -1769,10 +1831,7 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
                                   .arg(Helper::ToString(model))
                                   .arg(Helper::ToUnderlying(color));
             // Over-ear headsets and the neckband earphones have no case to put a ring under.
-            const bool withoutCase = Core::AirPods::HasSingleBattery(model) ||
-                                     model == Core::AirPods::Model::Powerbeats_3 ||
-                                     model == Core::AirPods::Model::Beats_X;
-            if (withoutCase) {
+            if (!Core::AirPods::HasChargingCase(model)) {
                 QVERIFY2(!presentation.caseCenter.has_value(), qPrintable(name));
                 QCOMPARE(presentation.podsCenter, 0.5);
                 continue;
