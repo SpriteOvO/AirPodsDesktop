@@ -18,6 +18,7 @@
 #include <QTranslator>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QAbstractButton>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -32,6 +33,7 @@
 #include "Source/Core/QuickConnect.h"
 #include "Source/Core/SettingsRepository.h"
 #include "Source/Gui/MainWindow.h"
+#include "Source/Gui/Widget/ActivityIndicator.h"
 #include "Source/Gui/Widget/Battery.h"
 #include "Source/Gui/Widget/AnimationView.h"
 #include "Source/Gui/MainWindowPresentation.h"
@@ -317,11 +319,114 @@ private Q_SLOTS:
         QVERIFY(message != nullptr);
         QCOMPARE(message->text(), QStringLiteral("Connected."));
         VerifySmoothPopupCorners(card, "connection-notification-light.png");
-        auto *close = card->findChild<QPushButton *>("notificationClose");
+        auto *close = card->findChild<QAbstractButton *>("notificationClose");
         QVERIFY(close != nullptr);
         QTest::mouseClick(close, Qt::LeftButton);
         QVERIFY(!card->isVisible());
         theme.SetMode(originalMode);
+    }
+
+    void NotificationCardSharesTheTitleRowWithClose()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        tray.ShowMessage("Quick connect", "Could not connect.", QSystemTrayIcon::Warning);
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QTRY_VERIFY(card->isVisible());
+        auto *title = card->findChild<QLabel *>("notificationTitle");
+        auto *message = card->findChild<QLabel *>("notificationMessage");
+        auto *close = card->findChild<QAbstractButton *>("notificationClose");
+        QVERIFY(title != nullptr && message != nullptr && close != nullptr);
+
+        // The title is drawn on its first line, centred on the card, level with the close button.
+        const auto lineRect = [&] {
+            const auto bounds = title->fontMetrics().boundingRect(
+                title->contentsRect(), title->alignment() | Qt::TextWordWrap, title->text());
+            const auto line = title->fontMetrics()
+                                  .boundingRect(
+                                      QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX},
+                                      Qt::TextSingleLine, title->text())
+                                  .height();
+            return QRect{title->mapTo(card, bounds.topLeft()), QSize{bounds.width(), line}};
+        }();
+        const QRect closeRect{close->mapTo(card, QPoint{}), close->size()};
+        QVERIFY2(
+            qAbs(lineRect.center().y() - closeRect.center().y()) <= 2,
+            qPrintable(QString{"title line centre %1, close centre %2"}
+                           .arg(lineRect.center().y())
+                           .arg(closeRect.center().y())));
+        QVERIFY2(
+            qAbs(lineRect.center().x() - card->width() / 2) <= 2,
+            qPrintable(QString{"title %1..%2, label %3+%4, card width %5"}
+                           .arg(lineRect.left())
+                           .arg(lineRect.right())
+                           .arg(title->mapTo(card, QPoint{}).x())
+                           .arg(title->width())
+                           .arg(card->width())));
+        QVERIFY(!lineRect.intersects(closeRect));
+        QVERIFY(closeRect.right() < card->width() - 12);
+
+        // The message follows the title closely, whatever its script's line height.
+        const int messageTop = message->mapTo(card, QPoint{}).y();
+        QVERIFY2(
+            messageTop - lineRect.bottom() <= 10,
+            qPrintable(QString{"title ends at %1, message starts at %2"}
+                           .arg(lineRect.bottom())
+                           .arg(messageTop)));
+
+        // The card ends one margin below the message.
+        const int messageBottom = message->mapTo(card, QPoint{0, message->height()}).y();
+        QVERIFY2(
+            card->height() - messageBottom <= 24,
+            qPrintable(QString{"%1 below the message"}.arg(card->height() - messageBottom)));
+        auto *activity = card->findChild<Gui::Widget::ActivityIndicator *>("notificationActivity");
+        QVERIFY(activity != nullptr);
+        QVERIFY(!activity->isVisible());
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        VerifySmoothPopupCorners(card, QString{"connection-notification-scale%1.png"}.arg(scale));
+
+        // While connecting, an iOS-style spinner leads the message on its first line, the pair
+        // centred on the card, without making the card taller.
+        const int settledHeight = card->height();
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods Pro");
+        QTRY_VERIFY(activity->isVisible());
+        const auto messageText = message->fontMetrics().boundingRect(
+            message->contentsRect(), message->alignment() | Qt::TextWordWrap, message->text());
+        const QRect textRect{message->mapTo(card, messageText.topLeft()), messageText.size()};
+        const QRect activityRect{activity->mapTo(card, QPoint{}), activity->size()};
+        const int firstLine = message->fontMetrics()
+                                  .boundingRect(
+                                      QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX},
+                                      Qt::TextSingleLine, message->text())
+                                  .height();
+        QVERIFY2(
+            activityRect.right() < textRect.left() && textRect.left() - activityRect.right() <= 8,
+            qPrintable(QString{"spinner ends at %1, text starts at %2"}
+                           .arg(activityRect.right())
+                           .arg(textRect.left())));
+        QVERIFY2(
+            qAbs(activityRect.center().y() - (textRect.top() + firstLine / 2)) <= 2,
+            qPrintable(QString{"spinner centre %1, first line centre %2"}
+                           .arg(activityRect.center().y())
+                           .arg(textRect.top() + firstLine / 2)));
+        QVERIFY2(
+            qAbs((activityRect.left() + textRect.right()) / 2 - card->width() / 2) <= 2,
+            qPrintable(QString{"spinner and text span %1..%2 on a card %3 wide"}
+                           .arg(activityRect.left())
+                           .arg(textRect.right())
+                           .arg(card->width())));
+        QVERIFY2(
+            card->height() <= settledHeight + 2,
+            qPrintable(QString{"%1 tall while connecting, %2 otherwise"}
+                           .arg(card->height())
+                           .arg(settledHeight)));
+        const int head = activity->HeadSpoke();
+        QTRY_VERIFY_WITH_TIMEOUT(activity->HeadSpoke() != head, 1000);
+        VerifySmoothPopupCorners(
+            card, QString{"connection-notification-pending-scale%1.png"}.arg(scale));
     }
 
     void QuickConnectCardTracksProgressAndResult()
@@ -334,9 +439,9 @@ private Q_SLOTS:
         auto *card = tray.findChild<QWidget *>("connectionNotification");
         QVERIFY(card != nullptr);
         QVERIFY(card->isVisible());
-        auto *progress = card->findChild<QProgressBar *>();
-        QVERIFY(progress != nullptr);
-        QVERIFY(progress->isVisible());
+        auto *activity = card->findChild<Gui::Widget::ActivityIndicator *>("notificationActivity");
+        QVERIFY(activity != nullptr);
+        QVERIFY(activity->isVisible());
         // The old success timer must not dismiss a newly started connection.
         quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods");
         quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods");

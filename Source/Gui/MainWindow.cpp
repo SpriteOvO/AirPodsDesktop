@@ -24,7 +24,6 @@
 #include <QPainter>
 #include <QMessageBox>
 #include <QCloseEvent>
-#include <QEnterEvent>
 
 #include <Config.h>
 #include "../Helper.h"
@@ -39,105 +38,6 @@ using namespace std::chrono_literals;
 
 namespace Gui {
 
-class CloseButton : public QWidget
-{
-    Q_OBJECT
-
-public:
-    CloseButton(QWidget *parent = nullptr)
-    {
-        setFixedSize(24, 24);
-    }
-
-Q_SIGNALS:
-    void Clicked();
-
-private:
-    bool _isHovering{false}, _isHoldDown{false};
-
-protected:
-    void paintEvent(QPaintEvent *event) override
-    {
-        QPainter painter{this};
-        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
-
-        DrawBackground(painter);
-        DrawX(painter);
-    }
-
-    void enterEvent(QEnterEvent *event) override
-    {
-        _isHovering = true;
-        repaint();
-    }
-
-    void leaveEvent(QEvent *event) override
-    {
-        _isHovering = false;
-        repaint();
-    }
-
-    void mousePressEvent(QMouseEvent *event) override
-    {
-        _isHoldDown = true;
-        repaint();
-    }
-
-    void mouseReleaseEvent(QMouseEvent *event) override
-    {
-        _isHoldDown = false;
-        Q_EMIT Clicked();
-        repaint();
-    }
-
-    void DrawBackground(QPainter &painter)
-    {
-        painter.save();
-        {
-            painter.setPen(Qt::NoPen);
-
-            const auto &colors = Theme::Manager::Instance().Colors();
-
-            QColor color;
-            if (_isHoldDown) {
-                color = colors.mainClosePressed;
-            }
-            else if (_isHovering) {
-                color = colors.mainCloseHover;
-            }
-            else {
-                color = colors.mainCloseBg;
-            }
-
-            painter.setBrush(QBrush{color});
-            painter.drawEllipse(rect());
-        }
-        painter.restore();
-    }
-
-    void DrawX(QPainter &painter)
-    {
-        painter.save();
-        {
-            painter.setPen(QPen{
-                Theme::Manager::Instance().Colors().mainCloseGlyph, 2.5, Qt::SolidLine,
-                Qt::RoundCap});
-            painter.setBrush(Qt::NoBrush);
-
-            QSize size = this->size();
-
-            constexpr int margin = 7;
-
-            painter.drawLine(margin, margin, size.width() - margin, size.height() - margin);
-
-            painter.drawLine(size.width() - margin, margin, margin, size.height() - margin);
-        }
-        painter.restore();
-    }
-};
-
-//////////////////////////////////////////////////
-
 MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 {
     qRegisterMetaType<Core::AirPods::State>("Core::AirPods::State");
@@ -145,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
 
     _animationView = new Widget::AnimationView{this};
     _playback = new AnimationPlayback{*_animationView, this};
-    _closeButton = new CloseButton{this};
+    _closeButton = new Widget::CloseButton{this};
 
     _ui.setupUi(this);
 
@@ -176,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent) : QDialog{parent}
     connect(_ui.pushButton, &QPushButton::clicked, this, &MainWindow::OnButtonClicked);
     connect(&_posAnimation, &QPropertyAnimation::finished, this, &MainWindow::OnPosMoveFinished);
     connect(_animationView, &Widget::AnimationView::Clicked, this, &MainWindow::OnAnimationClicked);
-    connect(_closeButton, &CloseButton::Clicked, this, &MainWindow::DoHide);
+    connect(_closeButton, &Widget::CloseButton::clicked, this, &MainWindow::DoHide);
 
     connect(this, &MainWindow::UpdateStateSafely, this, &MainWindow::UpdateState);
     connect(this, &MainWindow::AvailableSafely, this, &MainWindow::Available);
@@ -907,5 +807,3 @@ void MainWindow::closeEvent(QCloseEvent *event)
     DoHide();
 }
 } // namespace Gui
-
-#include "MainWindow.moc"

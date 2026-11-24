@@ -38,11 +38,11 @@
 #include "Widget/Battery.h"
 #include "AnimationPlayback.h"
 #include "Widget/AnimationView.h"
+#include "Widget/CloseButton.h"
 #include "Widget/FadeOverlay.h"
 
 namespace Gui {
 
-class CloseButton;
 class BatteryInfo;
 
 class MainWindow : public QDialog
@@ -112,7 +112,7 @@ private:
     QTimer *_autoHideTimer = new QTimer{this};
     // Caps how long an opened lid may keep the popup up, in case the state stops updating.
     QTimer *_lidSafetyTimer = new QTimer{this};
-    CloseButton *_closeButton;
+    Widget::CloseButton *_closeButton;
     Widget::Battery *_leftBattery = new Widget::Battery{this};
     Widget::Battery *_rightBattery = new Widget::Battery{this};
     Widget::Battery *_caseBattery = new Widget::Battery{this};

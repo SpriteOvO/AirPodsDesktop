@@ -94,6 +94,14 @@ foreach(scale_factor 1 1.25 1.5 2)
         AirPods5RenderingScale${scale_suffix}
         PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
     )
+    add_test(
+        NAME NotificationRenderingScale${scale_suffix}
+        COMMAND UiRenderingTests NotificationCardSharesTheTitleRowWithClose
+    )
+    set_tests_properties(
+        NotificationRenderingScale${scale_suffix}
+        PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
+    )
 endforeach()
 
 foreach(test_target AirPodsDomainTests QuickConnectTests AnimationViewTests UiRenderingTests)

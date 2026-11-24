@@ -6,11 +6,15 @@
 #include <QPointer>
 
 class QLabel;
-class QProgressBar;
-class QPushButton;
 class QScreen;
+class QSpacerItem;
 
 namespace Gui {
+
+namespace Widget {
+class ActivityIndicator;
+class CloseButton;
+} // namespace Widget
 
 // A single non-activating card whose content is replaced as a connection progresses.
 class NotificationWindow : public QWidget
@@ -24,20 +28,27 @@ public:
         const QRect &trayGeometry);
 
 protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void hideEvent(QHideEvent *event) override;
 
 private:
     QLabel *_title;
     QLabel *_message;
-    QProgressBar *_progress;
-    QPushButton *_close;
+    // Spins before the message's first line while a connection is pending, as on iOS.
+    Widget::ActivityIndicator *_activity;
+    Widget::CloseButton *_close;
+    // Push the title or the close button down so both share the first line's centre.
+    QSpacerItem *_titleOffset;
+    QSpacerItem *_closeOffset;
     QTimer _autoHide{this};
     QTimer _placementTimer{this};
     QPointer<QScreen> _targetScreen;
     bool _warning{false};
 
     void ApplyTheme();
+    void AlignCloseWithTitle();
+    void PlaceActivity();
     void Place();
 };
 
