@@ -163,68 +163,72 @@ Enjoy it all.</source>
         <source>Quick connect</source>
         <translation>クイック接続</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>バッテリー</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>インストールの準備ができました。現在のバージョンは %1 です。</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートをダウンロード中</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートできません</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>自動アップデートは中止されました</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>リリースの種類</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいバージョン</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>プレビュー版</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>安定版</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>このバージョンのリリースノートはありません</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>自動アップデートを完了できませんでした。新しいバージョンを手動でダウンロードしてインストールするか、このウィンドウを閉じて AirPodsDesktop を引き続きご利用ください。</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロードサイズを取得中...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ダウンロード済み</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>インストールの準備中...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロード中...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -272,6 +276,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
         <translation>音声の再生開始時に、選択したデバイスが未接続の場合は接続します。失敗した場合は、30 秒以上待ってから再生を開始すると再試行します。</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>ケースを開くと、使用中のアプリからフォーカスを奪わずに電池残量ウィンドウを表示します。オフの場合は通知アイコンから開いてください。</translation>
     </message>
 </context>
 <context>
@@ -411,12 +419,16 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <source>Connect automatically when audio starts playing</source>
         <translation>音声の再生開始時に自動接続する</translation>
     </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>ケースを開いたときに電池残量を表示する</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>ソフトウェアアップデート</translation>
     </message>
     <message>
         <source>View release</source>
@@ -444,11 +456,11 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロードが遅い場合は、アップデートを手動でダウンロードできます。手動ダウンロードに切り替えると AirPodsDesktop は終了します。</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>新機能</translation>
     </message>
 </context>
 </TS>

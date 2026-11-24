@@ -163,6 +163,10 @@ Enjoy it all.</source>
         <source>Quick connect</source>
         <translation>快速連線</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>電池</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
@@ -272,6 +276,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
         <translation>音訊開始播放時，若選定的裝置未連線，則自動發起連線。失敗後，至少等待 30 秒並重新開始播放才會重試。</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>開啟充電盒時顯示電量視窗，且不會搶走目前應用程式的焦點。關閉此選項後，可從系統匣圖示開啟。</translation>
     </message>
 </context>
 <context>
@@ -410,6 +418,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Connect automatically when audio starts playing</source>
         <translation>音訊開始播放時自動連線</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>開啟充電盒時顯示電量</translation>
     </message>
 </context>
 <context>

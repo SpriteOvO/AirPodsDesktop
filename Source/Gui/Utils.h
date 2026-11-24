@@ -76,10 +76,12 @@ inline void Dispatch(std::function<void()> callback)
     QMetaObject::invokeMethod(timer, "start", ::Qt::QueuedConnection, Q_ARG(int, 0));
 }
 
+// Qt 6's `QGuiApplication::quit()` first sends a close event to every visible top-level window and
+// cancels the quit if any of them ignores it. `MainWindow::closeEvent` always ignores it (closing
+// only hides the popup), so `quit()` did nothing while the popup was shown. `exit()` leaves the
+// event loop unconditionally; `aboutToQuit` is still emitted.
 inline void QuitApplicationSafely()
 {
-    // Explicit application exit must not be vetoed by a window's close-to-tray handler.
-    // Queue exit() onto the GUI thread so normal application/object teardown still runs.
     QMetaObject::invokeMethod(qApp, [] { QCoreApplication::exit(0); }, ::Qt::QueuedConnection);
 }
 

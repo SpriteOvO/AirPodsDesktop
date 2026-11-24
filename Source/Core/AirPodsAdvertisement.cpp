@@ -43,6 +43,7 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     _protocol = std::move(protocol.value());
 
     _state.model = _protocol.GetModel();
+    _state.color = _protocol.GetColor();
     _state.side = _protocol.GetBroadcastedSide();
 
     _state.pods.left.battery = _protocol.GetLeftBattery();
@@ -57,6 +58,13 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     _state.caseBox.isCharging = _protocol.IsCaseCharging();
     _state.caseBox.isBothPodsInCase = _protocol.IsBothPodsInCase();
     _state.caseBox.isLidOpened = _protocol.IsLidOpened();
+    // The advertisement only says "both in case"; a pod that charges while the other does not
+    // is the one still sitting in the case.
+    const auto inCase = [&](const PodState &pod) {
+        return _state.caseBox.isBothPodsInCase || (pod.isCharging && !pod.isInEar);
+    };
+    _state.pods.left.isInCase = inCase(_state.pods.left);
+    _state.pods.right.isInCase = inCase(_state.pods.right);
 
     if (_state.pods.left.battery.Available()) {
         _state.pods.left.battery = _state.pods.left.battery.Value() * 10;
@@ -66,6 +74,21 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
     }
     if (_state.caseBox.battery.Available()) {
         _state.caseBox.battery = _state.caseBox.battery.Value() * 10;
+    }
+
+    if (HasSingleBattery(_state.model)) {
+        // Prefer the field for the side that sent this advertisement, then fall back to the
+        // other one. Both pod slots carry the headset battery so merging stays side-agnostic.
+        const auto &primary =
+            _state.side == Side::Left ? _state.pods.left : _state.pods.right;
+        const auto &secondary =
+            _state.side == Side::Left ? _state.pods.right : _state.pods.left;
+        const PodState headset = primary.battery.Available() ? primary : secondary;
+
+        _state.pods.left = headset;
+        _state.pods.right = headset;
+        _state.caseBox.battery = {};
+        _state.caseBox.isCharging = false;
     }
 }
 

@@ -18,6 +18,7 @@
 
 #include "TrayIcon.h"
 #include "Theme.h"
+#include "Utils.h"
 
 #include <QFont>
 #include <QApplication>
@@ -39,7 +40,7 @@ TrayIcon::TrayIcon(
     });
     connect(_actionSettings, &QAction::triggered, this, &TrayIcon::OnSettingsClicked);
     connect(_actionAbout, &QAction::triggered, this, &TrayIcon::OnAboutClicked);
-    connect(_actionQuit, &QAction::triggered, qApp, [] { Utils::Qt::QuitApplicationSafely(); });
+    connect(_actionQuit, &QAction::triggered, this, [] { Utils::Qt::QuitApplicationSafely(); });
     connect(_tray, &QSystemTrayIcon::activated, this, &TrayIcon::OnIconClicked);
     connect(
         &_quickConnect, &Core::QuickConnect::Controller::OutcomeChanged, this,
@@ -141,6 +142,17 @@ void TrayIcon::Repaint()
 
         const auto textCharging = QString{" (%1)"}.arg(strCharging),
                    textPlaceHolder = QString{"\n%1: %2%%3"};
+
+        if (Core::AirPods::HasSingleBattery(state.model)) {
+            if (state.pods.left.battery.Available()) {
+                const auto batteryValue = state.pods.left.battery.Value();
+                toolTipContent += textPlaceHolder.arg(tr("Battery"))
+                                      .arg(batteryValue)
+                                      .arg(state.pods.left.isCharging ? textCharging : QString{});
+                minBattery = batteryValue;
+            }
+            break;
+        }
 
         // clang-format off
         if (state.pods.left.battery.Available()) {

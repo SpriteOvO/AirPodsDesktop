@@ -163,68 +163,72 @@ Profitez bien de tout ça.</translation>
         <source>Quick connect</source>
         <translation>Connexion rapide</translation>
     </message>
+    <message>
+        <source>Battery</source>
+        <translation>Batterie</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prêt pour l&apos;installation. Vous utilisez la version %1.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement de la mise à jour</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de mettre à jour</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>La mise à jour automatique a été interrompue</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de version</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle version</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Version préliminaire</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Version stable</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Aucune note de version pour cette version</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>La mise à jour automatique n&apos;a pas pu être effectuée. Veuillez télécharger et installer la nouvelle version manuellement, ou fermez cette fenêtre pour continuer à utiliser AirPodsDesktop.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>En attente de la taille du téléchargement...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 téléchargés</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Préparation de l&apos;installation...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 sur %3</translation>
     </message>
 </context>
 <context>
@@ -272,6 +276,10 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     <message>
         <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
         <translation>Connecte l’appareil sélectionné au début de la lecture audio s’il est déconnecté. Après un échec, attendez au moins 30 secondes et relancez la lecture pour réessayer.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Affiche la fenêtre de batterie à l&apos;ouverture du boîtier, sans retirer le focus de l&apos;application en cours. Lorsque cette option est désactivée, ouvrez-la depuis l&apos;icône de la zone de notification.</translation>
     </message>
 </context>
 <context>
@@ -411,12 +419,16 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
         <source>Connect automatically when audio starts playing</source>
         <translation>Se connecter automatiquement au début de la lecture audio</translation>
     </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Afficher la batterie à l&apos;ouverture du boîtier</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour logicielle</translation>
     </message>
     <message>
         <source>View release</source>
@@ -444,11 +456,11 @@ Vous devez d&apos;abord appairer vos AirPods dans les paramètres Bluetooth de W
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si le téléchargement est lent, vous pouvez télécharger la mise à jour manuellement. AirPodsDesktop se fermera lorsque vous passerez au téléchargement manuel.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouveautés</translation>
     </message>
 </context>
 </TS>

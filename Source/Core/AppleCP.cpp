@@ -66,6 +66,7 @@ Core::AirPods::Model AirPods::GetModel(uint16_t modelId)
     case 0x200A:
         return Core::AirPods::Model::AirPods_Max;
     case 0x201F:
+    case 0x202D:
         return Core::AirPods::Model::AirPods_Max_USB_C;
         // case 0x2003:
         //    return Core::AirPods::Model::Powerbeats_3;
@@ -154,6 +155,11 @@ bool AirPods::IsLeftInEar() const
 bool AirPods::IsRightInEar() const
 {
     return !IsRightCharging() && (IsRightBroadcasted() ? currInEar : anotInEar);
+}
+
+Color AirPods::GetColor() const
+{
+    return color;
 }
 
 AirPods AirPods::Desensitize() const
