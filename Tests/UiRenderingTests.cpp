@@ -771,7 +771,9 @@ private Q_SLOTS:
             }
         }
         QVERIFY(ring != nullptr);
-        const int headsetBottom = animation->mapTo(&window, QPoint{0, bottom}).y();
+        // The grab is in device pixels; the widget geometry is in logical ones.
+        const qreal headsetBottom =
+            animation->mapTo(&window, QPointF{0.0, (bottom + 1) / image.devicePixelRatio()}).y();
         const int ringTop = ring->mapTo(&window, QPoint{}).y();
         QVERIFY2(
             ringTop - headsetBottom >= 12,
