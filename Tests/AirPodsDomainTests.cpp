@@ -275,6 +275,7 @@ private Q_SLOTS:
     void PresentsMainWindowCaseBattery();
     void CollapsesAirPodsMaxToSingleBattery();
     void ParsesCapturedSpaceGrayAirPodsMax();
+    void ShowsTheAdvertisedColorRender();
     void MergesMatchingPodBatteries();
     void PresentsScenesFromPodPlacement();
     void MapsMainWindowAnimationResources();
@@ -1596,6 +1597,75 @@ void AirPodsDomainTests::ParsesCapturedSpaceGrayAirPodsMax()
         Gui::GetAnimationPresentation(Model::AirPods_Pro_2, Core::AppleCP::Color::MaxSpaceGray)
             .resource,
         QString{"qrc:/Resource/Video/AirPods_Pro_2.avi"});
+}
+
+void AirPodsDomainTests::ShowsTheAdvertisedColorRender()
+{
+    // The model ids the protocol recognises, so the color byte travels in real packets.
+    std::map<Model, uint16_t> modelIds;
+    for (uint32_t id = 0x2000; id <= 0x20FF; ++id) {
+        const auto model = Core::AppleCP::AirPods::GetModel(static_cast<uint16_t>(id));
+        if (model != Model::Unknown) {
+            modelIds.try_emplace(model, static_cast<uint16_t>(id));
+        }
+    }
+
+    int checkedColorModels = 0;
+    for (uint32_t i = 0; i < static_cast<uint32_t>(Model::_Max); ++i) {
+        const auto model = static_cast<Model>(i);
+        const auto modelId = modelIds.find(model);
+        if (modelId == modelIds.end()) {
+            continue;
+        }
+        // A model sold in white only lists that one color and ignores the advertised code.
+        const auto colors = Gui::GetAnimationColors(model);
+        const bool colored = colors.size() > 1;
+        checkedColorModels += colored ? 1 : 0;
+
+        for (uint32_t code = 0; code <= 0xFF; ++code) {
+            // Both sides advertise, as a pair does, and the state manager merges them.
+            StateManager manager;
+            manager.OnRssiMinChanged(-80);
+            std::optional<Core::AirPods::State> state;
+            for (const auto &[address, side] :
+                 {std::pair{0x1111ULL, Side::Left}, std::pair{0x2222ULL, Side::Right}})
+            {
+                auto data = MakeAdvertisementData(address, -45, side, 8, 7, 5, modelId->second);
+                data.manufacturerDataMap.at(Core::AppleCP::VendorId)[9] =
+                    static_cast<uint8_t>(code);
+                if (auto update = manager.OnAdvReceived(Advertisement{data})) {
+                    state = update->newState;
+                }
+            }
+            const auto name = QString{"model %1 color %2"}.arg(i).arg(code);
+            QVERIFY2(state.has_value(), qPrintable(name));
+            QVERIFY2(state->model == model, qPrintable(name));
+            QVERIFY2(Helper::ToUnderlying(state->color) == code, qPrintable(name));
+
+            Gui::MainWindowViewModel viewModel;
+            viewModel.UpdateState(*state);
+            const auto presentation = viewModel.Present();
+            QVERIFY2(presentation.animationModel == model, qPrintable(name));
+
+            const auto resource =
+                Gui::GetAnimationPresentation(model, presentation.animationColor).resource;
+            if (!colored) {
+                QVERIFY2(
+                    resource == Gui::GetAnimationPresentation(model).resource,
+                    qPrintable(QString{"%1 shows %2"}.arg(name, resource)));
+                continue;
+            }
+            // Its own render when the catalog has one, otherwise the model's default color.
+            const auto rendered = std::find(
+                                      colors.cbegin(), colors.cend(),
+                                      static_cast<Core::AppleCP::Color>(code)) != colors.cend();
+            const auto expected = rendered ? code : Helper::ToUnderlying(colors.front());
+            QVERIFY2(
+                resource.endsWith(QString{"/%1.avi"}.arg(expected)),
+                qPrintable(QString{"%1 shows %2"}.arg(name, resource)));
+        }
+    }
+    QVERIFY(checkedColorModels > 0);
 }
 
 void AirPodsDomainTests::MapsMainWindowAnimationResources()
