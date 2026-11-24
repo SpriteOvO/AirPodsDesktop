@@ -270,8 +270,12 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
         <translation>Menjaga perangkat audio tetap aktif selama AirPods terhubung agar suara pendek langsung terdengar. Ini dapat menimbulkan desis dan lebih menguras baterai.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Klik pada ikon tray akan menghubungkan perangkat yang dipilih, bukan membuka jendela utama. Klik dua kali tetap membukanya.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Klik sekali ikon tray untuk menghubungkan perangkat yang dipilih saat terputus, atau menampilkan informasi baterai saat terhubung. Informasi baterai terbuka otomatis setelah koneksi berhasil.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Hubungkan perangkat yang dipilih saat audio mulai diputar dan perangkat sedang terputus. Setelah gagal, tunggu setidaknya 30 detik lalu mulai pemutaran lagi untuk mencoba ulang.</translation>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
@@ -410,6 +414,10 @@ Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.<
     <message>
         <source>Dark</source>
         <translation>Gelap</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Hubungkan otomatis saat audio mulai diputar</translation>
     </message>
     <message>
         <source>Show battery when the case opens</source>

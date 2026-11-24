@@ -270,8 +270,12 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
         <translation>تا وقتی ایرپادت وصله، دستگاه صوتی رو بیدار نگه می‌داره تا صداهای کوتاه فوری پخش بشن. این کار ممکنه صدای هیس ایجاد کنه و باتری بیشتری مصرف کنه.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>با یک‌بار کلیک روی آیکن ناحیه اعلان، به‌جای بازشدن پنجره اصلی، دستگاه انتخاب‌شده وصل می‌شه. دوبار کلیک همچنان پنجره اصلی رو باز می‌کنه.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>با یک‌بار کلیک روی آیکن ناحیه اعلان، اگه دستگاه انتخاب‌شده وصل نباشه وصلش می‌کنه و اگه وصل باشه اطلاعات باتری رو نشون می‌ده. بعد از اتصال موفق، اطلاعات باتری خودکار باز می‌شه.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>وقتی پخش صدا شروع می‌شه و دستگاه انتخاب‌شده وصل نیست، اون رو وصل می‌کنه. بعد از خطا، دست‌کم ۳۰ ثانیه صبر کن و دوباره پخش رو شروع کن تا دوباره تلاش بشه.</translation>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
@@ -410,6 +414,10 @@ You need to pair your AirPods in Windows Bluetooth Settings first.</source>
     <message>
         <source>Dark</source>
         <translation>تیره</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>اتصال خودکار وقتی پخش صدا شروع می‌شه</translation>
     </message>
     <message>
         <source>Show battery when the case opens</source>

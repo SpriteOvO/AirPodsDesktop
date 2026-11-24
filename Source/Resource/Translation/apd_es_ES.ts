@@ -270,8 +270,12 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
         <translation>Mantiene activo el dispositivo de audio mientras los AirPods están conectados para que los sonidos cortos comiencen de inmediato. Esto puede producir un siseo audible y consumir más batería.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Un clic en el icono de la bandeja conecta el dispositivo seleccionado en lugar de abrir la ventana principal. El doble clic sigue abriéndola.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Haz clic una vez en el icono de la bandeja para conectar el dispositivo seleccionado si está desconectado, o para mostrar la información de la batería si ya está conectado. La información de la batería se abre automáticamente tras una conexión correcta.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Conecta el dispositivo seleccionado cuando empieza a reproducirse audio y está desconectado. Tras un error, espera al menos 30 segundos y vuelve a iniciar la reproducción para reintentarlo.</translation>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
@@ -410,6 +414,10 @@ Primero debes emparejar tus AirPods en la configuración de Bluetooth de Windows
     <message>
         <source>The paired Bluetooth audio device a tray icon click connects.</source>
         <translation>El dispositivo de audio Bluetooth emparejado que se conecta al hacer clic en el icono de la bandeja.</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Conectar automáticamente al empezar a reproducir audio</translation>
     </message>
     <message>
         <source>Show battery when the case opens</source>

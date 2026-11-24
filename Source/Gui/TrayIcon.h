@@ -21,7 +21,6 @@
 #include <functional>
 
 #include <QSystemTrayIcon>
-#include <QTimer>
 #include <QMenu>
 #include <QAction>
 
@@ -31,6 +30,7 @@
 #include "Base.h"
 #include "TrayActivation.h"
 #include "SettingsWindow.h"
+#include "NotificationWindow.h"
 
 namespace Gui {
 
@@ -42,11 +42,9 @@ public:
     explicit TrayIcon(
         std::function<int()> getCurrentLocaleIndex, Core::QuickConnect::Controller &quickConnect);
 
-    template <class... ArgsT>
-    inline void ShowMessage(ArgsT &&...args)
-    {
-        _tray->showMessage(std::forward<ArgsT>(args)...);
-    }
+    void ShowMessage(
+        const QString &title, const QString &text,
+        QSystemTrayIcon::MessageIcon icon = QSystemTrayIcon::Information);
 
     void UpdateState(const Core::AirPods::State &state);
     void Unavailable();
@@ -85,8 +83,7 @@ private:
     std::optional<Core::Update::ReleaseInfo> _updateReleaseInfo;
     std::optional<IconRenderState> _lastIconRenderState;
     Core::QuickConnect::Controller &_quickConnect;
-    TrayActivationState _trayActivationState;
-    QTimer _singleClickTimer{this};
+    NotificationWindow *_notification = new NotificationWindow{this};
 
     void ShowMainWindow();
     void Repaint();

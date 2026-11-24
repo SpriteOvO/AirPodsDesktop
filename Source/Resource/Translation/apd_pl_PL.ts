@@ -270,8 +270,12 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
         <translation>Zapobiega usypianiu urządzenia audio, gdy słuchawki AirPods są połączone, dzięki czemu krótkie dźwięki są odtwarzane bez opóźnienia. Może to powodować słyszalny szum i zwiększać zużycie baterii.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Kliknięcie ikony w zasobniku systemowym łączy z wybranym urządzeniem zamiast otwierać okno główne. Aby otworzyć okno, kliknij ikonę dwukrotnie.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Kliknij raz ikonę w zasobniku systemowym, aby połączyć wybrane urządzenie, gdy jest rozłączone, lub wyświetlić informacje o baterii, gdy jest połączone. Po udanym połączeniu informacje o baterii otwierają się automatycznie.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Łączy wybrane urządzenie, gdy rozpocznie się odtwarzanie dźwięku, a urządzenie jest rozłączone. Po niepowodzeniu odczekaj co najmniej 30 sekund i ponownie rozpocznij odtwarzanie, aby spróbować jeszcze raz.</translation>
     </message>
     <message>
         <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
@@ -410,6 +414,10 @@ Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</tr
     <message>
         <source>Dark</source>
         <translation>Ciemny</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Łącz automatycznie po rozpoczęciu odtwarzania dźwięku</translation>
     </message>
     <message>
         <source>Show battery when the case opens</source>
