@@ -141,16 +141,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Избраното устройство не е достъпно. Включете го или го доближете.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 вече е свързано.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>Свързване с %1...</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 е свързано.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -165,40 +157,24 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Ниска латентност на звука (може да причини шум)</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
+        <source>Battery</source>
+        <translation>Батерия</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show main window</source>
+        <source>Disconnect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise Control</source>
-        <translation>Контрол на шума</translation>
-    </message>
-    <message>
-        <source>Noise Cancellation</source>
-        <translation>Шумопотискане</translation>
-    </message>
-    <message>
-        <source>Transparency</source>
-        <translation>Прозрачност</translation>
-    </message>
-    <message>
-        <source>Adaptive</source>
-        <translation>Адаптивен</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation>Изкл.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise control unavailable: %1</source>
-        <translation>Контролът на шума не е достъпен: %1</translation>
-    </message>
-    <message>
-        <source>Noise Control (unsupported or unknown)</source>
-        <translation>Контрол на шума (неподдържан или неизвестен)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
@@ -209,11 +185,27 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect selected device</source>
+        <source>Noise Cancellation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect selected device</source>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -236,68 +228,72 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Disconnection from %1 timed out.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Готово за инсталиране. Използвате %1.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтегляне на актуализацията</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Актуализацията е невъзможна</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматичната актуализация беше спряна</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип на изданието</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Нова версия</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Предварително издание</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Стабилно издание</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Няма бележки за това издание</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматичната актуализация не можа да завърши. Изтеглете и инсталирайте новата версия ръчно или затворете този прозорец, за да продължите да използвате AirPodsDesktop.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изчакване на размера на изтеглянето...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтеглени %1</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Подготовка за инсталиране...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтегляне...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 от %3</translation>
     </message>
 </context>
 <context>
@@ -330,8 +326,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Поддържа аудиоустройството активно, докато AirPods са свързани, така че кратките звуци да започват веднага. Това може да причини доловим шум и да изразходва повече батерия.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Щракването върху иконата в системната област свързва избраното устройство, вместо да отваря главния прозорец. Двукратното щракване продължава да го отваря.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Щракнете веднъж върху иконата в системната област, за да свържете избраното устройство, ако не е свързано, или да покажете информацията за батерията, ако е свързано. След успешно свързване информацията за батерията се показва автоматично.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Свързва избраното устройство при започване на възпроизвеждане на звук, ако не е свързано. След неуспех изчакайте поне 30 секунди и стартирайте възпроизвеждането отново за нов опит.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Показва прозореца с батерията, когато отворите кутията, без да отнема фокуса от използваното приложение. Когато е изключено, отворете го от иконата в системната област.</translation>
     </message>
 </context>
 <context>
@@ -467,12 +471,20 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Dark</source>
         <translation>Тъмна</translation>
     </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Автоматично свързване при започване на възпроизвеждане на звук</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Показване на батерията при отваряне на кутията</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Актуализация на софтуера</translation>
     </message>
     <message>
         <source>View release</source>
@@ -500,11 +512,11 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако изтеглянето е бавно, можете да изтеглите актуализацията ръчно. AirPodsDesktop ще се затвори, когато преминете към ръчно изтегляне.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Какво ново</translation>
     </message>
 </context>
 </TS>

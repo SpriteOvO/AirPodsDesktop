@@ -74,10 +74,11 @@ separately with a log file, then `ctest --exclude-regex '^UiRenderingTests$'`.
 | `APD_RELEASE_TAG_PREFIX` | `v` | Release tag prefix of the configured repository (empty for `1.2.3` tags) |
 | `APD_BUILD_GIT_HASH` | — | Stamps the build hash into the log banner |
 
-Compiler quirks baked into `CMakeLists.txt`: on MSVC, `CMAKE_CXX_STANDARD 20` is remapped to
-`/std:c++latest` because `<format>` is unavailable under `/std:c++20`, and `/await` is forced
-globally for cppwinrt. Both are load-bearing — the code uses `std::format` and WinRT. Linux uses
-`BOOST_STACKTRACE_USE_ADDR2LINE` so stack traces need only `libdl`.
+Compiler quirk baked into `CMakeLists.txt`: `CMAKE_CXX_STANDARD 20` is remapped to `/std:c++latest`
+because MSVC's `<format>` is not available under `/std:c++20`. It is load-bearing — the code uses
+`std::format`. Do not reintroduce the legacy `/await` option: the Windows SDK's C++/WinRT uses standard
+C++20 coroutines, and MSVC 14.51 (Visual Studio 2026) rejects `/await` with error STL1011.
+Linux uses `BOOST_STACKTRACE_USE_ADDR2LINE` so stack traces need only `libdl`.
 
 `Source/Config.h` is generated from `Config.h.in` into `${PROJECT_BINARY_DIR}/Source` and is included
 as `<Config.h>` (angle brackets), not a relative path.
@@ -346,16 +347,39 @@ updates are disabled, and the taskbar battery dock being Windows-only. Treat cha
 1. Add the enum value to `Core::AirPods::Model` (before `_Max`) and a case to
    `Helper::ToString<Model>` — both in `Source/Core/Base.h`.
 2. Map the BLE model id in `AppleCP::AirPods::GetModel(uint16_t)` in `Source/Core/AppleCP.cpp`.
-3. Add the animation case to `GetAnimationPresentation` in `Source/Gui/MainWindowPresentation.cpp`.
+3. Add the animation in `Source/Gui/MainWindowPresentation.cpp`: a `GetAnimationPresentation` case
+   for a white-only model, or a `ColorRenderTable` entry for a model sold in several colors.
    A model with no artwork of its own can borrow the nearest existing one instead.
-4. Add the `.avi` under `Source/Resource/Video/` **and** register it in `Source/Resource/Resource.qrc`.
-   `MapsMainWindowAnimationResources` walks every enumerator and fails if a mapping names a resource
-   the qrc does not list or that is missing from disk, so an unregistered file is caught.
-5. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
+4. Add the `.avi` (and its still `.png` under `Image/Animation/`) under `Source/Resource/Video/`
+   **and** register both in `Source/Resource/Animation.qrc`. Color renders live in a folder per
+   model, one `<code>.avi` per color. `MapsMainWindowAnimationResources` walks every model and color
+   and fails if a mapping names a resource the qrc does not list or that is missing from disk.
+5. For a model with a charging case, add the still scene's pictures under
+   `Source/Resource/Image/Still/<same path as the video>/` — `L.png`, `R.png`, `Case.png`, the 3x
+   `ProxCard_L`, `ProxCard_R` and `ProxCard_case-closed-charged` images of Apple's bundle, unedited —
+   and register them in `Animation.qrc`. `Widget::LoadDeviceStill` lays them out like the iOS sheet.
+6. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
+
+The popup plays the video while the pods are together (both in the case or both out) and for
+models without a case. With one pod out it shows the still instead, and the picture and the
+battery row fade out and back in together around every scene change.
+
+Color codes are the advertised color byte (`AppleCP::Color`, read as a raw byte). They match the
+`CL` field of Apple's SharingDeviceAssets catalog, so each catalog variant maps to its code; a code
+without a render falls back to the model's default color, which is listed first.
+
+Renders carry a chroma matte that `AnimationView` keys out from the frame corners: magenta by
+default, green for pink and purple products, whose surfaces would otherwise read as magenta spill
+and be bleached. The spill test follows whichever matte the frame carries.
+
+`Animation.qrc` is not linked into any executable. The `apd_animations` target in `CMakeLists.txt`
+compiles it once into `Build/Binary/Animations.rcc`, which ships beside the executable. Anything
+that shows the popup (the app, `UiRenderingTests`) depends on that target and calls
+`Gui::RegisterAnimationResources()` before creating a window.
 
 Keep animation source material and conversion tooling outside the repository. Commit only the
 generated `.avi` runtime asset needed by the application, then register and test it as described
-above. The ten current animations are 360 frames at 60 fps.
+above. All animations are 360 frames at 60 fps.
 
 Note that `AirPods_4.avi` and `AirPods_4_ANC.avi` are currently byte-identical, so one conversion
 ran against the wrong source. Regenerating the ANC one needs the original `AirPods1,5-v2` asset.

@@ -51,6 +51,9 @@ struct BasicState {
 
 struct PodState : Details::BasicState {
     bool isInEar{false};
+    // The advertisement only says "both in case"; a pod that charges while the other does not
+    // is the one still sitting in the case (see `Advertisement`).
+    bool isInCase{false};
 
     bool operator==(const PodState &rhs) const = default;
 };
@@ -70,6 +73,7 @@ struct PodsState {
 
 struct State {
     Model model{Model::Unknown};
+    AppleCP::Color color{AppleCP::Color::White};
     PodsState pods;
     CaseState caseBox;
     QString displayName;
@@ -125,7 +129,17 @@ public:
         State newState;
     };
 
-    explicit StateManager(std::chrono::milliseconds advTimeout = std::chrono::seconds{10});
+    // How long a side may stay silent before its cached advertisement is dropped, and how long
+    // the whole device may stay silent before it is reported lost. Tests shorten them.
+    struct Intervals {
+        std::chrono::milliseconds lost{std::chrono::seconds{10}};
+        std::chrono::milliseconds stateReset{std::chrono::seconds{10}};
+    };
+
+    // GCC rejects `Intervals intervals = {}` here: the default member initializers of a nested
+    // class are not usable until the enclosing class is complete. Delegate instead.
+    StateManager();
+    explicit StateManager(Intervals intervals);
     ~StateManager();
 
     void SetOnDiscardState(std::function<void()> callback);
@@ -146,16 +160,72 @@ private:
     Helper::Timer _lostTimer;
     Helper::Sides<Helper::Timer> _stateResetTimer;
     Helper::Sides<std::optional<std::pair<Advertisement, Timestamp>>> _adv;
+    // Outlives `_adv`: a side that goes quiet loses its cached advertisement after
+    // `Intervals::stateReset`, but its address stays valid until the device disconnects.
+    Helper::Sides<std::optional<Advertisement::AddressType>> _knownAddress;
     std::optional<State> _cachedState;
     int16_t _rssiMin{std::numeric_limits<int16_t>::max()};
 
     bool IsPossibleDesiredAdv(const Advertisement &adv) const;
+    bool IsKnownAddress(Advertisement::AddressType address) const;
     void UpdateAdv(Advertisement adv);
     std::optional<UpdateEvent> UpdateState();
     std::function<void()> ResetAll();
 
     std::function<void()> DoLost();
     void DoStateReset(Side side);
+};
+
+// Decides whether the case lid opened or closed between two states.
+//
+// StateManager drops its state after 10 seconds without advertisements, and that also happens
+// while the lid stays open. The first state after such a gap has no previous state to compare
+// with, so it used to count as a fresh "lid opened" every time and reopened the popup (#233).
+// Remembering the last lid state for a while after the device is lost tells those gaps apart
+// from a real opening. It is reset when the Bluetooth connection drops or another device is
+// bound, because the lid can close without being advertised then.
+//
+// The lid is only advertised while both pods sit in the case. Taking the pods out is neither an
+// opening nor a closing, so the popup that came up for an opened case stays while they come out.
+//
+class LidTracker
+{
+public:
+    using Clock = std::chrono::steady_clock;
+    using Timestamp = std::chrono::time_point<Clock>;
+
+    enum class Lid : uint8_t {
+        Opened,
+        Closed,
+        Unobservable, // At least one pod is out of the case.
+    };
+
+    // How long the last seen lid state is trusted after the device was lost.
+    static constexpr std::chrono::seconds kMemory{60};
+
+    // Returns true when the lid was seen opening, false when it was seen closing, and nothing
+    // otherwise. `oldLid` is empty for the first state after the device was lost or bound.
+    std::optional<bool> Update(std::optional<Lid> oldLid, Lid newLid, Timestamp now);
+    void OnLost(Timestamp now);
+    void Reset();
+
+private:
+    mutable std::mutex _mutex;
+    std::optional<Lid> _lastLid;
+    std::optional<Timestamp> _lostAt;
+};
+
+// Remembers the last "both pods in ear" value across state updates so that a transition is still
+// detected after `StateManager` has dropped and re-created its cached state (issue #86).
+//
+class EarDetectionTracker
+{
+public:
+    std::optional<bool> Update(const State &state);
+    void Reset();
+
+private:
+    std::optional<bool> _lastBothInEar;
 };
 } // namespace Details
 
@@ -177,6 +247,8 @@ public:
 private:
     std::mutex _mutex;
     Details::StateManager _stateMgr;
+    Details::LidTracker _lidTracker;
+    Details::EarDetectionTracker _earDetection;
     std::optional<Bluetooth::Device> _boundDevice;
     QString _deviceName;
     Model _boundModel{Model::Unknown};

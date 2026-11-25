@@ -15,7 +15,8 @@ target_link_libraries(
 
 target_include_directories(AirPodsDomainTests PRIVATE "${CMAKE_SOURCE_DIR}")
 
-# The qrc is linked into the application target, so resource checks read the source tree instead.
+# The animations ship in Animations.rcc, not in this executable, so resource checks read the
+# source tree instead.
 target_compile_definitions(
     AirPodsDomainTests PRIVATE APD_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
@@ -107,7 +108,7 @@ target_link_libraries(
 
 target_include_directories(UiRenderingTests PRIVATE "${CMAKE_SOURCE_DIR}")
 target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINARY_DIR}")
-add_dependencies(UiRenderingTests apd_translations)
+add_dependencies(UiRenderingTests apd_translations apd_animations)
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
 foreach(scale_factor 1 1.25 1.5 2)
@@ -126,6 +127,14 @@ foreach(scale_factor 1 1.25 1.5 2)
     )
     set_tests_properties(
         AirPods5RenderingScale${scale_suffix}
+        PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
+    )
+    add_test(
+        NAME NotificationRenderingScale${scale_suffix}
+        COMMAND UiRenderingTests NotificationCardSharesTheTitleRowWithClose
+    )
+    set_tests_properties(
+        NotificationRenderingScale${scale_suffix}
         PROPERTIES ENVIRONMENT "QT_SCALE_FACTOR=${scale_factor}"
     )
 endforeach()

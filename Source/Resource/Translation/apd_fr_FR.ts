@@ -145,16 +145,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>L&apos;appareil sélectionné n&apos;est pas disponible. Allumez-le ou rapprochez-le.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 est déjà connecté.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>Connexion à %1...</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 est connecté.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -165,40 +157,24 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Connexion rapide</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
+        <source>Battery</source>
+        <translation>Batterie</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show main window</source>
+        <source>Disconnect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise Control</source>
-        <translation>Contrôle du bruit</translation>
-    </message>
-    <message>
-        <source>Noise Cancellation</source>
-        <translation>Réduction du bruit</translation>
-    </message>
-    <message>
-        <source>Transparency</source>
-        <translation>Transparence</translation>
-    </message>
-    <message>
-        <source>Adaptive</source>
-        <translation>Adaptatif</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation>Désactivé</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise control unavailable: %1</source>
-        <translation>Contrôle du bruit indisponible : %1</translation>
-    </message>
-    <message>
-        <source>Noise Control (unsupported or unknown)</source>
-        <translation>Contrôle du bruit (non pris en charge ou inconnu)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
@@ -209,11 +185,27 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect selected device</source>
+        <source>Noise Cancellation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect selected device</source>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -236,68 +228,72 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Disconnection from %1 timed out.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prêt pour l&apos;installation. Vous utilisez la version %1.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement de la mise à jour</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de mettre à jour</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>La mise à jour automatique a été interrompue</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Type de version</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouvelle version</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Version préliminaire</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Version stable</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Aucune note de version pour cette version</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>La mise à jour automatique n&apos;a pas pu être effectuée. Veuillez télécharger et installer la nouvelle version manuellement, ou fermez cette fenêtre pour continuer à utiliser AirPodsDesktop.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>En attente de la taille du téléchargement...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 téléchargés</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Préparation de l&apos;installation...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 sur %3</translation>
     </message>
 </context>
 <context>
@@ -330,8 +326,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Maintient le périphérique audio actif pendant que vos AirPods sont connectés afin que les sons courts démarrent immédiatement. Cela peut produire un souffle audible et augmenter la consommation de la batterie.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Un clic sur l&apos;icône de la zone de notification connecte l&apos;appareil sélectionné au lieu d&apos;ouvrir la fenêtre principale. Un double-clic continue de l&apos;ouvrir.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Cliquez une fois sur l’icône de la zone de notification pour connecter l’appareil sélectionné s’il est déconnecté, ou afficher le niveau de batterie s’il est connecté. Le niveau de batterie s’affiche automatiquement après une connexion réussie.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Connecte l’appareil sélectionné au début de la lecture audio s’il est déconnecté. Après un échec, attendez au moins 30 secondes et relancez la lecture pour réessayer.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Affiche la fenêtre de batterie à l&apos;ouverture du boîtier, sans retirer le focus de l&apos;application en cours. Lorsque cette option est désactivée, ouvrez-la depuis l&apos;icône de la zone de notification.</translation>
     </message>
 </context>
 <context>
@@ -467,12 +471,20 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Dark</source>
         <translation>Sombre</translation>
     </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Se connecter automatiquement au début de la lecture audio</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Afficher la batterie à l&apos;ouverture du boîtier</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour logicielle</translation>
     </message>
     <message>
         <source>View release</source>
@@ -500,11 +512,11 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si le téléchargement est lent, vous pouvez télécharger la mise à jour manuellement. AirPodsDesktop se fermera lorsque vous passerez au téléchargement manuel.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Nouveautés</translation>
     </message>
 </context>
 </TS>

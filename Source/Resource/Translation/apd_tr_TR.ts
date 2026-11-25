@@ -142,16 +142,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Seçili cihaz kullanılamıyor. Cihazı açın veya kapsama alanına getirin.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 zaten bağlı.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>%1 cihazına bağlanılıyor...</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 bağlandı.</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -166,16 +158,32 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Düşük ses gecikmesi (dip sese neden olabilir)</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
-        <translation>%1 cihazına bağlanılamadı.</translation>
+        <source>Battery</source>
+        <translation>Pil</translation>
     </message>
     <message>
-        <source>Show main window</source>
-        <translation>Ana pencereyi göster</translation>
+        <source>Connect selected device</source>
+        <translation>Seçili cihaza bağlan</translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation>Seçili cihazın bağlantısını kes</translation>
     </message>
     <message>
         <source>Noise Control</source>
         <translation>Gürültü Denetimi</translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation>Gürültü denetimi kullanılamıyor: %1</translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation>Kapalı modu doğrulanamadı. Önce bir Apple aygıtında Kapalı modunu etkinleştirmeniz gerekebilir.</translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation>İstenen gürültü denetimi modu doğrulanamadı.</translation>
     </message>
     <message>
         <source>Noise Cancellation</source>
@@ -194,28 +202,12 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>Kapalı</translation>
     </message>
     <message>
-        <source>Noise control unavailable: %1</source>
-        <translation>Gürültü denetimi kullanılamıyor: %1</translation>
-    </message>
-    <message>
         <source>Noise Control (unsupported or unknown)</source>
         <translation>Gürültü Denetimi (desteklenmiyor veya bilinmiyor)</translation>
     </message>
     <message>
-        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
-        <translation>Kapalı modu doğrulanamadı. Önce bir Apple aygıtında Kapalı modunu etkinleştirmeniz gerekebilir.</translation>
-    </message>
-    <message>
-        <source>The requested noise control mode was not confirmed.</source>
-        <translation>İstenen gürültü denetimi modu doğrulanamadı.</translation>
-    </message>
-    <message>
-        <source>Connect selected device</source>
-        <translation>Seçili cihaza bağlan</translation>
-    </message>
-    <message>
-        <source>Disconnect selected device</source>
-        <translation>Seçili cihazın bağlantısını kes</translation>
+        <source>Could not connect to %1.</source>
+        <translation>%1 cihazına bağlanılamadı.</translation>
     </message>
     <message>
         <source>%1 is already disconnected.</source>
@@ -237,68 +229,72 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Disconnection from %1 timed out.</source>
         <translation>%1 bağlantısını kesme işlemi zaman aşımına uğradı.</translation>
     </message>
+    <message>
+        <source>Show main window</source>
+        <translation>Ana pencereyi göster</translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuruluma hazır. %1 sürümünü kullanıyorsunuz.</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme indiriliyor</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellenemiyor</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>Otomatik güncelleme durduruldu</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>Sürüm türü</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni sürüm</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>Önizleme sürümü</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>Kararlı sürüm</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>Bu sürüm için sürüm notu yok</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otomatik güncelleme tamamlanamadı. Lütfen yeni sürümü manuel olarak indirip kurun veya AirPodsDesktop&apos;u kullanmaya devam etmek için bu pencereyi kapatın.</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirme boyutu bekleniyor...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 indirildi</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuruluma hazırlanıyor...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>İndiriliyor...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -331,8 +327,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>AirPods&apos;unuz bağlıyken ses cihazını etkin tutar; böylece kısa sesler hemen çalar. Bu, duyulabilir dip sese ve daha fazla pil tüketimine neden olabilir.</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>Tepsi simgesine tıklamak ana pencereyi açmak yerine seçili cihaza bağlanır. Çift tıklamak pencereyi açmaya devam eder.</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>Seçili cihaz bağlı değilse bağlanmak, bağlıysa pil bilgilerini göstermek için tepsi simgesine bir kez tıklayın. Başarılı bir bağlantıdan sonra pil bilgileri otomatik olarak açılır.</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>Ses çalmaya başladığında seçilen cihaz bağlı değilse bağlanır. Başarısız olursa yeniden denemek için en az 30 saniye bekleyin ve oynatmayı yeniden başlatın.</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>Kutuyu açtığınızda, kullandığınız uygulamanın odağını almadan pil penceresini gösterir. Kapalıyken sistem tepsisi simgesinden açabilirsiniz.</translation>
     </message>
 </context>
 <context>
@@ -468,12 +472,20 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Dark</source>
         <translation>Koyu</translation>
     </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>Ses çalmaya başladığında otomatik bağlan</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>Kutu açıldığında pili göster</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Yazılım Güncellemesi</translation>
     </message>
     <message>
         <source>View release</source>
@@ -501,11 +513,11 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirme yavaşsa güncellemeyi manuel olarak indirebilirsiniz. Manuel indirmeye geçtiğinizde AirPodsDesktop kapanacaktır.</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>Yenilikler</translation>
     </message>
 </context>
 </TS>

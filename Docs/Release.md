@@ -66,6 +66,11 @@ The two installer hashes must match because the bridge is an alternate release n
 NSIS payload, whether signed or unsigned. Test an upgrade from the latest public Win32 release
 before publishing.
 
+Also run the new installer while the previous release is still open in the tray. Setup must offer
+to close it, replace `AirPodsDesktop.exe`, and launch the new version from its finish page. A copy
+left running locks the old files and keeps the instance mutex, so without this step users keep the
+old build after an apparently successful install.
+
 ## Linux Release Assets
 
 The Linux workflow uploads `airpodsdesktop_<version>_amd64.deb` and
@@ -79,9 +84,9 @@ system UI. Build trees and tarball extractions open the release page for a manua
 because replacing those in place is not safe. Verify the assets on the draft before publishing:
 
 ```bash
-sha256sum airpodsdesktop_0.6.1_amd64.deb airpodsdesktop-0.6.1-Linux.tar.gz
-dpkg-deb -I airpodsdesktop_0.6.1_amd64.deb
-dpkg-deb -c airpodsdesktop_0.6.1_amd64.deb | head
+sha256sum airpodsdesktop_0.7.0_amd64.deb airpodsdesktop-0.7.0-Linux.tar.gz
+dpkg-deb -I airpodsdesktop_0.7.0_amd64.deb
+dpkg-deb -c airpodsdesktop_0.7.0_amd64.deb | head
 ```
 
 ## Optional Code-Signing Secrets

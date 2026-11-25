@@ -145,16 +145,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>選取的裝置目前無法使用，請開啟電源或將它移入接收範圍內。</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 已經連線。</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>正在連線 %1…</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 已連線。</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -165,40 +157,24 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>快速連線</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
+        <source>Battery</source>
+        <translation>電池</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show main window</source>
+        <source>Disconnect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise Control</source>
-        <translation>噪音控制</translation>
-    </message>
-    <message>
-        <source>Noise Cancellation</source>
-        <translation>主動降噪</translation>
-    </message>
-    <message>
-        <source>Transparency</source>
-        <translation>通透模式</translation>
-    </message>
-    <message>
-        <source>Adaptive</source>
-        <translation>適應性</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation>關閉</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise control unavailable: %1</source>
-        <translation>無法使用噪音控制：%1</translation>
-    </message>
-    <message>
-        <source>Noise Control (unsupported or unknown)</source>
-        <translation>噪音控制（不支援或未知）</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
@@ -209,11 +185,27 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect selected device</source>
+        <source>Noise Cancellation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect selected device</source>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -234,6 +226,10 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -330,8 +326,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>在 AirPods 連線期間保持音訊裝置喚醒，讓短促提示音能立即播放。這可能會產生可聽見的嘶嘶聲，並增加電池消耗。</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>按一下系統匣圖示會連線選取的裝置，而不是開啟主視窗；連按兩下仍會開啟主視窗。</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>按一下系統匣圖示：未連線時連線選取的裝置，已連線時顯示電量資訊。連線成功後自動顯示電量資訊。</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>音訊開始播放時，若選定的裝置未連線，則自動發起連線。失敗後，至少等待 30 秒並重新開始播放才會重試。</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>開啟充電盒時顯示電量視窗，且不會搶走目前應用程式的焦點。關閉此選項後，可從系統匣圖示開啟。</translation>
     </message>
 </context>
 <context>
@@ -466,6 +470,14 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     <message>
         <source>Dark</source>
         <translation>深色</translation>
+    </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>音訊開始播放時自動連線</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>開啟充電盒時顯示電量</translation>
     </message>
 </context>
 <context>

@@ -145,16 +145,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>选定的设备当前不可用，请打开电源或将其移入接收范围内。</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 已经连接。</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>正在连接 %1…</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 已连接。</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -165,40 +157,24 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>快速连接</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
+        <source>Battery</source>
+        <translation>电池</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show main window</source>
+        <source>Disconnect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise Control</source>
-        <translation>噪声控制</translation>
-    </message>
-    <message>
-        <source>Noise Cancellation</source>
-        <translation>主动降噪</translation>
-    </message>
-    <message>
-        <source>Transparency</source>
-        <translation>通透模式</translation>
-    </message>
-    <message>
-        <source>Adaptive</source>
-        <translation>自适应</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation>关闭</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise control unavailable: %1</source>
-        <translation>噪声控制不可用：%1</translation>
-    </message>
-    <message>
-        <source>Noise Control (unsupported or unknown)</source>
-        <translation>噪声控制（不支持或未知）</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
@@ -209,11 +185,27 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect selected device</source>
+        <source>Noise Cancellation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect selected device</source>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -236,68 +228,72 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Disconnection from %1 timed out.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>已准备好安装，当前版本 %1</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>正在下载更新</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>无法完成更新</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>自动更新已中止</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>发布类型</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>新版本</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>预览版</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>正式版</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>此版本没有发行说明</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法完成自动更新。请手动下载并安装新版本，或关闭此窗口以继续使用 AirPodsDesktop。</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在获取下载大小…</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>已下载 %1</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在准备安装…</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在下载…</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% · %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -330,8 +326,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>在 AirPods 连接期间保持音频设备唤醒，使短促提示音能够立即播放。这可能会产生可听见的嘶嘶声，并增加电池消耗。</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>单击系统托盘图标会连接选定的设备，而不是打开主窗口；双击仍会打开主窗口。</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>单击托盘图标：未连接时连接选定的设备，已连接时显示电量信息。连接成功后自动显示电量信息。</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>音频开始播放时，若选定的设备未连接，则自动发起连接。失败后，至少等待 30 秒并重新开始播放才会重试。</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>打开电池仓时显示电量窗口，且不会抢占当前应用的焦点。关闭此选项后，可从系统托盘图标打开。</translation>
     </message>
 </context>
 <context>
@@ -467,12 +471,20 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Dark</source>
         <translation>深色</translation>
     </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>音频开始播放时自动连接</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>打开电池仓时显示电量</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>软件更新</translation>
     </message>
     <message>
         <source>View release</source>
@@ -500,11 +512,11 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果下载缓慢，您可以改为手动下载。切换到手动下载时，AirPodsDesktop 将会关闭。</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>更新内容</translation>
     </message>
 </context>
 </TS>

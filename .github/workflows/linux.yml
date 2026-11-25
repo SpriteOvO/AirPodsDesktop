@@ -161,6 +161,7 @@ jobs:
           done <<'PATHS'
           ./usr/bin/airpodsdesktop
           ./usr/lib/airpodsdesktop/AirPodsDesktop
+          ./usr/lib/airpodsdesktop/Animations.rcc
           ./usr/lib/airpodsdesktop/qt.conf
           ./usr/lib/airpodsdesktop/lib/libQt6Core.so.6
           ./usr/lib/airpodsdesktop/plugins/platforms/libqxcb.so

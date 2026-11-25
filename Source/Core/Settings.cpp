@@ -76,8 +76,9 @@ void OnApply_appearance_mode(const Fields &newFields)
 {
     LOG(Info, "OnApply_appearance_mode: {}", newFields.appearance_mode);
 
-    Impl::NotifyApplyObserver(
-        [&](ApplyObserver &observer) { observer.OnAppearanceModeChanged(newFields.appearance_mode); });
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnAppearanceModeChanged(newFields.appearance_mode);
+    });
 }
 
 void OnApply_auto_run(const Fields &newFields)
@@ -148,6 +149,14 @@ void OnApply_tray_quick_connect_device_id(const Fields &newFields)
 
     Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
         observer.OnTrayQuickConnectDeviceChanged(newFields.tray_quick_connect_device_id);
+    });
+}
+
+void OnApply_audio_auto_connect_enabled(const Fields &newFields)
+{
+    LOG(Info, "OnApply_audio_auto_connect_enabled: {}", newFields.audio_auto_connect_enabled);
+    Impl::NotifyApplyObserver([&](ApplyObserver &observer) {
+        observer.OnAudioAutoConnectEnabledChanged(newFields.audio_auto_connect_enabled);
     });
 }
 

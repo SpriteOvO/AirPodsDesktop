@@ -145,16 +145,8 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>選択したデバイスは利用できません。電源を入れるか、通信範囲内に移動してください。</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 はすでに接続されています。</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>%1 に接続しています...</translation>
-    </message>
-    <message>
-        <source>%1 connected.</source>
-        <translation>%1 に接続しました。</translation>
     </message>
     <message>
         <source>Connection to %1 timed out.</source>
@@ -165,40 +157,24 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>クイック接続</translation>
     </message>
     <message>
-        <source>Could not connect to %1.</source>
+        <source>Battery</source>
+        <translation>バッテリー</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show main window</source>
+        <source>Disconnect selected device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise Control</source>
-        <translation>ノイズコントロール</translation>
-    </message>
-    <message>
-        <source>Noise Cancellation</source>
-        <translation>ノイズキャンセリング</translation>
-    </message>
-    <message>
-        <source>Transparency</source>
-        <translation>外部音取り込み</translation>
-    </message>
-    <message>
-        <source>Adaptive</source>
-        <translation>適応型</translation>
-    </message>
-    <message>
-        <source>Off</source>
-        <translation>オフ</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Noise control unavailable: %1</source>
-        <translation>ノイズコントロールを使用できません: %1</translation>
-    </message>
-    <message>
-        <source>Noise Control (unsupported or unknown)</source>
-        <translation>ノイズコントロール（非対応または不明）</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
@@ -209,11 +185,27 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect selected device</source>
+        <source>Noise Cancellation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disconnect selected device</source>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -236,68 +228,72 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Disconnection from %1 timed out.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::UpdateWindow</name>
     <message>
         <source>Ready to install. You are using %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>インストールの準備ができました。現在のバージョンは %1 です。</translation>
     </message>
     <message>
         <source>Downloading update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートをダウンロード中</translation>
     </message>
     <message>
         <source>Unable to update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートできません</translation>
     </message>
     <message>
         <source>The automatic update was stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>自動アップデートは中止されました</translation>
     </message>
     <message>
         <source>Release type</source>
-        <translation type="unfinished"></translation>
+        <translation>リリースの種類</translation>
     </message>
     <message>
         <source>New version</source>
-        <translation type="unfinished"></translation>
+        <translation>新しいバージョン</translation>
     </message>
     <message>
         <source>Preview release</source>
-        <translation type="unfinished"></translation>
+        <translation>プレビュー版</translation>
     </message>
     <message>
         <source>Stable release</source>
-        <translation type="unfinished"></translation>
+        <translation>安定版</translation>
     </message>
     <message>
         <source>No release notes for this version</source>
-        <translation type="unfinished"></translation>
+        <translation>このバージョンのリリースノートはありません</translation>
     </message>
     <message>
         <source>The automatic update could not be completed. Please download and install the new version manually, or close this window to continue using AirPodsDesktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>自動アップデートを完了できませんでした。新しいバージョンを手動でダウンロードしてインストールするか、このウィンドウを閉じて AirPodsDesktop を引き続きご利用ください。</translation>
     </message>
     <message>
         <source>Waiting for download size...</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロードサイズを取得中...</translation>
     </message>
     <message>
         <source>%1 downloaded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ダウンロード済み</translation>
     </message>
     <message>
         <source>Preparing to install...</source>
-        <translation type="unfinished"></translation>
+        <translation>インストールの準備中...</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロード中...</translation>
     </message>
     <message>
         <source>%1% - %2 of %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1% - %2 / %3</translation>
     </message>
 </context>
 <context>
@@ -330,8 +326,16 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <translation>AirPodsが接続されている間、オーディオデバイスを起動状態に保ち、短い音声をすぐに再生できるようにします。聞こえる程度のノイズが発生したり、バッテリー消費が増えたりする場合があります。</translation>
     </message>
     <message>
-        <source>A click on the tray icon connects the selected device instead of opening the main window. Double-click still opens it.</source>
-        <translation>通知領域のアイコンをクリックすると、メインウィンドウを開かずに選択したデバイスへ接続します。ダブルクリックすると、引き続きメインウィンドウが開きます。</translation>
+        <source>Single-click the tray icon to connect the selected device when disconnected, or show battery information when connected. Battery information opens automatically after a successful connection.</source>
+        <translation>トレイアイコンをシングルクリックすると、未接続の場合は選択したデバイスに接続し、接続済みの場合はバッテリー情報を表示します。接続に成功すると、バッテリー情報が自動的に表示されます。</translation>
+    </message>
+    <message>
+        <source>Connect the selected device when audio starts playing and it is disconnected. After a failure, wait at least 30 seconds and start playback again to retry.</source>
+        <translation>音声の再生開始時に、選択したデバイスが未接続の場合は接続します。失敗した場合は、30 秒以上待ってから再生を開始すると再試行します。</translation>
+    </message>
+    <message>
+        <source>Shows the battery window when you open the case, without taking focus from the app in use. When off, open it from the tray icon.</source>
+        <translation>ケースを開くと、使用中のアプリからフォーカスを奪わずに電池残量ウィンドウを表示します。オフの場合は通知アイコンから開いてください。</translation>
     </message>
 </context>
 <context>
@@ -467,12 +471,20 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
         <source>Dark</source>
         <translation>ダーク</translation>
     </message>
+    <message>
+        <source>Connect automatically when audio starts playing</source>
+        <translation>音声の再生開始時に自動接続する</translation>
+    </message>
+    <message>
+        <source>Show battery when the case opens</source>
+        <translation>ケースを開いたときに電池残量を表示する</translation>
+    </message>
 </context>
 <context>
     <name>UpdateWindow</name>
     <message>
         <source>Software Update</source>
-        <translation type="unfinished"></translation>
+        <translation>ソフトウェアアップデート</translation>
     </message>
     <message>
         <source>View release</source>
@@ -500,11 +512,11 @@ You need to pair your AirPods in the system Bluetooth settings first.</source>
     </message>
     <message>
         <source>If the download is slow, you can download the update manually. AirPodsDesktop will close when you switch to manual download.</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロードが遅い場合は、アップデートを手動でダウンロードできます。手動ダウンロードに切り替えると AirPodsDesktop は終了します。</translation>
     </message>
     <message>
         <source>What&apos;s new</source>
-        <translation type="unfinished"></translation>
+        <translation>新機能</translation>
     </message>
 </context>
 </TS>

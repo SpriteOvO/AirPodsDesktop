@@ -9,6 +9,11 @@
 
 namespace Gui {
 
+// Loads the device animations, which ship in `Animations.rcc` beside the executable instead of
+// inside it. Returns false if that file is missing or unreadable; the popup then has no device
+// picture to show.
+bool RegisterAnimationResources();
+
 // GUI-thread owner of the device animation. While a model is known but the popup is hidden the
 // decoder is kept loaded and paused on its first frame, because loading the file costs roughly
 // half a second. Opening the lid then starts the animation within a frame or two instead of

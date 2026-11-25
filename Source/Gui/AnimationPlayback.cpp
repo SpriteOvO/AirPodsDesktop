@@ -1,8 +1,18 @@
 #include "AnimationPlayback.h"
 
+#include <QCoreApplication>
+#include <QResource>
+
 #include "../Utils.h"
 
 namespace Gui {
+
+bool RegisterAnimationResources()
+{
+    static const bool registered =
+        QResource::registerResource(QCoreApplication::applicationDirPath() + "/Animations.rcc");
+    return registered;
+}
 
 AnimationPlayback::AnimationPlayback(Widget::AnimationView &view, QObject *parent)
     : QObject{parent}, _view{view}
@@ -79,7 +89,6 @@ void AnimationPlayback::SetAnimation(const AnimationPresentation &presentation)
     ReleasePlayer();
     _presentation = presentation;
     _retries = 0;
-    _view.SetRemoveEnclosedBackground(presentation.removeEnclosedBackground);
     // An empty presentation (no device bound or connected) has no fallback artwork;
     // loading an empty path would only make QImage log "No file name specified".
     const auto fallbackResource = presentation.FallbackResource();

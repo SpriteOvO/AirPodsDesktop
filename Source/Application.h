@@ -44,6 +44,9 @@ namespace Core::QuickConnect {
 class Backend;
 class Controller;
 } // namespace Core::QuickConnect
+namespace Core::GlobalMedia {
+class PlaybackMonitor;
+}
 
 #if defined APD_OS_LINUX
 namespace Core::NoiseControl {
@@ -100,6 +103,7 @@ private:
     std::unique_ptr<Core::NoiseControl::Controller> _noiseControl;
     std::atomic_uint64_t _noiseBindingGeneration{};
 #endif
+    std::unique_ptr<Core::GlobalMedia::PlaybackMonitor> _playbackMonitor;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;
     std::unique_ptr<Gui::MainWindow> _mainWindow;
@@ -125,6 +129,7 @@ private:
     void OnDeviceAddressChanged(uint64_t address) override;
     void OnTrayIconBatteryChanged(Core::Settings::TrayIconBatteryBehavior behavior) override;
     void OnTrayQuickConnectEnabledChanged(bool enable) override;
+    void OnAudioAutoConnectEnabledChanged(bool enable) override;
     void OnTrayQuickConnectDeviceChanged(const QString &deviceId) override;
     void OnTaskbarBatteryChanged(Core::Settings::TaskbarStatusBehavior behavior) override;
 };

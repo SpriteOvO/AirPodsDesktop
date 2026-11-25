@@ -42,7 +42,7 @@ set(
 
 project(
     AirPodsDesktop
-    VERSION 0.6.1 # Don't forget to bump the version in `vcpkg.json` as well
+    VERSION 0.7.0 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
@@ -163,10 +163,6 @@ if (MSVC)
     
     add_compile_options(
         "/MP"           # Multi-processor compilation
-
-        "/await"        # Enable the legacy pre-C++20 coroutine.
-                        # Workaround for cppwinrt v2.0.200609.3 in C++20.
-                        # For more information, see https://github.com/microsoft/cppwinrt/issues/866
     )
 endif()
 
@@ -364,6 +360,7 @@ set(
     "Source/Core/Update.cpp"
     "Source/Core/AirPods.cpp"
     "Source/Core/QuickConnect.cpp"
+    "Source/Core/PlaybackMonitor.cpp"
     "Source/Core/Settings.cpp"
     "Source/Core/SettingsRepository.cpp"
     "Source/Core/LowAudioLatency.cpp"
@@ -381,11 +378,16 @@ set(
     "Source/Gui/AnimationPlayback.cpp"
 
     "Source/Gui/TrayIcon.cpp"
+    "Source/Gui/NotificationWindow.cpp"
     "Source/Gui/MainWindow.cpp"
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
+    "Source/Gui/Widget/ActivityIndicator.cpp"
     "Source/Gui/Widget/Battery.cpp"
+    "Source/Gui/Widget/CloseButton.cpp"
+    "Source/Gui/Widget/DeviceStill.cpp"
+    "Source/Gui/Widget/FadeOverlay.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
     "Source/Gui/Theme.cpp"
 )
@@ -402,6 +404,7 @@ if (WIN32)
         "Source/Core/AutoStart_win.cpp"
         "Source/Core/Bluetooth_win.cpp"
         "Source/Core/GlobalMedia_win.cpp"
+        "Source/Core/PlaybackMonitor_win.cpp"
         "Source/Core/QuickConnect_win.cpp"
     )
     list(APPEND APD_GUI_CODE_FILES
@@ -448,6 +451,17 @@ endif()
 
 set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 
+# The device animations (one per model and color) are well over 100 MB. Compiled into an
+# executable they would be linked into every target that shows the popup, so they are built once
+# into a binary resource file beside the executables, which `Gui::RegisterAnimationResources()`
+# loads at startup. Animation.qrc stays the list of what ships. The videos are compressed
+# already, so rcc stores them as they are.
+qt_add_binary_resources(
+    apd_animations "Source/Resource/Animation.qrc"
+    DESTINATION "${APD_BINARY_OUT_DIR}/Animations.rcc"
+    OPTIONS --no-compress
+)
+
 #
 # Translation
 #
@@ -462,7 +476,7 @@ set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 #           https://stackoverflow.com/a/60848939
 #
 
-set(APD_TRANSLATION_LOCALES bg_BG de_DE fr_FR it_IT ja_JP ko_KR pt_BR pt_PT ru_RU tr_TR uk_UA zh_CN zh_TW)
+set(APD_TRANSLATION_LOCALES bg_BG de_DE es_ES fa_IR fr_FR id_ID it_IT ja_JP ko_KR pl_PL pt_BR pt_PT ru_RU tr_TR uk_UA zh_CN zh_TW)
 set(APD_TS_DIR "${CMAKE_SOURCE_DIR}/Source/Resource/Translation/")
 set(APD_QM_DIR "${APD_BINARY_OUT_DIR}/translations/")
 
@@ -600,7 +614,7 @@ add_executable(
     ${APD_QRC_FILE}
 )
 
-add_dependencies(${PROJECT_NAME} apd_translations)
+add_dependencies(${PROJECT_NAME} apd_translations apd_animations)
 
 foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
     set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)
@@ -693,6 +707,11 @@ elseif (APD_OS_LINUX)
     )
     install(
         FILES "${CMAKE_CURRENT_SOURCE_DIR}/Packaging/qt.conf"
+        DESTINATION "${APD_LINUX_APP_DIR}"
+        COMPONENT ${PROJECT_NAME}
+    )
+    install(
+        FILES "${APD_BINARY_OUT_DIR}/Animations.rcc"
         DESTINATION "${APD_LINUX_APP_DIR}"
         COMPONENT ${PROJECT_NAME}
     )
@@ -909,17 +928,25 @@ if (APD_GENERATE_INSTALLER)
         set(CPACK_NSIS_EXECUTABLES_DIRECTORY "./")
         set(CPACK_NSIS_MUI_FINISHPAGE_RUN "./${PROJECT_NAME}.exe")
         set(CPACK_NSIS_BRANDING_TEXT "${PROJECT_NAME} installer")
-        configure_file(
-            "${CMAKE_CURRENT_SOURCE_DIR}/CMake/InstallerMigration.nsh.in"
-            "${CMAKE_CURRENT_BINARY_DIR}/InstallerMigration.nsh"
-            @ONLY
+        foreach (APD_NSIS_SNIPPET InstallerCloseRunningApp InstallerMigration)
+            configure_file(
+                "${CMAKE_CURRENT_SOURCE_DIR}/CMake/${APD_NSIS_SNIPPET}.nsh.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/${APD_NSIS_SNIPPET}.nsh"
+                @ONLY
+            )
+            file(READ "${CMAKE_CURRENT_BINARY_DIR}/${APD_NSIS_SNIPPET}.nsh" APD_NSIS_COMMANDS)
+            # CPack serializes this value into CPackConfig.cmake before expanding the NSIS template.
+            string(REPLACE "\\" "\\\\" APD_NSIS_COMMANDS "${APD_NSIS_COMMANDS}")
+            string(REPLACE "\"" "\\\"" APD_NSIS_COMMANDS "${APD_NSIS_COMMANDS}")
+            string(REPLACE "$" "\\$" APD_NSIS_COMMANDS "${APD_NSIS_COMMANDS}")
+            set(APD_NSIS_${APD_NSIS_SNIPPET}_COMMANDS "${APD_NSIS_COMMANDS}")
+        endforeach()
+        # Close a running copy first: it locks the files that both hooks below replace or remove,
+        # including the legacy Win32 installation that the migration uninstalls.
+        set(
+            CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS
+            "${APD_NSIS_InstallerCloseRunningApp_COMMANDS}${APD_NSIS_InstallerMigration_COMMANDS}"
         )
-        file(READ "${CMAKE_CURRENT_BINARY_DIR}/InstallerMigration.nsh" APD_NSIS_MIGRATION_COMMANDS)
-        # CPack serializes this value into CPackConfig.cmake before expanding the NSIS template.
-        string(REPLACE "\\" "\\\\" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
-        string(REPLACE "\"" "\\\"" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
-        string(REPLACE "$" "\\$" APD_NSIS_MIGRATION_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
-        set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "${APD_NSIS_MIGRATION_COMMANDS}")
         string(REPLACE "/" "\\\\" ICON_FILEPATH ${ICON_FILEPATH})
         set(CPACK_NSIS_MUI_ICON ${ICON_FILEPATH})
 
@@ -934,7 +961,7 @@ if (APD_GENERATE_INSTALLER)
         )
         set(
             CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
-            "SetRegView 64\nDelete \\\"$DESKTOP\\\\${SHORTCUT_NAME}.lnk\\\""
+            "${APD_NSIS_InstallerCloseRunningApp_COMMANDS}SetRegView 64\nDelete \\\"$DESKTOP\\\\${SHORTCUT_NAME}.lnk\\\""
         )
     endif()
 
@@ -966,8 +993,15 @@ if (APD_GENERATE_INSTALLER)
             PATTERN "*Validation*" EXCLUDE
             PATTERN "*validation*" EXCLUDE
         )
+        # Package that one component, but as a monolithic installer. With a component installer,
+        # CPack's NSIS template copies the files in per-component sections that run before
+        # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS, so a running copy was never closed before its
+        # files were replaced. A monolithic installer copies them right after those commands.
+        set(CPACK_MONOLITHIC_INSTALL ON)
+        set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${PROJECT_NAME};${PROJECT_NAME};/")
+    else()
+        set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
     endif()
-    set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
 
     add_custom_command(
         TARGET ${PROJECT_NAME}

@@ -46,7 +46,6 @@ constexpr int kForegroundSearchRadius = 4;
 constexpr int kDarkForegroundSearchRadius = 8;
 constexpr int kEdgeSearchRadius = 2;
 constexpr int kDarkEdgeSearchRadius = 4;
-constexpr int kEnclosedForegroundSpan = 8;
 constexpr int kMinimumForegroundAreaDivisor = 600;
 constexpr int kForegroundIslandAlpha = 32;
 
@@ -78,12 +77,31 @@ bool IsMatte(QRgb pixel, const std::vector<QRgb> &palette, int tolerance)
     return qAlpha(pixel) != 0 && MatteDistance(pixel, palette) <= tolerance;
 }
 
+// Spill pulls a pixel toward the chroma matte: the matte's strong channels rise above its weak
+// ones. Renders of pink or purple products use a green matte instead of magenta, so the test
+// follows whichever matte the frame carries rather than assuming one.
+bool IsChromaSpill(QRgb pixel, QRgb matte)
+{
+    const int channels[]{qRed(pixel), qGreen(pixel), qBlue(pixel)};
+    const int matteChannels[]{qRed(matte), qGreen(matte), qBlue(matte)};
+    int strongMinimum = 255, weakMaximum = 0;
+    for (int i = 0; i < 3; ++i) {
+        if (matteChannels[i] >= 128) {
+            strongMinimum = (std::min)(strongMinimum, channels[i]);
+        }
+        else {
+            weakMaximum = (std::max)(weakMaximum, channels[i]);
+        }
+    }
+    return strongMinimum - weakMaximum >= kChromaSpill;
+}
+
 //
 // Clears matte-coloured pixels connected to the frame corners. Some animations crop white device
 // artwork against the right edge, so seeding every border pixel would erase that foreground too.
 // Starting from guaranteed-background corners lets the device outline stop the flood fill.
 //
-void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
+void KnockOutAnimationBackground(QImage &image)
 {
     const int width = image.width(), height = image.height();
     if (width == 0 || height == 0) {
@@ -113,11 +131,13 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
     addMatte(at(0, height - 1));
     addMatte(at(width - 1, height - 1));
 
-    const bool chromaMatte =
-        std::any_of(mattePalette.cbegin(), mattePalette.cend(), [](QRgb matte) {
+    const auto chromaMatteIt =
+        std::find_if(mattePalette.cbegin(), mattePalette.cend(), [](QRgb matte) {
             const auto [minimum, maximum] = std::minmax({qRed(matte), qGreen(matte), qBlue(matte)});
             return maximum - minimum >= kChromaRange;
         });
+    const bool chromaMatte = chromaMatteIt != mattePalette.cend();
+    const QRgb chromaMatteColor = chromaMatte ? *chromaMatteIt : QRgb{};
     const int matteTolerance = chromaMatte ? kChromaMatteDistance : kMatteDistance;
 
     std::vector<std::pair<int, int>> stack;
@@ -181,54 +201,6 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
             }
         }
     }
-    else if (removeEnclosedBackground) {
-        // The Max headband surrounds a large area of real matte. Its narrow white supports and
-        // highlights can use exactly the same RGB value, so clearing every matte-coloured pixel
-        // punches holes through the product. Keep a white pixel only when confidently non-matte
-        // pixels bracket it across a short horizontal, vertical, or diagonal span. That preserves
-        // the thin product surfaces while removing the broad enclosed background.
-        std::vector<bool> foreground(static_cast<size_t>(width) * height);
-        const auto index = [width](int x, int y) { return static_cast<size_t>(y) * width + x; };
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                foreground[index(x, y)] =
-                    qAlpha(at(x, y)) != 0 &&
-                    MatteDistance(at(x, y), mattePalette) >= kForegroundDistance;
-            }
-        }
-        const auto hasForeground = [&](int x, int y, int dx, int dy) {
-            for (int distance = 1; distance <= kEnclosedForegroundSpan; ++distance) {
-                const int sx = x + dx * distance, sy = y + dy * distance;
-                if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
-                    return false;
-                }
-                if (foreground[index(sx, sy)]) {
-                    return true;
-                }
-            }
-            return false;
-        };
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                if (!IsMatte(at(x, y), mattePalette, matteTolerance)) {
-                    continue;
-                }
-                const bool horizontal = hasForeground(x, y, -1, 0) && hasForeground(x, y, 1, 0);
-                const bool vertical = hasForeground(x, y, 0, -1) && hasForeground(x, y, 0, 1);
-                const bool diagonal = (hasForeground(x, y, -1, -1) && hasForeground(x, y, 1, 1)) ||
-                                      (hasForeground(x, y, 1, -1) && hasForeground(x, y, -1, 1));
-                const int centreGapHalfWidth = (std::max)(2, width / 32);
-                const bool centralLowerGap =
-                    y >= height / 2 && std::abs(x - width / 2) <= centreGapHalfWidth && !vertical;
-                const bool insideEnclosedRegion = x >= width / 5 && x <= width * 4 / 5;
-                if ((!(horizontal || vertical || diagonal) && insideEnclosedRegion) ||
-                    centralLowerGap)
-                {
-                    at(x, y) = 0;
-                }
-            }
-        }
-    }
 
     // Reconstruct antialiased edge pixels against transparency. Looking up a nearby foreground
     // colour also removes the white spill that otherwise becomes a bright outline in dark mode.
@@ -267,9 +239,7 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
                 continue;
             }
             const auto distance = MatteDistance(pixel, mattePalette);
-            const bool chromaContaminated = chromaMatte &&
-                                            qRed(pixel) - qGreen(pixel) >= kChromaSpill &&
-                                            qBlue(pixel) - qGreen(pixel) >= kChromaSpill;
+            const bool chromaContaminated = chromaMatte && IsChromaSpill(pixel, chromaMatteColor);
             if (chromaMatte && !chromaContaminated) {
                 continue;
             }
@@ -335,10 +305,9 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
             int outputBlue = qBlue(foreground);
             const auto [minimumChannel, maximumChannel] =
                 std::minmax({outputRed, outputGreen, outputBlue});
-            const bool foregroundHasMagentaSpill =
-                outputRed - outputGreen >= kChromaSpill && outputBlue - outputGreen >= kChromaSpill;
-            if (chromaMatte && (maximumChannel - minimumChannel < 64 || foregroundHasMagentaSpill))
-            {
+            const bool foregroundHasSpill =
+                chromaMatte && IsChromaSpill(foreground, chromaMatteColor);
+            if (chromaMatte && (maximumChannel - minimumChannel < 64 || foregroundHasSpill)) {
                 // Chroma subsampling can tint otherwise neutral AirPods/Beats edges. Their nearby
                 // opaque foreground is the reliable colour reference, so neutralise only that
                 // low-saturation reference while preserving coloured LEDs and logos.
@@ -433,6 +402,41 @@ void AnimationView::SetFallbackImage(QImage image)
     Clear();
 }
 
+void AnimationView::SetStillImage(QImage image)
+{
+    _still = std::move(image);
+    RescaleFrame();
+    update();
+}
+
+void AnimationView::SetShowStill(bool show)
+{
+    if (_showStill != show) {
+        _showStill = show;
+        RescaleFrame();
+        update();
+    }
+}
+
+void AnimationView::SetOpacity(qreal opacity)
+{
+    opacity = std::clamp(opacity, 0.0, 1.0);
+    if (_opacity != opacity) {
+        _opacity = opacity;
+        update();
+    }
+}
+
+qreal AnimationView::Opacity() const
+{
+    return _opacity;
+}
+
+bool AnimationView::IsShowingVideo() const
+{
+    return !(_showStill && !_still.isNull()) && !_frame.isNull();
+}
+
 void AnimationView::SetPlaybackEnabled(bool enabled)
 {
     {
@@ -503,14 +507,6 @@ void AnimationView::OnVideoFrameChanged(const QVideoFrame &frame)
         Qt::QueuedConnection);
 }
 
-void AnimationView::SetRemoveEnclosedBackground(bool enabled)
-{
-    if (_removeEnclosedBackground != enabled) {
-        _removeEnclosedBackground = enabled;
-        Clear();
-    }
-}
-
 void AnimationView::paintEvent(QPaintEvent *event)
 {
     if (_scaled.devicePixelRatio() != devicePixelRatioF()) {
@@ -522,6 +518,7 @@ void AnimationView::paintEvent(QPaintEvent *event)
 
     QPainter painter{this};
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setOpacity(_opacity);
 
     const auto target = QRect{QPoint{}, _scaled.size() / _scaled.devicePixelRatio()};
     painter.drawImage(
@@ -559,7 +556,7 @@ void AnimationView::PresentFrame(QImage frame)
         frame.detach();
     }
 
-    Detail::KnockOutAnimationBackground(frame, _removeEnclosedBackground);
+    Detail::KnockOutAnimationBackground(frame);
 
     _frame = std::move(frame);
     RescaleFrame();
@@ -569,7 +566,7 @@ void AnimationView::PresentFrame(QImage frame)
 
 void AnimationView::RescaleFrame()
 {
-    const auto &source = _frame.isNull() ? _fallback : _frame;
+    QImage source = _showStill && !_still.isNull() ? _still : _frame.isNull() ? _fallback : _frame;
     if (source.isNull() || size().isEmpty()) {
         _scaled = {};
         return;

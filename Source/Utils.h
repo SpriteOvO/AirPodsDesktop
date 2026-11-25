@@ -156,6 +156,13 @@ inline bool SingleInstance(const QString &instanceName)
     uint32_t lastError = GetLastError();
 
     if (mutex == nullptr) {
+        // The mutex lives in the `Global\` namespace with the creator's default DACL. When the
+        // running instance was started elevated (e.g. by the installer's "Run AirPodsDesktop"
+        // checkbox), a non-elevated process may not open it and gets `ERROR_ACCESS_DENIED`. That
+        // still means an instance is already running, so exit quietly like `ERROR_ALREADY_EXISTS`.
+        if (lastError == ERROR_ACCESS_DENIED) {
+            return false;
+        }
         FatalError(std::format("Create instance mutex failed.\nErrorCode: {}", lastError), false);
     }
 
