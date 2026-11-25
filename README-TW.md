@@ -38,12 +38,14 @@
 
 ## 💻 系統需求
 
-正式版本支援 Windows 10 1809 以上或 Windows 11 x64，不支援 32 位元 Windows 與 ARM64。
-現有 Qt 5／Win32 用戶可直接使用程式內更新器遷移至 Qt 6／x64，既有使用者設定會保留。
+正式版本支援 Windows 10 1809 以上或 Windows 11 x64。Linux 版本面向 Ubuntu 24.04 x64，
+提供 `.deb` 套件與可攜式 `.tar.gz` 壓縮檔。不支援 32 位元 Windows、Windows ARM64
+以及非 x64 的 Linux。現有 Qt 5／Win32 使用者可直接使用程式內更新器遷移至 Qt 6／x64，
+既有使用者設定會保留。
 
 ## 🛠️ 建置與測試
 
-Windows 環境需求、建置命令與測試方式請參閱[建置說明](/Docs/Build.md)。
+Windows 與 Linux 的環境需求、建置命令、封裝方式與測試方式請參閱[建置說明](/Docs/Build.md)。
 
 ## 🤝 貢獻
 

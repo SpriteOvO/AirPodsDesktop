@@ -48,9 +48,25 @@ struct ReleaseInfo {
 
 namespace Details {
 
-std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text);
-std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text);
-bool IsCompatibleInstallerAsset(const QString &fileName, const QString &systemName);
+// The updater selects one asset format per platform. Windows uses the NSIS installer, while Linux
+// uses the Debian package because it is the format the project officially distributes.
+enum class Platform { Windows, Linux };
+
+Platform CurrentPlatform();
+
+std::optional<ReleaseInfo> ParseSingleReleaseResponse(
+    const std::string &text, Platform platform = CurrentPlatform());
+std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(
+    const std::string &text, Platform platform = CurrentPlatform());
+bool IsCompatibleUpdateAsset(const QString &fileName, Platform platform);
+
+// Only a package-managed installation can hand the downloaded package to the system installer.
+// Build trees, tarball extractions and other prefixes fall back to a manual download.
+bool IsPackageManagedInstall(const QString &applicationDirPath);
+
+// Clears the automatic-update fields when the selected asset cannot be applied to this install.
+void ApplyInstallPolicy(ReleaseInfo &info, Platform platform, bool packageManaged);
+
 bool VerifyFileSha256(const QString &filePath, const QString &expectedSha256);
 
 } // namespace Details

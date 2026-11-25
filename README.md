@@ -38,13 +38,15 @@
 
 ## 💻 System requirements
 
-Official builds support Windows 10 1809 or newer and Windows 11 on x64. 32-bit Windows and ARM64
-are not supported. Existing Qt 5/Win32 users can migrate through the in-app updater while keeping
-their user settings.
+Official builds support Windows 10 1809 or newer and Windows 11 on x64. Linux builds target Ubuntu
+24.04 x64 and ship as a `.deb` package or a relocatable `.tar.gz` bundle. 32-bit Windows, Windows
+ARM64 and non-x64 Linux are not supported. Existing Qt 5/Win32 users can migrate through the in-app
+updater while keeping their user settings.
 
 ## 🛠️ Build and test
 
-See the [Build Instructions](/Docs/Build.md) for Windows prerequisites, build commands, and tests.
+See the [Build Instructions](/Docs/Build.md) for Windows and Linux prerequisites, build commands,
+packaging, and tests.
 
 ## 🤝 Contribute
 

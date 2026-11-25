@@ -2,7 +2,7 @@
 
 ## Status
 
-As of 2026-11-13, the Linux port builds and runs, with the main desktop features implemented:
+As of 2026-11-19, the Linux port builds and runs, with the main desktop features implemented:
 
 - [x] Linux CMake build, bundled runtime, DEB and tarball packaging.
 - [x] BlueZ Bluetooth discovery, AirPods binding and battery/connection display.
@@ -27,10 +27,12 @@ As of 2026-11-13, the Linux port builds and runs, with the main desktop features
       out; their causes were not established. Off may require enabling Off Listening Mode on an Apple
       device, but a timeout alone does not establish that this is the cause.
 - [ ] Verify Wayland on Linux.
-- [ ] Decide on Linux release assets; the updater is disabled on Linux until suitable assets exist.
-      Local RelWithDebInfo DEB and tarball builds succeeded and their extracted payloads matched;
-      dependencies resolved on the build host. A Release build, clean-machine installation and
-      packaged application startup have not yet been verified.
+- [x] Publish Linux release assets. The tag workflow attaches the DEB and tarball to the draft
+      release, and the in-app updater selects the DEB for package-managed installations. Local
+      RelWithDebInfo DEB and tarball builds succeeded and their extracted payloads matched.
+- [ ] Confirm the first tagged Linux release on a clean machine. CI installs the DEB and smoke-tests
+      the packaged application, but a Release build and clean-machine installation still need
+      manual acceptance testing.
 
 GNOME requires an AppIndicator extension for the tray. The taskbar battery dock is Windows-only.
 See `Docs/Build.md` for build, packaging and noise-control limitations.

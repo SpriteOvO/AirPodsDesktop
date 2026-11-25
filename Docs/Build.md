@@ -43,9 +43,10 @@ the device explicitly selected for Quick Connect through BlueZ, and writes an XD
 The Linux tray menu has separate Connect and Disconnect selected device actions; enable Quick Connect
 and select a paired audio device in Settings first. This selection is independent of the AirPods
 binding used for battery display and noise control. Disconnect calls BlueZ Device1.Disconnect, which
-can disconnect all profiles for that device. Update checks are
-disabled because releases only carry Windows installers, and the taskbar battery dock is
-Windows-only. See [Package for Linux](#package-for-linux) to build a `.deb` or `.tar.gz`.
+can disconnect all profiles for that device. Update checks select the Debian package when the
+application runs from a package-managed prefix under `/usr`. Build trees and tarball extractions
+open the release page for a manual download. The taskbar battery dock is Windows-only. See
+[Package for Linux](#package-for-linux) to build a `.deb` or `.tar.gz`.
 
 Linux noise control uses the bound classic Bluetooth device and requires BlueZ to expose a
 recognized product ID through that device's `Modalias`. If that optional property is absent or

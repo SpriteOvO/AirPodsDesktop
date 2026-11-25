@@ -2,7 +2,8 @@
 
 GitHub Actions builds and tests every push to `main` and every pull request. A tag matching
 `v*.*.*` additionally creates a draft GitHub Release containing the NSIS installer and a portable
-ZIP. Review and test the draft assets before publishing the release manually.
+ZIP, plus the Linux Debian package and tarball from the Linux workflow. Review and test the draft
+assets before publishing the release manually.
 
 The updater defaults to `SpriteOvO/AirPodsDesktop`. GitHub Actions overrides the owner and repository
 with the repository running the workflow, so a fork build checks that fork for test releases. For a
@@ -27,7 +28,7 @@ without the prefix, and the workflow's tag check accepts either.
 1. Update the same semantic version in `CMakeLists.txt` and `vcpkg.json`.
 2. Prepare the bilingual release notes locally in the ignored
    `Docs/ReleaseNotes/<version>.md` file.
-3. Build and test x64 `RelWithDebInfo` locally.
+3. Build and test x64 `RelWithDebInfo` locally on Windows and Ubuntu 24.04.
 4. Merge the version change into `main`.
 5. Create and push a matching annotated tag:
 
@@ -64,6 +65,24 @@ separate checksum asset is uploaded.
 The two installer hashes must match because the bridge is an alternate release name for the same
 NSIS payload, whether signed or unsigned. Test an upgrade from the latest public Win32 release
 before publishing.
+
+## Linux Release Assets
+
+The Linux workflow uploads `airpodsdesktop_<version>_amd64.deb` and
+`airpodsdesktop-<version>-Linux.tar.gz` to the same draft release. Both workflows attach to that
+draft, so whichever finishes second uploads its assets to the existing release.
+
+The in-app updater selects the `.deb` when the application runs from a package-managed prefix under
+`/usr`. It verifies the SHA-256 digest reported by the GitHub release API, then opens the package
+with the desktop's installer handler so the user approves the privileged installation in the
+system UI. Build trees and tarball extractions open the release page for a manual download instead,
+because replacing those in place is not safe. Verify the assets on the draft before publishing:
+
+```bash
+sha256sum airpodsdesktop_0.6.1_amd64.deb airpodsdesktop-0.6.1-Linux.tar.gz
+dpkg-deb -I airpodsdesktop_0.6.1_amd64.deb
+dpkg-deb -c airpodsdesktop_0.6.1_amd64.deb | head
+```
 
 ## Optional Code-Signing Secrets
 

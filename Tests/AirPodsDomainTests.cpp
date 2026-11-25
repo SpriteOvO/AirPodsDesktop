@@ -603,17 +603,17 @@ void AirPodsDomainTests::RejectsUpdateAssetForAnotherArchitecture()
 
 void AirPodsDomainTests::MatchesInstallerAssetsByArchitecture()
 {
-    using Core::Update::Details::IsCompatibleInstallerAsset;
+    using Core::Update::Details::IsCompatibleUpdateAsset;
+    using Core::Update::Details::Platform;
 
     const auto installer = QStringLiteral("AirPodsDesktop-0.5.0-win64.exe");
     const auto portable = QStringLiteral("AirPodsDesktop-0.5.0-win64-portable.zip");
     const auto bridge = QStringLiteral("AirPodsDesktop-0.5.0-win32-bridge.exe");
 
-    QVERIFY(IsCompatibleInstallerAsset(installer, QStringLiteral("win64")));
-    QVERIFY(!IsCompatibleInstallerAsset(bridge, QStringLiteral("win64")));
-    QVERIFY(!IsCompatibleInstallerAsset(portable, QStringLiteral("win64")));
-    QVERIFY(IsCompatibleInstallerAsset(bridge, QStringLiteral("win32")));
-    QVERIFY(!IsCompatibleInstallerAsset(installer, QStringLiteral("win32")));
+    QVERIFY(IsCompatibleUpdateAsset(installer, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(bridge, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(portable, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(installer, Platform::Linux));
 }
 
 void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()

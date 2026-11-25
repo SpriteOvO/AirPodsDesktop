@@ -272,16 +272,29 @@ jobs:
           name: AirPodsDesktop-${{ needs.build.outputs.version }}-${{ github.sha }}
           path: dist
 
-      - name: Create draft GitHub Release
+      - name: Create or update the draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "${{ github.ref_name }}"
-          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win64.exe"
-          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win64-portable.zip"
-          "dist/AirPodsDesktop-${{ needs.build.outputs.version }}-win32-bridge.exe"
-          --repo "${{ github.repository }}"
-          --draft
-          --verify-tag
-          --generate-notes
-          --title "AirPodsDesktop ${{ github.ref_name }}"
+        run: |
+          tag="${{ github.ref_name }}"
+          repo="${{ github.repository }}"
+          version="${{ needs.build.outputs.version }}"
+          assets=(
+            "dist/AirPodsDesktop-${version}-win64.exe"
+            "dist/AirPodsDesktop-${version}-win64-portable.zip"
+            "dist/AirPodsDesktop-${version}-win32-bridge.exe"
+          )
+
+          # The Linux workflow publishes the same draft release. Attach to an existing draft when
+          # it won the race, and retry the upload if both jobs created it together.
+          if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+            gh release upload "$tag" "${assets[@]}" --repo "$repo" --clobber
+          else
+            gh release create "$tag" "${assets[@]}" \
+              --repo "$repo" \
+              --draft \
+              --verify-tag \
+              --generate-notes \
+              --title "AirPodsDesktop $tag" \
+              || gh release upload "$tag" "${assets[@]}" --repo "$repo" --clobber
+          fi

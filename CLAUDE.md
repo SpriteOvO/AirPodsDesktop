@@ -181,8 +181,10 @@ other application trace messages can contain Bluetooth-related identifiers and a
   to `QStyleHints`, subscribes to portal `SettingChanged`, and debounces refresh by 150ms.
 - `Core::AutoStart` uses `CreateAutoStartService()`: a `QSettings` `Registry64Format` value on
   Windows, an XDG `autostart/AirPodsDesktop.desktop` entry on Linux.
-- `Core::Update::AsyncChecker` is a no-op off Windows, because releases only carry Windows
-  installers and every asset would be filtered out.
+- `Core::Update::AsyncChecker` runs on both platforms. Windows selects the NSIS installer. Linux
+  selects the `_amd64.deb`, but only for package-managed installations under `/usr`. Build trees
+  and tarball extractions fall back to the release page. On Linux the verified package is handed to
+  the desktop's installer handler instead of being executed directly.
 
 ### Apple Continuity Protocol quirks
 
