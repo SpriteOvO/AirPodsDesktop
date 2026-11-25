@@ -18,20 +18,27 @@
 #include <QTranslator>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QAbstractButton>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QStyleOptionComboBox>
+#include <QTextLayout>
 #include <QThread>
 #include <QUrl>
 #include <QTimer>
 #include <QPainter>
 
+#include <magic_enum.hpp>
+
 #include "Source/Core/QuickConnect.h"
 #include "Source/Core/SettingsRepository.h"
 #include "Source/Gui/MainWindow.h"
+#include "Source/Gui/Widget/ActivityIndicator.h"
 #include "Source/Gui/Widget/Battery.h"
-#include "Source/Gui/Widget/DeviceImage.h"
+#include "Source/Gui/Widget/DeviceStill.h"
+#include "Source/Gui/Widget/AnimationView.h"
+#include "Source/Gui/MainWindowPresentation.h"
 #include "Source/Gui/Widget/FadeOverlay.h"
 #include "Source/Gui/SettingsWindow.h"
 #include "Source/Gui/Theme.h"
@@ -244,9 +251,9 @@ private Q_SLOTS:
         QVERIFY(audioDescription != nullptr);
         QVERIFY(audioDescription->text().contains(QStringLiteral("至少等待 30 秒")));
         QCOMPARE(
-            description->text(), QStringLiteral(
-                                     "单击托盘图标：未连接时连接选定的设备，已连接时显示电量信息。"
-                                     "连接成功后自动显示电量信息。"));
+            description->text(),
+            QStringLiteral("单击托盘图标：未连接时连接选定的设备，已连接时显示电量信息。"
+                           "连接成功后自动显示电量信息。"));
         settings.show();
         QVERIFY(QTest::qWaitForWindowExposed(&settings));
         auto *card = settings.findChild<QWidget *>("cardTrayQuickConnect");
@@ -314,11 +321,145 @@ private Q_SLOTS:
         QVERIFY(message != nullptr);
         QCOMPARE(message->text(), QStringLiteral("Connected."));
         VerifySmoothPopupCorners(card, "connection-notification-light.png");
-        auto *close = card->findChild<QPushButton *>("notificationClose");
+        auto *close = card->findChild<QAbstractButton *>("notificationClose");
         QVERIFY(close != nullptr);
         QTest::mouseClick(close, Qt::LeftButton);
         QVERIFY(!card->isVisible());
         theme.SetMode(originalMode);
+    }
+
+    void NotificationCardSharesTheTitleRowWithClose()
+    {
+        Core::QuickConnect::Controller quickConnect{
+            std::make_shared<Core::QuickConnect::NullBackend>()};
+        Gui::TrayIcon tray{[] { return 0; }, quickConnect};
+        tray.ShowMessage("Quick connect", "Could not connect.", QSystemTrayIcon::Warning);
+        auto *card = tray.findChild<QWidget *>("connectionNotification");
+        QVERIFY(card != nullptr);
+        QTRY_VERIFY(card->isVisible());
+        auto *title = card->findChild<QLabel *>("notificationTitle");
+        auto *message = card->findChild<QLabel *>("notificationMessage");
+        auto *close = card->findChild<QAbstractButton *>("notificationClose");
+        QVERIFY(title != nullptr && message != nullptr && close != nullptr);
+
+        // The title is drawn on its first line, centred on the card, level with the close button.
+        const auto lineRect = [&] {
+            const auto bounds = title->fontMetrics().boundingRect(
+                title->contentsRect(), title->alignment() | Qt::TextWordWrap, title->text());
+            const auto line = title->fontMetrics()
+                                  .boundingRect(
+                                      QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX},
+                                      Qt::TextSingleLine, title->text())
+                                  .height();
+            return QRect{title->mapTo(card, bounds.topLeft()), QSize{bounds.width(), line}};
+        }();
+        const QRect closeRect{close->mapTo(card, QPoint{}), close->size()};
+        QVERIFY2(
+            qAbs(lineRect.center().y() - closeRect.center().y()) <= 2,
+            qPrintable(QString{"title line centre %1, close centre %2"}
+                           .arg(lineRect.center().y())
+                           .arg(closeRect.center().y())));
+        QVERIFY2(
+            qAbs(lineRect.center().x() - card->width() / 2) <= 2,
+            qPrintable(QString{"title %1..%2, label %3+%4, card width %5"}
+                           .arg(lineRect.left())
+                           .arg(lineRect.right())
+                           .arg(title->mapTo(card, QPoint{}).x())
+                           .arg(title->width())
+                           .arg(card->width())));
+        QVERIFY(!lineRect.intersects(closeRect));
+        QVERIFY(closeRect.right() < card->width() - 12);
+
+        // The message follows the title closely, whatever its script's line height.
+        const int messageTop = message->mapTo(card, QPoint{}).y();
+        QVERIFY2(
+            messageTop - lineRect.bottom() <= 10,
+            qPrintable(QString{"title ends at %1, message starts at %2"}
+                           .arg(lineRect.bottom())
+                           .arg(messageTop)));
+
+        // The card ends one margin below the message.
+        const int messageBottom = message->mapTo(card, QPoint{0, message->height()}).y();
+        QVERIFY2(
+            card->height() - messageBottom <= 24,
+            qPrintable(QString{"%1 below the message"}.arg(card->height() - messageBottom)));
+        auto *activity = card->findChild<Gui::Widget::ActivityIndicator *>("notificationActivity");
+        QVERIFY(activity != nullptr);
+        QVERIFY(!activity->isVisible());
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        VerifySmoothPopupCorners(card, QString{"connection-notification-scale%1.png"}.arg(scale));
+
+        // While connecting, an iOS-style spinner leads the message on its first line, the pair
+        // centred on the card, without making the card taller.
+        const int settledHeight = card->height();
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods Pro");
+        QTRY_VERIFY(activity->isVisible());
+        const auto messageText = message->fontMetrics().boundingRect(
+            message->contentsRect(), message->alignment() | Qt::TextWordWrap, message->text());
+        const QRect textRect{message->mapTo(card, messageText.topLeft()), messageText.size()};
+        const QRect activityRect{activity->mapTo(card, QPoint{}), activity->size()};
+        const int firstLine = message->fontMetrics()
+                                  .boundingRect(
+                                      QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX},
+                                      Qt::TextSingleLine, message->text())
+                                  .height();
+        QVERIFY2(
+            activityRect.right() < textRect.left() && textRect.left() - activityRect.right() <= 8,
+            qPrintable(QString{"spinner ends at %1, text starts at %2"}
+                           .arg(activityRect.right())
+                           .arg(textRect.left())));
+        QVERIFY2(
+            qAbs(activityRect.center().y() - (textRect.top() + firstLine / 2)) <= 2,
+            qPrintable(QString{"spinner centre %1, first line centre %2"}
+                           .arg(activityRect.center().y())
+                           .arg(textRect.top() + firstLine / 2)));
+        QVERIFY2(
+            qAbs((activityRect.left() + textRect.right()) / 2 - card->width() / 2) <= 2,
+            qPrintable(QString{"spinner and text span %1..%2 on a card %3 wide"}
+                           .arg(activityRect.left())
+                           .arg(textRect.right())
+                           .arg(card->width())));
+        QVERIFY2(
+            card->height() <= settledHeight + 2,
+            qPrintable(QString{"%1 tall while connecting, %2 otherwise"}
+                           .arg(card->height())
+                           .arg(settledHeight)));
+        const int head = activity->HeadSpoke();
+        QTRY_VERIFY_WITH_TIMEOUT(activity->HeadSpoke() != head, 1000);
+        VerifySmoothPopupCorners(
+            card, QString{"connection-notification-pending-scale%1.png"}.arg(scale));
+
+        // A name too long to share the first line wraps below it and is wider than it. The
+        // spinner still leads the first line rather than the wider block.
+        QString longName;
+        while (message->fontMetrics().horizontalAdvance(longName) < 200) {
+            longName += 'W';
+        }
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, longName);
+        QTRY_VERIFY(message->text().contains(longName));
+        QTextLayout wrapped{message->text(), message->font()};
+        QTextOption wrapOption;
+        wrapOption.setWrapMode(QTextOption::WordWrap);
+        wrapped.setTextOption(wrapOption);
+        wrapped.beginLayout();
+        QList<qreal> lineWidths;
+        for (auto line = wrapped.createLine(); line.isValid(); line = wrapped.createLine()) {
+            line.setLineWidth(message->contentsRect().width());
+            lineWidths.append(line.naturalTextWidth());
+        }
+        wrapped.endLayout();
+        QVERIFY2(lineWidths.size() >= 2, qPrintable(message->text()));
+        QVERIFY(lineWidths.at(0) + 40 < lineWidths.at(1));
+        const int firstLineLeft =
+            message->mapTo(card, message->contentsRect().topLeft()).x() +
+            qRound((message->contentsRect().width() - lineWidths.at(0)) / 2.0);
+        const int wrappedActivityRight = activity->mapTo(card, QPoint{}).x() + activity->width();
+        QVERIFY2(
+            wrappedActivityRight <= firstLineLeft && firstLineLeft - wrappedActivityRight <= 8,
+            qPrintable(QString{"spinner ends at %1, first line starts at %2"}
+                           .arg(wrappedActivityRight)
+                           .arg(firstLineLeft)));
     }
 
     void QuickConnectCardTracksProgressAndResult()
@@ -331,9 +472,9 @@ private Q_SLOTS:
         auto *card = tray.findChild<QWidget *>("connectionNotification");
         QVERIFY(card != nullptr);
         QVERIFY(card->isVisible());
-        auto *progress = card->findChild<QProgressBar *>();
-        QVERIFY(progress != nullptr);
-        QVERIFY(progress->isVisible());
+        auto *activity = card->findChild<Gui::Widget::ActivityIndicator *>("notificationActivity");
+        QVERIFY(activity != nullptr);
+        QVERIFY(activity->isVisible());
         // The old success timer must not dismiss a newly started connection.
         quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::Connected, "AirPods");
         quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, "AirPods");
@@ -413,20 +554,104 @@ private Q_SLOTS:
         theme.SetMode(originalMode);
     }
 
+    void MainWindowLaysOutHeaderLikeIOS()
+    {
+        // Proportions measured from the iOS sheet, scaled to the popup's 320 px width: a 24 px
+        // close button centred 35 px from the top and right edges, and a centred title whose
+        // first line sits 42 px from the top; a name too long for one line wraps onto a second.
+        Gui::MainWindow window;
+        auto *label = window.findChild<QLabel *>("deviceLabel");
+        auto *close = window.findChild<QWidget *>("closeContainer");
+        auto *animation = window.findChild<QWidget *>("animationContainer");
+        QVERIFY(label != nullptr && close != nullptr && animation != nullptr);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+
+        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+        for (const auto &name :
+             {QStringLiteral("AirPods 5"), QStringLiteral("湊あくあ 的 AirPods"),
+              QStringLiteral("Kashionz's AirPods Pro")})
+        {
+            Core::AirPods::State state;
+            state.model = Core::AirPods::Model::AirPods_5;
+            state.displayName = name;
+            window.UpdateState(state);
+
+            // Measured like the popup does: CJK names use a taller fallback font.
+            const int lineHeight =
+                label->fontMetrics()
+                    .boundingRect(
+                        QRect{0, 0, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX}, Qt::TextSingleLine, name)
+                    .height();
+            const qreal firstLineCentre = label->y() + lineHeight / 2.0;
+            QVERIFY2(
+                std::abs(firstLineCentre - 42) <= 1,
+                qPrintable(QString{"%1: first line at %2"}.arg(name).arg(firstLineCentre)));
+            const QRectF closeRect = close->geometry();
+            QCOMPARE(closeRect.size(), QSizeF(24, 24));
+            QCOMPARE(closeRect.center(), QPointF(window.width() - 35, 35));
+            // Centred on the window and clear of the close button.
+            QVERIFY(std::abs(label->geometry().center().x() + 0.5 - window.width() / 2.0) <= 1);
+            QVERIFY(label->geometry().right() < close->geometry().left());
+            // Room between the title and the device, as on iOS, even for a two-line title.
+            QVERIFY2(
+                animation->geometry().top() - label->geometry().bottom() >= 20,
+                qPrintable(QString{"%1: title ends at %2, picture starts at %3"}
+                               .arg(name)
+                               .arg(label->geometry().bottom())
+                               .arg(animation->geometry().top())));
+            // The whole name is shown, on one or two lines.
+            QCOMPARE(label->text(), name);
+            QVERIFY2(label->height() < lineHeight * 5 / 2, qPrintable(name));
+            QVERIFY2(label->font().pointSize() == 17, qPrintable(name));
+            QCOMPARE(label->font().weight(), QFont::Bold);
+
+            VerifySmoothPopupCorners(
+                &window, QString{"main-window-title-%1-scale%2.png"}.arg(name.size()).arg(scale));
+        }
+
+        // The name from the iOS screenshot wraps exactly as it does there.
+        Core::AirPods::State state;
+        state.displayName = QStringLiteral("湊あくあ 的 AirPods");
+        window.UpdateState(state);
+        QVERIFY(label->height() > label->fontMetrics().height() * 3 / 2);
+
+        // The popup is created at startup and usually gets its state before it is first shown;
+        // the style sheet polish on that first show must not undo the title's font, and neither
+        // may a theme change afterwards.
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        Gui::MainWindow fresh;
+        auto *freshLabel = fresh.findChild<QLabel *>("deviceLabel");
+        fresh.UpdateState(state);
+        // Windows switches theme while the popup has not been shown yet.
+        theme.SetMode(theme.IsDark() ? Gui::Theme::Mode::Light : Gui::Theme::Mode::Dark);
+        QCoreApplication::processEvents();
+        fresh.Show();
+        QTRY_VERIFY(fresh.isVisible());
+        QCOMPARE(freshLabel->font().pointSize(), 17);
+        QCOMPARE(freshLabel->font().weight(), QFont::Bold);
+        QCOMPARE(freshLabel->geometry(), label->geometry());
+        theme.SetMode(theme.IsDark() ? Gui::Theme::Mode::Light : Gui::Theme::Mode::Dark);
+        QCoreApplication::processEvents();
+        QCOMPARE(freshLabel->font().pointSize(), 17);
+        QCOMPARE(freshLabel->geometry(), label->geometry());
+        theme.SetMode(originalMode);
+    }
+
     void MainWindowElidesLongDeviceNames()
     {
         Gui::MainWindow window;
         auto *label = window.findChild<QLabel *>("deviceLabel");
         QVERIFY(label != nullptr);
         QCOMPARE(label->textFormat(), Qt::PlainText);
-        QVERIFY(!label->wordWrap());
 
         Core::AirPods::State state;
         state.model = Core::AirPods::Model::AirPods_4;
         state.displayName = QStringLiteral("AirPods 4");
         window.UpdateState(state);
         QCOMPARE(label->text(), state.displayName);
-        QCOMPARE(label->font().pointSize(), 18);
+        QCOMPARE(label->font().pointSize(), 17);
         QCOMPARE(label->toolTip(), QString{});
         QCOMPARE(label->accessibleName(), state.displayName);
 
@@ -514,52 +739,6 @@ private Q_SLOTS:
         QVERIFY(autoHide->isActive());
     }
 
-    void DeviceImageSlicesAndRearrangesPods()
-    {
-        const QImage source{":/Resource/Image/Animation/AirPods_Pro_2.png"};
-        QVERIFY(!source.isNull());
-        const auto slices =
-            Gui::Widget::Detail::SliceByTransparentGaps(source, (std::max)(source.width() / 50, 4))
-                .slices;
-        QCOMPARE(slices.size(), size_t{3}); // left pod, right pod, case
-
-        Gui::Widget::DeviceImage image;
-        image.resize(260, 122);
-        image.SetSource(source);
-        const auto spread = image.CurrentComposition();
-        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Together, false);
-        const auto together = image.CurrentComposition();
-        QVERIFY(spread != together);
-        QCOMPARE(spread.size(), together.size());
-
-        // The pods moved towards each other: the left pod's right edge shifted right and the
-        // case stayed where it was.
-        const auto edges = [](const QImage &composition) {
-            const auto s = Gui::Widget::Detail::SliceByTransparentGaps(composition, 2).slices;
-            return std::pair{s.front().right, s.back().left};
-        };
-        const auto [spreadPodEdge, spreadCaseEdge] = edges(spread);
-        const auto [togetherPodEdge, togetherCaseEdge] = edges(together);
-        QVERIFY(togetherPodEdge > spreadPodEdge);
-        QCOMPARE(togetherCaseEdge, spreadCaseEdge);
-
-        // Pods only: the case is gone, the pair sits in the middle.
-        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::PodsOnly, false);
-        const auto podsOnly = image.CurrentComposition();
-        const auto podsOnlySlices = Gui::Widget::Detail::SliceByTransparentGaps(podsOnly, 2).slices;
-        QCOMPARE(podsOnlySlices.size(), size_t{2});
-        const int centre = (podsOnlySlices.front().left + podsOnlySlices.back().right) / 2;
-        QVERIFY(std::abs(centre - podsOnly.width() / 2) <= 2);
-        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Together, false);
-
-        // Back to spread with animation: a cross-fade runs while visible.
-        image.show();
-        image.SetArrangement(Gui::Widget::DeviceImage::Arrangement::Spread, true);
-        QVERIFY(image.IsFading());
-        QTRY_VERIFY(!image.IsFading());
-        QCOMPARE(image.CurrentComposition(), spread);
-    }
-
     void MainWindowDissolvesTheBatteryRow()
     {
         Gui::MainWindow window;
@@ -589,42 +768,425 @@ private Q_SLOTS:
         QVERIFY(overlay->isHidden());
     }
 
-    void MainWindowCentresTheLonePodsRing()
+    void MainWindowShowsAStillWithOnePodOut()
     {
+        // Like iOS: the turntable plays while the pods are together. With one pod taken out the
+        // popup shows the still render, and the whole scene fades out and back in around the
+        // switch.
         Gui::MainWindow window;
-        auto *timer = window.findChild<QTimer *>("podsOnlyTimer");
-        QVERIFY(timer != nullptr);
+        auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+        QVERIFY(animation != nullptr);
+        QSignalSpy frames{animation, &Gui::Widget::AnimationView::FramePresented};
 
         Core::AirPods::State state;
-        state.model = Core::AirPods::Model::AirPods_Pro_2_USB_C;
-        state.displayName = QStringLiteral("AirPods Pro");
-        state.pods.left.battery = Core::AirPods::Battery{97};
-        state.pods.right.battery = Core::AirPods::Battery{95};
-        state.pods.left.isInEar = state.pods.right.isInEar = true;
+        state.model = Core::AirPods::Model::AirPods_5;
+        state.displayName = QStringLiteral("AirPods 5");
+        state.pods.left.battery = Core::AirPods::Battery{80};
+        state.pods.right.battery = Core::AirPods::Battery{70};
+        state.caseBox.battery = Core::AirPods::Battery{90};
+        state.pods.left.isInCase = state.pods.right.isInCase = true;
+        state.caseBox.isBothPodsInCase = true;
         window.UpdateState(state);
         window.Show();
         QTRY_VERIFY(window.isVisible());
-        QVERIFY(timer->isActive());
 
-        timer->start(0);
-        QTRY_VERIFY(!timer->isActive());
-        QCoreApplication::processEvents();
+        const auto turns = [&] {
+            QTRY_VERIFY(animation->isVisible());
+            const int before = frames.count();
+            QTRY_VERIFY_WITH_TIMEOUT(frames.count() >= before + 10, 5000);
+            QVERIFY(animation->IsShowingVideo());
+        };
+        const auto drawsSomething = [&] {
+            const QImage grab = animation->grab().toImage();
+            const QRgb first = grab.pixel(0, 0);
+            for (int y = 0; y < grab.height(); ++y) {
+                for (int x = 0; x < grab.width(); ++x) {
+                    if (grab.pixel(x, y) != first) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+        turns();
+        QCOMPARE(animation->Opacity(), 1.0);
 
-        auto rings = window.findChildren<Gui::Widget::Battery *>();
-        Gui::Widget::Battery *shown = nullptr;
-        for (auto *ring : rings) {
-            if (ring->isVisibleTo(&window)) {
-                QVERIFY(shown == nullptr);
-                shown = ring;
+        // One pod out. The video keeps playing while it fades out, then the still fades in.
+        state.pods.right.isInCase = false;
+        state.caseBox.isBothPodsInCase = false;
+        window.UpdateState(state);
+        QVERIFY(animation->IsShowingVideo());
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QTRY_VERIFY(!animation->IsShowingVideo());
+        // Another update while the still fades in (a battery step, an in-ear bit) must not send
+        // it back out: it keeps coming in.
+        QTRY_VERIFY(animation->Opacity() > 0.2);
+        QVERIFY(animation->Opacity() < 1.0);
+        state.pods.right.battery = Core::AirPods::Battery{60};
+        window.UpdateState(state);
+        qreal arriving = animation->Opacity();
+        for (int i = 0; i < 300 && arriving < 1.0; ++i) {
+            QTest::qWait(10);
+            const qreal now = animation->Opacity();
+            QVERIFY2(
+                now >= arriving,
+                qPrintable(QString{"the still went from %1 back to %2"}.arg(arriving).arg(now)));
+            arriving = now;
+        }
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY(!animation->IsShowingVideo());
+        QVERIFY(animation->isVisible());
+        QVERIFY(drawsSomething());
+        const int stillFrames = frames.count();
+        QTest::qWait(500);
+        QCOMPARE(frames.count(), stillFrames);
+
+        // A battery change alone leaves the still where it is.
+        state.pods.left.battery = Core::AirPods::Battery{70};
+        window.UpdateState(state);
+        QTest::qWait(100);
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY(!animation->IsShowingVideo());
+
+        // Both out: the turntable comes back the same way.
+        state.pods.left.isInCase = false;
+        window.UpdateState(state);
+        QVERIFY(!animation->IsShowingVideo());
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QTRY_VERIFY(animation->IsShowingVideo());
+        QTRY_COMPARE(animation->Opacity(), 1.0);
+        turns();
+
+        // A pod going back in while the video is still fading out, then out again: the video
+        // that was leaving fades back in instead of being swapped.
+        state.pods.left.isInCase = true;
+        window.UpdateState(state);
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QVERIFY(animation->IsShowingVideo());
+        state.pods.left.isInCase = false;
+        window.UpdateState(state);
+        qreal lowest = animation->Opacity();
+        for (int i = 0; i < 300 && animation->Opacity() < 1.0; ++i) {
+            QTest::qWait(10);
+            lowest = (std::min)(lowest, animation->Opacity());
+        }
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY2(lowest > 0.0, "the video faded all the way out before coming back");
+        QVERIFY(animation->IsShowingVideo());
+
+        // Opened with one pod already out, the popup starts on the still.
+        window.close();
+        QTRY_VERIFY(!window.isVisible());
+        state.pods.left.isInCase = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+        QVERIFY(animation->isVisible());
+        QCOMPARE(animation->Opacity(), 1.0);
+        QTest::qWait(500);
+        QVERIFY(!animation->IsShowingVideo());
+        QVERIFY(drawsSomething());
+    }
+
+    void MainWindowTitleFollowsThemeChanges()
+    {
+        // Windows can switch between light and dark while the app runs (a scheduled switch, or
+        // the appearance setting); the popup title must follow like the rest of the popup. The
+        // popup is created at startup and may not be shown until long after such a switch.
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        for (const bool shownBeforeSwitch : {true, false}) {
+            for (const auto [from, to] :
+                 {std::pair{Gui::Theme::Mode::Dark, Gui::Theme::Mode::Light},
+                  std::pair{Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}})
+            {
+                theme.SetMode(from);
+                Gui::MainWindow window;
+                Core::AirPods::State state;
+                state.model = Core::AirPods::Model::AirPods_5;
+                state.displayName = QStringLiteral("AirPods 5");
+                window.UpdateState(state);
+                if (shownBeforeSwitch) {
+                    window.Show();
+                    QTRY_VERIFY(window.isVisible());
+                }
+                theme.SetMode(to);
+                QCoreApplication::processEvents();
+                if (!shownBeforeSwitch) {
+                    window.Show();
+                    QTRY_VERIFY(window.isVisible());
+                }
+
+                auto *label = window.findChild<QLabel *>("deviceLabel");
+                const auto expected = theme.Colors().mainText;
+                QVERIFY2(
+                    label->palette().color(QPalette::WindowText) == expected,
+                    qPrintable(QString{"shown first %1: palette %2 vs %3"}
+                                   .arg(shownBeforeSwitch)
+                                   .arg(label->palette().color(QPalette::WindowText).name())
+                                   .arg(expected.name())));
+
+                // The darkest (light theme) or brightest (dark theme) glyph pixel is the text
+                // colour.
+                const auto image = window.grab(label->geometry()).toImage();
+                int extreme = theme.IsDark() ? 0 : 255;
+                for (int y = 0; y < image.height(); ++y) {
+                    for (int x = 0; x < image.width(); ++x) {
+                        const int gray = qGray(image.pixel(x, y));
+                        extreme =
+                            theme.IsDark() ? (std::max)(extreme, gray) : (std::min)(extreme, gray);
+                    }
+                }
+                QVERIFY2(
+                    std::abs(extreme - qGray(expected.rgb())) <= 40,
+                    qPrintable(QString{"shown first %1: title %2 vs expected %3"}
+                                   .arg(shownBeforeSwitch)
+                                   .arg(extreme)
+                                   .arg(qGray(expected.rgb()))));
+                window.close();
             }
         }
-        QVERIFY(shown != nullptr);
-        QCOMPARE(shown->getValue(), 95u);
-        const int ringCentre = shown->mapTo(&window, shown->rect().center()).x();
-        QVERIFY(std::abs(ringCentre - window.width() / 2) <= 3);
+        theme.SetMode(originalMode);
+    }
 
-        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
-        VerifySmoothPopupCorners(&window, QString{"main-window-pods-only-scale%1.png"}.arg(scale));
+    void MainWindowShowsTheHeadsetAtFullSize()
+    {
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            const QString themeName = mode == Gui::Theme::Mode::Light ? "light" : "dark";
+
+            // The headset fills most of the picture's height, like the earbuds and their case do.
+            Core::AirPods::State state;
+            state.model = Core::AirPods::Model::AirPods_Max;
+            state.displayName = QStringLiteral("AirPods Max");
+            state.pods.left.battery = Core::AirPods::Battery{80};
+            Gui::MainWindow window;
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QSignalSpy frames{animation, &Gui::Widget::AnimationView::FramePresented};
+            window.UpdateState(state);
+            window.Show();
+            QTRY_VERIFY(window.isVisible());
+            QTRY_VERIFY_WITH_TIMEOUT(frames.count() >= 10, 5000);
+
+            // The keyed-out corners show the surface the popup paints behind the picture. It is
+            // not the palette's window colour in every theme, and decoding can move it a level.
+            const auto image = animation->grab().toImage();
+            const QRgb surface = image.pixel(0, 0);
+            const auto isHeadset = [surface](QRgb pixel) {
+                return qAlpha(pixel) > 16 && (std::max)(
+                                                 {std::abs(qRed(pixel) - qRed(surface)),
+                                                  std::abs(qGreen(pixel) - qGreen(surface)),
+                                                  std::abs(qBlue(pixel) - qBlue(surface))}) > 8;
+            };
+            int top = image.height(), bottom = -1;
+            for (int y = 0; y < image.height(); ++y) {
+                for (int x = 0; x < image.width(); ++x) {
+                    if (isHeadset(image.pixel(x, y))) {
+                        top = (std::min)(top, y);
+                        bottom = (std::max)(bottom, y);
+                        break;
+                    }
+                }
+            }
+            QVERIFY2(bottom >= top, qPrintable(themeName));
+            QVERIFY2(
+                bottom - top + 1 >= image.height() * 0.75, qPrintable(QString{"%1: %2 of %3"}
+                                                                          .arg(themeName)
+                                                                          .arg(bottom - top + 1)
+                                                                          .arg(image.height())));
+
+            // ...but stops well above its battery ring, as on iOS.
+            Gui::Widget::Battery *ring = nullptr;
+            for (auto *candidate : window.findChildren<Gui::Widget::Battery *>()) {
+                if (candidate->isVisibleTo(&window)) {
+                    ring = candidate;
+                }
+            }
+            QVERIFY(ring != nullptr);
+            // The grab is in device pixels; the widget geometry is in logical ones.
+            const qreal headsetBottom =
+                animation->mapTo(&window, QPointF{0.0, (bottom + 1) / image.devicePixelRatio()})
+                    .y();
+            const int ringTop = ring->mapTo(&window, QPoint{}).y();
+            QVERIFY2(
+                ringTop - headsetBottom >= 12,
+                qPrintable(QString{"%1: headset ends at %2, ring starts at %3"}
+                               .arg(themeName)
+                               .arg(headsetBottom)
+                               .arg(ringTop)));
+
+            const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+            VerifySmoothPopupCorners(
+                &window, QString{"main-window-airpods-max-%1-scale%2.png"}.arg(themeName, scale));
+        }
+        theme.SetMode(originalMode);
+    }
+
+    void MainWindowCentresRingsUnderTheDevice()
+    {
+        for (auto model : magic_enum::enum_values<Core::AirPods::Model>()) {
+            if (model == Core::AirPods::Model::Unknown || model == Core::AirPods::Model::_Max) {
+                continue;
+            }
+            const auto presentation = Gui::GetAnimationPresentation(model);
+
+            Core::AirPods::State state;
+            state.model = model;
+            state.displayName = QStringLiteral("AirPods");
+            state.pods.left.battery = Core::AirPods::Battery{80};
+            state.pods.right.battery = Core::AirPods::Battery{60};
+            state.caseBox.battery = Core::AirPods::Battery{90};
+            // Both pods out with different levels: the turntable plays, and both pod rings and
+            // the case ring are shown where they apply.
+            state.pods.left.isInCase = false;
+            state.pods.right.isInCase = false;
+
+            Gui::MainWindow window;
+            window.UpdateState(state);
+            window.Show();
+            QTRY_VERIFY(window.isVisible());
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QTRY_VERIFY(animation->isVisible());
+            QCoreApplication::processEvents();
+
+            const QRect view{animation->mapTo(&window, QPoint{}), animation->size()};
+            const auto expected = [&](qreal fraction) {
+                return view.x() + fraction * view.width();
+            };
+            const auto centreOf = [&](Gui::Widget::Battery *ring) {
+                return ring->mapTo(&window, ring->rect().center()).x() + 0.5;
+            };
+
+            QList<Gui::Widget::Battery *> pods;
+            Gui::Widget::Battery *caseRing = nullptr;
+            for (auto *ring : window.findChildren<Gui::Widget::Battery *>()) {
+                if (!ring->isVisibleTo(&window)) {
+                    continue;
+                }
+                if (ring->getBadge() == Gui::Widget::Battery::Badge::Case) {
+                    caseRing = ring;
+                }
+                else {
+                    pods.append(ring);
+                }
+            }
+            const auto name = Helper::ToString(model);
+            QVERIFY2(!pods.isEmpty(), qPrintable(name));
+            qreal podsCentre = 0;
+            for (auto *ring : pods) {
+                podsCentre += centreOf(ring);
+            }
+            podsCentre /= pods.size();
+            QVERIFY2(
+                std::abs(podsCentre - expected(presentation.podsCenter)) <= 3,
+                qPrintable(QString{"%1 pods %2 vs %3"}
+                               .arg(name)
+                               .arg(podsCentre)
+                               .arg(expected(presentation.podsCenter))));
+
+            if (presentation.caseCenter.has_value()) {
+                QVERIFY2(caseRing != nullptr, qPrintable(name));
+                QVERIFY2(
+                    std::abs(centreOf(caseRing) - expected(*presentation.caseCenter)) <= 3,
+                    qPrintable(QString{"%1 case %2 vs %3"}
+                                   .arg(name)
+                                   .arg(centreOf(caseRing))
+                                   .arg(expected(*presentation.caseCenter))));
+                // The rows never run into each other.
+                for (auto *ring : pods) {
+                    QVERIFY2(
+                        ring->mapTo(&window, ring->rect().topRight()).x() <
+                            caseRing->mapTo(&window, caseRing->rect().topLeft()).x() +
+                                caseRing->width() / 2,
+                        qPrintable(name));
+                }
+            }
+            else {
+                // A headset or a neckband: no case ring, and the rings sit under the centred
+                // device; a headset has just one.
+                QVERIFY2(caseRing == nullptr, qPrintable(name));
+                if (Core::AirPods::HasSingleBattery(model)) {
+                    QCOMPARE(pods.size(), qsizetype{1});
+                }
+                QVERIFY2(std::abs(podsCentre - window.width() / 2.0) <= 3, qPrintable(name));
+            }
+        }
+    }
+
+    void MainWindowPlacesRingsUnderTheStill()
+    {
+        // With one pod out the popup shows the pods and the case side by side, as iOS does,
+        // and each ring sits under the object it belongs to.
+        QVERIFY(QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/UiValidation")));
+        for (auto model : magic_enum::enum_values<Core::AirPods::Model>()) {
+            if (model == Core::AirPods::Model::Unknown || model == Core::AirPods::Model::_Max ||
+                !Core::AirPods::HasChargingCase(model))
+            {
+                continue;
+            }
+            const auto name = Helper::ToString(model);
+            const auto presentation = Gui::GetAnimationPresentation(model);
+            const auto still = Gui::Widget::LoadDeviceStill(presentation.StillDirectory());
+            QVERIFY2(still.has_value(), qPrintable(name));
+            QVERIFY(still->leftCenter < still->rightCenter);
+            QVERIFY(still->rightCenter < still->caseCenter);
+
+            Core::AirPods::State state;
+            state.model = model;
+            state.displayName = name;
+            state.pods.left.battery = Core::AirPods::Battery{40};
+            state.pods.left.isCharging = true;
+            state.pods.right.battery = Core::AirPods::Battery{30};
+            state.caseBox.battery = Core::AirPods::Battery{90};
+            state.pods.left.isInCase = true;
+            state.pods.right.isInCase = false;
+
+            Gui::MainWindow window;
+            window.UpdateState(state);
+            window.Show();
+            QTRY_VERIFY(window.isVisible());
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QTRY_VERIFY(animation->isVisible());
+            QCoreApplication::processEvents();
+            QVERIFY2(!animation->IsShowingVideo(), qPrintable(name));
+
+            // The view takes the still's proportions and stays inside the popup.
+            const QRect view{animation->mapTo(&window, QPoint{}), animation->size()};
+            QVERIFY2(view.left() >= 0 && view.right() < window.width(), qPrintable(name));
+            QVERIFY2(
+                std::abs(
+                    view.width() -
+                    view.height() * still->image.width() / qreal(still->image.height())) <= 1,
+                qPrintable(name));
+            QVERIFY2(
+                std::abs(view.center().x() + 0.5 - window.width() / 2.0) <= 1, qPrintable(name));
+
+            const auto centreOf = [&](Gui::Widget::Battery *ring) {
+                return ring->mapTo(&window, ring->rect().center()).x() + 0.5;
+            };
+            for (auto *ring : window.findChildren<Gui::Widget::Battery *>()) {
+                QVERIFY2(ring->isVisibleTo(&window), qPrintable(name));
+                qreal fraction = still->caseCenter;
+                if (ring->getBadge() == Gui::Widget::Battery::Badge::Left) {
+                    fraction = still->leftCenter;
+                }
+                else if (ring->getBadge() == Gui::Widget::Battery::Badge::Right) {
+                    fraction = still->rightCenter;
+                }
+                const qreal expected = view.x() + fraction * view.width();
+                QVERIFY2(
+                    std::abs(centreOf(ring) - expected) <= 2,
+                    qPrintable(QString{"%1 ring %2 at %3, its object at %4"}
+                                   .arg(name)
+                                   .arg(static_cast<int>(ring->getBadge()))
+                                   .arg(centreOf(ring))
+                                   .arg(expected)));
+            }
+            QVERIFY(window.grab().save(QString{APD_BINARY_DIR "/UiValidation/still-%1.png"}.arg(
+                QString{magic_enum::enum_name(model).data()})));
+        }
     }
 
     void MainWindowRendersBatteryRings()
@@ -1166,8 +1728,7 @@ private Q_SLOTS:
         };
         QVERIFY(appearanceTextFits());
 
-        for (const auto *name :
-             {
+        for (const auto *name : {
                  "cbLowAudioLatency",
                  "cbAutoEarDetection",
                  "cbLidPopup",
@@ -1352,6 +1913,10 @@ int main(int argc, char **argv)
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app{argc, argv};
+    if (!Gui::RegisterAnimationResources()) {
+        qCritical("Animations.rcc was not found beside the test executable.");
+        return 1;
+    }
     // Production logging installs a Qt message handler during static initialization. Restore the
     // default handler so QTest assertion details remain visible in CTest and CI output.
     qInstallMessageHandler(nullptr);

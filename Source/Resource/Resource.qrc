@@ -1,16 +1,6 @@
 <RCC>
     <qresource prefix="/Resource">
         <file>Image/Icon.svg</file>
-        <file>Image/Animation/AirPods_1.png</file>
-        <file>Image/Animation/AirPods_2.png</file>
-        <file>Image/Animation/AirPods_3.png</file>
-        <file>Image/Animation/AirPods_4.png</file>
-        <file>Image/Animation/AirPods_4_ANC.png</file>
-        <file>Image/Animation/AirPods_Pro.png</file>
-        <file>Image/Animation/AirPods_Pro_2.png</file>
-        <file>Image/Animation/AirPods_Pro_3.png</file>
-        <file>Image/Animation/AirPods_Max.png</file>
-        <file>Image/Animation/Beats_Fit_Pro.png</file>
         <file>Image/Theme/CheckMarkLight.svg</file>
         <file>Image/Theme/CheckMarkDark.svg</file>
         <file>Image/Theme/ChevronDownLight.svg</file>
@@ -21,16 +11,6 @@
         <file>Font/Inter/InterDisplay-Medium.ttf</file>
         <file>Font/Inter/InterDisplay-SemiBold.ttf</file>
         <file>Font/NotoSansTC/NotoSansTC-Variable.ttf</file>
-        <file>Video/AirPods_1.avi</file>
-        <file>Video/AirPods_2.avi</file>
-        <file>Video/AirPods_3.avi</file>
-        <file>Video/AirPods_4.avi</file>
-        <file>Video/AirPods_4_ANC.avi</file>
-        <file>Video/AirPods_Pro.avi</file>
-        <file>Video/AirPods_Pro_2.avi</file>
-        <file>Video/AirPods_Pro_3.avi</file>
-        <file>Video/AirPods_Max.avi</file>
-        <file>Video/Beats_Fit_Pro.avi</file>
         <file>Audio/Silence.mp3</file>
     </qresource>
 </RCC>

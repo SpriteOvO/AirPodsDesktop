@@ -147,6 +147,37 @@ private Q_SLOTS:
         }
     }
 
+    void KeepsPinkProductsOnAGreenMatte()
+    {
+        // Pink and purple renders ship on a green matte: on magenta, their whole surface reads as
+        // matte spill and is bleached. The spill test must follow the matte the frame carries.
+        const QColor pink{"#F2B8D8"};
+        const QColor green{"#00FF00"};
+        QImage image{160, 100, QImage::Format_ARGB32_Premultiplied};
+        image.fill(green);
+        QPainter painter{&image};
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(pink);
+        painter.drawRoundedRect(QRect{40, 20, 80, 60}, 14, 14);
+        // A half-covered rim pixel, as the encoder leaves it: product mixed with green.
+        painter.setBrush(QColor{
+            (pink.red() + green.red()) / 2, (pink.green() + green.green()) / 2,
+            (pink.blue() + green.blue()) / 2});
+        painter.drawRect(QRect{38, 45, 2, 10});
+        painter.end();
+
+        Gui::Widget::Detail::KnockOutAnimationBackground(image);
+        VerifyTransparentBackgroundSamples(image);
+        const auto centre = qUnpremultiply(image.pixel(80, 50));
+        QCOMPARE(qAlpha(centre), 255);
+        QVERIFY(std::abs(qRed(centre) - pink.red()) <= 2);
+        QVERIFY(std::abs(qGreen(centre) - pink.green()) <= 2);
+        QVERIFY(std::abs(qBlue(centre) - pink.blue()) <= 2);
+        // The green-tinted rim loses its spill rather than staying green.
+        const auto rim = qUnpremultiply(image.pixel(39, 50));
+        QVERIFY(qAlpha(rim) == 0 || qGreen(rim) <= (std::max)(qRed(rim), qBlue(rim)) + 2);
+    }
+
     void KeepsForegroundThatReachesAnEdgeMidpoint()
     {
         QImage image{160, 100, QImage::Format_ARGB32_Premultiplied};
@@ -173,12 +204,124 @@ private Q_SLOTS:
     {
         QTest::addColumn<QString>("video");
         const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
-        const auto videos = videoDir.entryList({"*.avi"}, QDir::Files, QDir::Name);
+        // White-only models sit at the top level; color renders in a folder per model.
+        auto videos = videoDir.entryList({"*.avi"}, QDir::Files, QDir::Name);
+        for (const auto &model : videoDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            for (const auto &video :
+                 QDir{videoDir.filePath(model)}.entryList({"*.avi"}, QDir::Files, QDir::Name))
+            {
+                videos.append(model + "/" + video);
+            }
+        }
         QVERIFY2(!videos.isEmpty(), "No bundled animations found");
 
         for (const auto &video : videos) {
             QTest::newRow(qPrintable(video)) << video;
         }
+    }
+
+    void EarbudAnimationsKeepTheirDarkParts_data()
+    {
+        // Earbuds and their cases never show the background through a solid opening: matte
+        // enclosed by the product there means a dark part (a sensor, a mesh) was keyed away
+        // during conversion, as once happened to the AirPods Pro 2 sensors. Headsets and
+        // neckbands do have such openings, so only earbud renders are checked.
+        QTest::addColumn<QString>("video");
+        const QDir videoDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")};
+        for (const auto &video : videoDir.entryList({"*.avi"}, QDir::Files, QDir::Name)) {
+            QTest::newRow(qPrintable(video)) << video;
+        }
+        for (const auto &video :
+             QDir{videoDir.filePath("Beats_Fit_Pro")}.entryList({"*.avi"}, QDir::Files, QDir::Name))
+        {
+            QTest::newRow(qPrintable("Beats_Fit_Pro/" + video)) << "Beats_Fit_Pro/" + video;
+        }
+    }
+
+    void EarbudAnimationsKeepTheirDarkParts()
+    {
+        QFETCH(QString, video);
+        int framesChecked = 0, framesWithOpening = 0;
+        QVideoSink sink;
+        connect(&sink, &QVideoSink::videoFrameChanged, this, [&](const QVideoFrame &frame) {
+            const auto image = frame.toImage().convertToFormat(QImage::Format_RGB32);
+            if (image.isNull()) {
+                return;
+            }
+            ++framesChecked;
+            const int w = image.width(), h = image.height();
+            const QRgb matte = image.pixel(0, 0);
+            const auto isMatte = [&](int x, int y) {
+                const QRgb p = image.pixel(x, y);
+                return (std::max)(
+                           {std::abs(qRed(p) - qRed(matte)), std::abs(qGreen(p) - qGreen(matte)),
+                            std::abs(qBlue(p) - qBlue(matte))}) <= 24;
+            };
+            // 0: product, 1: matte reachable from the border, 2: matte enclosed by product.
+            std::vector<char> kind(static_cast<size_t>(w) * h, 0);
+            for (int y = 0; y < h; ++y) {
+                for (int x = 0; x < w; ++x) {
+                    kind[y * w + x] = isMatte(x, y) ? 2 : 0;
+                }
+            }
+            std::vector<std::pair<int, int>> stack;
+            for (int x = 0; x < w; ++x) {
+                stack.emplace_back(x, 0);
+                stack.emplace_back(x, h - 1);
+            }
+            for (int y = 0; y < h; ++y) {
+                stack.emplace_back(0, y);
+                stack.emplace_back(w - 1, y);
+            }
+            while (!stack.empty()) {
+                const auto [x, y] = stack.back();
+                stack.pop_back();
+                if (x < 0 || y < 0 || x >= w || y >= h || kind[y * w + x] != 2) {
+                    continue;
+                }
+                kind[y * w + x] = 1;
+                stack.emplace_back(x + 1, y);
+                stack.emplace_back(x - 1, y);
+                stack.emplace_back(x, y + 1);
+                stack.emplace_back(x, y - 1);
+            }
+            // Thin slivers between overlapping stems are real; a solid opening survives
+            // shrinking by two pixels.
+            for (int y = 2; y < h - 2; ++y) {
+                for (int x = 2; x < w - 2; ++x) {
+                    bool solid = true;
+                    for (int dy = -2; dy <= 2 && solid; ++dy) {
+                        for (int dx = -2; dx <= 2; ++dx) {
+                            if (std::abs(dx) + std::abs(dy) <= 2 &&
+                                kind[(y + dy) * w + x + dx] != 2)
+                            {
+                                solid = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (solid) {
+                        ++framesWithOpening;
+                        return;
+                    }
+                }
+            }
+        });
+        QMediaPlayer player;
+        player.setVideoSink(&sink);
+        player.setSource(QUrl::fromLocalFile(
+            QDir{QStringLiteral(APD_SOURCE_DIR "/Source/Resource/Video")}.filePath(video)));
+        player.setPlaybackRate(4.0);
+        player.play();
+        QTRY_COMPARE_WITH_TIMEOUT(player.mediaStatus(), QMediaPlayer::EndOfMedia, 15000);
+        player.stop();
+        player.setVideoSink(nullptr);
+        QVERIFY2(framesChecked > 0, qPrintable(video + ": no frames decoded"));
+        QVERIFY2(
+            framesWithOpening == 0,
+            qPrintable(
+                QString{"%1: %2 frames show the background through the product"}.arg(video).arg(
+                    framesWithOpening)));
     }
 
     void BundledAnimationsUseCompleteMacroblocks_data()
@@ -226,18 +369,18 @@ private Q_SLOTS:
         QVERIFY2(sink.frameCount > 0, qPrintable(video + ": no frames decoded"));
         if (!sink.failedInput.isNull()) {
             QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/AnimationValidation"));
-            const auto prefix =
-                QStringLiteral(APD_BINARY_DIR "/AnimationValidation/diagnostic-") + video;
+            const auto prefix = QStringLiteral(APD_BINARY_DIR "/AnimationValidation/diagnostic-") +
+                                QString{video}.replace('/', '-');
             sink.failedInput.save(prefix + "-input.png");
             sink.failedOutput.save(prefix + "-output.png");
             qWarning() << "First failing frame:" << video << sink.failedTime << "us";
         }
         QCOMPARE(sink.framesWithOpaqueBackgroundSamples, 0);
         QVERIFY(!sink.representativeFrame.isNull());
-        SaveComposites(QFileInfo{video}.completeBaseName(), sink.representativeFrame);
+        const auto stem = QString{video}.replace('/', '-').chopped(4);
+        SaveComposites(stem, sink.representativeFrame);
         QVERIFY(!sink.fallbackFrame.isNull());
-        const auto fallbackPath = QStringLiteral(APD_BINARY_DIR "/AnimationValidation/") +
-                                  QFileInfo{video}.completeBaseName() +
+        const auto fallbackPath = QStringLiteral(APD_BINARY_DIR "/AnimationValidation/") + stem +
                                   QStringLiteral("-fallback.png");
         QVERIFY2(sink.fallbackFrame.save(fallbackPath), "fallback save failed");
         if (video == QStringLiteral("AirPods_Pro.avi")) {

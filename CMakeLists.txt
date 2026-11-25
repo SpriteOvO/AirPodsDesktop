@@ -42,7 +42,7 @@ set(
 
 project(
     AirPodsDesktop
-    VERSION 0.6.1 # Don't forget to bump the version in `vcpkg.json` as well
+    VERSION 0.7.0 # Don't forget to bump the version in `vcpkg.json` as well
     LANGUAGES C CXX
     DESCRIPTION "AirPods desktop user experience enhancement program"
     HOMEPAGE_URL "https://github.com/${APD_GITHUB_OWNER}/${APD_GITHUB_REPOSITORY}"
@@ -353,8 +353,10 @@ set(
     "Source/Gui/SelectWindow.cpp"
     "Source/Gui/UpdateWindow.cpp"
     "Source/Gui/SettingsWindow.cpp"
+    "Source/Gui/Widget/ActivityIndicator.cpp"
     "Source/Gui/Widget/Battery.cpp"
-    "Source/Gui/Widget/DeviceImage.cpp"
+    "Source/Gui/Widget/CloseButton.cpp"
+    "Source/Gui/Widget/DeviceStill.cpp"
     "Source/Gui/Widget/FadeOverlay.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
     "Source/Gui/Theme.cpp"
@@ -395,6 +397,17 @@ endif()
 # Resource
 
 set(APD_QRC_FILE "Source/Resource/Resource.qrc")
+
+# The device animations (one per model and color) are well over 100 MB. Compiled into an
+# executable they would be linked into every target that shows the popup, so they are built once
+# into a binary resource file beside the executables, which `Gui::RegisterAnimationResources()`
+# loads at startup. Animation.qrc stays the list of what ships. The videos are compressed
+# already, so rcc stores them as they are.
+qt_add_binary_resources(
+    apd_animations "Source/Resource/Animation.qrc"
+    DESTINATION "${APD_BINARY_OUT_DIR}/Animations.rcc"
+    OPTIONS --no-compress
+)
 
 #
 # Translation
@@ -543,7 +556,7 @@ add_executable(
     ${APD_QRC_FILE}
 )
 
-add_dependencies(${PROJECT_NAME} apd_translations)
+add_dependencies(${PROJECT_NAME} apd_translations apd_animations)
 
 foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
     set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)

@@ -1,8 +1,18 @@
 #include "AnimationPlayback.h"
 
+#include <QCoreApplication>
+#include <QResource>
+
 #include "../Utils.h"
 
 namespace Gui {
+
+bool RegisterAnimationResources()
+{
+    static const bool registered =
+        QResource::registerResource(QCoreApplication::applicationDirPath() + "/Animations.rcc");
+    return registered;
+}
 
 AnimationPlayback::AnimationPlayback(Widget::AnimationView &view, QObject *parent)
     : QObject{parent}, _view{view}
@@ -52,7 +62,6 @@ void AnimationPlayback::SetAnimation(const AnimationPresentation &presentation)
     Stop();
     _presentation = presentation;
     _retries = 0;
-    _view.SetRemoveEnclosedBackground(presentation.removeEnclosedBackground);
     _view.SetFallbackImage(QImage{presentation.FallbackResource()});
     if (_active) {
         StartAttempt();

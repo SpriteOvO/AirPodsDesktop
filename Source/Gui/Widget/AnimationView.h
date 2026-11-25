@@ -20,9 +20,6 @@
 
 #include <mutex>
 
-#include <optional>
-
-#include <QColor>
 #include <QImage>
 #include <QWidget>
 
@@ -34,13 +31,9 @@ namespace Gui::Widget {
 namespace Detail {
 
 // Removes either the generated chroma matte or a legacy white matte while preserving product
-// surfaces. The Max animation also supports enclosed legacy matte inside the headband.
+// surfaces.
 // Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
-void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
-
-// Recolors a light product render toward `tint` while keeping its shading and the brightest
-// specular highlights. Input must be ARGB32 premultiplied.
-void TintAnimationFrame(QImage &image, const QColor &tint);
+void KnockOutAnimationBackground(QImage &image);
 
 } // namespace Detail
 
@@ -65,17 +58,20 @@ public:
     // Drops the last frame so nothing stale is painted the next time the widget shows.
     void Clear();
 
-    void SetRemoveEnclosedBackground(bool enabled);
+    // The poster of the video. It is what the view shows whenever no video frame is there to
+    // draw: before the first one arrives, and if the video cannot be played.
     void SetFallbackImage(QImage image);
+    // A picture to show in place of the video and its poster, for scenes that do not turn.
+    // `SetShowStill` has no effect while there is no such picture.
+    void SetStillImage(QImage image);
+    void SetShowStill(bool show);
     void SetPlaybackEnabled(bool enabled);
-    void SetTint(std::optional<QColor> tint);
 
-    // The last decoded frame (keyed, source resolution), for a hand-over to a still view.
-    QImage LastFrame() const;
-
-    // Whole-view opacity, so the video can fade while it keeps playing.
+    // Whole-view opacity, so the picture can fade while the video keeps playing.
     void SetOpacity(qreal opacity);
     qreal Opacity() const;
+    // Whether a decoded video frame, rather than a still picture, is being shown.
+    bool IsShowingVideo() const;
 
 Q_SIGNALS:
     void Clicked();
@@ -93,11 +89,11 @@ private:
     QImage _frame;  // processed, source resolution, ARGB32
     QImage _scaled; // `_frame` fitted to the widget
     QImage _fallback;
+    QImage _still;
+    bool _showStill{false};
     quint64 _generation{0};
     bool _playbackEnabled{true};
     bool _deliveryQueued{false};
-    bool _removeEnclosedBackground{false};
-    std::optional<QColor> _tint;
     qreal _opacity{1.0};
 
     void InvalidatePendingFrames();

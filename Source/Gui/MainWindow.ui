@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>320</width>
-    <height>300</height>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,20 +36,20 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>84</y>
+     <y>111</y>
      <width>260</width>
      <height>122</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="layoutAnimation">
     <property name="leftMargin">
-     <number>8</number>
+     <number>0</number>
     </property>
     <property name="topMargin">
      <number>6</number>
     </property>
     <property name="rightMargin">
-     <number>8</number>
+     <number>0</number>
     </property>
     <property name="bottomMargin">
      <number>6</number>
@@ -60,7 +60,7 @@
    <property name="geometry">
     <rect>
      <x>179</x>
-     <y>210</y>
+     <y>227</y>
      <width>81</width>
      <height>51</height>
     </rect>
@@ -71,7 +71,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>210</y>
+     <y>227</y>
      <width>141</width>
      <height>51</height>
     </rect>
@@ -108,22 +108,35 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="gridLayoutWidget_2">
+  <widget class="QWidget" name="closeContainer">
    <property name="geometry">
     <rect>
-     <x>280</x>
-     <y>7</y>
-     <width>31</width>
-     <height>31</height>
+     <x>273</x>
+     <y>23</y>
+     <width>24</width>
+     <height>24</height>
     </rect>
    </property>
-   <layout class="QGridLayout" name="layoutClose"/>
+   <layout class="QGridLayout" name="layoutClose">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+   </layout>
   </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>232</y>
+     <y>249</y>
      <width>241</width>
      <height>40</height>
     </rect>
