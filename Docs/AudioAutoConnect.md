@@ -9,9 +9,11 @@ a connection only if it is disconnected. A device that is already connected caus
 or window to open. Successful automatic connections open the battery window; progress and failures
 use the existing application notification card.
 
-Playback is checked on a background worker every 250 ms across active Windows output endpoints.
-The application's own sounds are excluded. Audio session state is used rather than sound level,
-so muted playback and quiet passages still count as playback. No audio is recorded. At least 1.5
+Playback is checked on a background worker every 250 ms across active output sessions:
+- **Windows:** active WASAPI audio sessions across active render endpoints (`PlaybackMonitor_win.cpp`).
+- **Linux:** non-corked sink inputs reported by PulseAudio or PipeWire's PulseAudio compatibility layer (`libpulse`, `PlaybackMonitor_linux.cpp`).
+
+The application's own sounds are excluded (by process ID). Audio session/stream state is used rather than sound level, so muted playback and quiet passages still count as playback. No audio is recorded. At least 1.5
 seconds without a running output session is required before another playback start is recognized.
 Applications that keep their audio streams running while paused may therefore delay recognition of
 a subsequent playback start.

@@ -34,3 +34,5 @@ build_release.ps1
 Build-linux/
 # aqtinstall output from setting up the Linux toolchain
 aqtinstall.log
+# Local code graph analysis output
+graphify-out/

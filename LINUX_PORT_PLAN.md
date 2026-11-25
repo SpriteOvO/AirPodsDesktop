@@ -2,15 +2,15 @@
 
 ## Status
 
-As of 2026-11-19, the Linux port builds and runs, with the main desktop features implemented:
+As of 2026-11-25 (merged with upstream v0.7.0), the Linux port builds and runs, with the main desktop features implemented:
 
-- [x] Linux CMake build, bundled runtime, DEB and tarball packaging.
-- [x] BlueZ Bluetooth discovery, AirPods binding and battery/connection display.
-- [x] MPRIS ear-detection playback control, BlueZ Quick Connect, XDG autostart, tray and settings.
+- [x] Linux CMake build, bundled runtime, `Animations.rcc` packaging, DEB and tarball packaging.
+- [x] BlueZ Bluetooth discovery, AirPods binding and battery/connection display, v0.7.0 iOS-style popup and `NotificationWindow`.
+- [x] MPRIS ear-detection playback control, BlueZ Quick Connect / Quick Disconnect, `libpulse` audio auto-connect playback monitor, XDG autostart, tray and settings.
 - [x] System theme detection through the desktop portal, with a Qt fallback.
 - [x] Linux tray noise control for supported models, using the bound classic Bluetooth device.
-- [x] Linux automated suite: 14 of 14 CTest entries passed in the latest run, including noise-control,
-      media, domain and UI tests. These tests do not replace hardware validation.
+- [x] Linux automated suite: 19 of 19 CTest entries passed in the latest run, including noise-control,
+      media, playback-probe, update, domain, animation and UI tests. These tests do not replace hardware validation.
 
 ### Hardware observations and remaining work
 
