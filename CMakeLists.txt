@@ -724,7 +724,12 @@ if (APD_GENERATE_INSTALLER)
         PATTERN "*Validation*" EXCLUDE
         PATTERN "*validation*" EXCLUDE
     )
-    set(CPACK_COMPONENTS_ALL ${PROJECT_NAME})
+    # Package that one component, but as a monolithic installer. With a component installer,
+    # CPack's NSIS template copies the files in per-component sections that run before
+    # CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS, so a running copy was never closed before its files
+    # were replaced. A monolithic installer copies them right after those commands.
+    set(CPACK_MONOLITHIC_INSTALL ON)
+    set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${PROJECT_NAME};${PROJECT_NAME};/")
 
     add_custom_command(
         TARGET ${PROJECT_NAME}
