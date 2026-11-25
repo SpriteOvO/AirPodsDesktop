@@ -25,7 +25,6 @@
 
 #include <QPainter>
 #include <QThread>
-#include <QtMath>
 #include <QVideoFrame>
 #include <QVideoSink>
 
@@ -47,7 +46,6 @@ constexpr int kForegroundSearchRadius = 4;
 constexpr int kDarkForegroundSearchRadius = 8;
 constexpr int kEdgeSearchRadius = 2;
 constexpr int kDarkEdgeSearchRadius = 4;
-constexpr int kEnclosedForegroundSpan = 8;
 constexpr int kMinimumForegroundAreaDivisor = 600;
 constexpr int kForegroundIslandAlpha = 32;
 
@@ -103,7 +101,7 @@ bool IsChromaSpill(QRgb pixel, QRgb matte)
 // artwork against the right edge, so seeding every border pixel would erase that foreground too.
 // Starting from guaranteed-background corners lets the device outline stop the flood fill.
 //
-void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
+void KnockOutAnimationBackground(QImage &image)
 {
     const int width = image.width(), height = image.height();
     if (width == 0 || height == 0) {
@@ -198,54 +196,6 @@ void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground)
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 if (IsMatte(at(x, y), mattePalette, matteTolerance)) {
-                    at(x, y) = 0;
-                }
-            }
-        }
-    }
-    else if (removeEnclosedBackground) {
-        // The Max headband surrounds a large area of real matte. Its narrow white supports and
-        // highlights can use exactly the same RGB value, so clearing every matte-coloured pixel
-        // punches holes through the product. Keep a white pixel only when confidently non-matte
-        // pixels bracket it across a short horizontal, vertical, or diagonal span. That preserves
-        // the thin product surfaces while removing the broad enclosed background.
-        std::vector<bool> foreground(static_cast<size_t>(width) * height);
-        const auto index = [width](int x, int y) { return static_cast<size_t>(y) * width + x; };
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                foreground[index(x, y)] =
-                    qAlpha(at(x, y)) != 0 &&
-                    MatteDistance(at(x, y), mattePalette) >= kForegroundDistance;
-            }
-        }
-        const auto hasForeground = [&](int x, int y, int dx, int dy) {
-            for (int distance = 1; distance <= kEnclosedForegroundSpan; ++distance) {
-                const int sx = x + dx * distance, sy = y + dy * distance;
-                if (sx < 0 || sx >= width || sy < 0 || sy >= height) {
-                    return false;
-                }
-                if (foreground[index(sx, sy)]) {
-                    return true;
-                }
-            }
-            return false;
-        };
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                if (!IsMatte(at(x, y), mattePalette, matteTolerance)) {
-                    continue;
-                }
-                const bool horizontal = hasForeground(x, y, -1, 0) && hasForeground(x, y, 1, 0);
-                const bool vertical = hasForeground(x, y, 0, -1) && hasForeground(x, y, 0, 1);
-                const bool diagonal = (hasForeground(x, y, -1, -1) && hasForeground(x, y, 1, 1)) ||
-                                      (hasForeground(x, y, 1, -1) && hasForeground(x, y, -1, 1));
-                const int centreGapHalfWidth = (std::max)(2, width / 32);
-                const bool centralLowerGap =
-                    y >= height / 2 && std::abs(x - width / 2) <= centreGapHalfWidth && !vertical;
-                const bool insideEnclosedRegion = x >= width / 5 && x <= width * 4 / 5;
-                if ((!(horizontal || vertical || diagonal) && insideEnclosedRegion) ||
-                    centralLowerGap)
-                {
                     at(x, y) = 0;
                 }
             }
@@ -452,6 +402,41 @@ void AnimationView::SetFallbackImage(QImage image)
     Clear();
 }
 
+void AnimationView::SetStillImage(QImage image)
+{
+    _still = std::move(image);
+    RescaleFrame();
+    update();
+}
+
+void AnimationView::SetShowStill(bool show)
+{
+    if (_showStill != show) {
+        _showStill = show;
+        RescaleFrame();
+        update();
+    }
+}
+
+void AnimationView::SetOpacity(qreal opacity)
+{
+    opacity = std::clamp(opacity, 0.0, 1.0);
+    if (_opacity != opacity) {
+        _opacity = opacity;
+        update();
+    }
+}
+
+qreal AnimationView::Opacity() const
+{
+    return _opacity;
+}
+
+bool AnimationView::IsShowingVideo() const
+{
+    return !(_showStill && !_still.isNull()) && !_frame.isNull();
+}
+
 void AnimationView::SetPlaybackEnabled(bool enabled)
 {
     {
@@ -522,40 +507,6 @@ void AnimationView::OnVideoFrameChanged(const QVideoFrame &frame)
         Qt::QueuedConnection);
 }
 
-void AnimationView::SetContentRect(QRectF rect)
-{
-    rect = rect.intersected(QRectF{0.0, 0.0, 1.0, 1.0});
-    if (rect.isEmpty()) {
-        rect = QRectF{0.0, 0.0, 1.0, 1.0};
-    }
-    if (_contentRect != rect) {
-        _contentRect = rect;
-        Clear();
-    }
-}
-
-QImage AnimationView::CropToContent(const QImage &image) const
-{
-    if (image.isNull() || _contentRect == QRectF{0.0, 0.0, 1.0, 1.0}) {
-        return image;
-    }
-    const QRect pixels =
-        QRect{
-            qRound(_contentRect.x() * image.width()), qRound(_contentRect.y() * image.height()),
-            qRound(_contentRect.width() * image.width()),
-            qRound(_contentRect.height() * image.height())}
-            .intersected(image.rect());
-    return image.copy(pixels);
-}
-
-void AnimationView::SetRemoveEnclosedBackground(bool enabled)
-{
-    if (_removeEnclosedBackground != enabled) {
-        _removeEnclosedBackground = enabled;
-        Clear();
-    }
-}
-
 void AnimationView::paintEvent(QPaintEvent *event)
 {
     if (_scaled.devicePixelRatio() != devicePixelRatioF()) {
@@ -567,6 +518,7 @@ void AnimationView::paintEvent(QPaintEvent *event)
 
     QPainter painter{this};
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setOpacity(_opacity);
 
     const auto target = QRect{QPoint{}, _scaled.size() / _scaled.devicePixelRatio()};
     painter.drawImage(
@@ -592,10 +544,6 @@ void AnimationView::PresentFrame(QImage frame)
     if (processingSize.isEmpty()) {
         processingSize = QSize{520, 244};
     }
-    // The cropped part, not the whole frame, has to reach that size.
-    processingSize = QSize{
-        qCeil(processingSize.width() / _contentRect.width()),
-        qCeil(processingSize.height() / _contentRect.height())};
     if (frame.width() > processingSize.width() || frame.height() > processingSize.height()) {
         frame = frame.scaled(processingSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
@@ -608,9 +556,7 @@ void AnimationView::PresentFrame(QImage frame)
         frame.detach();
     }
 
-    // Key the whole frame (its corners are the guaranteed background), then crop.
-    Detail::KnockOutAnimationBackground(frame, _removeEnclosedBackground);
-    frame = CropToContent(frame);
+    Detail::KnockOutAnimationBackground(frame);
 
     _frame = std::move(frame);
     RescaleFrame();
@@ -620,7 +566,7 @@ void AnimationView::PresentFrame(QImage frame)
 
 void AnimationView::RescaleFrame()
 {
-    QImage source = _frame.isNull() ? CropToContent(_fallback) : _frame;
+    QImage source = _showStill && !_still.isNull() ? _still : _frame.isNull() ? _fallback : _frame;
     if (source.isNull() || size().isEmpty()) {
         _scaled = {};
         return;

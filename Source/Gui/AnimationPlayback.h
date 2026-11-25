@@ -8,6 +8,11 @@
 
 namespace Gui {
 
+// Loads the device animations, which ship in `Animations.rcc` beside the executable instead of
+// inside it. Returns false if that file is missing or unreadable; the popup then has no device
+// picture to show.
+bool RegisterAnimationResources();
+
 // GUI-thread owner of one visible playback session. Hidden sessions release the decoder.
 class AnimationPlayback : public QObject
 {

@@ -119,6 +119,7 @@ jobs:
           }
           $requiredRuntimeFiles = @(
             'AirPodsDesktop.exe',
+            'Animations.rcc',
             'Qt6Core.dll',
             'platforms/qwindows.dll',
             'iconengines/qsvgicon.dll',

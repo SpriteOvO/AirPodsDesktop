@@ -91,9 +91,9 @@ Advertisement::Advertisement(const Bluetooth::AdvertisementWatcher::ReceivedData
         _state.caseBox.isCharging = false;
     }
 
-    if (!HasChargingCase(_state.model)) {
-        // Without a case there is no lid to open and nothing to rest in, so stray case bits must
-        // neither pop the battery card up nor change its scene.
+    if (!ReportsLidState(_state.model)) {
+        // Neither a lid to open nor a case to rest in, so stray case bits must not pop the
+        // battery card up.
         _state.caseBox.isBothPodsInCase = false;
         _state.caseBox.isLidOpened = false;
         _state.pods.left.isInCase = false;

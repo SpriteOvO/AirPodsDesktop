@@ -173,6 +173,10 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     Logger::CleanUpOldLogFiles();
 
+    if (!Gui::RegisterAnimationResources()) {
+        LOG(Warn, "Animations.rcc could not be loaded. The popup will show no device picture.");
+    }
+
     // Fusion is fully palette-driven, which is what makes light/dark theming and the Fluent
     // stylesheet consistent across every control. It must be set before any widget exists.
     setStyle(QStyleFactory::create("Fusion"));

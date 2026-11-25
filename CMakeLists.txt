@@ -356,6 +356,7 @@ set(
     "Source/Gui/Widget/ActivityIndicator.cpp"
     "Source/Gui/Widget/Battery.cpp"
     "Source/Gui/Widget/CloseButton.cpp"
+    "Source/Gui/Widget/DeviceStill.cpp"
     "Source/Gui/Widget/FadeOverlay.cpp"
     "Source/Gui/Widget/AnimationView.cpp"
     "Source/Gui/Theme.cpp"
@@ -397,28 +398,16 @@ endif()
 
 set(APD_QRC_FILE "Source/Resource/Resource.qrc")
 
-# The device animations (one per model and color) are well over 100 MB. Through AUTORCC they
-# would become a C++ array of almost a gigabyte per target; BIG_RESOURCES writes them straight
-# into an object file instead. Animation.qrc stays the list of what ships.
-set(APD_ANIMATION_QRC_FILE "${CMAKE_SOURCE_DIR}/Source/Resource/Animation.qrc")
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${APD_ANIMATION_QRC_FILE}")
-file(READ "${APD_ANIMATION_QRC_FILE}" APD_ANIMATION_QRC)
-string(REGEX MATCHALL "<file>[^<]+</file>" APD_ANIMATION_ENTRIES "${APD_ANIMATION_QRC}")
-set(APD_ANIMATION_FILES)
-foreach (APD_ANIMATION_ENTRY ${APD_ANIMATION_ENTRIES})
-    string(REGEX REPLACE "</?file>" "" APD_ANIMATION_ENTRY "${APD_ANIMATION_ENTRY}")
-    list(APPEND APD_ANIMATION_FILES "${CMAKE_SOURCE_DIR}/Source/Resource/${APD_ANIMATION_ENTRY}")
-endforeach()
-
-function(apd_add_animation_resources target)
-    qt_add_resources(
-        ${target} ${target}_animations
-        PREFIX "/Resource"
-        BASE "${CMAKE_SOURCE_DIR}/Source/Resource"
-        BIG_RESOURCES
-        FILES ${APD_ANIMATION_FILES}
-    )
-endfunction()
+# The device animations (one per model and color) are well over 100 MB. Compiled into an
+# executable they would be linked into every target that shows the popup, so they are built once
+# into a binary resource file beside the executables, which `Gui::RegisterAnimationResources()`
+# loads at startup. Animation.qrc stays the list of what ships. The videos are compressed
+# already, so rcc stores them as they are.
+qt_add_binary_resources(
+    apd_animations "Source/Resource/Animation.qrc"
+    DESTINATION "${APD_BINARY_OUT_DIR}/Animations.rcc"
+    OPTIONS --no-compress
+)
 
 #
 # Translation
@@ -567,9 +556,7 @@ add_executable(
     ${APD_QRC_FILE}
 )
 
-apd_add_animation_resources(${PROJECT_NAME})
-
-add_dependencies(${PROJECT_NAME} apd_translations)
+add_dependencies(${PROJECT_NAME} apd_translations apd_animations)
 
 foreach (APD_TARGET ${APD_INTERNAL_TARGETS} ${PROJECT_NAME})
     set(APD_HEADER_DEFINITION_VISIBILITY PRIVATE)

@@ -23,6 +23,7 @@
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QStyleOptionComboBox>
+#include <QTextLayout>
 #include <QThread>
 #include <QUrl>
 #include <QTimer>
@@ -35,6 +36,7 @@
 #include "Source/Gui/MainWindow.h"
 #include "Source/Gui/Widget/ActivityIndicator.h"
 #include "Source/Gui/Widget/Battery.h"
+#include "Source/Gui/Widget/DeviceStill.h"
 #include "Source/Gui/Widget/AnimationView.h"
 #include "Source/Gui/MainWindowPresentation.h"
 #include "Source/Gui/Widget/FadeOverlay.h"
@@ -427,6 +429,37 @@ private Q_SLOTS:
         QTRY_VERIFY_WITH_TIMEOUT(activity->HeadSpoke() != head, 1000);
         VerifySmoothPopupCorners(
             card, QString{"connection-notification-pending-scale%1.png"}.arg(scale));
+
+        // A name too long to share the first line wraps below it and is wider than it. The
+        // spinner still leads the first line rather than the wider block.
+        QString longName;
+        while (message->fontMetrics().horizontalAdvance(longName) < 200) {
+            longName += 'W';
+        }
+        quickConnect.OutcomeChanged(Core::QuickConnect::Outcome::RequestStarted, longName);
+        QTRY_VERIFY(message->text().contains(longName));
+        QTextLayout wrapped{message->text(), message->font()};
+        QTextOption wrapOption;
+        wrapOption.setWrapMode(QTextOption::WordWrap);
+        wrapped.setTextOption(wrapOption);
+        wrapped.beginLayout();
+        QList<qreal> lineWidths;
+        for (auto line = wrapped.createLine(); line.isValid(); line = wrapped.createLine()) {
+            line.setLineWidth(message->contentsRect().width());
+            lineWidths.append(line.naturalTextWidth());
+        }
+        wrapped.endLayout();
+        QVERIFY2(lineWidths.size() >= 2, qPrintable(message->text()));
+        QVERIFY(lineWidths.at(0) + 40 < lineWidths.at(1));
+        const int firstLineLeft =
+            message->mapTo(card, message->contentsRect().topLeft()).x() +
+            qRound((message->contentsRect().width() - lineWidths.at(0)) / 2.0);
+        const int wrappedActivityRight = activity->mapTo(card, QPoint{}).x() + activity->width();
+        QVERIFY2(
+            wrappedActivityRight <= firstLineLeft && firstLineLeft - wrappedActivityRight <= 8,
+            qPrintable(QString{"spinner ends at %1, first line starts at %2"}
+                           .arg(wrappedActivityRight)
+                           .arg(firstLineLeft)));
     }
 
     void QuickConnectCardTracksProgressAndResult()
@@ -735,11 +768,12 @@ private Q_SLOTS:
         QVERIFY(overlay->isHidden());
     }
 
-    void MainWindowKeepsTurningInEveryScene()
+    void MainWindowShowsAStillWithOnePodOut()
     {
-        // Like iOS there is no still picture: the turntable keeps playing while pods come and go.
+        // Like iOS: the turntable plays while the pods are together. With one pod taken out the
+        // popup shows the still render, and the whole scene fades out and back in around the
+        // switch.
         Gui::MainWindow window;
-        QVERIFY(window.findChild<QTimer *>("podsOnlyTimer") == nullptr);
         auto *animation = window.findChild<Gui::Widget::AnimationView *>();
         QVERIFY(animation != nullptr);
         QSignalSpy frames{animation, &Gui::Widget::AnimationView::FramePresented};
@@ -756,22 +790,102 @@ private Q_SLOTS:
         window.Show();
         QTRY_VERIFY(window.isVisible());
 
-        const auto keepsTurning = [&] {
+        const auto turns = [&] {
             QTRY_VERIFY(animation->isVisible());
             const int before = frames.count();
             QTRY_VERIFY_WITH_TIMEOUT(frames.count() >= before + 10, 5000);
+            QVERIFY(animation->IsShowingVideo());
         };
-        keepsTurning();
+        const auto drawsSomething = [&] {
+            const QImage grab = animation->grab().toImage();
+            const QRgb first = grab.pixel(0, 0);
+            for (int y = 0; y < grab.height(); ++y) {
+                for (int x = 0; x < grab.width(); ++x) {
+                    if (grab.pixel(x, y) != first) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+        turns();
+        QCOMPARE(animation->Opacity(), 1.0);
 
+        // One pod out. The video keeps playing while it fades out, then the still fades in.
         state.pods.right.isInCase = false;
         state.caseBox.isBothPodsInCase = false;
         window.UpdateState(state);
-        keepsTurning();
-
-        state.pods.left.isInCase = false;
-        state.pods.left.isInEar = state.pods.right.isInEar = true;
+        QVERIFY(animation->IsShowingVideo());
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QTRY_VERIFY(!animation->IsShowingVideo());
+        // Another update while the still fades in (a battery step, an in-ear bit) must not send
+        // it back out: it keeps coming in.
+        QTRY_VERIFY(animation->Opacity() > 0.2);
+        QVERIFY(animation->Opacity() < 1.0);
+        state.pods.right.battery = Core::AirPods::Battery{60};
         window.UpdateState(state);
-        keepsTurning();
+        qreal arriving = animation->Opacity();
+        for (int i = 0; i < 300 && arriving < 1.0; ++i) {
+            QTest::qWait(10);
+            const qreal now = animation->Opacity();
+            QVERIFY2(
+                now >= arriving,
+                qPrintable(QString{"the still went from %1 back to %2"}.arg(arriving).arg(now)));
+            arriving = now;
+        }
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY(!animation->IsShowingVideo());
+        QVERIFY(animation->isVisible());
+        QVERIFY(drawsSomething());
+        const int stillFrames = frames.count();
+        QTest::qWait(500);
+        QCOMPARE(frames.count(), stillFrames);
+
+        // A battery change alone leaves the still where it is.
+        state.pods.left.battery = Core::AirPods::Battery{70};
+        window.UpdateState(state);
+        QTest::qWait(100);
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY(!animation->IsShowingVideo());
+
+        // Both out: the turntable comes back the same way.
+        state.pods.left.isInCase = false;
+        window.UpdateState(state);
+        QVERIFY(!animation->IsShowingVideo());
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QTRY_VERIFY(animation->IsShowingVideo());
+        QTRY_COMPARE(animation->Opacity(), 1.0);
+        turns();
+
+        // A pod going back in while the video is still fading out, then out again: the video
+        // that was leaving fades back in instead of being swapped.
+        state.pods.left.isInCase = true;
+        window.UpdateState(state);
+        QTRY_VERIFY(animation->Opacity() < 1.0);
+        QVERIFY(animation->IsShowingVideo());
+        state.pods.left.isInCase = false;
+        window.UpdateState(state);
+        qreal lowest = animation->Opacity();
+        for (int i = 0; i < 300 && animation->Opacity() < 1.0; ++i) {
+            QTest::qWait(10);
+            lowest = (std::min)(lowest, animation->Opacity());
+        }
+        QCOMPARE(animation->Opacity(), 1.0);
+        QVERIFY2(lowest > 0.0, "the video faded all the way out before coming back");
+        QVERIFY(animation->IsShowingVideo());
+
+        // Opened with one pod already out, the popup starts on the still.
+        window.close();
+        QTRY_VERIFY(!window.isVisible());
+        state.pods.left.isInCase = true;
+        window.UpdateState(state);
+        window.Show();
+        QTRY_VERIFY(window.isVisible());
+        QVERIFY(animation->isVisible());
+        QCOMPARE(animation->Opacity(), 1.0);
+        QTest::qWait(500);
+        QVERIFY(!animation->IsShowingVideo());
+        QVERIFY(drawsSomething());
     }
 
     void MainWindowTitleFollowsThemeChanges()
@@ -924,8 +1038,9 @@ private Q_SLOTS:
             state.pods.left.battery = Core::AirPods::Battery{80};
             state.pods.right.battery = Core::AirPods::Battery{60};
             state.caseBox.battery = Core::AirPods::Battery{90};
-            // One pod out, so both pod rings and the case ring are shown where they apply.
-            state.pods.left.isInCase = true;
+            // Both pods out with different levels: the turntable plays, and both pod rings and
+            // the case ring are shown where they apply.
+            state.pods.left.isInCase = false;
             state.pods.right.isInCase = false;
 
             Gui::MainWindow window;
@@ -997,6 +1112,80 @@ private Q_SLOTS:
                 }
                 QVERIFY2(std::abs(podsCentre - window.width() / 2.0) <= 3, qPrintable(name));
             }
+        }
+    }
+
+    void MainWindowPlacesRingsUnderTheStill()
+    {
+        // With one pod out the popup shows the pods and the case side by side, as iOS does,
+        // and each ring sits under the object it belongs to.
+        QVERIFY(QDir{}.mkpath(QStringLiteral(APD_BINARY_DIR "/UiValidation")));
+        for (auto model : magic_enum::enum_values<Core::AirPods::Model>()) {
+            if (model == Core::AirPods::Model::Unknown || model == Core::AirPods::Model::_Max ||
+                !Core::AirPods::HasChargingCase(model))
+            {
+                continue;
+            }
+            const auto name = Helper::ToString(model);
+            const auto presentation = Gui::GetAnimationPresentation(model);
+            const auto still = Gui::Widget::LoadDeviceStill(presentation.StillDirectory());
+            QVERIFY2(still.has_value(), qPrintable(name));
+            QVERIFY(still->leftCenter < still->rightCenter);
+            QVERIFY(still->rightCenter < still->caseCenter);
+
+            Core::AirPods::State state;
+            state.model = model;
+            state.displayName = name;
+            state.pods.left.battery = Core::AirPods::Battery{40};
+            state.pods.left.isCharging = true;
+            state.pods.right.battery = Core::AirPods::Battery{30};
+            state.caseBox.battery = Core::AirPods::Battery{90};
+            state.pods.left.isInCase = true;
+            state.pods.right.isInCase = false;
+
+            Gui::MainWindow window;
+            window.UpdateState(state);
+            window.Show();
+            QTRY_VERIFY(window.isVisible());
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QTRY_VERIFY(animation->isVisible());
+            QCoreApplication::processEvents();
+            QVERIFY2(!animation->IsShowingVideo(), qPrintable(name));
+
+            // The view takes the still's proportions and stays inside the popup.
+            const QRect view{animation->mapTo(&window, QPoint{}), animation->size()};
+            QVERIFY2(view.left() >= 0 && view.right() < window.width(), qPrintable(name));
+            QVERIFY2(
+                std::abs(
+                    view.width() -
+                    view.height() * still->image.width() / qreal(still->image.height())) <= 1,
+                qPrintable(name));
+            QVERIFY2(
+                std::abs(view.center().x() + 0.5 - window.width() / 2.0) <= 1, qPrintable(name));
+
+            const auto centreOf = [&](Gui::Widget::Battery *ring) {
+                return ring->mapTo(&window, ring->rect().center()).x() + 0.5;
+            };
+            for (auto *ring : window.findChildren<Gui::Widget::Battery *>()) {
+                QVERIFY2(ring->isVisibleTo(&window), qPrintable(name));
+                qreal fraction = still->caseCenter;
+                if (ring->getBadge() == Gui::Widget::Battery::Badge::Left) {
+                    fraction = still->leftCenter;
+                }
+                else if (ring->getBadge() == Gui::Widget::Battery::Badge::Right) {
+                    fraction = still->rightCenter;
+                }
+                const qreal expected = view.x() + fraction * view.width();
+                QVERIFY2(
+                    std::abs(centreOf(ring) - expected) <= 2,
+                    qPrintable(QString{"%1 ring %2 at %3, its object at %4"}
+                                   .arg(name)
+                                   .arg(static_cast<int>(ring->getBadge()))
+                                   .arg(centreOf(ring))
+                                   .arg(expected)));
+            }
+            QVERIFY(window.grab().save(QString{APD_BINARY_DIR "/UiValidation/still-%1.png"}.arg(
+                QString{magic_enum::enum_name(model).data()})));
         }
     }
 
@@ -1724,6 +1913,10 @@ int main(int argc, char **argv)
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
     QApplication app{argc, argv};
+    if (!Gui::RegisterAnimationResources()) {
+        qCritical("Animations.rcc was not found beside the test executable.");
+        return 1;
+    }
     // Production logging installs a Qt message handler during static initialization. Restore the
     // default handler so QTest assertion details remain visible in CTest and CI output.
     qInstallMessageHandler(nullptr);

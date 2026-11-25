@@ -195,7 +195,15 @@ in `vcpkg.json`; a `v*.*.*` tag must match both. CI fails the build otherwise. F
    **and** register both in `Source/Resource/Animation.qrc`. Color renders live in a folder per
    model, one `<code>.avi` per color. `MapsMainWindowAnimationResources` walks every model and color
    and fails if a mapping names a resource the qrc does not list or that is missing from disk.
-5. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
+5. For a model with a charging case, add the still scene's pictures under
+   `Source/Resource/Image/Still/<same path as the video>/` — `L.png`, `R.png`, `Case.png`, the 3x
+   `ProxCard_L`, `ProxCard_R` and `ProxCard_case-closed-charged` images of Apple's bundle, unedited —
+   and register them in `Animation.qrc`. `Widget::LoadDeviceStill` lays them out like the iOS sheet.
+6. Extend `MapsMainWindowAnimationResources` in `Tests/AirPodsDomainTests.cpp`.
+
+The popup plays the video while the pods are together (both in the case or both out) and for
+models without a case. With one pod out it shows the still instead, and the picture and the
+battery row fade out and back in together around every scene change.
 
 Color codes are the advertised color byte (`AppleCP::Color`, read as a raw byte). They match the
 `CL` field of Apple's SharingDeviceAssets catalog, so each catalog variant maps to its code; a code
@@ -205,9 +213,10 @@ Renders carry a chroma matte that `AnimationView` keys out from the frame corner
 default, green for pink and purple products, whose surfaces would otherwise read as magenta spill
 and be bleached. The spill test follows whichever matte the frame carries.
 
-`Animation.qrc` is compiled with `BIG_RESOURCES` through `apd_add_animation_resources()` in
-`CMakeLists.txt`; AUTORCC would turn it into a near-gigabyte C++ array per target. Any target that
-shows the popup (the app, `UiRenderingTests`) must call that function.
+`Animation.qrc` is not linked into any executable. The `apd_animations` target in `CMakeLists.txt`
+compiles it once into `Build/Binary/Animations.rcc`, which ships beside the executable. Anything
+that shows the popup (the app, `UiRenderingTests`) depends on that target and calls
+`Gui::RegisterAnimationResources()` before creating a window.
 
 Keep animation source material and conversion tooling outside the repository. Commit only the
 generated `.avi` runtime asset needed by the application, then register and test it as described

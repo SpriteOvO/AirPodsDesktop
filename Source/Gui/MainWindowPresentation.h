@@ -35,12 +35,11 @@ enum class BatteryBadge : uint32_t {
     Case,
 };
 
-// What the sheet shows, following iOS. The turntable render keeps playing in every scene; only
-// the battery row changes:
-//   PodsInCase   both pods rest in the open case: merged ring + case ring
-//   OnePodOut    one pod taken out: L/R rings + case ring
-//   BothPodsOut  both taken out: L/R rings (merged when they match) + case ring
-//   Headset      over-ear models with one battery and no case: a single ring
+// What the sheet shows, following iOS:
+//   PodsInCase   both pods rest in the open case: turntable render, merged ring + case ring
+//   OnePodOut    one pod taken out: still render, L/R rings + case ring
+//   BothPodsOut  both taken out: turntable render, L/R rings (merged when they match) + case ring
+//   Headset      over-ear models with one battery and no case: turntable render, a single ring
 enum class Scene : uint32_t {
     PodsInCase,
     OnePodOut,
@@ -74,18 +73,15 @@ struct MainWindowPresentation {
 struct AnimationPresentation {
     QString resource;
     QSize sourceSize;
-    bool removeEnclosedBackground{false};
     // Horizontal centres of the pods and the case in the render, as fractions of its width. They
     // are the turntable axes measured over every frame, so the battery rings sit under them.
     qreal podsCenter{0.5};
     std::optional<qreal> caseCenter;
-    // The part of the render that is shown, as fractions of the frame; the centres above are
-    // relative to it. Crops the empty margins of renders that leave the product small.
-    QRectF contentRect{0.0, 0.0, 1.0, 1.0};
 
-    // The proportions of the shown part, which the view takes.
-    QSizeF ShownSize() const;
     QString FallbackResource() const;
+    // Where the pictures of the separate pods and the case are, for the still scene. Models
+    // without a charging case have none.
+    QString StillDirectory() const;
 };
 
 class MainWindowViewModel

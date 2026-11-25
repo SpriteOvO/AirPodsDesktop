@@ -240,32 +240,32 @@ GetAnimationPresentation(Core::AirPods::Model model, Core::AppleCP::Color color)
         const auto shown = rendered ? code : renders->colors.front();
         return {
             QString{"qrc:/Resource/Video/%1/%2.avi"}.arg(renders->directory).arg(shown),
-            renders->sourceSize, false, renders->podsCenter, renders->caseCenter};
+            renders->sourceSize, renders->podsCenter, renders->caseCenter};
     }
 
     // The AirPods come in white only. Centres are the mean turntable axes over all frames.
     switch (model) {
     case Model::AirPods_1:
-        return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}, false, 0.261, 0.732};
+        return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}, 0.261, 0.732};
     case Model::AirPods_2:
-        return {"qrc:/Resource/Video/AirPods_2.avi", {800, 400}, false, 0.261, 0.732};
+        return {"qrc:/Resource/Video/AirPods_2.avi", {800, 400}, 0.261, 0.732};
     case Model::AirPods_3:
-        return {"qrc:/Resource/Video/AirPods_3.avi", {900, 450}, false, 0.217, 0.776};
+        return {"qrc:/Resource/Video/AirPods_3.avi", {900, 450}, 0.217, 0.776};
     case Model::AirPods_4:
-        return {"qrc:/Resource/Video/AirPods_4.avi", {900, 450}, false, 0.233, 0.755};
+        return {"qrc:/Resource/Video/AirPods_4.avi", {900, 450}, 0.233, 0.755};
     case Model::AirPods_4_ANC:
-        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}, false, 0.233, 0.755};
+        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}, 0.233, 0.755};
     case Model::AirPods_5:
-        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}, false, 0.233, 0.755};
+        return {"qrc:/Resource/Video/AirPods_4_ANC.avi", {900, 450}, 0.233, 0.755};
     case Model::AirPods_Pro:
-        return {"qrc:/Resource/Video/AirPods_Pro.avi", {900, 450}, false, 0.209, 0.762};
+        return {"qrc:/Resource/Video/AirPods_Pro.avi", {900, 450}, 0.209, 0.762};
     case Model::AirPods_Pro_2:
     case Model::AirPods_Pro_2_USB_C:
-        return {"qrc:/Resource/Video/AirPods_Pro_2.avi", {900, 450}, false, 0.212, 0.756};
+        return {"qrc:/Resource/Video/AirPods_Pro_2.avi", {900, 450}, 0.212, 0.756};
     case Model::AirPods_Pro_3:
-        return {"qrc:/Resource/Video/AirPods_Pro_3.avi", {900, 450}, false, 0.210, 0.733};
+        return {"qrc:/Resource/Video/AirPods_Pro_3.avi", {900, 450}, 0.210, 0.733};
     default:
-        return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}, false, 0.261, 0.732};
+        return {"qrc:/Resource/Video/AirPods_1.avi", {800, 400}, 0.261, 0.732};
     }
 }
 
@@ -282,11 +282,6 @@ std::vector<Core::AppleCP::Color> GetAnimationColors(Core::AirPods::Model model)
     return colors;
 }
 
-QSizeF AnimationPresentation::ShownSize() const
-{
-    return {sourceSize.width() * contentRect.width(), sourceSize.height() * contentRect.height()};
-}
-
 QString AnimationPresentation::FallbackResource() const
 {
     if (!resource.startsWith("qrc:/Resource/Video/") || !resource.endsWith(".avi")) {
@@ -296,6 +291,19 @@ QString AnimationPresentation::FallbackResource() const
     result.replace("qrc:/Resource/Video/", ":/Resource/Image/Animation/");
     result.chop(4);
     return result + ".png";
+}
+
+QString AnimationPresentation::StillDirectory() const
+{
+    if (!caseCenter.has_value() || !resource.startsWith("qrc:/Resource/Video/") ||
+        !resource.endsWith(".avi"))
+    {
+        return {};
+    }
+    auto result = resource;
+    result.replace("qrc:/Resource/Video/", ":/Resource/Image/Still/");
+    result.chop(4);
+    return result;
 }
 
 QPoint PopupPosition(const QRect &availableGeometry, QSize windowSize, QSize margin)

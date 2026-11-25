@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QScreen>
 #include <QSpacerItem>
+#include <QTextLayout>
 #include <QVBoxLayout>
 
 #include "MainWindow.h"
@@ -210,10 +211,27 @@ void NotificationWindow::PlaceActivity()
     if (_activity->isHidden()) {
         return;
     }
+    const QRect contents = _message->contentsRect();
     const auto text = _message->fontMetrics().boundingRect(
-        _message->contentsRect(), _message->alignment() | Qt::TextWordWrap, _message->text());
+        contents, _message->alignment() | Qt::TextWordWrap, _message->text());
+
+    // The indicator leads the first line, which is centred on its own: when a later line of a
+    // wrapped message is wider, the block's left edge is not where the first line starts.
+    qreal firstLineWidth = text.width();
+    QTextLayout layout{_message->text().section(QChar::LineFeed, 0, 0), _message->font()};
+    QTextOption option;
+    option.setWrapMode(QTextOption::WordWrap);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    if (auto line = layout.createLine(); line.isValid()) {
+        line.setLineWidth(contents.width());
+        firstLineWidth = line.naturalTextWidth();
+    }
+    layout.endLayout();
+    const int firstLineLeft = contents.left() + qRound((contents.width() - firstLineWidth) / 2.0);
+
     _activity->move(
-        text.left() - kActivityGap - kActivitySize,
+        firstLineLeft - kActivityGap - kActivitySize,
         text.top() + (FirstLineHeight(_message) - kActivitySize) / 2);
 }
 

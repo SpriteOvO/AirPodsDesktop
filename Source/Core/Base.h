@@ -103,25 +103,39 @@ inline bool HasSingleBattery(Model model)
     }
 }
 
-// Only the single-battery models come without a case; any case or lid field they advertise is
-// meaningless.
+// Only the single-battery models come without a case, so they never show a case battery. See
+// `ReportsLidState` for their case and lid bits.
 inline bool HasChargingCase(Model model)
 {
     return !HasSingleBattery(model);
+}
+
+inline bool IsW1Beats(Model model)
+{
+    switch (model) {
+    case Model::Powerbeats_3:
+    case Model::Beats_X:
+    case Model::Beats_Solo3:
+        return true;
+    default:
+        return false;
+    }
 }
 
 // The W1 Beats have no in-ear or on-head sensor, so their in-ear bits carry nothing and must not
 // play or pause media.
 inline bool HasEarDetection(Model model)
 {
-    switch (model) {
-    case Model::Powerbeats_3:
-    case Model::Beats_X:
-    case Model::Beats_Solo3:
-        return false;
-    default:
-        return true;
-    }
+    return !IsW1Beats(model);
+}
+
+// Whether a model's case and lid bits are acted on. The W1 Beats have neither, so theirs are
+// noise. AirPods Max has no charging case either, but its bits have always opened and closed the
+// battery card like any other model's; what a Max means by them is not established, so they
+// keep doing that.
+inline bool ReportsLidState(Model model)
+{
+    return !IsW1Beats(model);
 }
 
 } // namespace Core::AirPods

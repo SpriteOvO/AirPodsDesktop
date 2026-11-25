@@ -39,6 +39,7 @@
 #include "AnimationPlayback.h"
 #include "Widget/AnimationView.h"
 #include "Widget/CloseButton.h"
+#include "Widget/DeviceStill.h"
 #include "Widget/FadeOverlay.h"
 
 namespace Gui {
@@ -94,19 +95,30 @@ private:
     Ui::MainWindow _ui;
 
     QPropertyAnimation _posAnimation{this, "pos"};
-    // The battery row cross-fades between scenes: the old row leaves, then the new one arrives.
-    // The overlay carries the old row while the widgets underneath are already rearranged.
+    // One fade for the whole scene, as on iOS: the picture and the battery row leave together,
+    // then the new ones arrive together. The overlay carries the old row while the widgets
+    // underneath are already rearranged.
     Widget::FadeOverlay *_batteryFade = new Widget::FadeOverlay{this};
     std::optional<MainWindowPresentation> _lastPresentation;
-    // Like iOS, the turntable video keeps playing in every scene.
+    // Like iOS: the turntable video plays while the pods are together (both in the case or both
+    // out) and for headsets; with one pod taken out the view shows the pods and the case side by
+    // side, still, each over its own battery ring.
     Widget::AnimationView *_animationView;
     AnimationPlayback *_playback;
     QVariantAnimation _sceneFade{this};
     enum class FadePhase { Idle, Out, In } _fadePhase{FadePhase::Idle};
-    qreal _fadeFrom{1.0}; // opacity the running phase started from (a resumed fade)
+    bool _rotating{true};       // what the scene asks for: the video, or else the still
+    bool _shownRotating{true};  // what is on screen right now (lags behind during a fade-out)
+    bool _fadeMedia{false};     // the picture takes part in the running fade
+    bool _fadeBatteries{false}; // the battery row takes part in the running fade
+    qreal _fadeFrom{1.0};       // opacity the running phase started from (a resumed fade)
     // Where the pods and the case sit in the current render, as fractions of its width.
     qreal _podsCenter{0.5};
     std::optional<qreal> _caseCenter;
+    qreal _videoAspect{2.0};
+    // The still scene's picture; models without a charging case have none.
+    std::optional<Widget::DeviceStill> _still;
+    int _podRingSpacing{0}; // the layout's own spacing between the left and the right ring
     QRect _podsRowGeometry;
     QRect _caseRowGeometry;
     QTimer *_autoHideTimer = new QTimer{this};
@@ -121,7 +133,7 @@ private:
         VersionUpdateAvailableSafely(std::forward<decltype(args)>(args)...);
     }};
     std::optional<Core::AirPods::Model> _cacheModel;
-    Core::AppleCP::Color _cacheColor{Core::AppleCP::Color::White};
+    QString _cacheResource;
     ButtonAction _buttonAction{ButtonAction::NoButton};
     MainWindowViewModel _viewModel;
     bool _isVisible{false};
@@ -137,6 +149,8 @@ private:
     void SetAnimation(std::optional<Core::AirPods::Model> model, Core::AppleCP::Color color);
     void PlayAnimation();
     void StopAnimation();
+    void ShowMedia(bool rotating);
+    int MediaWidth(bool rotating) const;
     void StartSceneFade(FadePhase phase);
     void LayoutBatteryRows();
     QRect BatteryRowRect() const;

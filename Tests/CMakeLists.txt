@@ -15,7 +15,8 @@ target_link_libraries(
 
 target_include_directories(AirPodsDomainTests PRIVATE "${CMAKE_SOURCE_DIR}")
 
-# The qrc is linked into the application target, so resource checks read the source tree instead.
+# The animations ship in Animations.rcc, not in this executable, so resource checks read the
+# source tree instead.
 target_compile_definitions(
     AirPodsDomainTests PRIVATE APD_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
@@ -60,7 +61,6 @@ target_compile_definitions(
 add_test(NAME AnimationViewTests COMMAND AnimationViewTests)
 
 add_executable(UiRenderingTests UiRenderingTests.cpp ${CMAKE_SOURCE_DIR}/Source/Resource/Resource.qrc)
-apd_add_animation_resources(UiRenderingTests)
 
 target_link_libraries(
     UiRenderingTests
@@ -73,7 +73,7 @@ target_link_libraries(
 
 target_include_directories(UiRenderingTests PRIVATE "${CMAKE_SOURCE_DIR}")
 target_compile_definitions(UiRenderingTests PRIVATE APD_BINARY_DIR="${CMAKE_BINARY_DIR}")
-add_dependencies(UiRenderingTests apd_translations)
+add_dependencies(UiRenderingTests apd_translations apd_animations)
 
 add_test(NAME UiRenderingTests COMMAND UiRenderingTests)
 foreach(scale_factor 1 1.25 1.5 2)

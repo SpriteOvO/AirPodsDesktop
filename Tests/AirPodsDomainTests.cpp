@@ -1534,6 +1534,11 @@ void AirPodsDomainTests::CollapsesAirPodsMaxToSingleBattery()
             QCOMPARE(state.pods.left.battery.Value(), 80u);
             QCOMPARE(state.pods.right.battery.Value(), 80u);
             QVERIFY(!state.caseBox.battery.Available());
+            // `MakePacket` sets "both in case" and an open lid. A Max keeps them, so they open
+            // and close the battery card as they always have; only the scene ignores them.
+            QVERIFY(Core::AirPods::ReportsLidState(state.model));
+            QVERIFY(state.caseBox.isBothPodsInCase);
+            QVERIFY(state.caseBox.isLidOpened);
 
             Gui::MainWindowViewModel viewModel;
             viewModel.UpdateState(state);
@@ -1684,6 +1689,7 @@ void AirPodsDomainTests::RecognisesW1Beats()
         QCOMPARE(Helper::ToString(model), name);
         QVERIFY(Core::AirPods::HasSingleBattery(model));
         QVERIFY(!Core::AirPods::HasChargingCase(model));
+        QVERIFY(!Core::AirPods::ReportsLidState(model));
         QVERIFY(!Core::AirPods::HasEarDetection(model));
 
         for (const auto side : {Side::Left, Side::Right}) {
@@ -1778,11 +1784,17 @@ void AirPodsDomainTests::MapsMainWindowAnimationResources()
         const auto model = static_cast<Core::AirPods::Model>(i);
         for (const auto color : Gui::GetAnimationColors(model)) {
             const auto presentation = Gui::GetAnimationPresentation(model, color);
-            for (const auto &resource : {
-                     QString{presentation.resource}.replace("qrc:/Resource/", ""),
-                     QString{presentation.FallbackResource()}.replace(":/Resource/", ""),
-                 })
-            {
+            QStringList resources{
+                QString{presentation.resource}.replace("qrc:/Resource/", ""),
+                QString{presentation.FallbackResource()}.replace(":/Resource/", ""),
+            };
+            // Every model with a charging case has the still scene's three pictures.
+            const auto stills = QString{presentation.StillDirectory()}.replace(":/Resource/", "");
+            QCOMPARE(!stills.isEmpty(), Core::AirPods::HasChargingCase(model));
+            if (!stills.isEmpty()) {
+                resources << stills + "/L.png" << stills + "/R.png" << stills + "/Case.png";
+            }
+            for (const auto &resource : resources) {
                 QVERIFY2(
                     qrcContents.contains("<file>" + resource + "</file>"),
                     qPrintable(QString{"resource not listed in Animation.qrc: %1"}.arg(resource)));

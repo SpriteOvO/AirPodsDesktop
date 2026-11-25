@@ -43,13 +43,13 @@
    </property>
    <layout class="QGridLayout" name="layoutAnimation">
     <property name="leftMargin">
-     <number>8</number>
+     <number>0</number>
     </property>
     <property name="topMargin">
      <number>6</number>
     </property>
     <property name="rightMargin">
-     <number>8</number>
+     <number>0</number>
     </property>
     <property name="bottomMargin">
      <number>6</number>

@@ -21,7 +21,6 @@
 #include <mutex>
 
 #include <QImage>
-#include <QRectF>
 #include <QWidget>
 
 class QVideoFrame;
@@ -32,9 +31,9 @@ namespace Gui::Widget {
 namespace Detail {
 
 // Removes either the generated chroma matte or a legacy white matte while preserving product
-// surfaces. The Max animation also supports enclosed legacy matte inside the headband.
+// surfaces.
 // Input must be ARGB32 premultiplied. Exposed for deterministic decoded-frame regression tests.
-void KnockOutAnimationBackground(QImage &image, bool removeEnclosedBackground = false);
+void KnockOutAnimationBackground(QImage &image);
 
 } // namespace Detail
 
@@ -59,12 +58,20 @@ public:
     // Drops the last frame so nothing stale is painted the next time the widget shows.
     void Clear();
 
-    void SetRemoveEnclosedBackground(bool enabled);
+    // The poster of the video. It is what the view shows whenever no video frame is there to
+    // draw: before the first one arrives, and if the video cannot be played.
     void SetFallbackImage(QImage image);
+    // A picture to show in place of the video and its poster, for scenes that do not turn.
+    // `SetShowStill` has no effect while there is no such picture.
+    void SetStillImage(QImage image);
+    void SetShowStill(bool show);
     void SetPlaybackEnabled(bool enabled);
-    // The part of each frame to show, as fractions of the frame. Renders with wide empty margins
-    // are cropped after keying, so the product fills the view.
-    void SetContentRect(QRectF rect);
+
+    // Whole-view opacity, so the picture can fade while the video keeps playing.
+    void SetOpacity(qreal opacity);
+    qreal Opacity() const;
+    // Whether a decoded video frame, rather than a still picture, is being shown.
+    bool IsShowingVideo() const;
 
 Q_SIGNALS:
     void Clicked();
@@ -82,13 +89,13 @@ private:
     QImage _frame;  // processed, source resolution, ARGB32
     QImage _scaled; // `_frame` fitted to the widget
     QImage _fallback;
+    QImage _still;
+    bool _showStill{false};
     quint64 _generation{0};
     bool _playbackEnabled{true};
     bool _deliveryQueued{false};
-    bool _removeEnclosedBackground{false};
-    QRectF _contentRect{0.0, 0.0, 1.0, 1.0};
+    qreal _opacity{1.0};
 
-    QImage CropToContent(const QImage &image) const;
     void InvalidatePendingFrames();
     void OnVideoFrameChanged(const QVideoFrame &frame);
     void PresentFrame(QImage frame);
