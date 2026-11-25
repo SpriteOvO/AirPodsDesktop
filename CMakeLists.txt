@@ -326,6 +326,8 @@ if (APD_OS_LINUX)
         INTERFACE_COMPILE_DEFINITIONS BOOST_STACKTRACE_USE_ADDR2LINE
         INTERFACE_LINK_LIBRARIES dl)
     find_package(Threads REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PULSEAUDIO REQUIRED IMPORTED_TARGET libpulse)
 endif()
 
 if(NOT TARGET Boost::pfr)
@@ -427,6 +429,7 @@ elseif (APD_OS_LINUX)
         "Source/Core/AutoStart_linux.cpp"
         "Source/Core/Bluetooth_linux.cpp"
         "Source/Core/GlobalMedia_linux.cpp"
+        "Source/Core/PlaybackMonitor_linux.cpp"
         "Source/Core/QuickConnect_linux.cpp"
         "Source/Core/NoiseControl.cpp"
         "Source/Core/NoiseControl.h"
@@ -584,6 +587,7 @@ endif()
 if (APD_OS_LINUX)
     target_link_libraries(apd_support PUBLIC Threads::Threads)
     target_link_libraries(apd_core PUBLIC Qt6::DBus Threads::Threads)
+    target_link_libraries(apd_core PRIVATE PkgConfig::PULSEAUDIO)
 endif()
 
 target_link_libraries(

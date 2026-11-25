@@ -23,6 +23,7 @@
 #if defined APD_OS_LINUX
 
     #include "Source/Core/GlobalMedia.h"
+    #include "Source/Core/PlaybackMonitor_linux.h"
 
 namespace {
 
@@ -72,6 +73,7 @@ private Q_SLOTS:
     void doesNotResumePlayersResumedBySomeoneElse();
     void dropsPlayersThatWentAway();
     void ignoresPlayersWithoutAReadableStatus();
+    void playbackProbeEvaluatesExternalStreams();
 
 private:
     std::shared_ptr<FakeMprisBus> _bus;
@@ -164,6 +166,24 @@ void GlobalMediaTests::ignoresPlayersWithoutAReadableStatus()
     Core::GlobalMedia::Pause();
 
     QCOMPARE(_bus->toggled, QStringList{kPlayerA});
+}
+
+void GlobalMediaTests::playbackProbeEvaluatesExternalStreams()
+{
+    using Core::GlobalMedia::Details::HasExternalPlayback;
+    using Core::GlobalMedia::Details::LinuxPlaybackStream;
+
+    constexpr int64_t selfPid = 4242;
+
+    QVERIFY(!HasExternalPlayback({}, selfPid));
+    QVERIFY(!HasExternalPlayback({LinuxPlaybackStream{selfPid, false}}, selfPid));
+    QVERIFY(!HasExternalPlayback({LinuxPlaybackStream{9999, true}}, selfPid));
+    QVERIFY(HasExternalPlayback({LinuxPlaybackStream{9999, false}}, selfPid));
+    QVERIFY(HasExternalPlayback({LinuxPlaybackStream{std::nullopt, false}}, selfPid));
+    QVERIFY(HasExternalPlayback(
+        {LinuxPlaybackStream{selfPid, false}, LinuxPlaybackStream{9999, true},
+         LinuxPlaybackStream{1234, false}},
+        selfPid));
 }
 
 QTEST_GUILESS_MAIN(GlobalMediaTests)

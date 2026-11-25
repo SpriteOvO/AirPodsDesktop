@@ -79,7 +79,7 @@ void PlaybackMonitor::SetEnabled(bool enabled)
     }};
 }
 
-#if !defined APD_OS_WIN
+#if !defined APD_OS_WIN && !defined APD_OS_LINUX
 PlaybackProbe CreatePlaybackProbe()
 {
     return [] { return std::optional<bool>{false}; };
