@@ -837,57 +837,77 @@ private Q_SLOTS:
 
     void MainWindowShowsTheHeadsetAtFullSize()
     {
-        // The headset fills most of the picture's height, like the earbuds and their case do.
-        Core::AirPods::State state;
-        state.model = Core::AirPods::Model::AirPods_Max;
-        state.displayName = QStringLiteral("AirPods Max");
-        state.pods.left.battery = Core::AirPods::Battery{80};
-        Gui::MainWindow window;
-        auto *animation = window.findChild<Gui::Widget::AnimationView *>();
-        QSignalSpy frames{animation, &Gui::Widget::AnimationView::FramePresented};
-        window.UpdateState(state);
-        window.Show();
-        QTRY_VERIFY(window.isVisible());
-        QTRY_VERIFY_WITH_TIMEOUT(frames.count() >= 10, 5000);
+        auto &theme = Gui::Theme::Manager::Instance();
+        const auto originalMode = theme.CurrentMode();
+        for (const auto mode : {Gui::Theme::Mode::Light, Gui::Theme::Mode::Dark}) {
+            theme.SetMode(mode);
+            const QString themeName = mode == Gui::Theme::Mode::Light ? "light" : "dark";
 
-        const auto image = animation->grab().toImage();
-        int top = image.height(), bottom = -1;
-        for (int y = 0; y < image.height(); ++y) {
-            for (int x = 0; x < image.width(); ++x) {
-                if (qAlpha(image.pixel(x, y)) > 16 &&
-                    image.pixel(x, y) != window.palette().color(QPalette::Window).rgba())
-                {
-                    top = (std::min)(top, y);
-                    bottom = (std::max)(bottom, y);
-                    break;
+            // The headset fills most of the picture's height, like the earbuds and their case do.
+            Core::AirPods::State state;
+            state.model = Core::AirPods::Model::AirPods_Max;
+            state.displayName = QStringLiteral("AirPods Max");
+            state.pods.left.battery = Core::AirPods::Battery{80};
+            Gui::MainWindow window;
+            auto *animation = window.findChild<Gui::Widget::AnimationView *>();
+            QSignalSpy frames{animation, &Gui::Widget::AnimationView::FramePresented};
+            window.UpdateState(state);
+            window.Show();
+            QTRY_VERIFY(window.isVisible());
+            QTRY_VERIFY_WITH_TIMEOUT(frames.count() >= 10, 5000);
+
+            // The keyed-out corners show the surface the popup paints behind the picture. It is
+            // not the palette's window colour in every theme, and decoding can move it a level.
+            const auto image = animation->grab().toImage();
+            const QRgb surface = image.pixel(0, 0);
+            const auto isHeadset = [surface](QRgb pixel) {
+                return qAlpha(pixel) > 16 && (std::max)(
+                                                 {std::abs(qRed(pixel) - qRed(surface)),
+                                                  std::abs(qGreen(pixel) - qGreen(surface)),
+                                                  std::abs(qBlue(pixel) - qBlue(surface))}) > 8;
+            };
+            int top = image.height(), bottom = -1;
+            for (int y = 0; y < image.height(); ++y) {
+                for (int x = 0; x < image.width(); ++x) {
+                    if (isHeadset(image.pixel(x, y))) {
+                        top = (std::min)(top, y);
+                        bottom = (std::max)(bottom, y);
+                        break;
+                    }
                 }
             }
-        }
-        QVERIFY(bottom >= top);
-        QVERIFY2(
-            bottom - top + 1 >= image.height() * 0.75,
-            qPrintable(QString{"%1 of %2"}.arg(bottom - top + 1).arg(image.height())));
+            QVERIFY2(bottom >= top, qPrintable(themeName));
+            QVERIFY2(
+                bottom - top + 1 >= image.height() * 0.75, qPrintable(QString{"%1: %2 of %3"}
+                                                                          .arg(themeName)
+                                                                          .arg(bottom - top + 1)
+                                                                          .arg(image.height())));
 
-        // ...but stops well above its battery ring, as on iOS.
-        Gui::Widget::Battery *ring = nullptr;
-        for (auto *candidate : window.findChildren<Gui::Widget::Battery *>()) {
-            if (candidate->isVisibleTo(&window)) {
-                ring = candidate;
+            // ...but stops well above its battery ring, as on iOS.
+            Gui::Widget::Battery *ring = nullptr;
+            for (auto *candidate : window.findChildren<Gui::Widget::Battery *>()) {
+                if (candidate->isVisibleTo(&window)) {
+                    ring = candidate;
+                }
             }
-        }
-        QVERIFY(ring != nullptr);
-        // The grab is in device pixels; the widget geometry is in logical ones.
-        const qreal headsetBottom =
-            animation->mapTo(&window, QPointF{0.0, (bottom + 1) / image.devicePixelRatio()}).y();
-        const int ringTop = ring->mapTo(&window, QPoint{}).y();
-        QVERIFY2(
-            ringTop - headsetBottom >= 12,
-            qPrintable(
-                QString{"headset ends at %1, ring starts at %2"}.arg(headsetBottom).arg(ringTop)));
+            QVERIFY(ring != nullptr);
+            // The grab is in device pixels; the widget geometry is in logical ones.
+            const qreal headsetBottom =
+                animation->mapTo(&window, QPointF{0.0, (bottom + 1) / image.devicePixelRatio()})
+                    .y();
+            const int ringTop = ring->mapTo(&window, QPoint{}).y();
+            QVERIFY2(
+                ringTop - headsetBottom >= 12,
+                qPrintable(QString{"%1: headset ends at %2, ring starts at %3"}
+                               .arg(themeName)
+                               .arg(headsetBottom)
+                               .arg(ringTop)));
 
-        const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
-        VerifySmoothPopupCorners(
-            &window, QString{"main-window-airpods-max-scale%1.png"}.arg(scale));
+            const auto scale = qEnvironmentVariable("QT_SCALE_FACTOR", "system");
+            VerifySmoothPopupCorners(
+                &window, QString{"main-window-airpods-max-%1-scale%2.png"}.arg(themeName, scale));
+        }
+        theme.SetMode(originalMode);
     }
 
     void MainWindowCentresRingsUnderTheDevice()
