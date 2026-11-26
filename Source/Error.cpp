@@ -19,6 +19,7 @@
 #include "Error.h"
 
 #include <format>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 
@@ -60,10 +61,7 @@ void Initialize()
 {
     Error::Impl::WriteStackTraceFile();
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
-
+#if defined APD_OS_WIN
     // Because QMessageBox does not allow calls from non-GUI threads.
     // So far, there seems to be no better way than using native APIs.
     //
@@ -95,6 +93,14 @@ void Initialize()
     else {
         MessageBoxA(nullptr, content.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
     }
+#else
+    // There is no non-GUI-thread-safe native dialog on Linux. A fatal error is reported on
+    // stderr (and in the log) instead; the stack trace file is already on disk.
+    std::fprintf(
+        stderr, "%s fatal error: %s\n%s\n", Config::ProgramName, content.c_str(),
+        report ? std::format("Please report this at {}.", Config::UrlIssues).c_str() : "");
+    std::fflush(stderr);
+#endif
 
 #if defined APD_DEBUG
     Utils::Debug::BreakPoint();

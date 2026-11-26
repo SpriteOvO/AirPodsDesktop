@@ -58,6 +58,8 @@ bool IsStrongerCompleteReport(const Advertisement &candidate, const Advertisemen
 
 } // namespace
 
+StateManager::StateManager() : StateManager(Intervals{}) {}
+
 StateManager::StateManager(Intervals intervals)
 {
     _lostTimer.Start(intervals.lost, [this] {

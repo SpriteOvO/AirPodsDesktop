@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <map>
@@ -21,7 +22,9 @@
 #include "Source/Gui/TaskbarGeometry.h"
 #include "Source/Utils.h"
 
-#include <sddl.h>
+#if defined APD_OS_WIN
+    #include <sddl.h>
+#endif
 
 namespace {
 
@@ -235,6 +238,7 @@ private Q_SLOTS:
     void RemembersSideAddressAcrossStateReset();
     void AcceptsUnknownRssiFromTrackedAddress();
     void MergesAdvertisementsFromBothSides();
+    void HonorsConfiguredAdvertisementTimeout();
     void RejectsConflictingPeerBatteryReports();
     void ReplacesWeakPartialReportWithStrongerCompleteReport();
     void KeepsStrongerPartialReportWhenConflictingCompleteReportIsWeaker();
@@ -281,7 +285,9 @@ private Q_SLOTS:
     void PresentsScenesFromPodPlacement();
     void MapsMainWindowAnimationResources();
     void ConvertsTaskbarGeometryAcrossDpiBoundaries();
+#if defined APD_OS_WIN
     void TreatsInaccessibleInstanceMutexAsRunning();
+#endif
 };
 
 void AirPodsDomainTests::RejectsMalformedPackets()
@@ -358,6 +364,19 @@ void AirPodsDomainTests::RecognizesAirPods5()
         }
     }
     QCOMPARE(manager.GetCurrentState()->model, Model::AirPods_5);
+}
+
+void AirPodsDomainTests::HonorsConfiguredAdvertisementTimeout()
+{
+    StateManager manager{StateManager::Intervals{std::chrono::milliseconds{80}, std::chrono::milliseconds{80}}};
+    manager.OnRssiMinChanged(-80);
+    std::atomic<int> discards{0};
+    manager.SetOnDiscardState([&discards] { discards.fetch_add(1); });
+
+    manager.OnAdvReceived(Advertisement{MakeAdvertisementData(0x1234, -45, Side::Left)});
+    QVERIFY(manager.GetCurrentState().has_value());
+    QTRY_VERIFY_WITH_TIMEOUT(discards.load() > 0, 2000);
+    QVERIFY(!manager.GetCurrentState().has_value());
 }
 
 void AirPodsDomainTests::ResolvesAirPods5DisplayName()
@@ -1211,13 +1230,20 @@ void AirPodsDomainTests::ParsesGitHubReleaseMetadata()
 
     QVERIFY(release.has_value());
     QCOMPARE(release->version, QVersionNumber(0, 5, 0));
+    QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
+#if defined APD_OS_WIN
     QCOMPARE(release->fileName, QString{"AirPodsDesktop-0.5.0-win64.exe"});
     QCOMPARE(release->fileSize, size_t{123456});
     QCOMPARE(
         release->sha256,
         QString{"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"});
-    QCOMPARE(release->changeLog, QString{"- Add automatic updates"});
     QVERIFY(release->CanAutoUpdate());
+#else
+    // The fixture asset is a Windows installer, and the updater only accepts assets built for
+    // the platform it runs on.
+    QVERIFY(release->fileName.isEmpty());
+    QVERIFY(!release->CanAutoUpdate());
+#endif
     QVERIFY(!release->isPreRelease);
 
     const auto generatedNotes = QString{R"json({
@@ -1275,17 +1301,17 @@ void AirPodsDomainTests::RejectsUpdateAssetForAnotherArchitecture()
 
 void AirPodsDomainTests::MatchesInstallerAssetsByArchitecture()
 {
-    using Core::Update::Details::IsCompatibleInstallerAsset;
+    using Core::Update::Details::IsCompatibleUpdateAsset;
+    using Core::Update::Details::Platform;
 
     const auto installer = QStringLiteral("AirPodsDesktop-0.5.0-win64.exe");
     const auto portable = QStringLiteral("AirPodsDesktop-0.5.0-win64-portable.zip");
     const auto bridge = QStringLiteral("AirPodsDesktop-0.5.0-win32-bridge.exe");
 
-    QVERIFY(IsCompatibleInstallerAsset(installer, QStringLiteral("win64")));
-    QVERIFY(!IsCompatibleInstallerAsset(bridge, QStringLiteral("win64")));
-    QVERIFY(!IsCompatibleInstallerAsset(portable, QStringLiteral("win64")));
-    QVERIFY(IsCompatibleInstallerAsset(bridge, QStringLiteral("win32")));
-    QVERIFY(!IsCompatibleInstallerAsset(installer, QStringLiteral("win32")));
+    QVERIFY(IsCompatibleUpdateAsset(installer, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(bridge, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(portable, Platform::Windows));
+    QVERIFY(!IsCompatibleUpdateAsset(installer, Platform::Linux));
 }
 
 void AirPodsDomainTests::RejectsReleaseMetadataFromAnotherRepository()
@@ -1916,6 +1942,7 @@ void AirPodsDomainTests::ConvertsTaskbarGeometryAcrossDpiBoundaries()
     QCOMPARE(vertical.taskButtonsNative, QRect(0, 120, 50, 1270));
 }
 
+#if defined APD_OS_WIN
 void AirPodsDomainTests::TreatsInaccessibleInstanceMutexAsRunning()
 {
     const auto pid = QCoreApplication::applicationPid();
@@ -1945,6 +1972,7 @@ void AirPodsDomainTests::TreatsInaccessibleInstanceMutexAsRunning()
 
     CloseHandle(owner);
 }
+#endif
 
 QTEST_GUILESS_MAIN(AirPodsDomainTests)
 

@@ -40,6 +40,13 @@
     #include "../Core/OS/Windows.h"
     #include <dwmapi.h>
     #include <winrt/Windows.UI.ViewManagement.h>
+#elif defined APD_OS_LINUX
+    #include <QDBusArgument>
+    #include <QDBusConnection>
+    #include <QDBusMessage>
+    #include <QDBusVariant>
+    #include <QGuiApplication>
+    #include <QStyleHints>
 #endif
 
 namespace Gui::Theme {
@@ -201,6 +208,58 @@ SystemTheme ReadSystemTheme()
             result.accent = QColor{
                 (int)((colorization >> 16) & 0xFF), (int)((colorization >> 8) & 0xFF),
                 (int)(colorization & 0xFF)};
+        }
+    }
+#elif defined APD_OS_LINUX
+    const auto readAppearance = [](const QString &key) -> QVariant {
+        auto message = QDBusMessage::createMethodCall(
+            QStringLiteral("org.freedesktop.portal.Desktop"),
+            QStringLiteral("/org/freedesktop/portal/desktop"),
+            QStringLiteral("org.freedesktop.portal.Settings"), QStringLiteral("Read"));
+        message.setArguments({QStringLiteral("org.freedesktop.appearance"), key});
+
+        const auto reply = QDBusConnection::sessionBus().call(message, QDBus::Block, 1'000);
+        if (reply.type() != QDBusMessage::ReplyMessage || reply.arguments().isEmpty()) {
+            return {};
+        }
+
+        // Read() answers with a variant of a variant; QtDBus can hand back either layer.
+        auto value = reply.arguments().at(0);
+        if (value.metaType() == QMetaType::fromType<QDBusVariant>()) {
+            value = value.value<QDBusVariant>().variant();
+        }
+        return value;
+    };
+
+    // The portal reports 0 for "no preference", 1 for dark and 2 for light. A portal without the
+    // key answers with an error instead, so Qt's own hint decides - it follows the portal too,
+    // where the platform theme supports it.
+    bool colorSchemeKnown = false;
+    bool colorSchemeOk = false;
+    const auto colorScheme = readAppearance(QStringLiteral("color-scheme")).toUInt(&colorSchemeOk);
+    if (colorSchemeOk && (colorScheme == 1 || colorScheme == 2)) {
+        result.appsDark = colorScheme == 1;
+        colorSchemeKnown = true;
+    }
+    if (!colorSchemeKnown) {
+        const auto *hints = QGuiApplication::styleHints();
+        result.appsDark = hints != nullptr && hints->colorScheme() == Qt::ColorScheme::Dark;
+    }
+    result.systemDark = result.appsDark;
+
+    // accent-color is newer than color-scheme and older portals answer with NotFound. It arrives
+    // as a (ddd) struct of red, green and blue in [0, 1].
+    const auto accent = readAppearance(QStringLiteral("accent-color"));
+    if (accent.canConvert<QDBusArgument>()) {
+        const auto argument = accent.value<QDBusArgument>();
+        if (argument.currentSignature() == QLatin1String{"(ddd)"}) {
+            double red{};
+            double green{};
+            double blue{};
+            argument.beginStructure();
+            argument >> red >> green >> blue;
+            argument.endStructure();
+            result.accent = QColor::fromRgbF(red, green, blue);
         }
     }
 #endif
@@ -437,10 +496,12 @@ Manager::Manager() : QObject{qApp}, _impl{std::make_unique<Impl>()}
     _impl->system = ReadSystemTheme();
     _impl->palette = BuildPalette(ApplyMode(_impl->system, _impl->mode));
 
+#if defined APD_OS_WIN
     _impl->listener = new QWidget{nullptr, Qt::Tool | Qt::FramelessWindowHint};
     _impl->listener->setObjectName("ThemeListener");
     _impl->listener->setAttribute(Qt::WA_DontShowOnScreen);
     _impl->listener->createWinId();
+#endif
 
     _impl->debounce.setSingleShot(true);
     _impl->debounce.setInterval(150);
@@ -449,6 +510,17 @@ Manager::Manager() : QObject{qApp}, _impl{std::make_unique<Impl>()}
     _impl->nativeFilter = std::make_unique<NativeFilter>(*this);
     qApp->installNativeEventFilter(_impl->nativeFilter.get());
     qApp->installEventFilter(this);
+
+#if defined APD_OS_LINUX
+    const auto subscribed = QDBusConnection::sessionBus().connect(
+        QStringLiteral("org.freedesktop.portal.Desktop"),
+        QStringLiteral("/org/freedesktop/portal/desktop"),
+        QStringLiteral("org.freedesktop.portal.Settings"), QStringLiteral("SettingChanged"), this,
+        SLOT(OnPortalSettingChanged(QString, QString, QDBusVariant)));
+    if (!subscribed) {
+        LOG(Warn, "Theme: could not subscribe to the desktop portal's settings changes.");
+    }
+#endif
 
     LOG(Info, "Theme: appsDark: '{}', systemDark: '{}', accent: '{}'", _impl->system.appsDark,
         _impl->system.systemDark, ColorName(_impl->system.accent));
@@ -1004,9 +1076,28 @@ void Manager::Refresh(bool force)
 
 void Manager::OnSystemThemeChanged()
 {
-    // Windows sends several notifications per change; coalesce them.
+    // Windows sends several window messages per change, and a portal change can arrive as more
+    // than one signal; coalesce them.
     _impl->debounce.start();
 }
+
+#if defined APD_OS_LINUX
+void Manager::OnPortalSettingChanged(
+    const QString &nameSpace, const QString &key, const QDBusVariant &value)
+{
+    // The value is deliberately ignored: a change to either key triggers a fresh portal read, so
+    // there is one authoritative parsing path instead of two.
+    Q_UNUSED(value)
+
+    if (nameSpace != QStringLiteral("org.freedesktop.appearance")) {
+        return;
+    }
+    if (key != QStringLiteral("color-scheme") && key != QStringLiteral("accent-color")) {
+        return;
+    }
+    OnSystemThemeChanged();
+}
+#endif
 
 bool Manager::eventFilter(QObject *watched, QEvent *event)
 {

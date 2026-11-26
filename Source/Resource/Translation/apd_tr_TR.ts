@@ -60,6 +60,12 @@ Keyfini çıkarın.</translation>
         <source>Please select your AirPods device below.</source>
         <translation>Lütfen aşağıdan AirPods cihazınızı seçin.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation>Eşleşmiş cihaz bulunamadı.
+Önce AirPods&apos;unuzu sistem Bluetooth ayarlarından eşleştirmeniz gerekir.</translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -136,24 +142,12 @@ Keyfini çıkarın.</translation>
         <translation>Seçili cihaz kullanılamıyor. Cihazı açın veya kapsama alanına getirin.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 zaten bağlı.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>%1 cihazına bağlanılıyor...</translation>
     </message>
     <message>
-        <source>%1 connected.</source>
-        <translation>%1 bağlandı.</translation>
-    </message>
-    <message>
         <source>Connection to %1 timed out.</source>
         <translation>%1 bağlantısı zaman aşımına uğradı.</translation>
-    </message>
-    <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>Windows %1 cihazına bağlanamadı.</translation>
     </message>
     <message>
         <source>Quick connect</source>
@@ -166,6 +160,78 @@ Keyfini çıkarın.</translation>
     <message>
         <source>Battery</source>
         <translation>Pil</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation>Seçili cihaza bağlan</translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation>Seçili cihazın bağlantısını kes</translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation>Gürültü Denetimi</translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation>Gürültü denetimi kullanılamıyor: %1</translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation>Kapalı modu doğrulanamadı. Önce bir Apple aygıtında Kapalı modunu etkinleştirmeniz gerekebilir.</translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation>İstenen gürültü denetimi modu doğrulanamadı.</translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation>Gürültü Engelleme</translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation>Şeffaflık</translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation>Uyarlanabilir</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Kapalı</translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation>Gürültü Denetimi (desteklenmiyor veya bilinmiyor)</translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation>%1 cihazına bağlanılamadı.</translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation>%1 zaten bağlı değil.</translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation>%1 bağlantısı kesiliyor...</translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation>%1 bağlantısı kesildi.</translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation>%1 bağlantısı kesilemedi.</translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation>%1 bağlantısını kesme işlemi zaman aşımına uğradı.</translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation>Ana pencereyi göster</translation>
     </message>
 </context>
 <context>
@@ -236,15 +302,6 @@ Keyfini çıkarın.</translation>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>AirPodsDesktop bilgileri</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Eşleşmiş cihaz bulunamadı.
-Önce Windows Bluetooth Ayarları&apos;ndan AirPods&apos;unuzu eşleştirmeniz gerekir.</translation>
     </message>
 </context>
 <context>

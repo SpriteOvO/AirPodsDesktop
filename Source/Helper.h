@@ -114,7 +114,7 @@ using MemberPointerType = typename Impl::MemberPointerType<T>::Type;
 template <class T>
 inline bool IsFutureReady(const std::future<T> &future)
 {
-    return future.wait_for(0s) == std::future_status::ready;
+    return future.wait_for(std::chrono::seconds{0}) == std::future_status::ready;
 }
 
 //////////////////////////////////////////////////
@@ -258,7 +258,9 @@ public:
     {
         _thread.request_stop();
         Notify();
-        if (_thread.joinable()) {
+        // A callback running on this worker may stop it; joining from the thread itself would
+        // throw std::system_error and abort the process.
+        if (_thread.joinable() && _thread.get_id() != std::this_thread::get_id()) {
             _thread.join();
         }
     }
@@ -321,7 +323,9 @@ public:
     {
         _thread.request_stop();
         _destroyConVar.notify_all();
-        if (_thread.joinable()) {
+        // A callback running on this timer may stop it; joining from the thread itself would
+        // throw std::system_error and abort the process.
+        if (_thread.joinable() && _thread.get_id() != std::this_thread::get_id()) {
             _thread.join();
         }
     }

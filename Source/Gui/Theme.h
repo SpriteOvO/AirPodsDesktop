@@ -27,6 +27,11 @@
 #include <QPalette>
 #include <QString>
 #include <QStringList>
+#include <QVariant>
+
+#if defined APD_OS_LINUX
+#include <QDBusVariant>
+#endif
 
 class QWidget;
 
@@ -68,8 +73,9 @@ struct Palette {
 };
 
 //
-// Reads the Windows theme (light/dark, accent colour), turns it into a `QPalette` plus a
-// stylesheet, and re-applies both whenever Windows broadcasts a theme change.
+// Reads the system theme (light/dark, accent colour) from the Windows personalization settings or
+// the freedesktop Settings portal, turns it into a `QPalette` plus a stylesheet, and re-applies
+// both whenever the system reports a theme change.
 //
 // GUI thread only.
 //
@@ -111,6 +117,16 @@ private:
 
     void Refresh(bool force);
     void OnSystemThemeChanged();
+
+private Q_SLOTS:
+#if defined APD_OS_LINUX
+    // Linux desktops announce appearance changes with a Settings portal signal rather than a
+    // window message. The signal carries a D-Bus variant, which QtDBus delivers as a
+    // `QDBusVariant`; a `QVariant` parameter would not match and the subscription would be
+    // silently dropped.
+    void OnPortalSettingChanged(
+        const QString &nameSpace, const QString &key, const QDBusVariant &value);
+#endif
 
     bool eventFilter(QObject *watched, QEvent *event) override;
 };

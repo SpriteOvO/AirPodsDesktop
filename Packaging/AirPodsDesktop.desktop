@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=AirPodsDesktop
+GenericName=AirPods Battery Monitor
+Comment=Show AirPods battery status with ear detection and quick connect
+Exec=airpodsdesktop
+Icon=AirPodsDesktop
+Terminal=false
+StartupNotify=false
+StartupWMClass=AirPodsDesktop
+Categories=Utility;
+Keywords=AirPods;Bluetooth;Battery;Earbuds;

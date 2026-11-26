@@ -21,9 +21,12 @@
 #include <array>
 #include <optional>
 
+#include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDir>
 #include <QFile>
 #include <QRegularExpression>
+#include <QStandardPaths>
 #include <QUrl>
 #include <QProcess>
 #include <QTemporaryDir>
@@ -110,21 +113,63 @@ QString ParseSha256Digest(const json &asset)
 
 } // namespace
 
-bool IsCompatibleInstallerAsset(const QString &fileName, const QString &systemName)
+Platform CurrentPlatform()
 {
-    if (QFileInfo{fileName}.suffix().compare(QStringLiteral("exe"), Qt::CaseInsensitive) != 0) {
+#if defined APD_OS_WIN
+    return Platform::Windows;
+#else
+    return Platform::Linux;
+#endif
+}
+
+bool IsCompatibleUpdateAsset(const QString &fileName, Platform platform)
+{
+    const QFileInfo fileInfo{fileName};
+    const auto suffix = fileInfo.suffix().toLower();
+    const auto baseName = fileInfo.completeBaseName().toLower();
+
+    if (platform == Platform::Windows) {
+        if (suffix != QStringLiteral("exe")) {
+            return false;
+        }
+
+        // CPack emits names ending in -win64. The legacy updater searches for win32, so the bridge
+        // deliberately uses -win32-bridge without also containing win64.
+        return baseName.endsWith(QStringLiteral("-win64")) ||
+               baseName.contains(QStringLiteral("-win64-"));
+    }
+
+    if (suffix != QStringLiteral("deb")) {
         return false;
     }
 
-    // CPack emits names ending in -win64. The legacy updater searches for win32, so the bridge
-    // deliberately uses -win32-bridge without also containing win64.
-    const auto architectureMarker = QStringLiteral("-") + systemName.toLower();
-    const auto baseName = QFileInfo{fileName}.completeBaseName().toLower();
-    return baseName.endsWith(architectureMarker) ||
-           baseName.contains(architectureMarker + QStringLiteral("-"));
+    // CPack's DEB-DEFAULT name is airpodsdesktop_<version>_amd64.deb. The project is x64-only.
+    return baseName.endsWith(QStringLiteral("_amd64")) ||
+           baseName.contains(QStringLiteral("_amd64-"));
 }
 
-std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
+bool IsPackageManagedInstall(const QString &applicationDirPath)
+{
+    const auto normalized = QDir::cleanPath(applicationDirPath);
+    return normalized == QStringLiteral("/usr") ||
+           normalized.startsWith(QStringLiteral("/usr/"));
+}
+
+void ApplyInstallPolicy(ReleaseInfo &info, Platform platform, bool packageManaged)
+{
+    if (platform == Platform::Windows || packageManaged) {
+        return;
+    }
+
+    // The Debian package is the Linux update channel. A tarball, build tree or other prefix cannot
+    // be replaced safely by the package manager, so offer the release page instead.
+    info.fileName.clear();
+    info.downloadUrl.clear();
+    info.fileSize = 0;
+    info.sha256.clear();
+}
+
+std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text, Platform platform)
 {
     try {
         const auto root = json::parse(text);
@@ -184,12 +229,9 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
             LOG(Info, "ParseSRResponse: Asset name: '{}', size: {}, downloadUrl: '{}'.", fileName,
                 fileSize, downloadUrl);
 
-#if !defined APD_OS_WIN
-    #error "Need to port."
-#endif
             // AirPodsDesktop-x.x.x-win64.exe
             //
-            if (!IsCompatibleInstallerAsset(fileName, CONFIG_CPACK_SYSTEM_NAME)) {
+            if (!IsCompatibleUpdateAsset(fileName, platform)) {
                 LOG(Warn, "ParseSRResponse: Asset platform is mismatched. Continue.");
                 continue;
             }
@@ -215,7 +257,8 @@ std::optional<ReleaseInfo> ParseSingleReleaseResponse(const std::string &text)
     }
 }
 
-std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string &text)
+std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(
+    const std::string &text, Platform platform)
 {
     try {
         const auto root = json::parse(text);
@@ -223,7 +266,7 @@ std::optional<ReleaseInfo> ParseMultipleReleasesResponseFirst(const std::string 
             LOG(Warn, "ParseMRResponse: response does not contain any releases.");
             return std::nullopt;
         }
-        auto optInfo = ParseSingleReleaseResponse(root.front().dump());
+        auto optInfo = ParseSingleReleaseResponse(root.front().dump(), platform);
         if (!optInfo.has_value()) {
             LOG(Warn, "One release info parsing failed.");
             return std::nullopt;
@@ -369,13 +412,13 @@ std::optional<ReleaseInfo> FetchUpdateRelease()
     const auto isCurrentPreRelease = Details::IsCurrentPreRelease();
     LOG(Info, "Update: isCurrentPreRelease: '{}'", isCurrentPreRelease);
 
-    const auto optInfo = Details::FetchLatestRelease(isCurrentPreRelease);
+    auto optInfo = Details::FetchLatestRelease(isCurrentPreRelease);
     if (!optInfo.has_value()) {
         LOG(Warn, "Update: FetchLatestRelease() returned nullopt.");
         return std::nullopt;
     }
 
-    const auto &latestInfo = optInfo.value();
+    auto &latestInfo = optInfo.value();
     const auto needToUpdate = Details::NeedToUpdate(latestInfo);
 
     LOG(Info, "Update: Latest version: '{}'", latestInfo.version.toString());
@@ -385,6 +428,15 @@ std::optional<ReleaseInfo> FetchUpdateRelease()
     }
 
     LOG(Info, "Update: Need to update.");
+
+#if defined APD_OS_LINUX
+    Details::ApplyInstallPolicy(latestInfo, Details::Platform::Linux,
+                                Details::IsPackageManagedInstall(
+                                    QCoreApplication::applicationDirPath()));
+    if (!latestInfo.CanAutoUpdate()) {
+        LOG(Info, "Update: This installation cannot apply the package automatically.");
+    }
+#endif
 
     if (latestInfo.version.toString() == Core::Settings::GetCurrent().skipped_version) {
         LOG(Info, "Update: User skipped this new version. Ignore.");
@@ -404,6 +456,29 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         return false;
     }
 
+    QString filePath;
+#if defined APD_OS_LINUX
+    const auto cacheDirectory = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (cacheDirectory.isEmpty()) {
+        LOG(Warn, "DownloadInstall: No writable cache location.");
+        return false;
+    }
+
+    QDir updateDirectory{QDir{cacheDirectory}.filePath(QStringLiteral("updates"))};
+    if (!updateDirectory.mkpath(QStringLiteral("."))) {
+        LOG(Warn, "DownloadInstall: Unable to create update directory '{}'.",
+            updateDirectory.path());
+        return false;
+    }
+
+    // Keep only the package being offered. The install handler may open it after this process
+    // exits, so it has to outlive the temporary lifetime used on Windows.
+    for (const auto &entry : updateDirectory.entryList({QStringLiteral("*.deb")}, QDir::Files)) {
+        updateDirectory.remove(entry);
+    }
+
+    filePath = updateDirectory.filePath(info.fileName);
+#else
     QTemporaryDir tempPath;
     if (!tempPath.isValid()) {
         auto errorString = tempPath.errorString();
@@ -411,7 +486,8 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         return false;
     }
 
-    const QString filePath = QFileInfo{tempPath.filePath(info.fileName)}.absoluteFilePath();
+    filePath = QFileInfo{tempPath.filePath(info.fileName)}.absoluteFilePath();
+#endif
 
     LOG(Info, "DownloadInstall: Ready to download to '{}'.", filePath);
 
@@ -447,17 +523,29 @@ bool DownloadInstall(const ReleaseInfo &info, const FnProgress &progressCallback
         return false;
     }
 
-    tempPath.setAutoRemove(false);
-
     // Download succeeded
     //
     LOG(Info, "Download: Downloaded succeeded. filePath: '{}', size: {}", filePath,
         response.downloaded_bytes);
 
+#if defined APD_OS_LINUX
+    QFile::setPermissions(filePath, QFileDevice::ReadOwner | QFileDevice::WriteOwner |
+                                       QFileDevice::ReadGroup | QFileDevice::ReadOther);
+
+    // Hand the verified package to the desktop's installer handler. The user confirms the
+    // privileged installation in the system UI rather than through an embedded credentials prompt.
+    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(filePath))) {
+        LOG(Warn, "DownloadInstall: No application handled the downloaded package '{}'.", filePath);
+        return false;
+    }
+#else
+    tempPath.setAutoRemove(false);
+
     if (!QProcess::startDetached(filePath)) {
         LOG(Warn, "DownloadInstall: Start installer failed.");
         return false;
     }
+#endif
 
     return true;
 }

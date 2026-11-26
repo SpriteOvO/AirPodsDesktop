@@ -23,25 +23,29 @@
 #include <QDialog>
 #include <QPainter>
 
-#include "ui_TaskbarStatus.h"
-
 #include "../Core/AirPods.h"
 #include "../Core/Settings.h"
 #include "Utils.h"
 #include "Base.h"
-#include "Widget/Battery.h"
+
+#if defined APD_OS_WIN
+    #include "ui_TaskbarStatus.h"
+    #include "Widget/Battery.h"
 
 struct TaskBarInfo {
     bool isHorizontal;
     HWND hShellTrayWnd, hReBarWindow32, hMSTaskSwWClass;
     QRect rectReBarWindow32, rectMSTaskSwWClass, rectMSTaskSwWClassForParent;
 };
+#endif
 
 namespace Gui {
 
 using namespace std::chrono_literals;
 
 using Core::Settings::TaskbarStatusBehavior;
+
+#if defined APD_OS_WIN
 
 class MiniIcon : public QWidget
 {
@@ -173,5 +177,39 @@ private:
         Repaint();
     });
 };
+
+#else
+
+// The battery dock is a Windows taskbar integration. On other platforms the interface stays
+// available so the application wiring does not need a platform branch, but it does nothing.
+class TaskbarStatus : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit TaskbarStatus(QWidget *parent = nullptr) : QDialog{parent}
+    {
+        hide();
+    }
+
+    void UpdateState(const Core::AirPods::State &state)
+    {
+        Q_UNUSED(state)
+    }
+    void Unavailable() {}
+    void Disconnect() {}
+    void Unbind() {}
+    void SetToolTip(const QString &text)
+    {
+        Q_UNUSED(text)
+    }
+
+Q_SIGNALS:
+    void OnSettingsChangedSafely(TaskbarStatusBehavior value);
+    void ShowMainWindowRequested();
+    void ShowTrayMenuRequested(const QPoint &position);
+};
+
+#endif
 
 } // namespace Gui
