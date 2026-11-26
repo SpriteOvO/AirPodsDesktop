@@ -29,7 +29,9 @@
 #include "Utils.h"
 #include "Error.h"
 
-#include "Core/OS/Windows.h"
+#if defined APD_OS_WIN
+    #include "Core/OS/Windows.h"
+#endif
 
 namespace Logger {
 
@@ -50,7 +52,11 @@ bool Initialize(bool enableTrace)
 #endif
 
     try {
+#if defined APD_OS_WIN
         const auto logFilePath = GetLogFilePath().absolutePath().toStdWString();
+#else
+        const auto logFilePath = GetLogFilePath().absolutePath().toStdString();
+#endif
 
         // clang-format off
         auto logger = std::make_shared<spdlog::logger>(

@@ -60,6 +60,11 @@ Selamat menikmati.</translation>
         <source>Please select your AirPods device below.</source>
         <translation>Silakan pilih perangkat AirPods Anda di bawah ini.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -140,24 +145,12 @@ Selamat menikmati.</translation>
         <translation>Perangkat yang dipilih tidak tersedia. Nyalakan atau dekatkan ke dalam jangkauan.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>%1 sudah terhubung.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>Menghubungkan ke %1...</translation>
     </message>
     <message>
-        <source>%1 connected.</source>
-        <translation>%1 terhubung.</translation>
-    </message>
-    <message>
         <source>Connection to %1 timed out.</source>
         <translation>Koneksi ke %1 kehabisan waktu.</translation>
-    </message>
-    <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>Windows tidak dapat terhubung ke %1.</translation>
     </message>
     <message>
         <source>Quick connect</source>
@@ -166,6 +159,78 @@ Selamat menikmati.</translation>
     <message>
         <source>Battery</source>
         <translation>Baterai</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -236,15 +301,6 @@ Selamat menikmati.</translation>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>Informasi AirPodsDesktop</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Tidak ada perangkat yang dipasangkan.
-Anda perlu memasangkan AirPods di Pengaturan Bluetooth Windows terlebih dahulu.</translation>
     </message>
 </context>
 <context>

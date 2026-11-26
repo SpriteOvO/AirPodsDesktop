@@ -27,6 +27,9 @@
 #include "../Core/AirPods.h"
 #include "../Core/QuickConnect.h"
 #include "../Core/Update.h"
+#if defined APD_OS_LINUX
+#include "../Core/NoiseControl.h"
+#endif
 #include "Base.h"
 #include "TrayActivation.h"
 #include "SettingsWindow.h"
@@ -52,6 +55,10 @@ public:
     void Unbind();
     void VersionUpdateAvailable(const Core::Update::ReleaseInfo &releaseInfo);
     void ShowContextMenu(const QPoint &position);
+#if defined APD_OS_LINUX
+    void SetNoiseControl(Core::NoiseControl::Controller *controller);
+    static QString NoiseControlTimeoutMessage(Core::NoiseControl::Mode mode);
+#endif
 
 Q_SIGNALS:
     void OnTrayIconBatteryChangedSafely(Core::Settings::TrayIconBatteryBehavior value);
@@ -70,6 +77,7 @@ private:
 
     QSystemTrayIcon *_tray = new QSystemTrayIcon{this};
     QMenu *_menu = new QMenu{this};
+    QAction *_actionShowMainWindow = new QAction{tr("Show main window"), this};
     QAction *_actionNewVersion = new QAction{tr("New version available!"), this};
     QAction *_actionLowAudioLatency = new QAction{tr("Low audio latency (may cause hiss)"), this};
     QAction *_actionSettings = new QAction{tr("Settings"), this};
@@ -84,6 +92,14 @@ private:
     std::optional<IconRenderState> _lastIconRenderState;
     Core::QuickConnect::Controller &_quickConnect;
     NotificationWindow *_notification = new NotificationWindow{this};
+#if defined APD_OS_LINUX
+    QAction *_actionQuickConnect = new QAction{this};
+    QAction *_actionQuickDisconnect = new QAction{this};
+    Core::NoiseControl::Controller *_noiseControl{};
+    QMenu *_noiseMenu{};
+    std::vector<QAction *> _noiseActions;
+    void UpdateNoiseControl();
+#endif
 
     void ShowMainWindow();
     void Repaint();

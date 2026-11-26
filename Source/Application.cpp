@@ -20,6 +20,7 @@
 
 #include <QGuiApplication>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QStyleFactory>
 
 #include <Config.h>
@@ -40,6 +41,9 @@
 #include "Core/PlaybackMonitor.h"
 #if defined APD_OS_WIN
     #include "Core/QuickConnect_win.h"
+#elif defined APD_OS_LINUX
+    #include "Core/QuickConnect_linux.h"
+    #include "Core/NoiseControl.h"
 #endif
 #include "Core/Settings.h"
 #include "Core/Update.h"
@@ -149,7 +153,7 @@ void ApdApplication::FirstTimeUse()
            "customize settings or quit."));
 }
 
-ApdApplication::ApdApplication(int argc, char *argv[]) : SingleApplication{argc, argv} {}
+ApdApplication::ApdApplication(int &argc, char *argv[]) : SingleApplication{argc, argv} {}
 
 bool ApdApplication::Prepare(int argc, char *argv[])
 {
@@ -204,10 +208,15 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
 #if defined APD_OS_WIN
     _quickConnectBackend = std::make_shared<Core::QuickConnect::WindowsBackend>();
+#elif defined APD_OS_LINUX
+    _quickConnectBackend = Core::QuickConnect::CreateLinuxBackend();
 #else
     _quickConnectBackend = std::make_shared<Core::QuickConnect::NullBackend>();
 #endif
     _quickConnect = std::make_unique<Core::QuickConnect::Controller>(_quickConnectBackend);
+#if defined APD_OS_LINUX
+    _noiseControl = std::make_unique<Core::NoiseControl::Controller>(Core::NoiseControl::CreateLinuxBackend());
+#endif
     _playbackMonitor = std::make_unique<Core::GlobalMedia::PlaybackMonitor>();
     connect(
         _playbackMonitor.get(), &Core::GlobalMedia::PlaybackMonitor::PlaybackChanged,
@@ -215,6 +224,9 @@ bool ApdApplication::Prepare(int argc, char *argv[])
 
     _trayIcon = std::make_unique<Gui::TrayIcon>(
         [this] { return GetCurrentLoadedLocaleIndex(); }, *_quickConnect);
+#if defined APD_OS_LINUX
+    _trayIcon->SetNoiseControl(_noiseControl.get());
+#endif
     _taskbarStatus = std::make_unique<Gui::TaskbarStatus>();
     _mainWindow = std::make_unique<Gui::MainWindow>();
     _mainWindow->StartUpdateChecks();
@@ -242,6 +254,13 @@ void ApdApplication::ConnectAirPodsManager()
 {
     auto *manager = _airPodsManager.get();
     auto *mainWindow = _mainWindow.get();
+#if defined APD_OS_LINUX
+    connect(manager, &Core::AirPods::Manager::BoundDeviceDetailsChanged, _noiseControl.get(),
+            [this](quint64 address, quint64 generation, quint32 model, bool connected) {
+                if (generation != _noiseBindingGeneration.load()) return;
+                _noiseControl->SetBoundDetails(address, generation, static_cast<Core::AirPods::Model>(model), connected);
+            });
+#endif
 
     connect(
         manager, &Core::AirPods::Manager::BoundDeviceUnavailable, this,
@@ -359,11 +378,24 @@ void ApdApplication::SetTranslator(const QLocale &locale)
 
     std::unique_ptr<QTranslator> translator;
     if (index != 0) {
-        QDir translationFolder = QCoreApplication::applicationDirPath();
-        translationFolder.cd("translations");
+        // A portable build keeps the .qm files beside the executable; an installed package puts
+        // them under the XDG data directories.
+        QStringList translationFolders{
+            QCoreApplication::applicationDirPath() + QStringLiteral("/translations")};
+        for (const auto &location :
+             QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation)) {
+            translationFolders.append(location + QStringLiteral("/airpodsdesktop/translations"));
+        }
 
         translator = std::make_unique<QTranslator>();
-        if (!translator->load(locale, "apd", "_", translationFolder.absolutePath())) {
+        bool loaded = false;
+        for (const auto &folder : translationFolders) {
+            if (translator->load(locale, "apd", "_", folder)) {
+                loaded = true;
+                break;
+            }
+        }
+        if (!loaded) {
             LOG(Warn, "Failed to load translation for locale '{}', keep current language",
                 localeName);
             return;
@@ -432,6 +464,13 @@ void ApdApplication::OnRssiMinChanged(int16_t rssiMin)
 
 void ApdApplication::OnDeviceAddressChanged(uint64_t address)
 {
+    uint64_t generation = 0;
+#if defined APD_OS_LINUX
+    generation = ++_noiseBindingGeneration;
+    QMetaObject::invokeMethod(_noiseControl.get(), [controller = _noiseControl.get(), address, generation] {
+        controller->Bind(address, generation);
+    }, Qt::AutoConnection);
+#endif
     if (address == 0) {
         emit _mainWindow->UnbindSafely();
         _trayIcon->Unbind();
@@ -449,8 +488,8 @@ void ApdApplication::OnDeviceAddressChanged(uint64_t address)
     // and stall every other thread touching settings.
     QMetaObject::invokeMethod(
         _airPodsManager.get(),
-        [manager = _airPodsManager.get(), address] {
-            manager->OnBoundDeviceAddressChanged(address);
+        [manager = _airPodsManager.get(), address, generation] {
+            manager->OnBoundDeviceAddressChanged(address, generation);
         },
         Qt::QueuedConnection);
 }

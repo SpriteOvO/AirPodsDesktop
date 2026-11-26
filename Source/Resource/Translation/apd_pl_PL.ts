@@ -60,6 +60,11 @@ Miłego słuchania!</translation>
         <source>Please select your AirPods device below.</source>
         <translation>Wybierz poniżej swoje słuchawki AirPods.</translation>
     </message>
+    <message>
+        <source>No paired device found.
+You need to pair your AirPods in the system Bluetooth settings first.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Gui::SettingsWindow</name>
@@ -140,24 +145,12 @@ Miłego słuchania!</translation>
         <translation>Wybrane urządzenie jest niedostępne. Włącz je lub przenieś w zasięg Bluetooth.</translation>
     </message>
     <message>
-        <source>%1 is already connected.</source>
-        <translation>Urządzenie %1 jest już połączone.</translation>
-    </message>
-    <message>
         <source>Connecting to %1...</source>
         <translation>Łączenie z %1...</translation>
     </message>
     <message>
-        <source>%1 connected.</source>
-        <translation>Połączono z %1.</translation>
-    </message>
-    <message>
         <source>Connection to %1 timed out.</source>
         <translation>Upłynął limit czasu połączenia z %1.</translation>
-    </message>
-    <message>
-        <source>Windows could not connect to %1.</source>
-        <translation>System Windows nie mógł połączyć się z %1.</translation>
     </message>
     <message>
         <source>Quick connect</source>
@@ -166,6 +159,78 @@ Miłego słuchania!</translation>
     <message>
         <source>Battery</source>
         <translation>Bateria</translation>
+    </message>
+    <message>
+        <source>Connect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnect selected device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise control unavailable: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off was not confirmed. You may need to enable Off on an Apple device first.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The requested noise control mode was not confirmed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Cancellation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adaptive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Noise Control (unsupported or unknown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not connect to %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 is already disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnecting from %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 disconnected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not disconnect from %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnection from %1 timed out.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show main window</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -236,15 +301,6 @@ Miłego słuchania!</translation>
     <message>
         <source>AirPodsDesktop information</source>
         <translation>Informacje o AirPodsDesktop</translation>
-    </message>
-</context>
-<context>
-    <name>QMessageBox</name>
-    <message>
-        <source>No paired device found.
-You need to pair your AirPods in Windows Bluetooth Settings first.</source>
-        <translation>Nie znaleziono sparowanego urządzenia.
-Najpierw sparuj słuchawki AirPods w ustawieniach Bluetooth systemu Windows.</translation>
     </message>
 </context>
 <context>

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 #include <SingleApplication>
 
 #include <QLocale>
@@ -47,6 +48,12 @@ namespace Core::GlobalMedia {
 class PlaybackMonitor;
 }
 
+#if defined APD_OS_LINUX
+namespace Core::NoiseControl {
+class Controller;
+}
+#endif
+
 namespace Gui {
 class MainWindow;
 class TaskbarStatus;
@@ -59,7 +66,10 @@ class ApdApplication : public SingleApplication, private Core::Settings::ApplyOb
 
 public:
     static void PreConstruction();
-    ApdApplication(int argc, char *argv[]);
+    // QCoreApplication keeps a reference to argc for the whole application lifetime, so the
+    // reference must bind to main()'s argc rather than to a temporary copy on this constructor's
+    // stack frame.
+    ApdApplication(int &argc, char *argv[]);
     ~ApdApplication() override;
 
     bool Prepare(int argc, char *argv[]);
@@ -89,6 +99,10 @@ private:
     // in reverse declaration order.
     std::shared_ptr<Core::QuickConnect::Backend> _quickConnectBackend;
     std::unique_ptr<Core::QuickConnect::Controller> _quickConnect;
+#if defined APD_OS_LINUX
+    std::unique_ptr<Core::NoiseControl::Controller> _noiseControl;
+    std::atomic_uint64_t _noiseBindingGeneration{};
+#endif
     std::unique_ptr<Core::GlobalMedia::PlaybackMonitor> _playbackMonitor;
     std::unique_ptr<Gui::TrayIcon> _trayIcon;
     std::unique_ptr<Gui::TaskbarStatus> _taskbarStatus;

@@ -18,6 +18,8 @@
 
 #include "SettingsWindow.h"
 
+#include "../Assert.h"
+
 #include <QAbstractItemView>
 #include <QPainter>
 #include <QLabel>

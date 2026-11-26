@@ -2,23 +2,35 @@
 
 ## Project Structure & Module Organization
 
-AirPodsDesktop is a Windows-focused C++20 and Qt 6 application built with CMake. Application startup and shared utilities live directly under `Source/`. Platform-independent behavior is grouped in `Source/Core/`, while Windows implementations use the `_win.cpp` suffix. Qt windows, widgets, and `.ui` forms belong in `Source/Gui/`. Images, audio, videos, translations, and Qt/Windows resource manifests are under `Source/Resource/`. Keep CMake helpers in `CMake/`, build documentation in `Docs/`, and screenshots or promotional assets in `Assets/`. Generated output belongs in `Build/` and must not be committed.
+AirPodsDesktop is a C++20 and Qt 6 application built with CMake for **Windows x64** and **Linux x64**. Application startup and shared utilities live directly under `Source/`. Platform-independent behavior is grouped in `Source/Core/`, while platform implementations use the `_win.cpp` and `_linux.cpp` suffixes. Qt windows, widgets, and `.ui` forms belong in `Source/Gui/`. Images, audio, videos, translations, and Qt/Windows resource manifests are under `Source/Resource/`. Keep CMake helpers in `CMake/`, build documentation in `Docs/`, and screenshots or promotional assets in `Assets/`. Generated output belongs in `Build/` (or `Build-linux/`) and must not be committed.
 
 Respect the target dependency direction: `apd_support` → `apd_domain` → `apd_core`, with `apd_presentation` feeding `apd_gui`. Keep platform calls and widgets out of domain code.
 
 ## Build, Test, and Development Commands
 
-Use PowerShell with CMake 3.20+, Visual Studio 2022, Qt 6.8.3 (`msvc2022_64`), and a bootstrapped vcpkg checkout. The supported target is Windows 10 1809+ or Windows 11 on x64.
+Two targets are supported: **Windows x64** (Visual Studio 2022, Qt 6.8.3 `msvc2022_64`, vcpkg) and **Linux x64** (GCC 13+, Qt 6.8.3 `gcc_64`, BlueZ/D-Bus, `libpulse`). See `Docs/Build.md` for full prerequisites.
+
+### Windows (PowerShell)
 
 ```powershell
 cmake -S . -B Build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_BUILD_TYPE=RelWithDebInfo `
   -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake `
-  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64
+  -DCMAKE_PREFIX_PATH=C:\Qt\6.8.3\msvc2022_64 -DAPD_BUILD_TESTS=ON
 cmake --build Build --config RelWithDebInfo
+ctest --test-dir Build -C RelWithDebInfo --output-on-failure
 ```
 
-Executables and deployed Qt files appear in `Build/Binary/`. Add `-DAPD_ENABLE_CONSOLE=ON` for console diagnostics or `-DAPD_GENERATE_INSTALLER=ON` when NSIS is installed. Run `clang-format -i Source\path\File.cpp` on touched C++ files.
+### Linux (Ubuntu 24.04+)
+
+```bash
+cmake -S . -B Build-linux -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_PREFIX_PATH=~/.local/Qt/6.8.3/gcc_64 -DAPD_BUILD_TESTS=ON
+cmake --build Build-linux -j"$(nproc)"
+xvfb-run -a ctest --test-dir Build-linux --output-on-failure
+```
+
+Executables and deployed Qt files appear in `Build/Binary/` (or `Build-linux/Binary/`). Add `-DAPD_ENABLE_CONSOLE=ON` for Windows console diagnostics or `-DAPD_GENERATE_INSTALLER=ON` to build installers (NSIS on Windows, DEB/TGZ via `cpack` on Linux). Run `clang-format -i Source/path/File.cpp` on touched C++ files.
 
 ## Coding Style & Naming Conventions
 
