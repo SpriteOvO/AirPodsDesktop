@@ -60,7 +60,6 @@ SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidg
     }
 
     _ui.listWidget->setCurrentRow(0);
-    _ui.listWidget->item(0)->setSelected(true);
 }
 
 bool SelectWindow::HasResult() const
