@@ -18,9 +18,17 @@
 
 #include "SelectWindow.h"
 
+#include <QFontMetrics>
 #include <QPushButton>
+#include <QSize>
 
 namespace Gui {
+
+namespace {
+// Mirrors the `QListWidget::item` rule in Theme.cpp.
+constexpr int kItemMinHeight = 32;
+constexpr int kItemVerticalPadding = 8;
+} // namespace
 
 SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidget *parent)
     : QDialog{parent}
@@ -40,6 +48,18 @@ SelectWindow::SelectWindow(const QString &title, const QStringList &items, QWidg
 
     _ui.label->setText(title);
     _ui.listWidget->addItems(items);
+
+    // The stylesheet gives items a min-height, but on some Qt versions the view still lays the
+    // rows out with the plain font height, so each row is painted taller than the space reserved
+    // for it and the rows overlap. Pin an explicit size hint so layout and painting agree, and
+    // keep it tall enough for the current UI font.
+    const auto metrics = _ui.listWidget->fontMetrics();
+    const int rowHeight = qMax(kItemMinHeight, metrics.height() + 2 * kItemVerticalPadding);
+    for (int i = 0; i < _ui.listWidget->count(); ++i) {
+        _ui.listWidget->item(i)->setSizeHint(QSize{0, rowHeight});
+    }
+
+    _ui.listWidget->setCurrentRow(0);
     _ui.listWidget->item(0)->setSelected(true);
 }
 
